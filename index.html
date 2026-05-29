@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPS / CINÉASTES</title>
+<style>
+@font-face {
+  font-family: 'ImprintMTShadow';
+  src: url('fonts/imprint-mt-shadow.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GoudyOldStyle';
+  src: url('fonts/GOUDOS.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TWCenCondEB';
+  src: url('fonts/tw-cen-mt-condensed-extrabold.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  --bg: #1a1714;
+  --bg-subtle: #201d1a;
+  --bg-card: #161310;
+  --gold: #C9A96E;
+  --gold-dim: #8B7355;
+  --gold-dark: #6a6050;
+  --gold-darker: #4a4038;
+  --text: #ede5d5;
+  --text-dim: #9a9080;
+  --border: #332d28;
+  --border-dim: #262018;
+  --border-dark: #201c18;
+  --tag-bg: #201d18;
+  --tag-border: #332d20;
+  --font-display: 'ImprintMTShadow', serif;
+  --font-body: 'GoudyOldStyle', Georgia, serif;
+  --font-ui: 'TWCenCondEB', 'Arial Narrow', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* HEADER */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.logo:hover { opacity: 0.8; }
+.logo span { color: var(--gold-dark); margin: 0 4px; }
+
+.nav { display: flex; gap: 1.5rem; }
+.nav a {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
+}
+.nav a:hover, .nav a.active { color: var(--gold); }
+.nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0; right: 0;
+  height: 1px;
+  background: var(--gold);
+}
+
+/* CONTENT */
+.content {
+  padding: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+/* SEARCH */
+.search-bar { margin-bottom: 1.5rem; position: relative; }
+.search-bar input {
+  background: var(--bg-subtle);
+  border: 0.5px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px 10px 16px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  border-radius: 4px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-bar input::placeholder { color: var(--gold-darker); }
+.search-bar input:focus { border-color: var(--gold-dim); }
+
+/* ALPHA BAR */
+.alpha-bar {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 1.5rem;
+}
+.alpha-bar span {
+  font-family: var(--font-body);
+  font-size: 22px;
+  color: var(--gold-darker);
+  cursor: pointer;
+  width: 34px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+  user-select: none;
+}
+.alpha-bar span.has-data:hover { color: var(--gold-dim); }
+.alpha-bar span.active { color: var(--gold); border-bottom: 1.5px solid var(--gold); }
+.alpha-bar span.no-data { color: #2a2520; cursor: default; }
+
+/* LIST */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+.list-letter {
+  font-family: var(--font-body);
+  font-size: 42px;
+  color: var(--gold);
+  line-height: 1;
+}
+.list-count {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cineaste-list { display: flex; flex-direction: column; }
+.cineaste-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 11px 6px;
+  border-bottom: 0.5px solid var(--border-dark);
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 3px;
+}
+.cineaste-row:hover { background: var(--bg-subtle); }
+.cineaste-row:hover .c-name { color: var(--gold); }
+.c-name {
+  font-family: var(--font-body);
+  font-size: 19px;
+  color: var(--text);
+  transition: color 0.15s;
+}
+.c-name b { font-weight: 700; text-transform: uppercase; }
+.c-dates {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--gold-dark);
+  font-size: 15px;
+  margin-left: 10px;
+}
+.c-badge {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dim);
+  background: var(--tag-bg);
+  border: 0.5px solid var(--tag-border);
+  padding: 2px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* FICHE OVERLAY */
+.fiche-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 200;
+  overflow-y: auto;
+  padding: 4rem 2rem;
+}
+.fiche-overlay.visible { display: flex; justify-content: center; align-items: flex-start; }
+.fiche {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 700px;
+  animation: fiche-in 0.2s ease-out;
+}
+@keyframes fiche-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fiche-back {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.fiche-back:hover { color: var(--gold); }
+.fiche-name {
+  font-family: var(--font-body);
+  font-size: 32px;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+.fiche-name b { font-weight: 700; text-transform: uppercase; }
+.fiche-dates {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--gold-dim);
+  font-style: italic;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 0.5px solid var(--border-dim);
+}
+.fiche-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+.fiche-stat-number {
+  font-family: var(--font-body);
+  font-size: 28px;
+  color: var(--gold);
+}
+.fiche-stat-label {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.fiche-section {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+.contrib-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.contrib-tag {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 5px 14px;
+  border: 0.5px solid var(--gold-dim);
+  border-radius: 3px;
+  color: var(--gold);
+  background: var(--tag-bg);
+  letter-spacing: 0.05em;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.contrib-tag:hover { background: var(--border); }
+.fiche-fb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 0.5px solid var(--border-dim);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  transition: color 0.15s;
+}
+.fiche-fb-link:hover { color: var(--gold); }
+
+/* CONTRIBUTEURS */
+.contrib-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.contrib-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.contrib-card:hover { border-color: var(--gold-dim); }
+.contrib-card-name {
+  font-family: var(--font-body);
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.contrib-card-stat {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.contrib-card-favs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--border-dim);
+}
+.contrib-fav-item {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.contrib-fav-item .heart { color: var(--gold); font-size: 12px; }
+
+/* STATISTIQUES */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 2.5rem;
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem;
+}
+.stat-card-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  margin-bottom: 6px;
+}
+.stat-card-value {
+  font-family: var(--font-body);
+  font-size: 30px;
+  color: var(--gold);
+}
+.ranking-section { margin-bottom: 2.5rem; }
+.ranking-title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 0.5px solid var(--border-dim);
+}
+.ranking-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 9px 6px;
+  border-bottom: 0.5px solid var(--border-dark);
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 3px;
+}
+.ranking-row:hover { background: var(--bg-subtle); }
+.ranking-rank {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--gold-dark);
+  width: 30px;
+  font-style: italic;
+}
+.ranking-name {
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--text);
+  flex: 1;
+}
+.ranking-name b { font-weight: 700; text-transform: uppercase; }
+.ranking-value {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dim);
+  letter-spacing: 0.05em;
+}
+
+/* MISC */
+.empty-msg {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--gold-darker);
+  font-size: 15px;
+  padding: 2rem 0;
+}
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-darker);
+}
+.page { display: none; }
+.page.visible { display: block; }
+
+@media (max-width: 640px) {
+  .header { flex-direction: column; gap: 1rem; padding: 1rem; }
+  .nav { gap: 1rem; }
+  .content { padding: 1.25rem; }
+  .alpha-bar span { width: 28px; height: 36px; font-size: 18px; }
+  .fiche-overlay { padding: 1rem; }
+  .fiche { padding: 1.5rem; }
+  .fiche-name { font-size: 26px; }
+  .list-letter { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo" onclick="navigate('index')">TOPS<span>/</span>CINÉASTES</div>
+  <div class="nav">
+    <a onclick="navigate('index')" id="nav-index" class="active">Index</a>
+    <a onclick="navigate('contributeurs')" id="nav-contributeurs">Contributeurs</a>
+    <a onclick="navigate('statistiques')" id="nav-statistiques">Statistiques</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="page visible" id="page-index">
+    <div class="search-bar">
+      <input type="text" placeholder="Rechercher un cinéaste..." id="search-input" oninput="filterList()">
+    </div>
+    <div class="alpha-bar" id="alpha-bar"></div>
+    <div class="list-header">
+      <div class="list-letter" id="list-letter">A</div>
+      <div class="list-count" id="list-count"></div>
+    </div>
+    <div class="cineaste-list" id="cineaste-list"></div>
+  </div>
+
+  <div class="page" id="page-contributeurs">
+    <div class="list-header" style="margin-bottom:1.5rem">
+      <div class="list-letter" style="font-size:28px">Contributeurs</div>
+      <div class="list-count" id="contrib-count"></div>
+    </div>
+    <div class="contrib-list" id="contrib-list"></div>
+  </div>
+
+  <div class="page" id="page-statistiques">
+    <div class="list-header" style="margin-bottom:1.5rem">
+      <div class="list-letter" style="font-size:28px">Statistiques</div>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="ranking-section">
+      <div class="ranking-title">Cinéastes les plus topés</div>
+      <div id="ranking-cineastes"></div>
+    </div>
+    <div class="ranking-section">
+      <div class="ranking-title">Contributeurs les plus actifs</div>
+      <div id="ranking-contributeurs"></div>
+    </div>
+  </div>
+</div>
+
+<div class="fiche-overlay" id="fiche-overlay" onclick="if(event.target===this)closeFiche()">
+  <div class="fiche" id="fiche-content"></div>
+</div>
+
+<div class="footer">TOPS / CINÉASTES</div>
+
+<script>
+var DATA = null;
+var currentLetter = 'A';
+
+// Cinéastes favoris par contributeur (issus du fichier contributeurs.docx)
+var FAVORIS = {
+  'BASTIEN TEKLOW':      ['Pier Paolo Pasolini', 'Quentin Tarantino', 'Apichatpong Weerasethakul'],
+  'CLEMENT GUIBOREL':    ['Yasujiro Ozu', 'Andrei Tarkovsky', 'Robert Bresson'],
+  'DANIEL JIRDEN':       ['Yasujiro Ozu', 'Robert Bresson', 'Michael Snow'],
+  'FRANKY FOCKERS':      ['Brian De Palma', 'Alfred Hitchcock', 'Pier Paolo Pasolini'],
+  'FREDERIC GUEZ':       ['Brian De Palma', 'Jean-Luc Godard', 'Clint Eastwood'],
+  'GREGORY LESCARD':     ['Eric Rohmer', 'Michael Mann', 'Michelangelo Antonioni'],
+  'KEEFE MURPHY':        ['Robert Bresson', 'Kenji Mizoguchi', 'Yasujiro Ozu'],
+  'MATHIEU MUZARD':      ['Robert Bresson', 'Jean-Marie Straub & Danièle Huillet', 'Kenji Mizoguchi'],
+  'SIMONE ROGHI':        ['Andrei Tarkovsky', 'Robert Bresson', 'Danièle Huillet & Jean-Marie Straub'],
+  'THIERRY JOUSSE':      ['Jean-Luc Godard', 'Kenji Mizoguchi', 'Vincente Minnelli'],
+  'THOMAS DEMAEREL':     ['John Carpenter', 'Brian De Palma', 'Dario Argento'],
+  'THORACENTESE RUBIS':  ['Andrei Tarkovsky', 'Kenji Mizoguchi', 'Robert Bresson'],
+  'VINZ J. ORLOV':       ['David Lynch', 'Woody Allen', 'Jean-Luc Godard'],
+};
+
+fetch('cineastes.json')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    DATA = data;
+    // Normaliser MAT -> MATHIEU MUZARD dans tops_contributeurs
+    DATA.cineastes.forEach(function(c) {
+      if (c.tops_contributeurs) {
+        c.tops_contributeurs = c.tops_contributeurs.map(function(t) {
+          if (t === 'MAT' || t === 'MAT ') return 'MATHIEU MUZARD';
+          return t;
+        });
+      }
+    });
+    init();
+  })
+  .catch(function() {
+    document.getElementById('cineaste-list').innerHTML =
+      '<div class="empty-msg">Erreur de chargement. Vérifiez que cineastes.json est présent.</div>';
+  });
+
+function init() {
+  buildAlpha();
+  selectLetter('A');
+}
+
+function formatNom(nom) {
+  if (nom.includes(',')) {
+    var idx = nom.indexOf(',');
+    return '<b>' + nom.slice(0, idx).toUpperCase() + '</b>' + nom.slice(idx);
+  }
+  return '<b>' + nom.toUpperCase() + '</b>';
+}
+
+function formatDates(c) {
+  if (!c.naissance) return '';
+  if (c.deces) return c.naissance + ' \u2013 ' + c.deces;
+  if (c.vivant) return c.naissance + ' \u2013 ';
+  return String(c.naissance);
+}
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('visible'); });
+  document.getElementById('page-' + page).classList.add('visible');
+  document.querySelectorAll('.nav a').forEach(function(a) { a.classList.remove('active'); });
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'contributeurs') renderContributeurs();
+  if (page === 'statistiques') renderStatistiques();
+  window.scrollTo(0, 0);
+}
+
+function getLetterData(letter) {
+  if (!DATA) return [];
+  return DATA.cineastes.filter(function(c) {
+    return c.nom.charAt(0).toUpperCase() === letter;
+  });
+}
+
+function buildAlpha() {
+  var bar = document.getElementById('alpha-bar');
+  bar.innerHTML = '';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(l) {
+    var s = document.createElement('span');
+    s.textContent = l;
+    if (getLetterData(l).length > 0) {
+      s.classList.add('has-data');
+      s.onclick = function() { selectLetter(l); };
+    } else {
+      s.classList.add('no-data');
+    }
+    if (l === currentLetter) s.classList.add('active');
+    bar.appendChild(s);
+  });
+}
+
+function selectLetter(l) {
+  currentLetter = l;
+  document.getElementById('search-input').value = '';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s) {
+    s.classList.toggle('active', s.textContent === l);
+  });
+  var items = getLetterData(l);
+  items.sort(function(a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+  renderList(items);
+  document.getElementById('list-letter').textContent = l;
+}
+
+function renderList(items) {
+  var list = document.getElementById('cineaste-list');
+  var count = document.getElementById('list-count');
+  list.innerHTML = '';
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-msg">Aucun résultat</div>';
+    count.textContent = '';
+    return;
+  }
+  count.textContent = items.length + ' cin\u00e9aste' + (items.length > 1 ? 's' : '');
+  items.forEach(function(c) {
+    var row = document.createElement('div');
+    row.className = 'cineaste-row';
+    var dates = formatDates(c);
+    var datesHtml = dates ? '<span class="c-dates">' + dates + '</span>' : '';
+    var nb = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+    row.innerHTML = '<div><span class="c-name">' + formatNom(c.nom) + '</span>' + datesHtml + '</div>' +
+      '<div class="c-badge">' + nb + ' top' + (nb > 1 ? 's' : '') + '</div>';
+    row.onclick = function() { openFiche(c); };
+    list.appendChild(row);
+  });
+}
+
+function filterList() {
+  var q = document.getElementById('search-input').value.toLowerCase().trim();
+  if (!q) { selectLetter(currentLetter); return; }
+  var results = DATA.cineastes.filter(function(c) {
+    return c.nom.toLowerCase().indexOf(q) !== -1;
+  });
+  results.sort(function(a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+  document.getElementById('list-letter').textContent = '';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s) { s.classList.remove('active'); });
+  renderList(results);
+}
+
+function openFiche(c) {
+  var nb = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+  var contribsHtml = nb > 0
+    ? c.tops_contributeurs.map(function(t) {
+        return '<span class="contrib-tag" onclick="event.stopPropagation();openContribDetail(\'' + t.replace(/'/g, "\\'") + '\')">' + t + '</span>';
+      }).join('')
+    : '<div class="empty-msg">Aucun top post\u00e9 pour ce cin\u00e9aste</div>';
+
+  var fbHtml = c.url_facebook
+    ? '<a class="fiche-fb-link" href="' + c.url_facebook + '" target="_blank">Voir la fiche sur Facebook &#8599;</a>'
+    : '';
+
+  document.getElementById('fiche-content').innerHTML =
+    '<div class="fiche-back" onclick="closeFiche()">\u2190 Retour</div>' +
+    '<div class="fiche-name">' + formatNom(c.nom) + '</div>' +
+    '<div class="fiche-dates">' + formatDates(c) + '</div>' +
+    '<div class="fiche-stat"><div class="fiche-stat-number">' + nb + '</div><div class="fiche-stat-label">tops post\u00e9s</div></div>' +
+    '<div class="fiche-section">Tops post\u00e9s par</div>' +
+    '<div class="contrib-grid">' + contribsHtml + '</div>' +
+    fbHtml;
+
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFiche() {
+  document.getElementById('fiche-overlay').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeFiche();
+});
+
+function renderContributeurs() {
+  if (!DATA) return;
+  var list = document.getElementById('contrib-list');
+  var count = document.getElementById('contrib-count');
+  count.textContent = DATA.contributeurs.length + ' contributeurs';
+
+  var contribs = DATA.contributeurs.map(function(contrib) {
+    var displayName = (contrib.prenom + (contrib.nom ? ' ' + contrib.nom : '')).trim();
+    var nb = 0;
+    DATA.cineastes.forEach(function(c) {
+      if (c.tops_contributeurs && c.tops_contributeurs.indexOf(displayName) !== -1) nb++;
+    });
+    return { name: displayName, tops: nb };
+  });
+  contribs.sort(function(a, b) { return b.tops - a.tops; });
+
+  list.innerHTML = contribs.map(function(c) {
+    var favs = FAVORIS[c.name] || [];
+    var favsHtml = favs.length
+      ? favs.map(function(f) {
+          return '<div class="contrib-fav-item"><span class="heart">&#10084;</span>' + f + '</div>';
+        }).join('')
+      : '';
+    var favsSection = favs.length
+      ? '<div class="contrib-card-favs">' + favsHtml + '</div>'
+      : '';
+    return '<div class="contrib-card" onclick="openContribDetail(\'' + c.name.replace(/'/g, "\\'") + '\')">' +
+      '<div class="contrib-card-name">' + c.name + '</div>' +
+      '<div class="contrib-card-stat">' + c.tops + ' top' + (c.tops > 1 ? 's' : '') + ' post\u00e9s</div>' +
+      favsSection +
+      '</div>';
+  }).join('');
+}
+
+function openContribDetail(name) {
+  var cineastes = DATA.cineastes.filter(function(c) {
+    return c.tops_contributeurs && c.tops_contributeurs.indexOf(name) !== -1;
+  });
+  cineastes.sort(function(a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+
+  var favs = FAVORIS[name] || [];
+  var favsHtml = favs.length
+    ? '<div class="fiche-section" style="margin-top:1.5rem;margin-bottom:0.5rem">Cin\u00e9astes favoris</div>' +
+      '<div class="contrib-grid">' +
+      favs.map(function(f) { return '<span class="contrib-tag" style="cursor:default">&#10084; ' + f + '</span>'; }).join('') +
+      '</div>'
+    : '';
+
+  var listHtml = '<div class="cineaste-list" style="margin-top:1rem">';
+  cineastes.forEach(function(c) {
+    var dates = formatDates(c);
+    var datesHtml = dates ? '<span class="c-dates">' + dates + '</span>' : '';
+    listHtml += '<div class="cineaste-row" onclick="closeFiche();var c=DATA.cineastes.find(function(x){return x.fbid===\'' + c.fbid + '\'});if(c)openFiche(c)">' +
+      '<span class="c-name">' + formatNom(c.nom) + '</span>' + datesHtml + '</div>';
+  });
+  listHtml += '</div>';
+
+  document.getElementById('fiche-content').innerHTML =
+    '<div class="fiche-back" onclick="closeFiche()">\u2190 Retour</div>' +
+    '<div class="fiche-name" style="font-size:26px">' + name + '</div>' +
+    '<div class="fiche-dates" style="font-style:normal">' + cineastes.length + ' top' + (cineastes.length > 1 ? 's' : '') + ' post\u00e9s</div>' +
+    favsHtml +
+    '<div class="fiche-section" style="margin-top:1.5rem">Cin\u00e9astes class\u00e9s</div>' +
+    listHtml;
+
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderStatistiques() {
+  if (!DATA) return;
+
+  var totalCineastes = DATA.cineastes.length;
+  var totalContribs = DATA.contributeurs.length;
+  var vivants = 0, decedes = 0, sansDates = 0, sansTops = 0;
+  var totalTops = 0;
+
+  // Compter les tops en parcourant tous les tops_contributeurs de chaque cinéaste
+  DATA.cineastes.forEach(function(c) {
+    var nb = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+    totalTops += nb;
+    if (c.vivant === true) vivants++;
+    if (c.vivant === false) decedes++;
+    if (!c.naissance) sansDates++;
+    if (nb === 0) sansTops++;
+  });
+
+  document.getElementById('stats-grid').innerHTML =
+    mkStat('Cinéastes', totalCineastes) +
+    mkStat('Contributeurs', totalContribs) +
+    mkStat('Tops postés', totalTops) +
+    mkStat('Vivants', vivants) +
+    mkStat('Décédés', decedes) +
+    mkStat('Sans tops', sansTops);
+
+  var ranked = DATA.cineastes.slice().sort(function(a, b) {
+    return (b.tops_contributeurs ? b.tops_contributeurs.length : 0) -
+           (a.tops_contributeurs ? a.tops_contributeurs.length : 0);
+  }).slice(0, 25);
+
+  document.getElementById('ranking-cineastes').innerHTML = ranked.map(function(c, i) {
+    var nb = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+    return '<div class="ranking-row" onclick="navigate(\'index\');setTimeout(function(){var x=DATA.cineastes.find(function(y){return y.fbid===\'' + c.fbid + '\'});if(x)openFiche(x)},100)">' +
+      '<div class="ranking-rank">' + (i+1) + '.</div>' +
+      '<div class="ranking-name">' + formatNom(c.nom) + '</div>' +
+      '<div class="ranking-value">' + nb + ' tops</div></div>';
+  }).join('');
+
+  var contribMap = {};
+  DATA.contributeurs.forEach(function(contrib) {
+    var n = (contrib.prenom + (contrib.nom ? ' ' + contrib.nom : '')).trim();
+    contribMap[n] = 0;
+  });
+  DATA.cineastes.forEach(function(c) {
+    if (c.tops_contributeurs) {
+      c.tops_contributeurs.forEach(function(name) {
+        if (contribMap[name] !== undefined) contribMap[name]++;
+      });
+    }
+  });
+  var contribRanked = Object.keys(contribMap).map(function(n) {
+    return { name: n, tops: contribMap[n] };
+  }).sort(function(a, b) { return b.tops - a.tops; });
+
+  document.getElementById('ranking-contributeurs').innerHTML = contribRanked.map(function(c, i) {
+    return '<div class="ranking-row" onclick="navigate(\'contributeurs\');setTimeout(function(){openContribDetail(\'' + c.name.replace(/'/g, "\\'") + '\')},100)">' +
+      '<div class="ranking-rank">' + (i+1) + '.</div>' +
+      '<div class="ranking-name">' + c.name + '</div>' +
+      '<div class="ranking-value">' + c.tops + ' tops</div></div>';
+  }).join('');
+}
+
+function mkStat(label, value) {
+  return '<div class="stat-card"><div class="stat-card-label">' + label + '</div><div class="stat-card-value">' + value + '</div></div>';
+}
+</script>
+</body>
+</html>
