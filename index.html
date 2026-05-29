@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPS / CINÉASTES</title>
+<style>
+@font-face {
+  font-family: 'ImprintMTShadow';
+  src: url('fonts/imprint-mt-shadow.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GoudyOldStyle';
+  src: url('fonts/GOUDOS.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TWCenCondEB';
+  src: url('fonts/tw-cen-mt-condensed-extrabold.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  --bg: #111;
+  --bg-subtle: #161412;
+  --bg-card: #0d0d0b;
+  --gold: #C9A96E;
+  --gold-dim: #8B7355;
+  --gold-dark: #5a5040;
+  --gold-darker: #3a3028;
+  --text: #e8e0d0;
+  --text-dim: #7a7060;
+  --border: #2a2520;
+  --border-dim: #1e1e1e;
+  --border-dark: #1a1a18;
+  --tag-bg: #1a1712;
+  --tag-border: #2a2218;
+  --font-display: 'ImprintMTShadow', 'Playfair Display', serif;
+  --font-body: 'GoudyOldStyle', 'Georgia', serif;
+  --font-ui: 'TWCenCondEB', 'Arial Narrow', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ========== HEADER ========== */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logo:hover { opacity: 0.8; }
+.logo span { color: var(--gold-dark); margin: 0 4px; }
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav a {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.nav a:hover,
+.nav a.active {
+  color: var(--gold);
+}
+
+.nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gold);
+}
+
+/* ========== CONTENT ========== */
+.content {
+  padding: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+/* ========== SEARCH ========== */
+.search-bar {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.search-bar input {
+  background: var(--bg-subtle);
+  border: 0.5px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px 10px 40px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  border-radius: 4px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-bar input::placeholder { color: var(--gold-darker); }
+.search-bar input:focus { border-color: var(--gold-dim); }
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold-darker);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ========== ALPHABET BAR ========== */
+.alpha-bar {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 1.5rem;
+}
+
+.alpha-bar span {
+  font-family: var(--font-body);
+  font-size: 22px;
+  color: var(--gold-darker);
+  cursor: pointer;
+  width: 34px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+  user-select: none;
+}
+
+.alpha-bar span.has-data:hover { color: var(--gold-dim); }
+
+.alpha-bar span.active {
+  color: var(--gold);
+  border-bottom: 1.5px solid var(--gold);
+}
+
+.alpha-bar span.no-data {
+  color: #222;
+  cursor: default;
+}
+
+/* ========== LIST ========== */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.list-letter {
+  font-family: var(--font-body);
+  font-size: 42px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.list-count {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cineaste-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cineaste-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border-dark);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cineaste-row:hover { background: var(--bg-subtle); }
+.cineaste-row:hover .c-name { color: var(--gold); }
+
+.c-name {
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--text);
+  transition: color 0.15s;
+}
+
+.c-name b {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.c-dates {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--gold-dark);
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.c-badge {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dim);
+  background: var(--tag-bg);
+  border: 0.5px solid var(--tag-border);
+  padding: 2px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ========== FICHE ========== */
+.fiche-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  overflow-y: auto;
+  padding: 4rem 2rem;
+}
+
+.fiche-overlay.visible { display: flex; justify-content: center; align-items: flex-start; }
+
+.fiche {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 700px;
+  animation: fiche-in 0.25s ease-out;
+}
+
+@keyframes fiche-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fiche-back {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+
+.fiche-back:hover { color: var(--gold); }
+
+.fiche-name {
+  font-family: var(--font-body);
+  font-size: 30px;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+
+.fiche-name b {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fiche-dates {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--gold-dim);
+  font-style: italic;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 0.5px solid var(--border-dim);
+}
+
+.fiche-section {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+
+.fiche-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+
+.fiche-stat-number {
+  font-family: var(--font-body);
+  font-size: 28px;
+  color: var(--gold);
+}
+
+.fiche-stat-label {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dark);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.contrib-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contrib-tag {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 5px 14px;
+  border: 0.5px solid var(--gold-dim);
+  border-radius: 3px;
+  color: var(--gold);
+  background: var(--tag-bg);
+  letter-spacing: 0.05em;
+  transition: background 0.15s;
+}
+
+.contrib-tag:hover {
+  background: var(--border);
+}
+
+.fiche-fb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 0.5px solid var(--border-dim);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  transition: color 0.15s;
+}
+
+.fiche-fb-link:hover { color: var(--gold); }
+
+/* ========== PAGE CONTRIBUTEURS ========== */
+.contrib-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.contrib-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.contrib-card:hover { border-color: var(--gold-dim); }
+
+.contrib-card-name {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.contrib-card-stat {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--gold-dark);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ========== PAGE STATISTIQUES ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem;
+}
+
+.stat-card-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+  margin-bottom: 6px;
+}
+
+.stat-card-value {
+  font-family: var(--font-body);
+  font-size: 28px;
+  color: var(--gold);
+}
+
+.ranking-section {
+  margin-bottom: 2.5rem;
+}
+
+.ranking-title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 0.5px solid var(--border-dim);
+}
+
+.ranking-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--border-dark);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ranking-row:hover { background: var(--bg-subtle); }
+
+.ranking-rank {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--gold-dark);
+  width: 30px;
+  font-style: italic;
+}
+
+.ranking-name {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text);
+  flex: 1;
+}
+
+.ranking-name b {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ranking-value {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--gold-dim);
+  letter-spacing: 0.05em;
+}
+
+/* ========== EMPTY / MESSAGES ========== */
+.empty-msg {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--gold-darker);
+  font-size: 15px;
+  padding: 2rem 0;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-darker);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .nav { gap: 1rem; }
+  .content { padding: 1.25rem; }
+  .alpha-bar span { width: 28px; height: 36px; font-size: 18px; }
+  .fiche-overlay { padding: 1rem; }
+  .fiche { padding: 1.5rem; }
+  .fiche-name { font-size: 24px; }
+  .list-letter { font-size: 32px; }
+}
+
+/* ========== PAGE VISIBILITY ========== */
+.page { display: none; }
+.page.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo" onclick="navigate('index')">TOPS<span>/</span>CINÉASTES</div>
+  <div class="nav">
+    <a onclick="navigate('index')" id="nav-index" class="active">Index</a>
+    <a onclick="navigate('contributeurs')" id="nav-contributeurs">Contributeurs</a>
+    <a onclick="navigate('statistiques')" id="nav-statistiques">Statistiques</a>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- PAGE INDEX -->
+  <div class="page visible" id="page-index">
+    <div class="search-bar">
+      <div class="search-icon">&#x1F50D;</div>
+      <input type="text" placeholder="Rechercher un cinéaste..." id="search-input" oninput="filterList()">
+    </div>
+    <div class="alpha-bar" id="alpha-bar"></div>
+    <div class="list-header">
+      <div class="list-letter" id="list-letter">A</div>
+      <div class="list-count" id="list-count"></div>
+    </div>
+    <div class="cineaste-list" id="cineaste-list"></div>
+  </div>
+
+  <!-- PAGE CONTRIBUTEURS -->
+  <div class="page" id="page-contributeurs">
+    <div class="list-header" style="margin-bottom:1.5rem">
+      <div class="list-letter" style="font-size:28px">Contributeurs</div>
+      <div class="list-count" id="contrib-count"></div>
+    </div>
+    <div class="contrib-list" id="contrib-list"></div>
+  </div>
+
+  <!-- PAGE STATISTIQUES -->
+  <div class="page" id="page-statistiques">
+    <div class="list-header" style="margin-bottom:1.5rem">
+      <div class="list-letter" style="font-size:28px">Statistiques</div>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="ranking-section">
+      <div class="ranking-title">Cinéastes les plus couverts</div>
+      <div id="ranking-cineastes"></div>
+    </div>
+    <div class="ranking-section">
+      <div class="ranking-title">Contributeurs les plus actifs</div>
+      <div id="ranking-contributeurs"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FICHE OVERLAY -->
+<div class="fiche-overlay" id="fiche-overlay" onclick="if(event.target===this)closeFiche()">
+  <div class="fiche">
+    <div class="fiche-back" onclick="closeFiche()">&#8592; Retour</div>
+    <div class="fiche-name" id="fiche-name"></div>
+    <div class="fiche-dates" id="fiche-dates"></div>
+    <div class="fiche-stat">
+      <div class="fiche-stat-number" id="fiche-stat-number"></div>
+      <div class="fiche-stat-label">tops postés</div>
+    </div>
+    <div class="fiche-section">Tops postés par</div>
+    <div class="contrib-grid" id="fiche-contribs"></div>
+    <a class="fiche-fb-link" id="fiche-fb-link" target="_blank">Voir la fiche sur Facebook &#8599;</a>
+  </div>
+</div>
+
+<div class="footer">
+  TOPS / CINÉASTES
+</div>
+
+<script>
+/* ========== STATE ========== */
+let DATA = null;
+let currentLetter = 'A';
+let currentPage = 'index';
+
+/* ========== LOAD DATA ========== */
+fetch('cineastes.json')
+  .then(r => r.json())
+  .then(data => {
+    DATA = data;
+    init();
+  })
+  .catch(err => {
+    document.getElementById('cineaste-list').innerHTML =
+      '<div class="empty-msg">Erreur de chargement des données. Vérifiez que cineastes.json est présent.</div>';
+  });
+
+/* ========== INIT ========== */
+function init() {
+  buildAlpha();
+  selectLetter('A');
+}
+
+/* ========== FORMAT NAME ========== */
+function formatNom(nom) {
+  if (nom.includes(',')) {
+    var idx = nom.indexOf(',');
+    return '<b>' + nom.slice(0, idx).toUpperCase() + '</b>' + nom.slice(idx);
+  }
+  return '<b>' + nom.toUpperCase() + '</b>';
+}
+
+/* ========== FORMAT DATES ========== */
+function formatDates(c) {
+  if (!c.naissance) return '';
+  if (c.deces) return c.naissance + ' – ' + c.deces;
+  if (c.vivant) return c.naissance + ' – ';
+  return c.naissance + '';
+}
+
+/* ========== NAVIGATION ========== */
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('visible'); });
+  document.getElementById('page-' + page).classList.add('visible');
+  document.querySelectorAll('.nav a').forEach(function(a) { a.classList.remove('active'); });
+  document.getElementById('nav-' + page).classList.add('active');
+
+  if (page === 'contributeurs') renderContributeurs();
+  if (page === 'statistiques') renderStatistiques();
+
+  window.scrollTo(0, 0);
+}
+
+/* ========== ALPHABET ========== */
+function getLetterData(letter) {
+  if (!DATA) return [];
+  return DATA.cineastes.filter(function(c) {
+    var first = c.nom.charAt(0).toUpperCase();
+    return first === letter;
+  });
+}
+
+function buildAlpha() {
+  var bar = document.getElementById('alpha-bar');
+  bar.innerHTML = '';
+  var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  letters.forEach(function(l) {
+    var s = document.createElement('span');
+    s.textContent = l;
+    var items = getLetterData(l);
+    if (items.length > 0) {
+      s.classList.add('has-data');
+      s.onclick = function() { selectLetter(l); };
+    } else {
+      s.classList.add('no-data');
+    }
+    if (l === currentLetter) s.classList.add('active');
+    bar.appendChild(s);
+  });
+}
+
+function selectLetter(l) {
+  currentLetter = l;
+  document.getElementById('search-input').value = '';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s) {
+    s.classList.toggle('active', s.textContent === l);
+  });
+  var items = getLetterData(l);
+  items.sort(function(a, b) { return a.nom.localeCompare(b.nom); });
+  renderList(items);
+  document.getElementById('list-letter').textContent = l;
+}
+
+/* ========== LIST ========== */
+function renderList(items) {
+  var list = document.getElementById('cineaste-list');
+  var count = document.getElementById('list-count');
+  list.innerHTML = '';
+
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-msg">Aucun résultat</div>';
+    count.textContent = '';
+    return;
+  }
+
+  count.textContent = items.length + ' cinéaste' + (items.length > 1 ? 's' : '');
+
+  items.forEach(function(c) {
+    var row = document.createElement('div');
+    row.className = 'cineaste-row';
+
+    var dates = formatDates(c);
+    var datesHtml = dates ? '<span class="c-dates">' + dates + '</span>' : '';
+    var nbTops = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+
+    row.innerHTML =
+      '<div><span class="c-name">' + formatNom(c.nom) + '</span>' + datesHtml + '</div>' +
+      '<div class="c-badge">' + nbTops + ' top' + (nbTops > 1 ? 's' : '') + '</div>';
+
+    row.onclick = function() { openFiche(c); };
+    list.appendChild(row);
+  });
+}
+
+/* ========== SEARCH ========== */
+function filterList() {
+  var q = document.getElementById('search-input').value.toLowerCase().trim();
+  if (!q) {
+    selectLetter(currentLetter);
+    return;
+  }
+
+  var results = DATA.cineastes.filter(function(c) {
+    return c.nom.toLowerCase().indexOf(q) !== -1;
+  });
+
+  results.sort(function(a, b) { return a.nom.localeCompare(b.nom); });
+
+  document.getElementById('list-letter').textContent = '';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s) {
+    s.classList.remove('active');
+  });
+
+  renderList(results);
+}
+
+/* ========== FICHE ========== */
+function openFiche(c) {
+  document.getElementById('fiche-name').innerHTML = formatNom(c.nom);
+  document.getElementById('fiche-dates').textContent = formatDates(c);
+
+  var nbTops = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+  document.getElementById('fiche-stat-number').textContent = nbTops;
+
+  var grid = document.getElementById('fiche-contribs');
+  if (nbTops > 0) {
+    grid.innerHTML = c.tops_contributeurs.map(function(t) {
+      return '<span class="contrib-tag">' + t + '</span>';
+    }).join('');
+  } else {
+    grid.innerHTML = '<div class="empty-msg">Aucun top posté pour ce cinéaste</div>';
+  }
+
+  var fbLink = document.getElementById('fiche-fb-link');
+  if (c.url_facebook) {
+    fbLink.href = c.url_facebook;
+    fbLink.style.display = 'inline-flex';
+  } else {
+    fbLink.style.display = 'none';
+  }
+
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFiche() {
+  document.getElementById('fiche-overlay').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeFiche();
+});
+
+/* ========== CONTRIBUTEURS ========== */
+function renderContributeurs() {
+  if (!DATA) return;
+
+  var list = document.getElementById('contrib-list');
+  var count = document.getElementById('contrib-count');
+
+  count.textContent = DATA.contributeurs.length + ' contributeurs';
+
+  var contribs = DATA.contributeurs.map(function(contrib) {
+    var displayName = contrib.prenom + (contrib.nom ? ' ' + contrib.nom : '');
+    var nbTops = 0;
+    DATA.cineastes.forEach(function(c) {
+      if (c.tops_contributeurs && c.tops_contributeurs.indexOf(displayName) !== -1) {
+        nbTops++;
+      }
+    });
+    return { name: displayName, tops: nbTops };
+  });
+
+  contribs.sort(function(a, b) { return b.tops - a.tops; });
+
+  list.innerHTML = contribs.map(function(c) {
+    return '<div class="contrib-card" onclick="openContribDetail(\'' + c.name.replace(/'/g, "\\'") + '\')">' +
+      '<div class="contrib-card-name">' + c.name + '</div>' +
+      '<div class="contrib-card-stat">' + c.tops + ' top' + (c.tops > 1 ? 's' : '') + ' postés</div>' +
+      '</div>';
+  }).join('');
+}
+
+function openContribDetail(name) {
+  var cineastes = DATA.cineastes.filter(function(c) {
+    return c.tops_contributeurs && c.tops_contributeurs.indexOf(name) !== -1;
+  });
+  cineastes.sort(function(a, b) { return a.nom.localeCompare(b.nom); });
+
+  var html = '<div class="fiche-back" onclick="closeFiche()">&#8592; Retour</div>' +
+    '<div class="fiche-name">' + name + '</div>' +
+    '<div class="fiche-dates" style="font-style:normal">' + cineastes.length + ' top' + (cineastes.length > 1 ? 's' : '') + ' postés</div>' +
+    '<div class="fiche-section">Cinéastes classés</div>' +
+    '<div class="cineaste-list">';
+
+  cineastes.forEach(function(c) {
+    var dates = formatDates(c);
+    var datesHtml = dates ? '<span class="c-dates">' + dates + '</span>' : '';
+    html += '<div class="cineaste-row" onclick="closeFiche();setTimeout(function(){navigate(\'index\');openFiche(DATA.cineastes.find(function(x){return x.fbid===\'' + c.fbid + '\'}))},100)">' +
+      '<div><span class="c-name">' + formatNom(c.nom) + '</span>' + datesHtml + '</div></div>';
+  });
+
+  html += '</div>';
+
+  document.querySelector('.fiche-overlay .fiche').innerHTML = html;
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+/* ========== STATISTIQUES ========== */
+function renderStatistiques() {
+  if (!DATA) return;
+
+  var totalCineastes = DATA.cineastes.length;
+  var totalContribs = DATA.contributeurs.length;
+  var totalTops = 0;
+  var vivants = 0;
+  var decedes = 0;
+
+  DATA.cineastes.forEach(function(c) {
+    totalTops += c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+    if (c.vivant === true) vivants++;
+    if (c.vivant === false) decedes++;
+  });
+
+  document.getElementById('stats-grid').innerHTML =
+    '<div class="stat-card"><div class="stat-card-label">Cinéastes</div><div class="stat-card-value">' + totalCineastes + '</div></div>' +
+    '<div class="stat-card"><div class="stat-card-label">Contributeurs</div><div class="stat-card-value">' + totalContribs + '</div></div>' +
+    '<div class="stat-card"><div class="stat-card-label">Tops postés</div><div class="stat-card-value">' + totalTops + '</div></div>' +
+    '<div class="stat-card"><div class="stat-card-label">Vivants / Décédés</div><div class="stat-card-value">' + vivants + ' / ' + decedes + '</div></div>';
+
+  var ranked = DATA.cineastes.slice().sort(function(a, b) {
+    return (b.tops_contributeurs ? b.tops_contributeurs.length : 0) - (a.tops_contributeurs ? a.tops_contributeurs.length : 0);
+  }).slice(0, 25);
+
+  var rankHtml = '';
+  ranked.forEach(function(c, i) {
+    var nb = c.tops_contributeurs ? c.tops_contributeurs.length : 0;
+    rankHtml += '<div class="ranking-row" onclick="navigate(\'index\');openFiche(DATA.cineastes.find(function(x){return x.fbid===\'' + c.fbid + '\'}))">' +
+      '<div class="ranking-rank">' + (i + 1) + '.</div>' +
+      '<div class="ranking-name">' + formatNom(c.nom) + '</div>' +
+      '<div class="ranking-value">' + nb + ' tops</div></div>';
+  });
+  document.getElementById('ranking-cineastes').innerHTML = rankHtml;
+
+  var contribMap = {};
+  DATA.contributeurs.forEach(function(contrib) {
+    var displayName = contrib.prenom + (contrib.nom ? ' ' + contrib.nom : '');
+    contribMap[displayName] = 0;
+  });
+  DATA.cineastes.forEach(function(c) {
+    if (c.tops_contributeurs) {
+      c.tops_contributeurs.forEach(function(name) {
+        if (contribMap[name] !== undefined) contribMap[name]++;
+      });
+    }
+  });
+
+  var contribRanked = Object.keys(contribMap).map(function(name) {
+    return { name: name, tops: contribMap[name] };
+  }).sort(function(a, b) { return b.tops - a.tops; });
+
+  var contribHtml = '';
+  contribRanked.forEach(function(c, i) {
+    contribHtml += '<div class="ranking-row" onclick="navigate(\'contributeurs\');openContribDetail(\'' + c.name.replace(/'/g, "\\'") + '\')">' +
+      '<div class="ranking-rank">' + (i + 1) + '.</div>' +
+      '<div class="ranking-name">' + c.name + '</div>' +
+      '<div class="ranking-value">' + c.tops + ' tops</div></div>';
+  });
+  document.getElementById('ranking-contributeurs').innerHTML = contribHtml;
+}
+</script>
+
+</body>
+</html>
