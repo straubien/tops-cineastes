@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tops Cinéastes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:      #f7f4ef;
+      --cream2:     #f0ece4;
+      --white:      #ffffff;
+      --border:     #e4ddd4;
+      --border2:    #d4ccc0;
+      --text:       #1c1814;
+      --text-mid:   #5c5248;
+      --text-dim:   #9c9288;
+      --bordeaux:   #7a1428;
+      --bordeaux2:  #5e0f1e;
+      --bordeaux-bg:#f5eaec;
+      --bordeaux-bd:#d4a8b0;
+      --gold:       #b8973a;
+      --gold-bg:    #f8f2e4;
+      --header-bg:  #1c1814;
+      --header-bd:  #2e2820;
+      --shadow-sm:  0 1px 2px rgba(28,24,20,.06);
+      --shadow:     0 1px 4px rgba(28,24,20,.08), 0 4px 16px rgba(28,24,20,.06);
+      --shadow-md:  0 2px 8px rgba(28,24,20,.10), 0 8px 24px rgba(28,24,20,.08);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── LOADING ── */
+    #loading {
+      position: fixed; inset: 0; background: var(--header-bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; gap: 20px; transition: opacity 0.5s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .loading-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px; font-weight: 500; letter-spacing: 3px;
+      color: var(--bordeaux-bg);
+    }
+    .loading-logo span { color: var(--bordeaux); }
+    .loading-bar {
+      width: 160px; height: 1px;
+      background: #2e2820; overflow: hidden;
+    }
+    .loading-fill {
+      height: 100%; background: var(--bordeaux);
+      animation: loadpulse 1.4s ease-in-out infinite;
+    }
+    @keyframes loadpulse {
+      0%   { width:0%; margin-left:0 }
+      50%  { width:60%; margin-left:20% }
+      100% { width:0%; margin-left:100% }
+    }
+    .loading-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: #5c5248; letter-spacing: 1px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--header-bg);
+      padding: 0 32px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid var(--header-bd);
+    }
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 19px; font-weight: 500; letter-spacing: 2px;
+      color: #e8e0d8; cursor: pointer; text-decoration: none;
+      transition: color 0.2s;
+    }
+    .logo span { color: var(--bordeaux); margin: 0 2px; }
+    .logo:hover { color: white; }
+    nav { display: flex; gap: 4px; }
+    nav a {
+      color: #9c9288; font-size: 13px; font-weight: 500;
+      padding: 5px 14px; border-radius: 4px;
+      cursor: pointer; transition: all 0.15s;
+      background: none; border: none; font-family: inherit;
+      text-decoration: none; letter-spacing: 0.3px;
+    }
+    nav a:hover { color: #e8e0d8; background: #2a2420; }
+    nav a.active { color: white; background: var(--bordeaux); }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── PAGE HEADER (commun) ── */
+    .page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 36px 32px 28px;
+    }
+    .page-header-inner { max-width: 1140px; margin: 0 auto; }
+    .page-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--bordeaux); margin-bottom: 10px; font-weight: 500;
+    }
+    .page-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px; font-weight: 600; color: var(--text);
+      line-height: 1.1; margin-bottom: 6px;
+    }
+    .page-sub {
+      font-size: 14px; color: var(--text-dim); margin-bottom: 22px;
+    }
+    .page-sub span { color: var(--bordeaux); font-weight: 600; }
+
+    /* ── SEARCH ── */
+    .search-wrap { display: flex; gap: 0; max-width: 460px; }
+    .search-input {
+      flex: 1; background: var(--cream);
+      border: 1px solid var(--border2); border-right: none;
+      border-radius: 6px 0 0 6px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 14px; padding: 10px 16px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+    .search-input:focus { border-color: var(--bordeaux); background: var(--white); }
+    .search-btn {
+      background: var(--bordeaux); border: 1px solid var(--bordeaux);
+      border-radius: 0 6px 6px 0; color: white;
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      padding: 10px 20px; cursor: pointer; transition: background 0.15s;
+      white-space: nowrap; letter-spacing: 0.3px;
+    }
+    .search-btn:hover { background: var(--bordeaux2); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      background: var(--cream2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+    }
+    .stats-bar-inner {
+      max-width: 1140px; margin: 0 auto;
+      display: flex; gap: 36px; align-items: center;
+    }
+    .stat-item { display: flex; align-items: baseline; gap: 7px; }
+    .stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px; font-weight: 600; color: var(--bordeaux); line-height: 1;
+    }
+    .stat-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+      max-width: 1140px; margin: 0 auto;
+      padding: 28px 32px;
+      display: grid; grid-template-columns: 1fr 284px; gap: 28px;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 2px; color: var(--text-dim); font-weight: 500;
+    }
+    .section-action {
+      font-size: 13px; color: var(--bordeaux); font-weight: 500;
+      cursor: pointer; background: none; border: none;
+      font-family: inherit; transition: color 0.15s;
+    }
+    .section-action:hover { color: var(--bordeaux2); }
+
+    /* ── ALPHABET ── */
+    .alpha-nav { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 16px; }
+    .alpha-btn {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      font-weight: 500; padding: 3px 8px; cursor: pointer;
+      transition: all 0.15s; box-shadow: var(--shadow-sm);
+    }
+    .alpha-btn:hover { border-color: var(--bordeaux); color: var(--bordeaux); }
+    .alpha-btn.active {
+      background: var(--bordeaux); border-color: var(--bordeaux);
+      color: white; box-shadow: none;
+    }
+
+    /* ── TABLE CINÉASTES ── */
+    .cineaste-table { width: 100%; border-collapse: collapse; }
+    .cineaste-table tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .cineaste-table tr:hover { background: var(--white); }
+    .cineaste-table td { padding: 11px 12px 11px 0; vertical-align: middle; }
+    .cineaste-table td:first-child { padding-left: 6px; width: 44px; }
+    .col-rank {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--border2); text-align: right;
+    }
+    .col-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .col-name .prenom { color: var(--text-mid); font-weight: 400; margin-left: 6px; }
+    .col-tops { text-align: right; white-space: nowrap; }
+    .tops-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--bordeaux-bg); border: 1px solid var(--bordeaux-bd);
+      border-radius: 10px; padding: 2px 10px;
+      font-size: 12px; font-weight: 600; color: var(--bordeaux);
+    }
+    .tops-zero { color: var(--border2); font-size: 14px; }
+    .no-results { padding: 40px 8px; font-size: 14px; color: var(--text-dim); }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex; gap: 5px; align-items: center;
+      padding: 22px 0; justify-content: center;
+    }
+    .page-btn {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text-mid);
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+      padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+    .page-btn:hover { border-color: var(--bordeaux); color: var(--bordeaux); }
+    .page-btn.active { background: var(--bordeaux); border-color: var(--bordeaux); color: white; box-shadow: none; }
+    .page-info { font-size: 13px; color: var(--text-dim); }
+
+    /* ── SIDEBAR ── */
+    .sidebar { display: flex; flex-direction: column; gap: 20px; }
+    .sidebar-block {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 8px; padding: 18px; box-shadow: var(--shadow);
+    }
+
+    /* ── FICHE PANEL ── */
+    .fiche-empty { color: var(--text-dim); font-size: 14px; line-height: 1.8; }
+    .fiche-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--text-dim); font-weight: 500; margin-bottom: 10px;
+    }
+    .fiche-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px; font-weight: 600; color: var(--text);
+      line-height: 1.2; margin-bottom: 2px;
+    }
+    .fiche-prenom { font-size: 17px; font-weight: 400; color: var(--text-mid); font-style: italic; }
+    .fiche-dates { font-size: 13px; color: var(--text-dim); margin-bottom: 14px; }
+    .fiche-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+    .fiche-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .fiche-row-label { font-size: 13px; color: var(--text-mid); }
+    .fiche-row-val { font-size: 14px; font-weight: 600; color: var(--bordeaux); }
+    .fiche-members { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .member-chip {
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 10px; font-size: 12px; color: var(--text-mid);
+      padding: 3px 10px; cursor: pointer; font-weight: 500; transition: all 0.15s;
+    }
+    .member-chip.posted { background: var(--bordeaux-bg); border-color: var(--bordeaux-bd); color: var(--bordeaux); }
+    .member-chip.en-cours { background: var(--gold-bg); border-color: #d4c080; color: var(--gold); }
+    .member-chip:hover { border-color: var(--bordeaux); color: var(--bordeaux); }
+
+    /* ── MEMBRES VIEW ── */
+    .membres-grid {
+      max-width: 1140px; margin: 0 auto; padding: 28px 32px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;
+    }
+    .membre-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 8px; padding: 22px; cursor: pointer;
+      transition: all 0.2s; box-shadow: var(--shadow);
+    }
+    .membre-card:hover { border-color: var(--bordeaux); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .membre-card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 16px;
+    }
+    .coeur-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-dim); font-weight: 500; margin-bottom: 8px;
+    }
+    .coeur-list { display: flex; flex-direction: column; gap: 5px; }
+    .coeur-item {
+      font-size: 14px; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .coeur-item::before { content: '❤'; font-size: 10px; color: var(--bordeaux); }
+    .no-coeur { font-size: 13px; color: var(--text-dim); font-style: italic; }
+    .membre-card-footer {
+      margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .membre-tops-count { font-size: 13px; color: var(--text-mid); font-weight: 500; }
+    .membre-tops-count span { color: var(--bordeaux); font-weight: 700; }
+
+    /* ── PROFIL VIEW ── */
+    .profil-header-wrap {
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 40px 32px 32px;
+    }
+    .profil-header-inner {
+      max-width: 1140px; margin: 0 auto;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 32px; flex-wrap: wrap;
+    }
+    .profil-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 48px; font-weight: 600; color: var(--text); line-height: 1;
+    }
+    .profil-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .profil-stat-box {
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 20px; text-align: center;
+      min-width: 90px;
+    }
+    .profil-stat-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px; font-weight: 600; color: var(--bordeaux); line-height: 1;
+    }
+    .profil-stat-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-weight: 500; }
+
+    .profil-wrap { max-width: 1140px; margin: 0 auto; padding: 32px 32px; }
+    .profil-section { margin-bottom: 32px; }
+    .profil-section-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--text-dim); font-weight: 500;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .coeur-big { display: flex; flex-wrap: wrap; gap: 10px; }
+    .coeur-big-item {
+      background: var(--bordeaux-bg); border: 1px solid var(--bordeaux-bd);
+      border-radius: 6px; padding: 8px 16px; font-size: 14px; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .coeur-big-item .heart { color: var(--bordeaux); font-size: 11px; }
+    .favoris-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .favori-tag {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 14px; font-size: 13px; color: var(--text-mid);
+      padding: 4px 13px; box-shadow: var(--shadow-sm);
+    }
+    .films-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;
+    }
+    .film-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px 14px; box-shadow: var(--shadow-sm);
+    }
+    .film-title { font-size: 14px; color: var(--text); font-weight: 600; margin-bottom: 3px; }
+    .film-meta { font-size: 12px; color: var(--text-dim); }
+    .declaration-block {
+      background: var(--white); border-left: 3px solid var(--bordeaux);
+      padding: 16px 20px; font-size: 14px; color: var(--text-mid);
+      line-height: 1.8; font-style: italic; border-radius: 0 6px 6px 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-dim); font-weight: 500;
+      cursor: pointer; margin-bottom: 28px;
+      background: none; border: none; transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--bordeaux); }
+
+    /* ── MEMBRE ROW SIDEBAR ── */
+    .membre-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: color 0.1s;
+    }
+    .membre-row:last-child { border-bottom: none; }
+    .membre-row:hover .membre-row-name { color: var(--bordeaux); }
+    .membre-row-name { font-size: 14px; color: var(--text); font-weight: 500; transition: color 0.15s; }
+    .membre-row-count { font-size: 13px; color: var(--text-dim); }
+    .membre-row-count span { color: var(--bordeaux); font-weight: 600; }
+    .progress-bar { height: 2px; background: var(--border); margin-top: 4px; border-radius: 1px; }
+    .progress-fill { height: 100%; background: var(--bordeaux); border-radius: 1px; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--header-bg); border-top: 1px solid var(--header-bd);
+      padding: 20px 32px; margin-top: 56px;
+    }
+    .footer-inner {
+      max-width: 1140px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px; font-weight: 500; letter-spacing: 1px; color: #5c5248;
+    }
+    .footer-info { font-size: 13px; color: #5c5248; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--cream); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    .highlight { color: var(--bordeaux); font-weight: 600; }
+    .membre-card-year { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loading-logo">Tops<span> / </span>Cinéastes</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-text" id="loadingText">Chargement…</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo" onclick="showView('cineastes')">Tops<span>/</span>Cinéastes</div>
+  <nav>
+    <a onclick="showView('cineastes')" id="nav-cineastes" class="active">Cinéastes</a>
+    <a onclick="showView('membres')" id="nav-membres">Membres</a>
+  </nav>
+</header>
+
+<!-- VIEW : CINÉASTES -->
+<div id="view-cineastes" class="view active">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-eyebrow">Index</div>
+      <div class="page-title">Les cinéastes</div>
+      <div class="page-sub" id="heroSub">Chargement…</div>
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" type="text"
+               placeholder="Rechercher un cinéaste…"
+               oninput="onSearch()" autocomplete="off"/>
+        <button class="search-btn" onclick="onSearch()">Rechercher</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stats-bar-inner">
+      <div class="stat-item">
+        <span class="stat-num" id="statCineastes">—</span>
+        <span class="stat-label">cinéastes</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="statMembres">—</span>
+        <span class="stat-label">membres</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="statTops">—</span>
+        <span class="stat-label">tops postés</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div>
+      <div class="alpha-nav" id="alphNav"></div>
+      <div class="section-header">
+        <span class="section-title" id="sectionTitle">Tous les cinéastes</span>
+        <button class="section-action" onclick="resetFilters()">Réinitialiser</button>
+      </div>
+      <table class="cineaste-table">
+        <tbody id="cineasteBody"></tbody>
+      </table>
+      <div class="no-results" id="noResults" style="display:none">Aucun résultat.</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-block" id="fichePanel">
+        <div class="fiche-label">Fiche cinéaste</div>
+        <div class="fiche-empty">Cliquez sur un cinéaste<br>pour afficher sa fiche.</div>
+      </div>
+      <div class="sidebar-block">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">Membres</span>
+          <button class="section-action" onclick="showView('membres')">Voir tous →</button>
+        </div>
+        <div id="sidebarMembres"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW : MEMBRES -->
+<div id="view-membres" class="view">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-eyebrow">Communauté</div>
+      <div class="page-title">Les membres</div>
+      <div class="page-sub">
+        <span id="membresCount">—</span> cinéphiles actifs
+      </div>
+    </div>
+  </div>
+  <div class="membres-grid" id="membresGrid"></div>
+</div>
+
+<!-- VIEW : PROFIL -->
+<div id="view-profil" class="view">
+  <div class="profil-header-wrap">
+    <div class="profil-header-inner" id="profilHero"></div>
+  </div>
+  <div class="profil-wrap">
+    <button class="back-btn" onclick="showView('membres')">← Retour aux membres</button>
+    <div id="profilContent"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Tops / Cinéastes</div>
+    <div class="footer-info" id="footerInfo">—</div>
+  </div>
+</footer>
+
+<script>
+// ── STATE ──
+let allCineastes = [];
+let allMembres   = [];
+let topsStats    = { par_cineaste: {}, par_membre: {} };
+let filtered     = [];
+let currentLetter = '';
+let currentQuery  = '';
+let currentPage   = 1;
+const PAGE_SIZE   = 100;
+
+// ── LOAD DATA ──
+async function loadData() {
+  try {
+    setLoadingText('Chargement des cinéastes…');
+    const [cRes, mRes, sRes] = await Promise.all([
+      fetch('./cineastes.json'),
+      fetch('./membres.json'),
+      fetch('./tops_stats.json')
+    ]);
+    allCineastes = await cRes.json();
+    allMembres   = await mRes.json();
+    topsStats    = await sRes.json();
+  } catch(e) {
+    setLoadingText('Mode démonstration…');
+    allCineastes = getDemoCineastes();
+    allMembres   = getDemoMembres();
+  }
+  init();
+}
+
+function setLoadingText(t) {
+  document.getElementById('loadingText').textContent = t;
+}
+
+function init() {
+  // Stats
+  const totalTops = Object.values(topsStats.par_membre || {}).reduce((s,v) => s+v, 0);
+  document.getElementById('statCineastes').textContent = allCineastes.length.toLocaleString('fr');
+  document.getElementById('statMembres').textContent   = allMembres.length;
+  document.getElementById('statTops').textContent      = totalTops.toLocaleString('fr');
+  document.getElementById('heroSub').innerHTML =
+    `<span>${allCineastes.length.toLocaleString('fr')}</span> cinéastes · <span>${allMembres.length}</span> membres · <span>${totalTops.toLocaleString('fr')}</span> tops`;
+  document.getElementById('membresCount').textContent  = allMembres.length;
+  document.getElementById('footerInfo').textContent    = `${allCineastes.length.toLocaleString('fr')} cinéastes · Mai 2026`;
+
+  buildAlpha();
+  filtered = [...allCineastes];
+  renderTable();
+  renderSidebarMembres();
+  renderMembresGrid();
+
+  // Hide loading
+  const loader = document.getElementById('loading');
+  loader.classList.add('hidden');
+  setTimeout(() => loader.style.display = 'none', 500);
+}
+
+function countTopsForMembre(m) {
+  return parseInt(topsStats.par_membre?.[String(m.id)] || 0);
+}
+
+// ── ALPHABET ──
+function buildAlpha() {
+  const letters = [...new Set(allCineastes.filter(c => c.nom && c.nom.length > 0).map(c => c.nom[0].toUpperCase()))].sort();
+  const nav = document.getElementById('alphNav');
+  nav.innerHTML = '';
+  letters.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = 'alpha-btn';
+    btn.textContent = l;
+    btn.dataset.letter = l;
+    btn.onclick = () => filterByLetter(l, btn);
+    nav.appendChild(btn);
+  });
+}
+
+// ── FILTERS ──
+function onSearch() {
+  currentQuery  = document.getElementById('searchInput').value.trim();
+  currentLetter = '';
+  document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+  currentPage = 1;
+  applyFilters();
+}
+
+function filterByLetter(letter, btn) {
+  document.getElementById('searchInput').value = '';
+  currentQuery = '';
+  if (currentLetter === letter) {
+    currentLetter = '';
+    btn.classList.remove('active');
+  } else {
+    document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLetter = letter;
+  }
+  currentPage = 1;
+  applyFilters();
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  currentQuery  = '';
+  currentLetter = '';
+  currentPage   = 1;
+  document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+  applyFilters();
+  document.getElementById('fichePanel').innerHTML =
+    '<div class="fiche-label">Fiche cinéaste</div>' +
+    '<div class="fiche-empty">Cliquez sur un cinéaste<br>pour afficher sa fiche.</div>';
+}
+
+function applyFilters() {
+  const q = currentQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  filtered = allCineastes.filter(c => {
+    if (currentLetter && c.nom[0].toUpperCase() !== currentLetter) return false;
+    if (q) {
+      const nom    = c.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const prenom = c.prenom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!nom.includes(q) && !prenom.includes(q)) return false;
+    }
+    return true;
+  });
+  updateSectionTitle();
+  renderTable();
+}
+
+function updateSectionTitle() {
+  let t = 'Tous les cinéastes';
+  if (currentLetter) t = `Cinéastes — ${currentLetter}`;
+  if (currentQuery)  t = `Résultats pour « ${currentQuery} »`;
+  document.getElementById('sectionTitle').textContent = t;
+}
+
+// ── TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('cineasteBody');
+  const noRes = document.getElementById('noResults');
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    noRes.style.display = 'block';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+  noRes.style.display = 'none';
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const q     = currentQuery.toLowerCase();
+
+  page.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.onclick = () => showFiche(c);
+    if (!c.nom) return;
+
+    let nom    = escHtml(c.nom);
+    let prenom = escHtml(c.prenom);
+    if (q) {
+      const re = new RegExp(`(${escRegex(q)})`, 'gi');
+      nom    = nom.replace(re, '<span class="highlight">$1</span>');
+      prenom = prenom.replace(re, '<span class="highlight">$1</span>');
+    }
+
+    const topsCount = getTopsCount(c);
+    const topsHTML  = topsCount > 0
+      ? `<span class="tops-badge">${topsCount}</span>`
+      : `<span class="tops-zero">—</span>`;
+
+    tr.innerHTML = `
+      <td class="col-rank">${String(start + i + 1).padStart(3,'0')}</td>
+      <td class="col-name">${nom}<span class="prenom">${prenom}</span></td>
+      <td class="col-tops">${topsHTML}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  renderPagination();
+}
+
+function getTopsCount(cineaste) {
+  return topsStats.par_cineaste?.[String(cineaste.id)]?.total || 0;
+}
+
+// ── PAGINATION ──
+function renderPagination() {
+  const total = Math.ceil(filtered.length / PAGE_SIZE);
+  const pg    = document.getElementById('pagination');
+  if (total <= 1) { pg.innerHTML = ''; return; }
+
+  let html = '';
+  if (currentPage > 1)
+    html += `<button class="page-btn" onclick="goPage(${currentPage-1})">←</button>`;
+
+  const start = Math.max(1, currentPage - 2);
+  const end   = Math.min(total, currentPage + 2);
+  if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>`;
+  if (start > 2) html += `<span class="page-info">…</span>`;
+  for (let p = start; p <= end; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (end < total - 1) html += `<span class="page-info">…</span>`;
+  if (end < total) html += `<button class="page-btn" onclick="goPage(${total})">${total}</button>`;
+  if (currentPage < total)
+    html += `<button class="page-btn" onclick="goPage(${currentPage+1})">→</button>`;
+
+  html += `<span class="page-info">&nbsp;${filtered.length.toLocaleString('fr')} résultats</span>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) {
+  currentPage = p;
+  renderTable();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── FICHE ──
+function showFiche(c) {
+  const panel = document.getElementById('fichePanel');
+  const dates = c.annee_deces
+    ? `${c.annee_naissance || '?'} – ${c.annee_deces}`
+    : c.annee_naissance ? `Né·e en ${c.annee_naissance}` : 'Dates inconnues';
+
+  // Build members chips
+  const cinStat = topsStats.par_cineaste?.[String(c.id)] || {};
+  const postedIds   = new Set(cinStat.posted || []);
+  const enCoursIds  = new Set(cinStat.en_cours || []);
+  const chipsHTML = allMembres.map(m => {
+    const posted   = postedIds.has(m.id);
+    const en_cours = enCoursIds.has(m.id);
+    const cls = posted ? 'posted' : en_cours ? 'en-cours' : '';
+    const label = en_cours ? m.prenom + ' ⋯' : m.prenom;
+    return `<span class="member-chip ${cls}" onclick="showProfil(${m.id})">${label}</span>`;
+  }).join('');
+  const total = cinStat.total || 0;
+
+  panel.innerHTML = `
+    <div class="fiche-label">Fiche cinéaste</div>
+    <div class="fiche-name">${escHtml(c.nom)}<br>
+      <span class="fiche-prenom">${escHtml(c.prenom)}</span>
+    </div>
+    <div class="fiche-dates">${dates}</div>
+    <hr class="fiche-divider"/>
+    <div class="fiche-row">
+      <span class="fiche-row-label">Tops postés</span>
+      <span class="fiche-row-val">${total} / ${allMembres.length}</span>
+    </div>
+    <div class="fiche-row">
+      <span class="fiche-row-label">Participation</span>
+      <span class="fiche-row-val">${allMembres.length > 0 ? Math.round(total/allMembres.length*100) : 0} %</span>
+    </div>
+    <div class="fiche-row">
+      <span class="fiche-row-label">Fiche Facebook</span>
+      <a href="${c.lien_facebook}" target="_blank"
+         style="font-size:13px;color:var(--bordeaux);text-decoration:none;font-weight:500;"
+         onmouseover="this.style.textDecoration='underline'"
+         onmouseout="this.style.textDecoration='none'">Voir →</a>
+    </div>
+    <hr class="fiche-divider"/>
+    <div class="fiche-label" style="margin-bottom:8px">Membres ayant posté</div>
+    <div class="fiche-members">${chipsHTML}</div>
+    <hr class="fiche-divider"/>
+    <a href="top-editor.html?id=${c.id}"
+       style="display:block;text-align:center;padding:10px 16px;background:var(--bordeaux);color:white;text-decoration:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;border-radius:6px;transition:background 0.15s;margin-top:4px;letter-spacing:0.3px;"
+       onmouseover="this.style.background='var(--bordeaux2)'"
+       onmouseout="this.style.background='var(--bordeaux)'">
+      + Poster mon top
+    </a>
+  `;
+}
+
+// ── SIDEBAR MEMBRES ──
+function renderSidebarMembres() {
+  const el = document.getElementById('sidebarMembres');
+  const withCounts = allMembres.map(m => ({
+    ...m,
+    topsCount: countTopsForMembre(m)
+  })).sort((a,b) => b.topsCount - a.topsCount);
+
+  const maxTops = withCounts[0]?.topsCount || 1;
+
+  el.innerHTML = withCounts.map(m => {
+    const pct = Math.round(m.topsCount / maxTops * 100);
+    return `
+      <div class="membre-row" onclick="showProfil(${m.id})">
+        <div>
+          <div class="membre-row-name">${m.prenom} ${m.nom}</div>
+          <div class="progress-bar" style="width:80px">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="membre-row-count">
+          <span>${m.topsCount}</span> tops
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── MEMBRES GRID ──
+function renderMembresGrid() {
+  const grid = document.getElementById('membresGrid');
+  grid.innerHTML = allMembres.map(m => {
+    const coeurHTML = m.cineastes_coeur?.length
+      ? m.cineastes_coeur.slice(0,3).map(c =>
+          `<div class="coeur-item">${escHtml(c)}</div>`).join('')
+      : '<div class="no-coeur">Profil à compléter</div>';
+
+    return `
+      <div class="membre-card" onclick="showProfil(${m.id})">
+        <div class="membre-card-name">${m.prenom} ${m.nom}</div>
+        <div class="membre-card-year"></div>
+        <div class="coeur-label">Cinéastes ❤</div>
+        <div class="coeur-list">${coeurHTML}</div>
+        <div class="membre-card-footer">
+          <div class="membre-tops-count">
+            <span>${countTopsForMembre(m)}</span> tops postés
+          </div>
+          <div style="font-size:11px;color:var(--dim)">Voir le profil →</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── PROFIL ──
+function showProfil(id) {
+  const m = allMembres.find(x => x.id === id);
+  if (!m) return;
+  showView('profil');
+
+  // Hero
+  document.getElementById('profilHero').innerHTML = `
+    <div class="profil-name-block">
+      <div class="profil-name">${m.prenom} ${m.nom}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:8px;letter-spacing:1px;text-transform:uppercase">Membre</div>
+      <div class="profil-year"></div>
+    </div>
+    <div class="profil-stats">
+      <div class="profil-stat-box">
+        <div class="profil-stat-val">${countTopsForMembre(m)}</div>
+        <div class="profil-stat-label">Tops postés</div>
+      </div>
+      <div class="profil-stat-box">
+        <div class="profil-stat-val">${m.cineastes_coeur?.length || 0}</div>
+        <div class="profil-stat-label">Cinéastes ❤</div>
+      </div>
+      <div class="profil-stat-box">
+        <div class="profil-stat-val">${m.films_coeur?.length || 0}</div>
+        <div class="profil-stat-label">Films ❤</div>
+      </div>
+    </div>
+  `;
+
+  const coeurHTML = m.cineastes_coeur?.length
+    ? m.cineastes_coeur.map(c =>
+        `<div class="coeur-big-item"><span class="heart">❤</span>${escHtml(c)}</div>`).join('')
+    : '<span style="color:var(--text-dim);font-size:14px">Non renseigné</span>';
+
+  const favorisHTML = m.cineastes_favoris?.length
+    ? m.cineastes_favoris.map(c =>
+        `<span class="favori-tag">${escHtml(c)}</span>`).join('')
+    : '<span style="color:var(--text-dim);font-size:13px">Non renseigné</span>';
+
+  const filmsHTML = m.films_coeur?.length
+    ? m.films_coeur.map(f => `
+        <div class="film-card">
+          <div class="film-title">❤ ${escHtml(f.titre)}</div>
+          <div class="film-meta">${escHtml(f.cineaste)}${f.annee ? ', ' + f.annee : ''}</div>
+        </div>`).join('')
+    : '<span style="color:var(--text-dim);font-size:13px">Non renseigné</span>';
+
+  const declHTML = m.declaration && m.declaration.length > 20
+    ? `<div class="profil-section">
+        <div class="profil-section-title">Déclaration cinéphile</div>
+        <div class="declaration-block">${escHtml(m.declaration)}</div>
+       </div>`
+    : '';
+
+  document.getElementById('profilContent').innerHTML = `
+    <div class="profil-section">
+      <div class="profil-section-title">Cinéastes du cœur</div>
+      <div class="coeur-big">${coeurHTML}</div>
+    </div>
+    <div class="profil-section">
+      <div class="profil-section-title">Films favoris absolus</div>
+      <div class="films-grid">${filmsHTML}</div>
+    </div>
+    <div class="profil-section">
+      <div class="profil-section-title">Cinéastes favoris</div>
+      <div class="favoris-list">${favorisHTML}</div>
+    </div>
+    ${declHTML}
+  `;
+}
+
+// ── VIEWS ──
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── UTILS ──
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ── DEMO DATA (fallback if JSON not found) ──
+function getDemoCineastes() {
+  return [
+    {id:1,nom:"GODARD",prenom:"Jean-Luc",annee_naissance:1930,annee_deces:2022,lien_facebook:"#",fbid:"1"},
+    {id:2,nom:"TARKOVSKY",prenom:"Andrei",annee_naissance:1932,annee_deces:1986,lien_facebook:"#",fbid:"2"},
+    {id:3,nom:"KUBRICK",prenom:"Stanley",annee_naissance:1928,annee_deces:1999,lien_facebook:"#",fbid:"3"},
+    {id:4,nom:"BRESSON",prenom:"Robert",annee_naissance:1901,annee_deces:1999,lien_facebook:"#",fbid:"4"},
+    {id:5,nom:"HITCHCOCK",prenom:"Alfred",annee_naissance:1899,annee_deces:1980,lien_facebook:"#",fbid:"5"},
+  ];
+}
+function getDemoMembres() {
+  return [{id:1,prenom:"Keefe",nom:"Murphy",annee_naissance:1990,
+    cineastes_coeur:["Robert BRESSON","Kenji MIZOGUCHI","Yasujiro OZU"],
+    cineastes_favoris:[],films_coeur:[],declaration:"",email:"",actif:true}];
+}
+
+// ── START ──
+loadData();
+</script>
+</body>
+</html>
