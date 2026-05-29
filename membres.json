@@ -1,0 +1,1561 @@
+[
+  {
+    "id": 1,
+    "prenom": "Keefe",
+    "nom": "Murphy",
+    "annee_naissance": 1990,
+    "cineastes_coeur": [
+      "Robert BRESSON",
+      "Kenji MIZOGUCHI",
+      "Yasujiro OZU"
+    ],
+    "cineastes_favoris": [
+      "Jean-Luc GODARD",
+      "Jean-Marie STRAUB & Danièle HUILLET",
+      "Andrei TARKOVSKY",
+      "Stan BRAKHAGE",
+      "Marguerite DURAS",
+      "Chantal AKERMAN",
+      "James BENNING",
+      "Johan van der KEUKEN",
+      "Mikio NARUSE",
+      "Pedro COSTA",
+      "Chris MARKER",
+      "Jacques RIVETTE",
+      "Philippe GARREL",
+      "WANG Bing",
+      "Carl Theodor DREYER",
+      "Rainer Werner FASSBINDER",
+      "Jonas MEKAS",
+      "Michelangelo ANTONIONI",
+      "Michael SNOW",
+      "Ingmar BERGMAN",
+      "Pier Paolo PASOLINI",
+      "João César MONTEIRO",
+      "Manoel de OLIVEIRA",
+      "Jean ROUCH",
+      "Robert BEAVERS",
+      "Teo HERNANDEZ",
+      "Sergei PARAJANOV",
+      "Satyajit RAY",
+      "TSAI Ming-liang",
+      "Jean EPSTEIN",
+      "Mani KAUL",
+      "Stephen DWOSKIN",
+      "Béla TARR",
+      "John FORD",
+      "Werner NEKES & Dore O.",
+      "Apichatpong WEERASETHAKUL",
+      "Louis FEUILLADE",
+      "Yoshishige YOSHIDA",
+      "Franco PIAVOLI",
+      "Hollis FRAMPTON",
+      "Abbas KIAROSTAMI",
+      "Gregory J. MARKOPOULOS",
+      "Nathaniel DORSKY",
+      "Eric PAUWELS",
+      "Friedrich Wilhelm MURNAU",
+      "Antonio REIS & Margarida CORDEIRO",
+      "Hiroshi SHIMIZU"
+    ],
+    "films_coeur": [
+      {
+        "titre": "PATHER PANCHALI",
+        "cineaste": "S. RAY",
+        "annee": 1955
+      },
+      {
+        "titre": "BALTHAZAR",
+        "cineaste": "BRESSON",
+        "annee": 1966
+      },
+      {
+        "titre": "TOKYO STORY",
+        "cineaste": "OZU",
+        "annee": 1953
+      },
+      {
+        "titre": "THE DEVIL PROBABLY",
+        "cineaste": "BRESSON",
+        "annee": 1977
+      },
+      {
+        "titre": "THE STORY OF LATE CHRYSANTHEMUMS",
+        "cineaste": "MIZOGUCHI",
+        "annee": 1939
+      },
+      {
+        "titre": "MIRROR",
+        "cineaste": "TARKOVSKY",
+        "annee": 1975
+      },
+      {
+        "titre": "LATE SPRING",
+        "cineaste": "OZU",
+        "annee": 1949
+      },
+      {
+        "titre": "INDIA SONG",
+        "cineaste": "DURAS",
+        "annee": 1975
+      },
+      {
+        "titre": "SATANTANGO",
+        "cineaste": "TARR",
+        "annee": 1994
+      }
+    ],
+    "declaration": "abstract/auteur/experimental/structural | animation shorts | anti-illusionist/arthouse/avant-garde/ciné-sabotage | contemplative/slow | documentary/essay/ethnographic | early/silent | golden-age hollywood/woman's pictures | japan/france/USSR + new waves | non-narrative | personal/psychological | subversive/leftist/academia | ... | other",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 2,
+    "prenom": "Daniel",
+    "nom": "Jirdén",
+    "annee_naissance": 1986,
+    "cineastes_coeur": [
+      "Yasujirô OZU",
+      "Robert BRESSON",
+      "Michael SNOW"
+    ],
+    "cineastes_favoris": [
+      "Stan BRAKHAGE",
+      "Jacques RIVETTE",
+      "Jean EPSTEIN",
+      "Michelangelo ANTONIONI",
+      "Raul RUIZ",
+      "Nathaniel DORSKY",
+      "Robert BEAVERS",
+      "Gregory J. MARKOPOULOS",
+      "Jonas MEKAS",
+      "Kenji MIZOGUCHI",
+      "Maya DEREN",
+      "Jean-Luc GODARD",
+      "Chantal AKERMAN",
+      "Marguerite DURAS",
+      "Rainer Werner FASSBINDER",
+      "Jean-Marie STRAUB & Danièle HUILLET",
+      "Yoshishige YOSHIDA",
+      "Ernie GEHR",
+      "Pedro COSTA",
+      "Manoel de OLIVEIRA",
+      "Johan van der KEUKEN",
+      "Philippe GARREL",
+      "Masahiro SHINODA",
+      "Apichatpong WEERASETHAKUL",
+      "Frederick WISEMAN",
+      "Chris MARKER",
+      "John CASSAVETES",
+      "Carl Theodor DREYER",
+      "Douglas SIRK",
+      "Mani KAUL",
+      "David LYNCH",
+      "Hiroshi TESHIGAHARA",
+      "Jean ROUCH",
+      "Eric M. NILSSON",
+      "Béla TARR",
+      "Hiroshi SHIMIZU",
+      "Pier Paolo PASOLINI",
+      "John FORD",
+      "Hollis FRAMPTON",
+      "Andrei TARKOVSKY",
+      "Edward YANG",
+      "Franco PIAVOLI",
+      "HOU Hsiao-hsien",
+      "Antonio REIS & Margarida CORDEIRO",
+      "James BENNING",
+      "Jacques TATI"
+    ],
+    "films_coeur": [
+      {
+        "titre": "WAVELENGTH",
+        "cineaste": "SNOW",
+        "annee": 1967
+      },
+      {
+        "titre": "LA REGION CENTRALE",
+        "cineaste": "SNOW",
+        "annee": 1971
+      },
+      {
+        "titre": "INLAND EMPIRE",
+        "cineaste": "LYNCH",
+        "annee": 2006
+      },
+      {
+        "titre": "QUATRE NUITS D'UN REVEUR",
+        "cineaste": "BRESSON",
+        "annee": 1971
+      },
+      {
+        "titre": "SANMA NO AJI",
+        "cineaste": "OZU",
+        "annee": 1962
+      },
+      {
+        "titre": "ANTICIPATION OF THE NIGHT",
+        "cineaste": "BRAKHAGE",
+        "annee": 1958
+      },
+      {
+        "titre": "WEEK-END",
+        "cineaste": "GODARD",
+        "annee": 1967
+      },
+      {
+        "titre": "PIERROT LE FOU",
+        "cineaste": "GODARD",
+        "annee": 1965
+      },
+      {
+        "titre": "IL DESERTO ROSSO",
+        "cineaste": "ANTONIONI",
+        "annee": 1964
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 3,
+    "prenom": "Mathieu",
+    "nom": "Muzard",
+    "annee_naissance": 1985,
+    "cineastes_coeur": [
+      "Robert BRESSON",
+      "Jean-Marie STRAUB & Danièle HUILLET",
+      "Kenji MIZOGUCHI"
+    ],
+    "cineastes_favoris": [
+      "(puis, par ordre alphabétique)",
+      "Chantal AKERMAN",
+      "Michelangelo ANTONIONI",
+      "James BENNING",
+      "Ingmar BERGMAN",
+      "Stan BRAKHAGE",
+      "Carl Theodor DREYER",
+      "Marguerite DURAS",
+      "Jean EPSTEIN",
+      "Jean EUSTACHE",
+      "Rainer Werner FASSBINDER",
+      "Jean-Luc GODARD",
+      "Marcel HANOUN",
+      "Johan van der KEUKEN",
+      "Jonas MEKAS",
+      "João César MONTEIRO",
+      "Friedrich Wilhelm MURNAU",
+      "Yasujiro OZU",
+      "Pier Paolo PASOLINI",
+      "Satyajit RAY",
+      "Jean ROUCH",
+      "Michael SNOW",
+      "Andrei TARKOVSKY",
+      "WANG Bing"
+    ],
+    "films_coeur": [
+      {
+        "titre": "LA PASSION DE JEANNE D'ARC",
+        "cineaste": "DREYER",
+        "annee": 1928
+      },
+      {
+        "titre": "CONTES DES CHRYSANTHEMES TARDIFS",
+        "cineaste": "MIZOGUCHI",
+        "annee": 1939
+      },
+      {
+        "titre": "LE DESERT ROUGE",
+        "cineaste": "ANTONIONI",
+        "annee": 1964
+      },
+      {
+        "titre": "MOUCHETTE",
+        "cineaste": "BRESSON",
+        "annee": 1967
+      },
+      {
+        "titre": "LA REGION CENTRALE",
+        "cineaste": "SNOW",
+        "annee": 1971
+      },
+      {
+        "titre": "MOISE ET AARON",
+        "cineaste": "STRAUB/HUILLET",
+        "annee": 1975
+      },
+      {
+        "titre": "JEANNE DIELMAN, 23 QUAI DU COMMERCE, 1080 BRUXELLES",
+        "cineaste": "AKERMAN",
+        "annee": 1975
+      },
+      {
+        "titre": "SON NOM DE VENISE DANS CALCUTTA DESERT",
+        "cineaste": "DURAS",
+        "annee": 1976
+      },
+      {
+        "titre": "PASSION",
+        "cineaste": "GODARD",
+        "annee": 1982
+      },
+      {
+        "titre": "LE SACRIFICE",
+        "cineaste": "TARKOVSKY",
+        "annee": 1986
+      }
+    ],
+    "declaration": "Les « Notes sur le cinématographe » écrites par Bresson décrivent assez bien ce que je recherche dans l'art cinématographique. J'aime les films qui emploient les moyens du cinématographe et se servent de la caméra afin de créer. Autrement dit, pour moi, le cinéma n'est ni de la littérature, ni du théâtre filmé, mais « une écriture en mouvement avec des images et des sons ». Cette écriture, c'est ce que Bresson appelle la « mise en ordre » (par opposition à la mise en scène), le mouvement ou l'absence de mouvement d'appareil, le cadre et le montage. Il s'agit là de l'essentiel: le scénario, la photographie, l'interprétation, même si ils ont évidemment leur importance sont de mon point de vue et en conséquence, des éléments secondaires. Je préfère le cinéma qui épie au cinéma qui explique, le cinéma comme art de la réalité plutôt que comme art de l'image, les films qui, comme le disait Daney, « inventent le temps ».",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 4,
+    "prenom": "Bastien",
+    "nom": "Teklow",
+    "annee_naissance": 1984,
+    "cineastes_coeur": [
+      "Pier Paolo PASOLINI",
+      "Quentin TARANTINO",
+      "Apichatpong WEERASETHAKUL"
+    ],
+    "cineastes_favoris": [
+      "Eric ROHMER",
+      "Sergio LEONE",
+      "Jacques ROZIER",
+      "Andrei TARKOVSKY",
+      "John FORD",
+      "Marcel PAGNOL",
+      "Federico FELLINI",
+      "João César MONTEIRO",
+      "Yasujiro OZU",
+      "Alfred HITCHCOCK",
+      "Jacques RIVETTE",
+      "David LYNCH",
+      "Stanley KUBRICK",
+      "Woody ALLEN",
+      "John CASSAVETES",
+      "Michelangelo ANTONIONI",
+      "Steven SPIELBERG",
+      "Billy WILDER",
+      "Raoul WALSH",
+      "Ingmar BERGMAN",
+      "Howard HAWKS",
+      "Martin SCORSESE",
+      "Abbas KIAROSTAMI",
+      "Satyajit RAY",
+      "Vincente MINNELLI",
+      "Kenji MIZOGUCHI",
+      "Douglas SIRK"
+    ],
+    "films_coeur": [
+      {
+        "titre": "IL ETAIT UNE FOIS EN AMERIQUE",
+        "cineaste": "LEONE",
+        "annee": 1984
+      },
+      {
+        "titre": "PULP FICTION",
+        "cineaste": "TARANTINO",
+        "annee": 1994
+      },
+      {
+        "titre": "SUEURS FROIDES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1958
+      },
+      {
+        "titre": "MARIUS",
+        "cineaste": "A. KORDA",
+        "annee": 1931
+      },
+      {
+        "titre": "ONCLE BOONMEE",
+        "cineaste": "WEERASETHAKUL",
+        "annee": 2010
+      },
+      {
+        "titre": "2001, L'ODYSSEE DE L'ESPACE",
+        "cineaste": "KUBRICK",
+        "annee": 1968
+      },
+      {
+        "titre": "L'EVANGILE SELON SAINT MATTHIEU",
+        "cineaste": "PASOLINI",
+        "annee": 1964
+      },
+      {
+        "titre": "PROFESSION: REPORTER",
+        "cineaste": "ANTONIONI",
+        "annee": 1975
+      },
+      {
+        "titre": "VOYAGE AU BOUT DE L'ENFER",
+        "cineaste": "CIMINO",
+        "annee": 1978
+      },
+      {
+        "titre": "JEANNE DIELMAN, 23 QUAI DU COMMERCE, 1080 BRUXELLES",
+        "cineaste": "AKERMAN",
+        "annee": 1975
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 5,
+    "prenom": "Vinz J.",
+    "nom": "Orlov",
+    "annee_naissance": null,
+    "cineastes_coeur": [
+      "David LYNCH",
+      "Woody ALLEN",
+      "Jean-Luc GODARD"
+    ],
+    "cineastes_favoris": [
+      "(puis, sans ordre)",
+      "Brian DE PALMA",
+      "David CRONENBERG",
+      "Ingmar BERGMAN",
+      "Luis BUNUEL",
+      "Bertrand BLIER",
+      "Douglas SIRK",
+      "Alain RESNAIS",
+      "Jacques DEMY",
+      "Friedrich Wilhelm MURNAU",
+      "WONG Kar-wai",
+      "Nanni MORETTI",
+      "Marco FERRERI",
+      "Eric ROHMER",
+      "Claude CHABROL",
+      "Jacques RIVETTE",
+      "Joseph L. MANKIEWICZ",
+      "Howard HAWKS",
+      "Rainer Werner FASSBINDER",
+      "Ernst LUBITSCH",
+      "Lars von TRIER",
+      "Nagisa OSHIMA",
+      "Alfred HITCHCOCK",
+      "Jean-Claude BRISSEAU",
+      "Pedro ALMODOVAR",
+      "François TRUFFAUT",
+      "Fritz LANG",
+      "Kenji MIZOGUCHI"
+    ],
+    "films_coeur": [
+      {
+        "titre": "PIERROT LE FOU",
+        "cineaste": "GODARD",
+        "annee": 1965
+      },
+      {
+        "titre": "LA MAMAN ET LA PUTAIN",
+        "cineaste": "EUSTACHE",
+        "annee": 1973
+      },
+      {
+        "titre": "CELINE ET JULIE VONT EN BATEAU",
+        "cineaste": "RIVETTE",
+        "annee": 1974
+      },
+      {
+        "titre": "MULHOLLAND DRIVE",
+        "cineaste": "LYNCH",
+        "annee": 2001
+      },
+      {
+        "titre": "IN GIRUM IMUS NOCTE ET CONSUMIMUR IGNI",
+        "cineaste": "DEBORD",
+        "annee": 1978
+      },
+      {
+        "titre": "SUEURS FROIDES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1958
+      },
+      {
+        "titre": "ANNIE HALL",
+        "cineaste": "ALLEN",
+        "annee": 1977
+      },
+      {
+        "titre": "L'AURORE",
+        "cineaste": "MURNAU",
+        "annee": 1927
+      },
+      {
+        "titre": "L'AVENTURE DE MADAME MUIR",
+        "cineaste": "MANKIEWICZ",
+        "annee": 1947
+      },
+      {
+        "titre": "LES PARAPLUIES DE CHERBOURG",
+        "cineaste": "DEMY",
+        "annee": 1964
+      }
+    ],
+    "declaration": "Si mes goûts me poussent d'abord vers le cinéma \"art et essai\", les nouvelles vagues des années 60 (que j'adore), le cinéma muet (américain et allemand essentiellement + quelques français) et le classicisme hollywoodien, j'ai aussi en mémoire un texte de Thierry Jousse sur les \"limites du cinéma\" dans lequel je me reconnais beaucoup. C'est sans doute pour cette raison que, depuis l'adolescence, j'ai un penchant (pervers ?) pour la transgression sous toutes ses formes. Cela a commencé avec le cinéma fantastique et d'horreur puis cette inclination a pris d'autres directions : la transgression des règles de narration classique (mon goût pour le cinéma dit expérimental), transgressions politiques (Debord et Vienet, les brûlots anars de Mocky ou de Faraldo, le cinéma militant de 68...) et toutes les atteintes au \"bon goût\" que l'on peut trouver dans le cinéma bis et ses nombreuses déviances (mondo, horreur extrême, pornographie, etc.). Voilà les deux voies que j'affectionne au cinéma, même si je ne suis fermé à aucune de ses composantes. S'il fallait néanmoins, pour conclure, dire ce qui m'intéresse le moins, je dirais d'abord le cinéma industriel américain actuel (Marvel and Cie), le cinéma de guerre et d'action (rarement accroché et Frederic Guez connaît mon aversion (presque) jamais démentie pour les poursuites en bagnoles), le cinéma d'animation (ça va faire tiquer mais à part Miyazaki et Takahata, rien ne m'emballe vraiment) et la science-fiction (avec évidemment pas mal d'exceptions).",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 6,
+    "prenom": "Seb",
+    "nom": "Lapin",
+    "annee_naissance": 1981,
+    "cineastes_coeur": [
+      "Brian DE PALMA",
+      "Sergio LEONE",
+      "Stanley KUBRICK"
+    ],
+    "cineastes_favoris": [
+      "Martin SCORSESE",
+      "Clint EASTWOOD",
+      "Billy WILDER",
+      "Francis Ford COPPOLA",
+      "Alfred HITCHCOCK",
+      "Akira KUROSAWA",
+      "Blake EDWARDS",
+      "Joseph L. MANKIEWICZ",
+      "Orson WELLES",
+      "Elia KAZAN",
+      "Jean-Pierre MELVILLE",
+      "Hayao MIYAZAKI",
+      "John CARPENTER",
+      "Joel & Ethan COEN",
+      "Claude CHABROL",
+      "David CRONENBERG",
+      "Tim BURTON",
+      "Sam PECKINPAH",
+      "Luis BUNUEL",
+      "Mamoru OSHII",
+      "Spike LEE",
+      "Douglas SIRK",
+      "Vincente MINNELLI",
+      "Fritz LANG",
+      "Steven SPIELBERG",
+      "Roman POLANSKI",
+      "Raoul WALSH",
+      "John WOO",
+      "Christopher NOLAN",
+      "Luchino VISCONTI",
+      "Frank CAPRA",
+      "François TRUFFAUT",
+      "David FINCHER",
+      "Ernst LUBITSCH",
+      "Robert ALDRICH",
+      "Kenji MIZOGUCHI",
+      "Satoshi KON",
+      "WONG Kar-wai",
+      "Ang LEE",
+      "Michael MANN",
+      "David LYNCH",
+      "Steven SODERBERGH",
+      "Stanley DONEN",
+      "Michael POWELL & Emeric PRESSBURGER",
+      "Michael CIMINO",
+      "Yasujiro OZU",
+      "Dario ARGENTO"
+    ],
+    "films_coeur": [
+      {
+        "titre": "IL ETAIT UNE FOIS EN AMERIQUE",
+        "cineaste": "LEONE",
+        "annee": 1984
+      },
+      {
+        "titre": "L'IMPASSE",
+        "cineaste": "DE PALMA",
+        "annee": 1993
+      },
+      {
+        "titre": "VOYAGE AU BOUT DE L'ENFER",
+        "cineaste": "CIMINO",
+        "annee": 1978
+      },
+      {
+        "titre": "2001, L'ODYSSEE DE L'ESPACE",
+        "cineaste": "KUBRICK",
+        "annee": 1968
+      },
+      {
+        "titre": "APOCALYPSE NOW",
+        "cineaste": "COPPOLA",
+        "annee": 1979
+      },
+      {
+        "titre": "LE BON, LA BRUTE ET LE TRUAND",
+        "cineaste": "LEONE",
+        "annee": 1966
+      },
+      {
+        "titre": "SUEURS FROIDES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1958
+      },
+      {
+        "titre": "OBSESSION",
+        "cineaste": "DE PALMA",
+        "annee": 1976
+      },
+      {
+        "titre": "IL ETAIT UNE FOIS DANS L'OUEST",
+        "cineaste": "LEONE",
+        "annee": 1968
+      },
+      {
+        "titre": "CITIZEN KANE",
+        "cineaste": "WELLES",
+        "annee": 1941
+      }
+    ],
+    "declaration": "Je suis surtout peu intéressé par le documentaire et le cinéma dit expérimental, d'une manière générale l'expérimentation pour l'expérimentation ou la poésie pour la poésie, en cinéma, me parlent peu. Ce qui m'intéresse c'est ce qu'un cinéaste, au travers de personnages et d'un récit, a à révéler de lui-même, de sa vérité et de sa vision du monde qui puisse me parler ou m'émouvoir, donc j'ai toujours eu un attrait particulier pour les cinémas qui font du récit un élément primordial, autant dire le cinéma américain, les cinémas asiatiques à l'exception de ses niches ultra-contemplatives et pseudos-réflexives d'aujourd'hui, une bonne partie du cinéma italien même si tout cela est évidemment réducteur. Forcément, beaucoup d'amour pour les narrateurs par l'image (Leone et De Palma en tête de mon classement cinéastes, ça dit tout je pense), peu d'appétence pour les cinémas statiques et/ou bavards, un rejet absolu de la prétention sous toutes ses formes. Je dois tout de même admettre une prédilection pour les cinémas \"de genres\", du film noir à l'horreur en passant par le thriller ou le western, la nouvelle vague japonaise, le Nouvel Hollywood, la comédie américaine des années 30 à 60 (mais en fait plutôt des cinéastes en particulier, Wilder, Edwards, Hawks, Lubitsch, etc, que le genre en lui-même), la SF 80s, le polar 90s, le divertissement personnel et de qualité (les auteurs qui s'expriment humblement sous trois couches de divertissement grand public auront toujours davantage ma sympathie que ceux qui prétendent inventer un langage ou partager leur savoir) et puis une certaine passion ou parfois indulgence pour les cinémas déviants, même s'il faut que ce soit un minimum cohérent et maîtrisé (la transgression/disruption sans queue ni tête c'est non).",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 7,
+    "prenom": "Franky",
+    "nom": "Fockers",
+    "annee_naissance": 1971,
+    "cineastes_coeur": [
+      "Brian DE PALMA",
+      "Alfred HITCHCOCK",
+      "Pier Paolo PASOLINI"
+    ],
+    "cineastes_favoris": [
+      "Andrei TARKOVSKY",
+      "Luis BUNUEL",
+      "Raoul WALSH",
+      "Marguerite DURAS",
+      "Fritz LANG",
+      "Billy WILDER",
+      "Woody ALLEN",
+      "Apichatpong WEERASETHAKUL",
+      "David LYNCH",
+      "Ingmar BERGMAN",
+      "Nanni MORETTI",
+      "Michelangelo ANTONIONI",
+      "Jean-Luc GODARD",
+      "Vincente MINNELLI",
+      "Yasujiro OZU",
+      "Rainer Werner FASSBINDER",
+      "Abbas KIAROSTAMI",
+      "John FORD",
+      "Chantal AKERMAN",
+      "Douglas SIRK",
+      "Manoel de OLIVEIRA",
+      "Friedrich Wilhelm MURNAU",
+      "Eric ROHMER",
+      "Dino RISI",
+      "João César MONTEIRO",
+      "Kenji MIZOGUCHI",
+      "Jacques TATI"
+    ],
+    "films_coeur": [
+      {
+        "titre": "SUEURS FROIDES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1958
+      },
+      {
+        "titre": "LA MORT AUX TROUSSES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1959
+      },
+      {
+        "titre": "STALKER",
+        "cineaste": "TARKOVSKY",
+        "annee": 1979
+      },
+      {
+        "titre": "SALO",
+        "cineaste": "PASOLINI",
+        "annee": 1975
+      },
+      {
+        "titre": "UN CHIEN ANDALOU",
+        "cineaste": "BUNUEL",
+        "annee": 1929
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 8,
+    "prenom": "Thoracentèse",
+    "nom": "Rubis",
+    "annee_naissance": null,
+    "cineastes_coeur": [
+      "Andrei TARKOVSKY",
+      "Kenji MIZOGUCHI",
+      "Robert BRESSON"
+    ],
+    "cineastes_favoris": [
+      "Chantal AKERMAN",
+      "James BENNING",
+      "Carl Theodor DREYER",
+      "Jean-Luc GODARD",
+      "Danièle HUILLET & Jean-Marie STRAUB",
+      "Yasujiro OZU",
+      "Pier Paolo PASOLINI",
+      "(puis, par ordre alphabétique)",
+      "Antouanetta ANGELIDI",
+      "Michelangelo ANTONIONI",
+      "Sarunas BARTAS",
+      "Ingmar BERGMAN",
+      "Stan BRAKHAGE",
+      "John CASSAVETES",
+      "Pedro COSTA",
+      "Marguerite DURAS",
+      "Stephen DWOSKIN",
+      "Jean EPSTEIN",
+      "Jean EUSTACHE",
+      "Rainer Werner FASSBINDER",
+      "Philippe GARREL",
+      "Marcel HANOUN",
+      "Akio JISSOJI",
+      "Mani KAUL",
+      "Abbas KIAROSTAMI",
+      "Jonas MEKAS",
+      "João César MONTEIRO",
+      "Friedrich Wilhelm MURNAU",
+      "Mikio NARUSE",
+      "Werner NEKES",
+      "Manoel de OLIVEIRA",
+      "Ulrike OTTINGER",
+      "Sergei PARAJANOV",
+      "Franco PIAVOLI",
+      "Jean-Daniel POLLET",
+      "Satyajit RAY",
+      "Antonio REIS & Margarida CORDEIRO",
+      "Jacques RIVETTE",
+      "Hiroshi SHIMIZU",
+      "Victor SJOSTROM",
+      "Michael SNOW",
+      "Béla TARR",
+      "Shuji TERAYAMA",
+      "José VAL DEL OMAR",
+      "Dziga VERTOV",
+      "WANG Bing",
+      "Klaus WYBORNY",
+      "Yoshishige YOSHIDA"
+    ],
+    "films_coeur": [
+      {
+        "titre": "LE MIROIR",
+        "cineaste": "TARKOVSKY",
+        "annee": 1975
+      },
+      {
+        "titre": "IL VANGELO SECONDO MATTEO",
+        "cineaste": "PASOLINI",
+        "annee": 1964
+      },
+      {
+        "titre": "AU HASARD BALTHAZAR",
+        "cineaste": "BRESSON",
+        "annee": 1966
+      },
+      {
+        "titre": "CONTES DES CHRYSANTHEMES TARDIFS",
+        "cineaste": "MIZOGUCHI",
+        "annee": 1939
+      },
+      {
+        "titre": "TROP TOT, TROP TARD",
+        "cineaste": "HUILLET/STRAUB",
+        "annee": 1981
+      },
+      {
+        "titre": "VOYAGE A TOKYO",
+        "cineaste": "OZU",
+        "annee": 1953
+      },
+      {
+        "titre": "SAYAT NOVA",
+        "cineaste": "PARAJANOV",
+        "annee": 1969
+      },
+      {
+        "titre": "LA PASSION DE JEANNE D'ARC",
+        "cineaste": "DREYER",
+        "annee": 1928
+      },
+      {
+        "titre": "IL DESERTO ROSSO",
+        "cineaste": "ANTONIONI",
+        "annee": 1964
+      },
+      {
+        "titre": "SHOAH",
+        "cineaste": "LANZMANN",
+        "annee": 1985
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 9,
+    "prenom": "Grégory",
+    "nom": "Lescard",
+    "annee_naissance": 1986,
+    "cineastes_coeur": [
+      "Eric ROHMER",
+      "Michael MANN",
+      "Michelangelo ANTONIONI",
+      "Jean-Luc GODARD",
+      "Ermanno OLMI",
+      "Georgi DANELIYA"
+    ],
+    "cineastes_favoris": [
+      "Chantal AKERMAN",
+      "James BENNING",
+      "Ingmar BERGMAN",
+      "Kathryn BIGELOW",
+      "Robert BRESSON",
+      "James CAMERON",
+      "John CARPENTER",
+      "John CASSAVETES",
+      "Joe DANTE",
+      "Raymond DEPARDON",
+      "Rainer Werner FASSBINDER",
+      "Jean-Luc GODARD",
+      "Alain GUIRAUDIE",
+      "Werner HERZOG",
+      "Alfred HITCHCOCK",
+      "Jim JARMUSCH",
+      "Abdellatif KECHICHE",
+      "Stanley KUBRICK",
+      "David LEAN",
+      "David LYNCH",
+      "Mia HANSEN-LOVE",
+      "Luc MOULLET",
+      "Maurice PIALAT",
+      "Kelly REICHARDT",
+      "Jean RENOIR",
+      "Jacques ROZIER",
+      "Steven SPIELBERG",
+      "John WATERS",
+      "Bob FOSSE",
+      "Friedrich Wilhelm MURNAU",
+      "Buster KEATON",
+      "Josef von STERNBERG",
+      "Fritz LANG",
+      "Artavazd PELESHIAN",
+      "Jean DURAND",
+      "Orson WELLES",
+      "John HUSTON",
+      "Charles CHAPLIN",
+      "Dusan HANAK",
+      "Aleksandr REKHVIASHVILI",
+      "Apichatpong WEERASETHAKUL",
+      "Sidney LUMET",
+      "Anthony MANN",
+      "Jacques ROZIER",
+      "Mikheil KOBAKHIDZE",
+      "Eric ROHMER",
+      "François TRUFFAUT",
+      "Yoshishige YOSHIDA",
+      "Seijun SUZUKI",
+      "Masahiro SHINODA",
+      "Stanley DONEN",
+      "Vincente MINNELLI",
+      "Ingmar BERGMAN",
+      "Raymond DEPARDON",
+      "Frederick WISEMAN",
+      "Jay & Mark DUPLASS",
+      "Paolo & Vittorio TAVIANI",
+      "Guillaume BRAC",
+      "Alfred HITCHCOCK",
+      "Joseph L. MANKIEWICZ",
+      "Henri STORCK",
+      "Charles DEKEUKELEIRE",
+      "Sam PECKINPAH"
+    ],
+    "films_coeur": [
+      {
+        "titre": "VOYAGE AU BOUT DE L'ENFER",
+        "cineaste": "CIMINO",
+        "annee": 1978
+      },
+      {
+        "titre": "LE RAYON VERT",
+        "cineaste": "ROHMER",
+        "annee": 1986
+      },
+      {
+        "titre": "LES NAUFRAGES DE L'ILE DE LA TORTUE",
+        "cineaste": "ROZIER",
+        "annee": 1976
+      },
+      {
+        "titre": "IL ETAIT UNE FOIS DANS L'OUEST",
+        "cineaste": "LEONE",
+        "annee": 1968
+      },
+      {
+        "titre": "LES DEMOISELLES DE ROCHEFORT",
+        "cineaste": "DEMY",
+        "annee": 1967
+      },
+      {
+        "titre": "UN CONDAMNE A MORT S'EST ECHAPPE",
+        "cineaste": "BRESSON",
+        "annee": 1956
+      },
+      {
+        "titre": "AGUIRRE, LA COLERE DE DIEU",
+        "cineaste": "HERZOG",
+        "annee": 1972
+      },
+      {
+        "titre": "FENETRE SUR COUR",
+        "cineaste": "HITCHCOCK",
+        "annee": 1954
+      },
+      {
+        "titre": "MANHUNTER",
+        "cineaste": "MANN",
+        "annee": 1986
+      },
+      {
+        "titre": "SORCERER",
+        "cineaste": "FRIEDKIN",
+        "annee": 1977
+      },
+      {
+        "titre": "PIERROT LE FOU",
+        "cineaste": "GODARD",
+        "annee": 1965
+      },
+      {
+        "titre": "L'ARBRE AUX SABOTS",
+        "cineaste": "OLMI",
+        "annee": 1978
+      },
+      {
+        "titre": "PAT GARRETT ET BILLY LE KID",
+        "cineaste": "PECKINPAH",
+        "annee": 1973
+      },
+      {
+        "titre": "FAT CITY",
+        "cineaste": "HUSTON",
+        "annee": 1972
+      },
+      {
+        "titre": "L'ARGENT DE POCHE",
+        "cineaste": "TRUFFAUT",
+        "annee": 1976
+      },
+      {
+        "titre": "AGENT X27",
+        "cineaste": "STERNBERG",
+        "annee": 1931
+      },
+      {
+        "titre": "L'AURORE",
+        "cineaste": "MURNAU",
+        "annee": 1927
+      },
+      {
+        "titre": "SHERLOCK JR.",
+        "cineaste": "KEATON",
+        "annee": 1924
+      },
+      {
+        "titre": "LA RUEE VERS L'OR",
+        "cineaste": "CHAPLIN",
+        "annee": 1925
+      },
+      {
+        "titre": "L'HOMME QUI TUA LIBERTY VALANCE",
+        "cineaste": "FORD",
+        "annee": 1962
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 10,
+    "prenom": "Frédéric",
+    "nom": "Guez",
+    "annee_naissance": 1975,
+    "cineastes_coeur": [
+      "Brian DE PALMA",
+      "Jean-Luc GODARD",
+      "Clint EASTWOOD"
+    ],
+    "cineastes_favoris": [
+      "Abel FERRARA",
+      "TSUI Hark",
+      "Eric ROHMER",
+      "Steven SPIELBERG",
+      "Philippe GARREL",
+      "John CARPENTER",
+      "Martin SCORSESE",
+      "Claude CHABROL",
+      "Woody ALLEN",
+      "David CRONENBERG",
+      "Francis Ford COPPOLA",
+      "HOU Hsiao-hsien",
+      "Maurice PIALAT",
+      "John WOO",
+      "Dario ARGENTO",
+      "Tim BURTON",
+      "Lucio FULCI",
+      "Alfred HITCHCOCK",
+      "Gus VAN SANT",
+      "Michael MANN",
+      "Jean RENOIR",
+      "Aleksandr SOKUROV",
+      "WONG Kar-wai",
+      "William FRIEDKIN",
+      "Oliver STONE",
+      "John CASSAVETES",
+      "Walter HILL"
+    ],
+    "films_coeur": [
+      {
+        "titre": "L'IMPASSE",
+        "cineaste": "DE PALMA",
+        "annee": 1993
+      },
+      {
+        "titre": "THE BLADE",
+        "cineaste": "TSUI HARK",
+        "annee": 1995
+      },
+      {
+        "titre": "UNE BALLE DANS LA TETE",
+        "cineaste": "WOO",
+        "annee": 1990
+      },
+      {
+        "titre": "BLOW OUT",
+        "cineaste": "DE PALMA",
+        "annee": 1981
+      },
+      {
+        "titre": "VAN GOGH",
+        "cineaste": "PIALAT",
+        "annee": 1991
+      },
+      {
+        "titre": "LA MAISON DES BOIS",
+        "cineaste": "PIALAT",
+        "annee": 1971
+      },
+      {
+        "titre": "THE KILLER",
+        "cineaste": "WOO",
+        "annee": 1989
+      },
+      {
+        "titre": "A TOUTE EPREUVE",
+        "cineaste": "WOO",
+        "annee": 1992
+      },
+      {
+        "titre": "POUSSIERES DANS LE VENT",
+        "cineaste": "HOU",
+        "annee": 1986
+      }
+    ],
+    "declaration": "Je ne fais aucune différence entre film documentaire, populaire ou art et essai. Je mets juste de côté ce qui n'est plus du cinéma, comme les Marvel par exemple.",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 11,
+    "prenom": "Thomas",
+    "nom": "Demaerel",
+    "annee_naissance": 1981,
+    "cineastes_coeur": [
+      "John CARPENTER",
+      "Brian DE PALMA",
+      "Dario ARGENTO"
+    ],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 12,
+    "prenom": "Karine",
+    "nom": "Cnudde",
+    "annee_naissance": 1972,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 14,
+    "prenom": "Thierry",
+    "nom": "Jousse",
+    "annee_naissance": 1961,
+    "cineastes_coeur": [
+      "Jean-Luc GODARD",
+      "Kenji MIZOGUCHI",
+      "Vincente MINNELLI"
+    ],
+    "cineastes_favoris": [
+      "(puis, sans ordre)",
+      "Jacques TOURNEUR",
+      "Max OPHULS",
+      "Friedrich Wilhelm MURNAU",
+      "Satyajit RAY",
+      "Sacha GUITRY",
+      "Claude CHABROL",
+      "Eric ROHMER",
+      "Alfred HITCHCOCK",
+      "Fritz LANG",
+      "Ritwik GHATAK",
+      "David LYNCH",
+      "Jean RENOIR",
+      "Ernst LUBITSCH",
+      "Francis Ford COPPOLA",
+      "Ingmar BERGMAN",
+      "Otto PREMINGER",
+      "Leo McCAREY",
+      "Robert BRESSON",
+      "Nagisa OSHIMA",
+      "Raoul WALSH",
+      "John FORD",
+      "Mikio NARUSE",
+      "Jacques DEMY",
+      "Jean EUSTACHE",
+      "Carl Theodor DREYER",
+      "Blake EDWARDS",
+      "HOU Hsiao-hsien",
+      "Rainer Werner FASSBINDER",
+      "Abbas KIAROSTAMI",
+      "Luis BUNUEL",
+      "Jerzy SKOLIMOWSKI",
+      "Maurice PIALAT",
+      "Samuel FULLER",
+      "Robert ALDRICH",
+      "Victor ERICE",
+      "Manoel de OLIVEIRA",
+      "Michael CIMINO",
+      "Jean-Marie STRAUB & Danièle HUILLET",
+      "Jean GREMILLON",
+      "Brian DE PALMA",
+      "Marco BELLOCCHIO",
+      "John CASSAVETES",
+      "Clint EASTWOOD",
+      "Federico FELLINI",
+      "Erich von STROHEIM",
+      "Jacques BECKER",
+      "Douglas SIRK"
+    ],
+    "films_coeur": [
+      {
+        "titre": "MADAME DE...",
+        "cineaste": "OPHULS",
+        "annee": 1953
+      },
+      {
+        "titre": "LES PARAPLUIES DE CHERBOURG",
+        "cineaste": "DEMY",
+        "annee": 1964
+      },
+      {
+        "titre": "TO BE OR NOT TO BE",
+        "cineaste": "LUBITSCH",
+        "annee": 1942
+      },
+      {
+        "titre": "MISS OYU",
+        "cineaste": "MIZOGUCHI",
+        "annee": 1951
+      },
+      {
+        "titre": "LES ENCHAINES",
+        "cineaste": "HITCHCOCK",
+        "annee": 1946
+      },
+      {
+        "titre": "FANNY ET ALEXANDRE VERSION TV",
+        "cineaste": "BERGMAN",
+        "annee": null
+      },
+      {
+        "titre": "BONNE CHANCE",
+        "cineaste": "GUITRY",
+        "annee": 1935
+      },
+      {
+        "titre": "PIERROT LE FOU",
+        "cineaste": "GODARD",
+        "annee": 1965
+      },
+      {
+        "titre": "CITY GIRL",
+        "cineaste": "MURNAU",
+        "annee": 1930
+      },
+      {
+        "titre": "LE CHANT DU MISSOURI",
+        "cineaste": "MINNELLI",
+        "annee": 1944
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 15,
+    "prenom": "Simone",
+    "nom": "Roghi",
+    "annee_naissance": 1994,
+    "cineastes_coeur": [
+      "Andrei TARKOVSKY",
+      "Robert BRESSON",
+      "Danièle HUILLET & Jean-Marie STRAUB"
+    ],
+    "cineastes_favoris": [
+      "Kenji MIZOGUCHI",
+      "Yasujiro OZU",
+      "Jean-Luc GODARD",
+      "Michelangelo ANTONIONI",
+      "Antonio REIS & Margarida CORDEIRO",
+      "Sergei PARAJANOV",
+      "Ingmar BERGMAN",
+      "Pedro COSTA",
+      "Jean EUSTACHE",
+      "Jacques RIVETTE",
+      "Chris MARKER",
+      "Dziga VERTOV",
+      "Pier Paolo PASOLINI",
+      "Sergei M. EISENSTEIN",
+      "F.W. MURNAU",
+      "Stan BRAKHAGE",
+      "Guy DEBORD",
+      "Béla TARR",
+      "Saul LEVINE",
+      "Martine ROUSSET",
+      "Marguerite DURAS",
+      "Stephen DWOSKIN",
+      "Carl Theodor DREYER",
+      "Chantal AKERMAN",
+      "Don ASKARIAN",
+      "Lav DIAZ",
+      "Michael SNOW"
+    ],
+    "films_coeur": [
+      {
+        "titre": "ZERKALO",
+        "cineaste": "TARKOVSKY",
+        "annee": 1975
+      },
+      {
+        "titre": "AU HASARD BALTHAZAR",
+        "cineaste": "BRESSON",
+        "annee": 1966
+      },
+      {
+        "titre": "TROP TOT, TROP TARD",
+        "cineaste": "HUILLET/STRAUB",
+        "annee": 1981
+      },
+      {
+        "titre": "ZANGIKU MONOGATARI",
+        "cineaste": "MIZOGUCHI",
+        "annee": 1939
+      },
+      {
+        "titre": "BANSHUN",
+        "cineaste": "OZU",
+        "annee": 1949
+      },
+      {
+        "titre": "SAYAT NOVA",
+        "cineaste": "PARAJANOV",
+        "annee": 1969
+      },
+      {
+        "titre": "ANA",
+        "cineaste": "REIS/CORDEIRO",
+        "annee": 1982
+      },
+      {
+        "titre": "IL DESERTO ROSSO",
+        "cineaste": "ANTONIONI",
+        "annee": 1964
+      },
+      {
+        "titre": "PERSONA",
+        "cineaste": "BERGMAN",
+        "annee": 1966
+      }
+    ],
+    "declaration": "First of all, let me start out by saying that my taste in all things cinema is not strictly constrained by conventional distinctions along the line of genre: while drama and experimental films, indeed, make up most of my best ever chart, I can easily find beauty in a comedy or in a western. The reason I'm still a voracious cinephile is a yearning for the absolute image: a representation that goes beyond the subjective point of view and allows me to see the world with a new eye that is able to grasp the whole. Human vision is ordinarily atomistic, an easy prey to the obtuse whims of the moment. The task of cinema, as I understand it, is to open up perception to objective thought and to an ethical commitment to truth, so that man may escape the prison of his own ego and attain a vision which is at the same time rational and ecstatic.",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 16,
+    "prenom": "Julien",
+    "nom": "D'Abrigeon",
+    "annee_naissance": 1973,
+    "cineastes_coeur": [
+      "Jean-Luc GODARD",
+      "Ermanno OLMI",
+      "Georgi DANELIYA"
+    ],
+    "cineastes_favoris": [
+      "John WATERS",
+      "Bob FOSSE",
+      "Friedrich Wilhelm MURNAU",
+      "Buster KEATON",
+      "Josef von STERNBERG",
+      "Fritz LANG",
+      "Orson WELLES",
+      "John HUSTON",
+      "Charles CHAPLIN",
+      "Jacques ROZIER",
+      "Eric ROHMER",
+      "François TRUFFAUT",
+      "Alfred HITCHCOCK",
+      "Sam PECKINPAH"
+    ],
+    "films_coeur": [
+      {
+        "titre": "PIERROT LE FOU",
+        "cineaste": "GODARD",
+        "annee": 1965
+      },
+      {
+        "titre": "L'ARBRE AUX SABOTS",
+        "cineaste": "OLMI",
+        "annee": 1978
+      },
+      {
+        "titre": "PAT GARRETT ET BILLY LE KID",
+        "cineaste": "PECKINPAH",
+        "annee": 1973
+      },
+      {
+        "titre": "FAT CITY",
+        "cineaste": "HUSTON",
+        "annee": 1972
+      },
+      {
+        "titre": "L'ARGENT DE POCHE",
+        "cineaste": "TRUFFAUT",
+        "annee": 1976
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 17,
+    "prenom": "Ilan",
+    "nom": "Malka",
+    "annee_naissance": 1979,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 18,
+    "prenom": "Thomas",
+    "nom": "Flavier",
+    "annee_naissance": 1985,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 19,
+    "prenom": "Clément",
+    "nom": "Guiborel",
+    "annee_naissance": 1988,
+    "cineastes_coeur": [
+      "Yasujiro OZU",
+      "Andrei TARKOVSKY",
+      "Robert BRESSON"
+    ],
+    "cineastes_favoris": [
+      "John CASSAVETES",
+      "Jonas MEKAS",
+      "Jacques ROZIER",
+      "Danièle HUILLET & Jean-Marie STRAUB",
+      "Jean-Luc GODARD",
+      "Pier Paolo PASOLINI",
+      "Kenji MIZOGUCHI",
+      "John FORD",
+      "James BENNING",
+      "Apichatpong WEERASETHAKUL",
+      "Michelangelo ANTONIONI",
+      "Stan BRAKHAGE",
+      "Victor ERICE",
+      "Chantal AKERMAN",
+      "Carl Theodor DREYER",
+      "Guy DEBORD",
+      "Werner NEKES",
+      "Jean EUSTACHE",
+      "Jacques RIVETTE",
+      "Charles CHAPLIN",
+      "Michael SNOW",
+      "Pedro COSTA",
+      "Petter HUTTON",
+      "Marguerite DURAS",
+      "Erich von STROHEIM",
+      "Roberto ROSSELLINI",
+      "Friedrich Wilhelm MURNAU",
+      "Jack CHAMBERS",
+      "Eric PAUWELS",
+      "Jean EPSTEIN",
+      "Satyajit RAY",
+      "Stanley KUBRICK",
+      "WANG Bing",
+      "Philippe GARREL",
+      "John CARPENTER",
+      "Antonio REIS & Margarida CORDEIRO",
+      "José VAL DEL OMAR"
+    ],
+    "films_coeur": [
+      {
+        "titre": "LOVE STREAMS",
+        "cineaste": "CASSAVETES",
+        "annee": 1984
+      },
+      {
+        "titre": "ADIEU PHILIPPINE",
+        "cineaste": "ROZIER",
+        "annee": 1962
+      },
+      {
+        "titre": "ANDREI RUBLEV",
+        "cineaste": "TARKOVSKY",
+        "annee": 1966
+      },
+      {
+        "titre": "LE MIROIR",
+        "cineaste": "TARKOVSKY",
+        "annee": 1975
+      },
+      {
+        "titre": "AS I WAS MOVING AHEAD…",
+        "cineaste": "MEKAS",
+        "annee": 2000
+      },
+      {
+        "titre": "TEN SKIES",
+        "cineaste": "BENNING",
+        "annee": 2004
+      },
+      {
+        "titre": "A WOMAN UNDER THE INFLUENCE",
+        "cineaste": "CASSAVETES",
+        "annee": 1974
+      },
+      {
+        "titre": "THE HART OF LONDON",
+        "cineaste": "CHAMBERS",
+        "annee": 1970
+      },
+      {
+        "titre": "QUATRE NUITS D’UN REVEUR",
+        "cineaste": "BRESSON",
+        "annee": 1971
+      },
+      {
+        "titre": "AGATHA ET LES LECTURES ILLIMITEES",
+        "cineaste": "DURAS",
+        "annee": 1981
+      }
+    ],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 21,
+    "prenom": "Antoine",
+    "nom": "Mouton",
+    "annee_naissance": 1981,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 22,
+    "prenom": "PEELSA",
+    "nom": "",
+    "annee_naissance": null,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true,
+    "pseudo": "PEELSA",
+    "nom_reel": "Edo Volbeda"
+  },
+  {
+    "id": 23,
+    "prenom": "Lilian",
+    "nom": "Fanara",
+    "annee_naissance": 1998,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 24,
+    "prenom": "Wille",
+    "nom": "Lindelöw",
+    "annee_naissance": null,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  },
+  {
+    "id": 25,
+    "prenom": "Patern",
+    "nom": "Rival",
+    "annee_naissance": 1984,
+    "cineastes_coeur": [],
+    "cineastes_favoris": [],
+    "films_coeur": [],
+    "declaration": "",
+    "email": "",
+    "actif": true
+  }
+]
