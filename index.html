@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPS / CINEASTES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family:'GoudyOldStyle'; src:url('fonts/GOUDOS.woff2') format('woff2'); font-display:swap; }
+@font-face { font-family:'ImprintMTShadow'; src:url('fonts/imprint-mt-shadow.woff2') format('woff2'); font-display:swap; }
+
+/* ── PALETTE CLAIR ───────────────────────────────────────── */
+:root {
+  --bg:#f7f3ec; --bg-subtle:#ede8df; --bg-card:#faf8f4;
+  --rouge:#3B2314; --rouge-dim:#2a1810; --rouge-glow:rgba(59,35,20,0.1);
+  --brun:#3d2b1a; --brun-pale:#7a6350;
+  --text:#111008; --text-dim:#3d2b1a;
+  --border:#d0c8b8; --border-dim:#ddd6c8; --border-dark:#e8e2d8;
+  --tag-bg:#ede8df; --tag-border:#c8bfaf;
+  --font:'Cormorant Garamond',Georgia,serif;
+  --font-names:'GoudyOldStyle',Georgia,serif;
+  --font-display:'ImprintMTShadow',serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1a1714;--bg-subtle:#201d1a;--bg-card:#161310;
+  --rouge:#c8a878;--rouge-dim:#a08050;--rouge-glow:rgba(200,168,120,0.1);
+  --brun:#c8b89a;--brun-pale:#7a6a58;
+  --text:#ede5d5;--text-dim:#9a9080;
+  --border:#332d28;--border-dim:#262018;--border-dark:#201c18;
+  --tag-bg:#201d18;--tag-border:#332d20;
+}}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font);
+  min-height:100vh;display:flex;flex-direction:column;
+}
+/* ── GRAIN PAPIER ────────────────────────────────────────── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:200px;
+}
+a{text-decoration:none;color:inherit}
+
+/* ── PAGE D'ACCUEIL (SPLASH) ─────────────────────────────── */
+.splash{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;padding:3rem 2rem;
+  animation:splash-in 1s ease-out;
+}
+@keyframes splash-in{from{opacity:0}to{opacity:1}}
+.splash-title{
+  font-family:var(--font-display);font-size:72px;letter-spacing:0.12em;
+  color:var(--rouge);line-height:1;margin-bottom:1rem;
+}
+.splash-title span{color:var(--brun-pale);margin:0 10px;font-size:56px}
+.splash-sub{
+  font-family:var(--font);font-size:20px;font-style:italic;
+  color:var(--brun);letter-spacing:0.04em;margin-bottom:3rem;
+}
+.splash-sub strong{font-weight:600;font-style:normal;color:var(--text)}
+.splash-enter{
+  font-family:var(--font-names);font-size:18px;letter-spacing:0.1em;
+  color:var(--rouge);border:1.5px solid var(--rouge);
+  padding:12px 36px;border-radius:2px;cursor:pointer;
+  transition:background 0.3s,color 0.3s,box-shadow 0.3s;
+  background:transparent;
+}
+.splash-enter:hover{
+  background:var(--rouge);color:#fff;
+  box-shadow:0 4px 20px var(--rouge-glow);
+}
+.splash-line{
+  width:60px;height:2px;background:var(--rouge);margin-bottom:2.5rem;opacity:0.6;
+}
+.splash.hidden{display:none}
+
+/* ── MAIN WRAPPER ────────────────────────────────────────── */
+.main-wrapper{display:none;flex-direction:column;min-height:100vh}
+.main-wrapper.visible{display:flex}
+
+/* ── HEADER PUBLICATION ──────────────────────────────────── */
+.header{
+  padding:1.2rem 2.5rem 0.8rem;text-align:center;
+  position:sticky;top:0;background:var(--bg);z-index:100;
+  border-bottom:1px solid var(--border);
+}
+.header::after{
+  content:'';position:absolute;bottom:-3px;left:0;right:0;
+  height:2px;background:var(--rouge);opacity:0.7;
+}
+.logo{
+  font-family:var(--font-display);font-size:34px;letter-spacing:0.12em;
+  color:var(--rouge);cursor:pointer;transition:opacity 0.2s;
+  display:block;margin-bottom:0.6rem;
+}
+.logo:hover{opacity:0.8}
+.logo span{color:var(--brun-pale);margin:0 8px;font-size:28px}
+.nav{
+  display:flex;justify-content:center;gap:0.4rem;
+  padding-bottom:0.3rem;
+}
+.nav a{
+  font-family:var(--font);font-size:19px;font-weight:500;
+  font-variant:small-caps;letter-spacing:0.1em;
+  color:var(--brun);cursor:pointer;transition:color 0.2s;
+  position:relative;padding:2px 6px;
+}
+.nav a:hover{color:var(--rouge)}
+.nav a.active{color:var(--rouge)}
+.nav a.active::after{
+  content:'';position:absolute;bottom:-2px;left:0;right:0;
+  height:1.5px;background:var(--rouge);
+}
+.nav-sep{color:var(--border);font-size:14px;line-height:24px;user-select:none}
+
+/* ── CONTENU ─────────────────────────────────────────────── */
+.content{padding:2.5rem;max-width:980px;margin:0 auto;width:100%;flex:1}
+
+/* ── TRANSITIONS DE PAGE ─────────────────────────────────── */
+.page{display:none;opacity:0;transform:translateY(8px);transition:opacity 0.3s,transform 0.3s}
+.page.visible{display:block;opacity:1;transform:translateY(0)}
+
+/* ── RECHERCHE ───────────────────────────────────────────── */
+.search-bar{margin-bottom:1.8rem}
+.search-bar input{
+  background:var(--bg-card);border:1px solid var(--border);color:var(--text);
+  padding:10px 18px;font-family:var(--font);font-size:20px;font-style:italic;
+  border-radius:2px;width:100%;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.search-bar input::placeholder{color:var(--brun-pale)}
+.search-bar input:focus{border-color:var(--rouge);box-shadow:0 0 0 3px var(--rouge-glow)}
+
+/* ── ALPHABET TYPOGRAPHIQUE ──────────────────────────────── */
+.alpha-bar{
+  display:flex;flex-wrap:wrap;justify-content:center;
+  gap:2px;margin-bottom:2.5rem;padding-bottom:1.8rem;
+  border-bottom:1px solid var(--border-dim);
+}
+.alpha-bar span{
+  font-family:var(--font-display);font-size:22px;
+  color:var(--brun-pale);cursor:pointer;
+  width:34px;height:42px;display:flex;align-items:center;justify-content:center;
+  transition:color 0.2s,transform 0.2s;user-select:none;
+  background:transparent;border:none;
+}
+.alpha-bar span.has-data:hover{color:var(--brun);transform:scale(1.15)}
+.alpha-bar span.active{color:var(--rouge);transform:scale(1.35);font-weight:400}
+.alpha-bar span.no-data{color:var(--border-dim);cursor:default}
+
+/* ── EN-TETE SECTION ─────────────────────────────────────── */
+.list-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem}
+.list-letter{
+  font-family:var(--font-display);font-size:72px;
+  color:var(--rouge);line-height:1;letter-spacing:0.02em;
+}
+.list-count{
+  font-family:var(--font);font-size:17px;font-style:italic;color:var(--brun-pale);
+}
+
+/* ── LISTE DES CINEASTES ─────────────────────────────────── */
+.cineaste-list{display:flex;flex-direction:column}
+.cineaste-row{
+  display:flex;align-items:baseline;
+  padding:10px 8px 10px 0;
+  border-bottom:1px solid var(--border-dark);
+  cursor:pointer;transition:background 0.12s,transform 0.12s;
+  border-radius:2px;position:relative;
+}
+.cineaste-row:hover{background:var(--bg-subtle);transform:translateX(3px)}
+.cineaste-row:hover .c-name{color:var(--rouge)}
+.cineaste-row:hover .c-badge{border-color:var(--rouge);color:var(--rouge)}
+/* indicateur graphique */
+.c-bar{
+  width:3px;min-height:100%;border-radius:1px;margin-right:10px;
+  background:var(--rouge);opacity:0.5;flex-shrink:0;
+  transition:opacity 0.15s;align-self:stretch;
+}
+.cineaste-row:hover .c-bar{opacity:1}
+.c-info{flex:1;min-width:0}
+.c-name{
+  font-family:var(--font-names);font-size:26px;color:var(--text);
+  transition:color 0.15s;
+}
+.c-name b{font-weight:700}
+.c-dates{
+  font-family:var(--font);font-style:italic;color:var(--brun);
+  font-size:20px;margin-left:12px;
+  font-variant-numeric:oldstyle-nums;
+  font-feature-settings:'onum' 1;
+}
+.c-badge{
+  font-family:var(--font);font-size:22px;font-style:italic;
+  color:var(--text);background:var(--tag-bg);
+  border:1px solid var(--tag-border);padding:2px 14px;border-radius:2px;
+  white-space:nowrap;transition:border-color 0.15s,color 0.15s;
+  margin-left:auto;flex-shrink:0;
+}
+
+/* ── FICHE OVERLAY ───────────────────────────────────────── */
+.fiche-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(10,8,4,0.65);z-index:200;
+  overflow-y:auto;padding:4rem 2rem;
+}
+.fiche-overlay.visible{display:flex;justify-content:center;align-items:flex-start}
+.fiche{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-top:3px solid var(--rouge);border-radius:2px;
+  padding:2.5rem;width:100%;max-width:720px;
+  animation:fiche-in 0.25s ease-out;
+  box-shadow:0 8px 40px rgba(0,0,0,0.18);
+  background-image:linear-gradient(to bottom,var(--bg-card) 0%,var(--bg) 100%);
+}
+@keyframes fiche-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fiche-back{
+  font-family:var(--font);font-size:17px;font-style:italic;
+  color:var(--brun-pale);cursor:pointer;margin-bottom:2rem;
+  display:inline-flex;align-items:center;gap:6px;transition:color 0.15s;
+}
+.fiche-back:hover{color:var(--rouge)}
+.fiche-name{
+  font-family:var(--font-names);font-size:42px;color:var(--text);
+  margin-bottom:4px;line-height:1.1;
+}
+.fiche-name b{font-weight:700}
+.fiche-name-line{width:40px;height:2px;background:var(--rouge);margin:10px 0 16px;opacity:0.6}
+.fiche-dates{
+  font-family:var(--font);font-size:20px;color:var(--brun);
+  font-style:italic;margin-bottom:2rem;
+  font-variant-numeric:oldstyle-nums;
+}
+.fiche-body{display:grid;grid-template-columns:140px 1fr;gap:2rem;margin-bottom:2rem}
+.fiche-stat-block{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg-subtle);border:1px solid var(--border);border-radius:2px;padding:1.2rem}
+.fiche-stat-number{
+  font-family:var(--font-names);font-size:52px;font-weight:700;
+  color:var(--rouge);line-height:1;
+}
+.fiche-stat-label{
+  font-family:var(--font);font-size:15px;font-style:italic;
+  color:var(--brun-pale);margin-top:4px;
+}
+.fiche-contribs{flex:1}
+.fiche-section{
+  font-family:var(--font);font-size:12px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--rouge);margin-bottom:0.75rem;
+}
+.contrib-grid{display:flex;flex-wrap:wrap;gap:8px}
+.contrib-tag{
+  font-family:var(--font);font-size:16px;padding:4px 16px;
+  border:1px solid var(--tag-border);border-radius:2px;
+  color:var(--brun);background:var(--tag-bg);
+  transition:border-color 0.15s,color 0.15s;cursor:pointer;
+}
+.contrib-tag:hover{border-color:var(--rouge);color:var(--rouge)}
+.fiche-fb-link{
+  display:inline-flex;align-items:center;gap:6px;margin-top:2rem;
+  padding-top:1.5rem;border-top:1px solid var(--border-dim);
+  font-family:var(--font);font-size:15px;font-style:italic;
+  color:var(--brun-pale);transition:color 0.15s;
+}
+.fiche-fb-link:hover{color:var(--rouge)}
+
+/* ── CONTRIBUTEURS — BULLES FLOTTANTES ───────────────────── */
+.contrib-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;
+}
+.contrib-bubble{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:1.6rem;
+  cursor:pointer;
+  transition:transform 0.2s,box-shadow 0.2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+.contrib-bubble:hover{
+  transform:translateY(-4px);
+  box-shadow:0 8px 24px rgba(0,0,0,0.1);
+}
+.contrib-card-name{
+  font-family:var(--font-names);font-size:26px;color:var(--text);margin-bottom:4px;
+}
+.contrib-card-name .contrib-prenom{color:var(--text)}
+.contrib-card-name .contrib-nom{color:var(--rouge);font-weight:700}
+.contrib-card-stat{
+  font-family:var(--font-names);font-size:18px;font-weight:700;
+  color:var(--text);margin-bottom:10px;
+}
+
+.contrib-favs-section{
+  padding-top:12px;border-top:1px solid var(--border-dim);
+}
+.contrib-favs-label{
+  font-family:var(--font-names);font-size:14px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--text);margin-bottom:10px;
+}
+.contrib-favs-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  justify-items:center;
+}
+.contrib-fav-bubble:first-child{
+  grid-column:1 / -1;
+  justify-self:center;
+}
+.contrib-fav-bubble{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  max-width:130px;text-align:center;
+}
+.contrib-fav-portrait{
+  width:80px;height:80px;border-radius:50%;
+  object-fit:cover;border:2px solid var(--border);
+  background:var(--bg-subtle);
+  transition:border-color 0.2s;
+}
+.contrib-fav-portrait.fav-first{width:112px;height:112px}
+.contrib-bubble:hover .contrib-fav-portrait{border-color:var(--rouge)}
+.contrib-fav-initials{
+  width:80px;height:80px;border-radius:50%;
+  background:var(--bg-subtle);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:22px;color:var(--brun-pale);
+  transition:border-color 0.2s;
+}
+.contrib-fav-initials.fav-first{width:112px;height:112px;font-size:32px}
+.contrib-bubble:hover .contrib-fav-initials{border-color:var(--rouge)}
+.contrib-fav-name{
+  font-family:var(--font-names);font-size:14px;
+  color:var(--text);line-height:1.2;font-weight:500;
+}
+
+/* ── STATISTIQUES ────────────────────────────────────────── */
+/* chiffres clés : 3 grands + 3 petits */
+.stats-hero{
+  display:flex;justify-content:center;gap:3rem;
+  margin-bottom:2rem;padding-bottom:2rem;
+  border-bottom:1px solid var(--border-dim);
+}
+.stat-hero-item{text-align:center}
+.stat-hero-value{
+  font-family:var(--font-names);font-size:64px;font-weight:700;
+  color:var(--rouge);line-height:1;
+}
+.stat-hero-label{
+  font-family:var(--font-names);font-size:16px;
+  color:var(--text);margin-top:4px;letter-spacing:0.05em;
+}
+.stats-secondary{
+  display:flex;justify-content:center;gap:2rem;
+  margin-bottom:3rem;flex-wrap:wrap;
+}
+.stat-sec-item{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:2px;padding:1rem 1.6rem;text-align:center;
+  box-shadow:0 1px 4px rgba(0,0,0,0.05);min-width:140px;
+}
+.stat-sec-value{
+  font-family:var(--font-names);font-size:36px;font-weight:700;
+  color:var(--rouge);line-height:1;
+}
+.stat-sec-label{
+  font-family:var(--font-names);font-size:14px;
+  color:var(--text);margin-top:4px;
+}
+.ranking-section{margin-bottom:3rem}
+.ranking-title{
+  font-family:var(--font-names);font-size:24px;font-weight:700;
+  color:var(--text);margin-bottom:1rem;padding-bottom:0.6rem;
+  border-bottom:2px solid var(--border);
+}
+.ranking-row{
+  display:flex;align-items:baseline;padding:10px 8px;
+  border-bottom:1px solid var(--border-dark);cursor:pointer;
+  transition:background 0.12s,transform 0.12s;border-radius:2px;
+}
+.ranking-row:hover{background:var(--bg-subtle);transform:translateX(3px)}
+.ranking-rank{
+  font-family:var(--font);font-size:22px;color:var(--brun-pale);
+  width:36px;font-style:italic;
+}
+.ranking-name{
+  font-family:var(--font-names);font-size:22px;color:var(--text);flex:1;
+}
+.ranking-name b{font-weight:700}
+.ranking-value{
+  font-family:var(--font-names);font-size:20px;font-weight:700;
+  color:var(--text);
+}
+
+/* ── PAGE PROFIL CONTRIBUTEUR ────────────────────────────── */
+.profil-header{
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:2rem 0 2.5rem;
+  border-bottom:1px solid var(--border-dim);margin-bottom:2.5rem;
+}
+.profil-back{
+  align-self:flex-start;font-family:var(--font);font-size:17px;font-style:italic;
+  color:var(--brun-pale);cursor:pointer;margin-bottom:2rem;
+  display:inline-flex;align-items:center;gap:6px;transition:color 0.15s;
+}
+.profil-back:hover{color:var(--rouge)}
+.profil-name{
+  font-family:var(--font-names);font-size:42px;color:var(--text);
+  margin-bottom:4px;line-height:1.1;
+}
+.profil-name .contrib-prenom{color:var(--text)}
+.profil-name .contrib-nom{color:var(--rouge);font-weight:700}
+.profil-name-line{width:40px;height:2px;background:var(--rouge);margin:12px auto;opacity:0.6}
+.profil-stat{
+  font-family:var(--font-names);font-size:22px;color:var(--text);
+  font-weight:700;
+}
+.profil-favs-title{
+  font-family:var(--font-names);font-size:16px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text);margin-bottom:1.5rem;
+}
+.profil-favs-grid{
+  display:flex;justify-content:center;gap:40px;flex-wrap:wrap;
+}
+.profil-fav-item{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  max-width:160px;text-align:center;
+}
+.profil-fav-portrait{
+  width:130px;height:130px;border-radius:50%;
+  object-fit:cover;border:3px solid var(--border);
+  background:var(--bg-subtle);transition:border-color 0.2s;
+}
+.profil-fav-portrait:hover{border-color:var(--rouge)}
+.profil-fav-portrait.profil-fav-first{width:160px;height:160px}
+.profil-fav-initials{
+  width:130px;height:130px;border-radius:50%;
+  background:var(--bg-subtle);border:3px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:36px;color:var(--brun-pale);
+  transition:border-color 0.2s;
+}
+.profil-fav-initials.profil-fav-first{width:160px;height:160px;font-size:44px}
+.profil-fav-name{
+  font-family:var(--font-names);font-size:17px;color:var(--text);
+  font-weight:500;line-height:1.3;
+}
+
+/* ── DIVERS ──────────────────────────────────────────────── */
+.empty-msg{font-family:var(--font);font-style:italic;color:var(--brun-pale);font-size:18px;padding:2rem 0}
+
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:640px){
+  .splash-title{font-size:42px}
+  .splash-title span{font-size:34px}
+  .header{padding:0.8rem 1.25rem 0.6rem}
+  .logo{font-size:26px}
+  .nav a{font-size:16px}
+  .content{padding:1.25rem}
+  .alpha-bar span{font-size:17px;width:26px;height:36px}
+  .list-letter{font-size:48px}
+  .c-name{font-size:21px}
+  .c-dates{font-size:17px}
+  .fiche-overlay{padding:1rem}
+  .fiche{padding:1.5rem}
+  .fiche-name{font-size:30px}
+  .fiche-body{grid-template-columns:1fr;gap:1rem}
+  .stats-hero{flex-direction:column;gap:1.5rem}
+  .stat-hero-value{font-size:48px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ─────────────────────────────────────────────── -->
+<div class="splash" id="splash">
+  <div class="splash-title">TOPS<span>/</span>CINEASTES</div>
+  <div class="splash-line"></div>
+  <button class="splash-enter" onclick="enterSite()">Explorer l'index</button>
+</div>
+
+<!-- ── SITE ───────────────────────────────────────────────── -->
+<div class="main-wrapper" id="main-wrapper">
+  <div class="header">
+    <div class="logo" onclick="navigate('index')">TOPS<span>/</span>CINEASTES</div>
+    <div class="nav">
+      <a onclick="navigate('index')" id="nav-index" class="active">Index</a>
+      <span class="nav-sep">·</span>
+      <a onclick="navigate('contributeurs')" id="nav-contributeurs">Contributeurs</a>
+      <span class="nav-sep">·</span>
+      <a onclick="navigate('statistiques')" id="nav-statistiques">Statistiques</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="page visible" id="page-index">
+      <div class="search-bar">
+        <input type="text" placeholder="Rechercher un cinéaste…" id="search-input" oninput="filterList()">
+      </div>
+      <div class="alpha-bar" id="alpha-bar"></div>
+      <div class="list-header">
+        <div class="list-letter" id="list-letter">A</div>
+        <div class="list-count" id="list-count"></div>
+      </div>
+      <div class="cineaste-list" id="cineaste-list"></div>
+    </div>
+
+    <div class="page" id="page-contributeurs">
+      <div class="list-header" style="margin-bottom:1.5rem">
+        <div class="list-letter" style="font-size:44px;color:var(--text)">Contributeurs</div>
+        <div class="list-count" id="contrib-count" style="font-size:20px;color:var(--text);font-style:normal"></div>
+      </div>
+      <div class="contrib-list" id="contrib-list"></div>
+    </div>
+
+    <div class="page" id="page-profil">
+      <div class="profil-back" onclick="navigate('contributeurs')">&#8592; Contributeurs</div>
+      <div class="profil-header">
+        <div class="profil-name" id="profil-name"></div>
+        <div class="profil-name-line"></div>
+        <div class="profil-stat" id="profil-stat"></div>
+      </div>
+      <div class="profil-favs-title">Cinéastes favoris</div>
+      <div class="profil-favs-grid" id="profil-favs-grid"></div>
+    </div>
+
+    <div class="page" id="page-statistiques">
+      <div class="list-header" style="margin-bottom:1.5rem">
+        <div class="list-letter" style="font-size:44px;color:var(--text)">Statistiques</div>
+      </div>
+      <div class="stats-hero" id="stats-hero"></div>
+      <div class="stats-secondary" id="stats-secondary"></div>
+      <div class="ranking-section">
+        <div class="ranking-title">Cinéastes les plus topés</div>
+        <div id="ranking-cineastes"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="fiche-overlay" id="fiche-overlay" onclick="if(event.target===this)closeFiche()">
+    <div class="fiche" id="fiche-content"></div>
+  </div>
+
+</div>
+
+<script>
+var DATA=null,currentLetter='A';
+
+var FAVORIS={
+  'BASTIEN TEKLOW':['Pier Paolo Pasolini','Quentin Tarantino','Apichatpong Weerasethakul'],
+  'CLÉMENT GUIBOREL':['Yasujiro Ozu','Andrei Tarkovsky','Robert Bresson'],
+  'DANIEL JIRDEN':['Yasujiro Ozu','Robert Bresson','Michael Snow'],
+  'FRANKY FOCKERS':['Brian De Palma','Alfred Hitchcock','Pier Paolo Pasolini'],
+  'FRÉDÉRIC GUEZ':['Brian De Palma','Jean-Luc Godard','Clint Eastwood'],
+  'GREGORY LESCARD':['Eric Rohmer','Michael Mann','Michelangelo Antonioni'],
+  'KEEFE MURPHY':['Robert Bresson','Kenji Mizoguchi','Yasujiro Ozu'],
+  'MATHIEU MUZARD':['Robert Bresson','Straub/Huillet','Kenji Mizoguchi'],
+  'SIMONE ROGHI':['Andrei Tarkovsky','Robert Bresson','Straub/Huillet'],
+  'THIERRY JOUSSE':['Jean-Luc Godard','Kenji Mizoguchi','Vincente Minnelli'],
+  'THOMAS DEMAEREL':['John Carpenter','Brian De Palma','Dario Argento'],
+  'THORACENTESE RUBIS':['Andrei Tarkovsky','Kenji Mizoguchi','Robert Bresson'],
+  'VINZ J. ORLOV':['David Lynch','Woody Allen','Jean-Luc Godard'],
+};
+
+fetch('cineastes.json').then(function(r){return r.json()}).then(function(data){
+  DATA=data;
+  DATA.cineastes.forEach(function(c){
+    if(c.tops_contributeurs){
+      c.tops_contributeurs=c.tops_contributeurs.map(function(t){
+        if(t==='MAT'||t==='MAT ')return 'MATHIEU MUZARD';
+        if(t==='THOMAS F. FLAVIER')return 'THOMAS FLAVIER';
+        if(t==='VINZ ORLOV')return 'VINZ J. ORLOV';
+        if(t==='THOMAS D. DEMAEREL')return 'THOMAS DEMAEREL';
+        return t;
+      });
+    }
+  });
+  // mettre à jour splash
+  var tt=0;DATA.cineastes.forEach(function(c){tt+=(c.tops_contributeurs||[]).length});
+  var nc=DATA.contributeurs.filter(function(c){var n=(c.prenom+(c.nom?' '+c.nom:'')).trim();return n!=='version 22.8'&&n!==''}).length;
+  init();
+}).catch(function(){
+  document.getElementById('cineaste-list').innerHTML='<div class="empty-msg">Erreur de chargement.</div>';
+});
+
+function enterSite(){
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('main-wrapper').classList.add('visible');
+}
+
+function init(){buildAlpha();selectLetter('A')}
+
+function toTitleCase(s){
+  var r=s.charAt(0).toUpperCase()+s.slice(1).toLowerCase();
+  var acc={'Thoracentese':'Thoracentèse','Frederic':'Frédéric','Clement':'Clément','Gregory':'Grégory'};
+  return acc[r]||r;
+}
+
+function formatContribNamePlain(name){
+  var p=name.trim().split(' ');
+  if(p.length===1)return p[0];
+  return p.slice(0,-1).map(toTitleCase).join(' ')+' '+p[p.length-1];
+}
+function formatContribName(name){
+  var p=name.trim().split(' ');
+  if(p.length===1)return '<span class="contrib-nom">'+p[0]+'</span>';
+  var prenom=p.slice(0,-1).map(toTitleCase).join(' ');
+  return '<span class="contrib-prenom">'+prenom+'</span> <span class="contrib-nom">'+p[p.length-1]+'</span>';
+}
+
+function formatNom(nom){
+  if(nom.includes(',')){var i=nom.indexOf(',');return '<b>'+nom.slice(0,i)+'</b>'+nom.slice(i)}
+  return '<b>'+nom+'</b>';
+}
+function formatDateSimple(n,d,v){
+  if(!n)return '';if(d)return n+'\u2013'+d;if(v)return String(n);return String(n);
+}
+function formatDates(c){
+  if(c.provisoire)return'(fiche provisoire)';
+  if(c.duo&&Array.isArray(c.naissance)){
+    var d1=formatDateSimple(c.naissance[0],c.deces[0],c.vivant[0]);
+    var d2=formatDateSimple(c.naissance[1],c.deces[1],c.vivant[1]);
+    if(d1||d2)return(d1||'?')+'\u2002/\u2002'+(d2||'?');return '';
+  }
+  return formatDateSimple(c.naissance,c.deces,c.vivant);
+}
+
+function navigateProfil(name){
+  navigate('profil');
+  renderProfil(name);
+}
+
+function renderProfil(name){
+  var cin=DATA.cineastes.filter(function(c){return c.tops_contributeurs&&c.tops_contributeurs.indexOf(name)!==-1});
+  document.getElementById('profil-name').innerHTML=formatContribName(name);
+  document.getElementById('profil-stat').textContent=cin.length+' cinéaste'+(cin.length>1?'s':'')+' topé'+(cin.length>1?'s':'');
+
+  var favs=FAVORIS[name]||[];
+  var particles=['De','Van','von','Von','Du','du','Di','di','Da','da','Le','La','del','Del','Della','lo','Lo'];
+  var grid=document.getElementById('profil-favs-grid');
+  grid.innerHTML='';
+  if(!favs.length){grid.innerHTML='<div class="empty-msg">Aucun cinéaste favori renseigné</div>';return}
+  favs.forEach(function(f,fi){
+    var displayName=f;
+    var lastName;
+    if(f==='Straub/Huillet'){lastName='Straub';}
+    else{
+      var parts=f.split(' ');
+      var last=parts[parts.length-1];
+      var secondLast=parts.length>1?parts[parts.length-2]:'';
+      lastName=particles.indexOf(secondLast)!==-1?secondLast+' '+last:last;
+    }
+    var src='portraits/portrait-'+lastName+'.jpg';
+    var initials=lastName.charAt(0);
+    var isFirst=fi===0;
+    var item=document.createElement('div');item.className='profil-fav-item';
+    var imgClass='profil-fav-portrait'+(isFirst?' profil-fav-first':'');
+    var initClass='profil-fav-initials'+(isFirst?' profil-fav-first':'');
+    item.innerHTML='<img class="'+imgClass+'" src="'+src+'" alt="'+displayName+'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">'
+      +'<div class="'+initClass+'" style="display:none">'+initials+'</div>'
+      +'<div class="profil-fav-name">'+displayName+'</div>';
+    grid.appendChild(item);
+  });
+}
+
+function navigate(page){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('visible')});
+  // force reflow for animation
+  var el=document.getElementById('page-'+page);
+  void el.offsetWidth;
+  el.classList.add('visible');
+  document.querySelectorAll('.nav a').forEach(function(a){a.classList.remove('active')});
+  var navEl=document.getElementById('nav-'+page);
+  if(navEl)navEl.classList.add('active');
+  if(page==='contributeurs')renderContributeurs();
+  if(page==='statistiques')renderStatistiques();
+  window.scrollTo(0,0);
+}
+
+function getLetterData(l){return DATA?DATA.cineastes.filter(function(c){return c.nom.charAt(0).toUpperCase()===l}):[]}
+
+function buildAlpha(){
+  var bar=document.getElementById('alpha-bar');bar.innerHTML='';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(l){
+    var s=document.createElement('span');s.textContent=l;
+    if(getLetterData(l).length>0){s.classList.add('has-data');s.onclick=function(){selectLetter(l)}}
+    else return; // ne pas afficher les lettres sans données
+    if(l===currentLetter)s.classList.add('active');
+    bar.appendChild(s);
+  });
+}
+
+function selectLetter(l){
+  currentLetter=l;document.getElementById('search-input').value='';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s){s.classList.toggle('active',s.textContent===l)});
+  var items=getLetterData(l);items.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr')});
+  renderList(items);document.getElementById('list-letter').textContent=l;
+}
+
+function renderList(items){
+  var list=document.getElementById('cineaste-list'),count=document.getElementById('list-count');
+  list.innerHTML='';
+  if(!items.length){list.innerHTML='<div class="empty-msg">Aucun résultat</div>';count.textContent='';return}
+  count.textContent=items.length+' cinéaste'+(items.length>1?'s':'');
+  var maxTops=1;items.forEach(function(c){var n=(c.tops_contributeurs||[]).length;if(n>maxTops)maxTops=n});
+  items.forEach(function(c){
+    var row=document.createElement('div');row.className='cineaste-row';
+    var nb=(c.tops_contributeurs||[]).length;
+    var barH=Math.max(4,Math.round((nb/maxTops)*100));
+    var dates=formatDates(c);
+    var datesHtml=dates?'<span class="c-dates">'+dates+'</span>':'';
+    row.innerHTML='<div class="c-bar" style="opacity:'+(nb>0?0.3+0.7*(nb/maxTops):0.1)+'"></div>'+
+      '<div class="c-info"><span class="c-name">'+formatNom(c.nom)+'</span>'+datesHtml+'</div>'+
+      '<div class="c-badge">'+nb+' top'+(nb>1?'s':'')+'</div>';
+    row.onclick=function(){openFiche(c)};list.appendChild(row);
+  });
+}
+
+function filterList(){
+  var q=document.getElementById('search-input').value.toLowerCase().trim();
+  if(!q){selectLetter(currentLetter);return}
+  var r=DATA.cineastes.filter(function(c){return c.nom.toLowerCase().indexOf(q)!==-1});
+  r.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr')});
+  document.getElementById('list-letter').textContent='';
+  document.querySelectorAll('.alpha-bar span').forEach(function(s){s.classList.remove('active')});
+  renderList(r);
+}
+
+function openFiche(c){
+  var nb=(c.tops_contributeurs||[]).length;
+  var contribsHtml=nb>0
+    ?c.tops_contributeurs.map(function(t){return '<span class="contrib-tag" onclick="event.stopPropagation();openContribDetail(\''+t.replace(/'/g,"\\'")+'\')">'+ t+'</span>'}).join('')
+    :'<div class="empty-msg">Aucun top posté pour ce cinéaste</div>';
+  var fbHtml=c.url_facebook?'<a class="fiche-fb-link" href="'+c.url_facebook+'" target="_blank">Voir la fiche sur Facebook &#8599;</a>':'';
+
+  document.getElementById('fiche-content').innerHTML=
+    '<div class="fiche-back" onclick="closeFiche()">\u2190 Retour</div>'+
+    '<div class="fiche-name">'+formatNom(c.nom)+'</div>'+
+    '<div class="fiche-name-line"></div>'+
+    '<div class="fiche-dates">'+formatDates(c)+'</div>'+
+    '<div class="fiche-body">'+
+      '<div class="fiche-stat-block"><div class="fiche-stat-number">'+nb+'</div><div class="fiche-stat-label">tops postés</div></div>'+
+      '<div class="fiche-contribs"><div class="fiche-section">Tops postés par</div><div class="contrib-grid">'+contribsHtml+'</div></div>'+
+    '</div>'+fbHtml;
+
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow='hidden';
+}
+
+function closeFiche(){document.getElementById('fiche-overlay').classList.remove('visible');document.body.style.overflow=''}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeFiche()});
+
+function renderContributeurs(){
+  if(!DATA)return;
+  var list=document.getElementById('contrib-list'),count=document.getElementById('contrib-count');
+  var contribs=DATA.contributeurs
+    .filter(function(c){var n=(c.prenom+(c.nom?' '+c.nom:'')).trim();return n!=='version 22.8'&&n!==''})
+    .map(function(c){
+      var dn=(c.prenom+(c.nom?' '+c.nom:'')).trim();var nb=0;
+      DATA.cineastes.forEach(function(x){if(x.tops_contributeurs&&x.tops_contributeurs.indexOf(dn)!==-1)nb++});
+      return{name:dn,tops:nb};
+    });
+  contribs.sort(function(a,b){return b.tops-a.tops});
+  count.textContent=contribs.length+' contributeurs';
+  list.innerHTML=contribs.map(function(c){
+    var favs=FAVORIS[c.name]||[];
+    var favsHtml='';
+    if(favs.length){
+      favsHtml='<div class="contrib-favs-section"><div class="contrib-favs-label">Cinéastes favoris</div><div class="contrib-favs-row">';
+      var particles=['De','Van','von','Von','Du','du','Di','di','Da','da','Le','La','del','Del','Della','lo','Lo'];
+      favs.forEach(function(f,fi){
+        var displayName=f;
+        // Straub/Huillet : nom court
+        var lastName;
+        if(f==='Straub/Huillet'){lastName='Straub';displayName='Straub/Huillet';}
+        else{
+          var parts=f.split(' ');
+          var last=parts[parts.length-1];
+          var secondLast=parts.length>1?parts[parts.length-2]:'';
+          if(particles.indexOf(secondLast)!==-1){lastName=secondLast+' '+last;}
+          else{lastName=last;}
+        }
+        var src='portraits/portrait-'+lastName+'.jpg';
+        var initials=lastName.charAt(0);
+        var iFirst=fi===0?'fav-first':'';
+        favsHtml+='<div class="contrib-fav-bubble">'
+          +'<img class="contrib-fav-portrait '+iFirst+'" src="'+src+'" alt="'+displayName+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+          +'<div class="contrib-fav-initials '+iFirst+'" style="display:none">'+initials+'</div>'
+          +'<div class="contrib-fav-name">'+displayName+'</div></div>';
+      });
+      favsHtml+='</div></div>';
+    }
+    return '<div class="contrib-bubble" onclick="openContribDetail(\''+c.name.replace(/'/g,"\\'")+'\')">'
+      +'<div class="contrib-card-name">'+formatContribName(c.name)+'</div>'
+      +'<div class="contrib-card-stat">'+c.tops+' top'+(c.tops>1?'s':'')+' postés</div>'
+
+      +favsHtml+'</div>';
+  }).join('');
+}
+
+function openContribDetail(name){
+  var cin=DATA.cineastes.filter(function(c){return c.tops_contributeurs&&c.tops_contributeurs.indexOf(name)!==-1});
+  cin.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr')});
+  var favs=FAVORIS[name]||[];
+  var favsHtml=favs.length
+    ?'<div class="fiche-section" style="margin-top:1.5rem;margin-bottom:0.5rem">Cinéastes favoris</div>'
+     +'<div class="contrib-grid">'+favs.map(function(f){return '<span class="contrib-tag" style="cursor:default">&#10084; '+f+'</span>'}).join('')+'</div>'
+    :'';
+  var listHtml='<div class="cineaste-list" style="margin-top:1rem">';
+  cin.forEach(function(c){
+    var dates=formatDates(c);var dh=dates?'<span class="c-dates">'+dates+'</span>':'';
+    listHtml+='<div class="cineaste-row" style="padding-left:0" onclick="closeFiche();var c=DATA.cineastes.find(function(x){return x.fbid===\''+c.fbid+'\'});if(c)openFiche(c)">'
+      +'<span class="c-name">'+formatNom(c.nom)+'</span>'+dh+'</div>';
+  });listHtml+='</div>';
+
+  document.getElementById('fiche-content').innerHTML=
+    '<div class="fiche-back" onclick="closeFiche()">\u2190 Retour</div>'
+    +'<div class="fiche-name" style="font-size:32px">'+formatContribNamePlain(name)+'</div>'
+    +'<div class="fiche-name-line"></div>'
+    +'<div class="fiche-dates" style="font-style:italic">'+cin.length+' top'+(cin.length>1?'s':'')+' postés</div>'
+    +favsHtml
+    +'<div class="fiche-section" style="margin-top:1.5rem">Cinéastes classés</div>'
+    +listHtml;
+
+  document.getElementById('fiche-overlay').classList.add('visible');
+  document.body.style.overflow='hidden';
+}
+
+function renderStatistiques(){
+  if(!DATA)return;
+  var totalC=DATA.cineastes.length;
+  var totalContribs=DATA.contributeurs.filter(function(c){var n=(c.prenom+(c.nom?' '+c.nom:'')).trim();return n!=='version 22.8'&&n!==''}).length;
+  var enA=0,dec=0,st=0,tt=0;
+  DATA.cineastes.forEach(function(c){var nb=(c.tops_contributeurs||[]).length;tt+=nb;if(c.vivant===true)enA++;if(c.vivant===false)dec++;if(nb===0)st++});
+
+  document.getElementById('stats-hero').innerHTML=
+    mkHero(totalC,'Cinéastes')+mkHero(tt,'Tops postés')+mkHero(totalContribs,'Contributeurs');
+  document.getElementById('stats-secondary').innerHTML=
+    mkSec(enA,'En activité')+mkSec(dec,'Décédés')+mkSec(st,'Sans tops');
+
+  var ranked=DATA.cineastes.slice().sort(function(a,b){return(b.tops_contributeurs||[]).length-(a.tops_contributeurs||[]).length}).filter(function(c){return(c.tops_contributeurs||[]).length>15});
+  document.getElementById('ranking-cineastes').innerHTML=ranked.map(function(c,i){
+    var nb=(c.tops_contributeurs||[]).length;
+    return '<div class="ranking-row" onclick="navigate(\'index\');setTimeout(function(){var x=DATA.cineastes.find(function(y){return y.fbid===\''+c.fbid+'\'});if(x)openFiche(x)},100)">'
+      +'<div class="ranking-rank">'+(i+1)+'.</div>'
+      +'<div class="ranking-name">'+formatNom(c.nom)+'</div>'
+      +'<div class="ranking-value">'+nb+' tops</div></div>';
+  }).join('');
+
+
+}
+
+function mkHero(v,l){return '<div class="stat-hero-item"><div class="stat-hero-value">'+v+'</div><div class="stat-hero-label">'+l+'</div></div>'}
+function mkSec(v,l){return '<div class="stat-sec-item"><div class="stat-sec-value">'+v+'</div><div class="stat-sec-label">'+l+'</div></div>'}
+</script>
+</body>
+</html>
