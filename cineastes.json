@@ -3102,8 +3102,8 @@
       "duo": false,
       "provisoire": false,
       "naissance": 1942,
-      "deces": null,
-      "vivant": true,
+      "deces": 2026,
+      "vivant": false,
       "tops_contributeurs": [
         "MATHIEU MUZARD",
         "VINZ J. ORLOV",
@@ -24666,8 +24666,8 @@
       "duo": false,
       "provisoire": false,
       "naissance": 1932,
-      "deces": null,
-      "vivant": true,
+      "deces": 2026,
+      "vivant": false,
       "tops_contributeurs": [
         "KEEFE MURPHY",
         "DANIEL JIRDEN",
@@ -40269,8 +40269,8 @@
       "duo": false,
       "provisoire": false,
       "naissance": 1969,
-      "deces": null,
-      "vivant": true,
+      "deces": 2026,
+      "vivant": false,
       "tops_contributeurs": [
         "DANIEL JIRDEN",
         "BASTIEN TEKLOW",
@@ -47943,8 +47943,8 @@
       "duo": false,
       "provisoire": false,
       "naissance": 1930,
-      "deces": null,
-      "vivant": true,
+      "deces": 2026,
+      "vivant": false,
       "tops_contributeurs": [
         "MATHIEU MUZARD",
         "BASTIEN TEKLOW",
