@@ -7076,7 +7076,8 @@
         },
         {
           "rang": 4,
-          "titre": "Cut"
+          "titre": "Cut",
+          "annee": 2004
         },
         {
           "rang": 5,
@@ -7735,7 +7736,8 @@
         },
         {
           "rang": 5,
-          "titre": "Les Statues meurent aussi"
+          "titre": "Les Statues meurent aussi",
+          "annee": 1953
         },
         {
           "rang": 6,
@@ -7869,12 +7871,12 @@
         },
         {
           "rang": 4,
-          "titre": "Austin Powers – Austin Powers : International Man of Mystery",
+          "titre": "Austin Powers",
           "annee": 1997
         },
         {
           "rang": 5,
-          "titre": "Austin Powers - l'espion qui m'a tirée",
+          "titre": "Austin Powers : l'espion qui m'a tirée",
           "annee": 1999
         }
       ]
@@ -7993,7 +7995,8 @@
         },
         {
           "rang": 4,
-          "titre": "La Vérité sur le cas de Monsieur Valdemar"
+          "titre": "La Vérité sur le cas de Monsieur Valdemar",
+          "annee": 1990
         },
         {
           "rang": 5,
@@ -8382,7 +8385,7 @@
         },
         {
           "rang": 2,
-          "titre": "Valeska Gert: Rien que pour le plaisir, rien que pour le jeu",
+          "titre": "Valeska Gert : Rien que pour le plaisir, rien que pour le jeu",
           "annee": 1978
         },
         {
@@ -9322,7 +9325,8 @@
         },
         {
           "rang": 8,
-          "titre": "Intégrale des courts-métrages soit 26 films."
+          "titre": "Intégrale des courts-métrages soit 26 films.",
+          "annee": "1964-1992"
         }
       ]
     },
