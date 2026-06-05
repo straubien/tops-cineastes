@@ -969,7 +969,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Dom Juan ou le Festin de Pierre"
+          "titre": "Dom Juan ou le Festin de Pierre",
           "annee": 1965
         },
         {
@@ -5755,7 +5755,7 @@
         {
           "rang": 2,
           "titre": "Épisodes des séries Pause Café et Pause Café Tendresse",
-          "annee": 1981 / 1989
+          "annee": "1981-1989"
         }
       ]
     },
