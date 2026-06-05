@@ -407,6 +407,7 @@
         {
           "rang": 9,
           "titre": "Par-delà les nuages"
+          "annee": 1995
         }
       ]
     },
@@ -969,10 +970,12 @@
         {
           "rang": 1,
           "titre": "Dom Juan ou le Festin de Pierre"
+          "annee": 1965
         },
         {
           "rang": 2,
           "titre": "On purge bébé"
+          "annee": 1961
         }
       ]
     },
@@ -1456,6 +1459,7 @@
         {
           "rang": 8,
           "titre": "Xenogenesis"
+          "annee": 1978
         }
       ]
     },
@@ -2442,14 +2446,17 @@
         {
           "rang": 19,
           "titre": "Transfer"
+          "annee": 1966
         },
         {
           "rang": 20,
           "titre": "From the Drain"
+          "annee": 1967
         },
         {
           "rang": 21,
           "titre": "Chacun son cinéma"
+          "annee": 2007
         },
         {
           "rang": 22,
@@ -2464,6 +2471,7 @@
         {
           "rang": 24,
           "titre": "The lie chair"
+          "annee": 1975
         },
         {
           "rang": 25,
@@ -2473,10 +2481,12 @@
         {
           "rang": 26,
           "titre": "Camera"
+          "annee": 2000
         },
         {
           "rang": 27,
           "titre": "The Nest"
+          "annee": 2014
         },
         {
           "rang": 28,
@@ -3281,6 +3291,7 @@
         {
           "rang": 3,
           "titre": "Histoires extraordinaires"
+          "annee": 1968
         },
         {
           "rang": 4,
@@ -3310,6 +3321,7 @@
         {
           "rang": 9,
           "titre": "Boccace 70"
+          "annee": 1962
         },
         {
           "rang": 10,
@@ -3473,7 +3485,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Selfie,"
+          "titre": "Selfie"
+          "annee": 2019
         }
       ]
     },
@@ -3613,10 +3626,12 @@
         {
           "rang": 1,
           "titre": "Les Vampires"
+          "annee": 1957
         },
         {
           "rang": 2,
           "titre": "Le Château des amants maudits"
+          "annee": 1956
         }
       ]
     },
@@ -3711,6 +3726,7 @@
         {
           "rang": 3,
           "titre": "Le Père Noël est une ordure"
+          "annee": 1985
         }
       ]
     },
@@ -4182,10 +4198,12 @@
         {
           "rang": 1,
           "titre": "Le Monstre"
+          "annee": 1955
         },
         {
           "rang": 2,
           "titre": "La Marque"
+          "annee": 1957
         },
         {
           "rang": 3,
@@ -4883,6 +4901,7 @@
         {
           "rang": 3,
           "titre": "Seuls two"
+          "annee": 2008
         }
       ]
     },
@@ -4912,6 +4931,7 @@
         {
           "rang": 1,
           "titre": "Schizophrenia, 1983."
+          "annee": 1983
         }
       ]
     },
@@ -5111,6 +5131,7 @@
         {
           "rang": 2,
           "titre": "Trois histoires de l'au-delà"
+          "annee": 2002
         }
       ]
     },
@@ -5733,8 +5754,8 @@
         },
         {
           "rang": 2,
-          "titre": "Épisodes des séries Pause Café (1981) et Pause Café Tendresse",
-          "annee": 1989
+          "titre": "Épisodes des séries Pause Café et Pause Café Tendresse",
+          "annee": 1981 / 1989
         }
       ]
     },
@@ -6243,6 +6264,7 @@
         {
           "rang": 2,
           "titre": "La Cité de Dieu"
+          "annee": 2002
         },
         {
           "rang": 3,
@@ -7900,10 +7922,12 @@
         {
           "rang": 1,
           "titre": "Sin City : J'ai tué pour elle"
+          "annee": 2014
         },
         {
           "rang": 2,
           "titre": "Sin City"
+          "annee": 2005
         },
         {
           "rang": 3,
@@ -8186,6 +8210,7 @@
         {
           "rang": 2,
           "titre": "Paris, je t'aime"
+          "annee": 2006
         }
       ]
     },
@@ -8350,10 +8375,11 @@
         {
           "rang": 1,
           "titre": "L'Honneur perdu de Katharina Blum"
+          "annee": 1975
         },
         {
           "rang": 2,
-          "titre": "Valeska Gert : Rien que pour le plaisir, rien que pour le jeu,",
+          "titre": "Valeska Gert: Rien que pour le plaisir, rien que pour le jeu",
           "annee": 1978
         },
         {
@@ -8779,6 +8805,7 @@
         {
           "rang": 1,
           "titre": "Ziegfeld Follies"
+          "annee": 1947
         }
       ]
     },
@@ -9218,10 +9245,12 @@
         {
           "rang": 5,
           "titre": "Cold meridian"
+          "annee": 2020
         },
         {
           "rang": 6,
           "titre": "GUO4"
+          "annee": 2019
         }
       ]
     },
@@ -9444,6 +9473,7 @@
         {
           "rang": 5,
           "titre": "Histoires de vies brisées : Les « double peine » de Lyon"
+          "annee": 2001
         },
         {
           "rang": 6,
@@ -9523,6 +9553,7 @@
         {
           "rang": 2,
           "titre": "En thérapie"
+          "annee": 2021-2022
         },
         {
           "rang": 3,
@@ -9741,6 +9772,7 @@
         {
           "rang": 1,
           "titre": "Fulltime killer"
+          "annee": 2001
         }
       ]
     },
