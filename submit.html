@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPS/CINÉASTES — Soumettre mes tops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #f7f3ec;
+  --bg-subtle: #ede8df;
+  --bg-card: #faf8f4;
+  --rouge: #C0392B;
+  --noir: #1a1a1a;
+  --brun: #3d2b1a;
+  --brun-pale: #7a6350;
+  --text: #111008;
+  --border: #d0c8b8;
+  --border-dim: #ddd6c8;
+  --font: 'Cormorant Garamond', Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--noir);
+  padding: 0;
+  position: relative;
+}
+.header-bar {
+  height: 4px;
+  display: flex;
+}
+.header-bar-main { flex: 1; background: var(--rouge); }
+.header-bar-end  { width: 40px; background: var(--noir); }
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: #f0ece3;
+  text-decoration: none;
+}
+.logo span {
+  background: var(--rouge);
+  color: #f0ece3;
+  padding: 1px 6px;
+  margin: 0 4px;
+}
+.header-user {
+  font-family: var(--font);
+  font-size: 15px;
+  font-style: italic;
+  color: rgba(240,236,227,0.55);
+}
+.header-user strong { color: rgba(240,236,227,0.85); font-style: normal; }
+.btn-logout {
+  font-family: var(--font);
+  font-size: 14px;
+  color: rgba(240,236,227,0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 16px;
+  transition: color 0.15s;
+}
+.btn-logout:hover { color: var(--rouge); }
+
+/* ── MAIN ── */
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+/* ── LOGIN ── */
+.login-wrap {
+  max-width: 420px;
+  margin: 6rem auto;
+  text-align: center;
+}
+.login-title {
+  font-family: var(--font);
+  font-size: 38px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.login-sub {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-bottom: 2.5rem;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.login-form input {
+  font-family: var(--font);
+  font-size: 18px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-form input:focus { border-color: var(--rouge); }
+.login-form input::placeholder { color: var(--brun-pale); font-style: italic; }
+.btn-primary {
+  font-family: var(--font);
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f0ece3;
+  background: var(--noir);
+  border: none;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+.btn-primary:hover { background: var(--rouge); }
+.btn-primary:disabled { background: var(--brun-pale); cursor: wait; }
+.login-error {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--rouge);
+  margin-top: 8px;
+}
+
+/* ── PAGE SOUMISSION ── */
+.page-title {
+  font-family: var(--font);
+  font-size: 42px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-bottom: 2.5rem;
+}
+
+/* Sélecteur de cinéaste */
+.cineaste-select-wrap {
+  margin-bottom: 1.5rem;
+}
+.field-label {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rouge);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.field-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--rouge);
+  flex-shrink: 0;
+}
+/* Autocomplete cinéaste */
+.autocomplete-wrap {
+  position: relative;
+}
+.autocomplete-input {
+  font-family: var(--font);
+  font-size: 20px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.autocomplete-input:focus { border-color: var(--rouge); }
+.autocomplete-input::placeholder { color: var(--brun-pale); font-style: italic; }
+.autocomplete-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: 4px 4px 0 var(--noir);
+}
+.autocomplete-dropdown.visible { display: block; }
+.autocomplete-item {
+  font-family: var(--font);
+  font-size: 18px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-bottom: 0.5px solid var(--border-dim);
+  transition: background 0.1s;
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover,
+.autocomplete-item.selected { background: var(--bg-subtle); color: var(--rouge); }
+.autocomplete-item b { color: var(--rouge); font-weight: 700; }
+
+/* Zone de texte */
+.textarea-wrap { margin-bottom: 1.5rem; }
+.tops-textarea {
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.7;
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  min-height: 280px;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+.tops-textarea:focus { border-color: var(--rouge); }
+.tops-textarea::placeholder { color: var(--brun-pale); font-style: italic; }
+
+.textarea-hint {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-top: 6px;
+}
+
+/* Boutons d'action */
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+.btn-secondary {
+  font-family: var(--font);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brun);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--noir); color: var(--noir); }
+
+/* Résultat du parsing */
+.result-wrap {
+  display: none;
+  margin-top: 2rem;
+  border-top: 3px solid var(--noir);
+  padding-top: 1.5rem;
+}
+.result-wrap.visible { display: block; }
+.result-title {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rouge);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--rouge);
+}
+.result-cineaste {
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.result-cineaste strong { font-weight: 600; color: var(--rouge); }
+
+.films-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  counter-reset: film-counter;
+}
+.films-list li {
+  counter-increment: film-counter;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--border-dim);
+  position: relative;
+  padding-left: 2.2rem;
+}
+.films-list li:last-child { border-bottom: none; }
+.films-list li::before {
+  content: counter(film-counter) '.';
+  position: absolute;
+  left: 0;
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--noir);
+  min-width: 1.8rem;
+}
+.film-titre {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 18px;
+  color: var(--text);
+  flex: 1;
+}
+.film-annee {
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 12px;
+  color: var(--brun-pale);
+  white-space: nowrap;
+}
+.film-note {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brun-pale);
+}
+
+/* Avertissement / erreur parsing */
+.parse-warning {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--brun-pale);
+  background: var(--bg-subtle);
+  border-left: 3px solid var(--brun-pale);
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+}
+
+/* Confirmation soumission */
+.submit-confirm {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 1rem 0;
+}
+.submit-note {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--brun-pale);
+}
+
+/* Message de succès */
+.success-msg {
+  display: none;
+  background: var(--noir);
+  color: #f0ece3;
+  padding: 1.5rem 2rem;
+  margin-top: 1.5rem;
+  position: relative;
+}
+.success-msg.visible { display: block; }
+.success-msg::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 12px; height: 100%;
+  background: var(--rouge);
+}
+.success-msg h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.success-msg p {
+  font-size: 16px;
+  font-style: italic;
+  opacity: 0.65;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(240,236,227,0.3);
+  border-top-color: #f0ece3;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-bar {
+  height: 2px;
+  background: var(--border-dim);
+  margin: 1rem 0;
+  overflow: hidden;
+  display: none;
+}
+.loading-bar.visible { display: block; }
+.loading-bar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--rouge);
+  animation: loading 1.2s ease-in-out infinite;
+}
+@keyframes loading {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* Soumissions précédentes */
+.prev-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-dim);
+}
+.prev-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  margin-bottom: 1rem;
+}
+.prev-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border-dim);
+  font-size: 17px;
+}
+.prev-item:last-child { border-bottom: none; }
+.prev-name { color: var(--text); }
+.prev-status {
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 12px;
+  padding: 2px 10px;
+}
+.prev-status.pending  { background: var(--bg-subtle); color: var(--brun-pale); }
+.prev-status.approved { background: #1a3a1a; color: #a0d0a0; }
+.prev-status.rejected { background: #3a1a1a; color: #d0a0a0; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .main { padding: 2rem 1.2rem; }
+  .header-inner { padding: 0.8rem 1.2rem; }
+  .page-title { font-size: 32px; }
+}
+
+/* ── SET PASSWORD ───────────────────────────────────────────── */
+.setpwd-wrap {
+  max-width: 420px;
+  margin: 6rem auto;
+  text-align: center;
+}
+.setpwd-title {
+  font-size: 34px;
+  font-weight: 300;
+  margin-bottom: 6px;
+}
+.setpwd-sub {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-bottom: 2.5rem;
+}
+.setpwd-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── TABS ──────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 3px solid var(--noir);
+  margin-bottom: 2rem;
+}
+.tab-btn {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--brun-pale);
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--noir);
+  background: var(--bg-subtle);
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; left: 0; right: 0;
+  height: 3px;
+  background: var(--rouge);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── MULTI-SELECT CHIPS ─────────────────────────────────────── */
+.chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 36px;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--noir);
+  color: #f0ece3;
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 5px 10px 5px 14px;
+  cursor: grab;
+  user-select: none;
+  transition: background 0.15s;
+  position: relative;
+}
+.chip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--rouge);
+}
+.chip.dragging { opacity: 0.4; }
+.chip.drag-over { background: #2a2a2a; }
+.chip-rank {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  color: rgba(240,236,227,0.45);
+  min-width: 14px;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: rgba(240,236,227,0.5);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  margin-left: 4px;
+  transition: color 0.1s;
+}
+.chip-remove:hover { color: var(--rouge); }
+.chips-hint {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-bottom: 12px;
+}
+.chips-max-msg {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rouge);
+  margin-bottom: 8px;
+  display: none;
+}
+
+/* ── FILMS LIBRES ───────────────────────────────────────────── */
+.films-count {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+.films-count.warn { color: var(--rouge); }
+.films-list-libre {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+.films-list-libre li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--border-dim);
+  font-size: 17px;
+}
+.films-list-libre li:last-child { border-bottom: none; }
+.films-list-libre .film-titre { flex: 1; font-family: 'Times New Roman', serif; }
+.films-list-libre .film-annee { font-size: 13px; color: var(--brun-pale); }
+
+/* ── AVATAR ─────────────────────────────────────────────────── */
+.avatar-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  background: var(--rouge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f0ece3;
+  font-family: system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+}
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-upload-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.avatar-input {
+  display: none;
+}
+.avatar-label {
+  font-family: var(--font);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brun);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 10px 20px;
+  cursor: pointer;
+  display: inline-block;
+  transition: all 0.15s;
+  text-align: center;
+}
+.avatar-label:hover { border-color: var(--noir); color: var(--noir); }
+.avatar-hint {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brun-pale);
+}
+.avatar-success {
+  display: none;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--vert, #1a6b3a);
+  margin-top: 8px;
+}
+
+/* ── PROFIL SUCCESS ─────────────────────────────────────────── */
+.profil-success {
+  display: none;
+  background: var(--noir);
+  color: #f0ece3;
+  padding: 1.2rem 1.8rem;
+  margin-top: 1.5rem;
+  position: relative;
+}
+.profil-success.visible { display: block; }
+.profil-success::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 8px; height: 100%;
+  background: var(--rouge);
+}
+.profil-success h3 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.profil-success p { font-size: 15px; font-style: italic; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-bar">
+    <div class="header-bar-main"></div>
+    <div class="header-bar-end"></div>
+  </div>
+  <div class="header-inner">
+    <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
+    <div style="display:flex;align-items:center">
+      <div class="header-user" id="header-user" style="display:none">
+        Connecté en tant que <strong id="header-name"></strong>
+      </div>
+      <button class="btn-logout" id="btn-logout" style="display:none" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="section-setpwd" style="display:none">
+  <div class="setpwd-wrap">
+    <div class="setpwd-title">Bienvenue</div>
+    <div class="setpwd-sub">Choisissez votre mot de passe</div>
+    <div class="setpwd-form">
+      <input type="password" id="setpwd-password" placeholder="Nouveau mot de passe" autocomplete="new-password">
+      <input type="password" id="setpwd-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password">
+      <button class="btn-primary" id="btn-setpwd">Valider</button>
+      <div class="login-error" id="setpwd-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div id="section-login">
+  <div class="login-wrap">
+    <div class="login-title">Connexion</div>
+    <div class="login-sub">Espace réservé aux contributeurs</div>
+    <div class="login-form">
+      <input type="email" id="login-email" placeholder="Votre adresse email" autocomplete="email">
+      <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password">
+      <button class="btn-primary" id="btn-login" onclick="login()">Se connecter</button>
+      <div class="login-error" id="login-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SOUMISSION -->
+<div id="section-submit" style="display:none">
+  <div class="main">
+    <div class="page-title" id="submit-title">Mon profil</div>
+    <div class="page-sub">Gérez vos tops, cinéastes favoris, films et présentation.</div>
+
+    <!-- ── ONGLETS ───────────────────────────────────────── -->
+    <div class="tabs" id="main-tabs">
+      <button class="tab-btn active" data-tab="tops">Tops</button>
+      <button class="tab-btn" data-tab="favoris">Cinéastes ❤</button>
+      <button class="tab-btn" data-tab="autres-cineastes">Autres cinéastes</button>
+      <button class="tab-btn" data-tab="films-favoris">Films ❤</button>
+      <button class="tab-btn" data-tab="autres-films">Autres films</button>
+      <button class="tab-btn" data-tab="presentation">Présentation</button>
+      <button class="tab-btn" data-tab="avatar">Avatar</button>
+    </div>
+
+    <!-- ── ONGLET 1 : TOPS ──────────────────────────────── -->
+    <div class="tab-panel active" id="panel-tops">
+      <div class="cineaste-select-wrap">
+        <div class="field-label">Cinéaste</div>
+        <div class="autocomplete-wrap">
+          <input type="text" class="autocomplete-input" id="cineaste-input"
+            placeholder="Tapez un nom…" autocomplete="off">
+          <div class="autocomplete-dropdown" id="cineaste-dropdown"></div>
+        </div>
+      </div>
+      <div class="textarea-wrap">
+        <div class="field-label">Votre top</div>
+        <textarea class="tops-textarea" id="tops-textarea"
+          placeholder="Collez votre liste ici, dans n'importe quel format…
+
+Exemples acceptés :
+1. The Thing (1982)
+2- Halloween (1978)
+3. Fog – The Fog (1980)
+
+Ou :
+1) The Thing
+2) Halloween
+3) Fog"></textarea>
+        <div class="textarea-hint">Tous les formats sont acceptés — avec ou sans année, titre français ou anglais, commentaires inclus.</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btn-parse">Analyser ma liste</button>
+        <button class="btn-secondary" id="btn-reset-tops">Recommencer</button>
+      </div>
+      <div class="loading-bar" id="loading-bar"></div>
+      <div class="result-wrap" id="result-wrap">
+        <div class="result-title">Résultat de l'analyse</div>
+        <div class="result-cineaste" id="result-cineaste"></div>
+        <div class="parse-warning" id="parse-warning" style="display:none"></div>
+        <ol class="films-list" id="films-list"></ol>
+        <div class="submit-confirm">
+          <button class="btn-primary" id="btn-submit">Soumettre pour validation</button>
+          <div class="submit-note">Votre top sera vérifié par Mathieu avant publication.</div>
+        </div>
+      </div>
+      <div class="success-msg" id="success-msg">
+        <h3>Top soumis !</h3>
+        <p>Mathieu sera notifié et votre top apparaîtra sur le site après validation.</p>
+      </div>
+      <div class="prev-section" id="prev-section" style="display:none">
+        <div class="prev-title">Soumissions récentes</div>
+        <div id="prev-list"></div>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 2 : CINÉASTES FAVORIS ────────────────── -->
+    <div class="tab-panel" id="panel-favoris">
+      <div class="field-label">Cinéastes favoris (max 3) — glissez pour réordonner</div>
+      <div class="chips-list" id="favoris-chips"></div>
+      <div class="chips-max-msg" id="favoris-max">Maximum 3 cinéastes favoris atteint.</div>
+      <div class="autocomplete-wrap" id="favoris-ac-wrap">
+        <input type="text" class="autocomplete-input" id="favoris-input"
+          placeholder="Ajouter un cinéaste…" autocomplete="off">
+        <div class="autocomplete-dropdown" id="favoris-dropdown"></div>
+      </div>
+      <div class="chips-hint">Ces cinéastes apparaîtront en tête de votre profil avec un ❤.</div>
+      <div class="actions" style="margin-top:1.5rem">
+        <button class="btn-primary" id="btn-submit-favoris">Soumettre pour validation</button>
+      </div>
+      <div class="profil-success" id="success-favoris">
+        <h3>Soumis !</h3>
+        <p>Mathieu validera vos cinéastes favoris avant publication.</p>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 3 : AUTRES CINÉASTES ─────────────────── -->
+    <div class="tab-panel" id="panel-autres-cineastes">
+      <div class="field-label">Autres cinéastes appréciés — glissez pour réordonner</div>
+      <div class="chips-list" id="autres-chips"></div>
+      <div class="autocomplete-wrap">
+        <input type="text" class="autocomplete-input" id="autres-input"
+          placeholder="Ajouter un cinéaste…" autocomplete="off">
+        <div class="autocomplete-dropdown" id="autres-dropdown"></div>
+      </div>
+      <div class="chips-hint">Les 10 premiers seront visibles directement, les suivants après "Voir plus".</div>
+      <div class="actions" style="margin-top:1.5rem">
+        <button class="btn-primary" id="btn-submit-autres">Soumettre pour validation</button>
+      </div>
+      <div class="profil-success" id="success-autres">
+        <h3>Soumis !</h3>
+        <p>Mathieu validera votre liste avant publication.</p>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 4 : FILMS FAVORIS ─────────────────────── -->
+    <div class="tab-panel" id="panel-films-favoris">
+      <div class="textarea-wrap">
+        <div class="field-label">Films favoris (max 10)</div>
+        <textarea class="tops-textarea" id="films-fav-textarea"
+          placeholder="Un film par ligne — avec ou sans année :
+Le Sacrifice (1986)
+Andreï Roublev (1966)
+Stalker (1979)"></textarea>
+        <div class="textarea-hint">Pas besoin de numéroter — collez simplement vos films.</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btn-parse-films-fav">Analyser</button>
+        <button class="btn-secondary" id="btn-reset-films-fav">Recommencer</button>
+      </div>
+      <div class="result-wrap" id="result-films-fav">
+        <div class="result-title">Résultat</div>
+        <div class="parse-warning" id="warn-films-fav" style="display:none"></div>
+        <div class="films-count" id="count-films-fav"></div>
+        <ul class="films-list-libre" id="list-films-fav"></ul>
+        <div class="submit-confirm">
+          <button class="btn-primary" id="btn-submit-films-fav">Soumettre pour validation</button>
+          <div class="submit-note">Mathieu validera vos films favoris avant publication.</div>
+        </div>
+      </div>
+      <div class="profil-success" id="success-films-fav">
+        <h3>Soumis !</h3>
+        <p>Mathieu validera vos films favoris avant publication.</p>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 5 : AUTRES FILMS ──────────────────────── -->
+    <div class="tab-panel" id="panel-autres-films">
+      <div class="textarea-wrap">
+        <div class="field-label">Autres films</div>
+        <textarea class="tops-textarea" id="autres-films-textarea"
+          placeholder="Un film par ligne — avec ou sans année :
+Nashville (1975)
+Short Cuts (1993)"></textarea>
+        <div class="textarea-hint">Sans limite de nombre. Pas besoin de numéroter.</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btn-parse-autres-films">Analyser</button>
+        <button class="btn-secondary" id="btn-reset-autres-films">Recommencer</button>
+      </div>
+      <div class="result-wrap" id="result-autres-films">
+        <div class="result-title">Résultat</div>
+        <div class="parse-warning" id="warn-autres-films" style="display:none"></div>
+        <div class="films-count" id="count-autres-films"></div>
+        <ul class="films-list-libre" id="list-autres-films"></ul>
+        <div class="submit-confirm">
+          <button class="btn-primary" id="btn-submit-autres-films">Soumettre pour validation</button>
+          <div class="submit-note">Mathieu validera votre liste avant publication.</div>
+        </div>
+      </div>
+      <div class="profil-success" id="success-autres-films">
+        <h3>Soumis !</h3>
+        <p>Mathieu validera votre liste avant publication.</p>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 6 : PRÉSENTATION ──────────────────────── -->
+    <div class="tab-panel" id="panel-presentation">
+      <div class="textarea-wrap">
+        <div class="field-label">Présentation cinéphile</div>
+        <textarea class="tops-textarea" id="presentation-textarea"
+          placeholder="Décrivez votre rapport au cinéma en quelques lignes…"></textarea>
+        <div class="textarea-hint">Texte libre. Sera affiché sur votre profil après validation.</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btn-submit-presentation">Soumettre pour validation</button>
+      </div>
+      <div class="profil-success" id="success-presentation">
+        <h3>Soumis !</h3>
+        <p>Mathieu validera votre présentation avant publication.</p>
+      </div>
+    </div>
+
+    <!-- ── ONGLET 7 : AVATAR ────────────────────────────── -->
+    <div class="tab-panel" id="panel-avatar">
+      <div class="field-label">Photo de profil</div>
+      <div class="avatar-wrap">
+        <div class="avatar-preview" id="avatar-preview">
+          <span id="avatar-initiales"></span>
+        </div>
+        <div class="avatar-upload-zone">
+          <input type="file" class="avatar-input" id="avatar-input" accept="image/jpeg,image/png,image/webp">
+          <label for="avatar-input" class="avatar-label">Choisir une photo…</label>
+          <div class="avatar-hint">Format JPG, PNG ou WebP. La photo sera publiée immédiatement sans validation.</div>
+          <button class="btn-primary" id="btn-upload-avatar" style="display:none">Publier cette photo</button>
+          <div class="avatar-success" id="avatar-success">✓ Photo publiée avec succès.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CONFIG SUPABASE ──────────────────────────────────────────
+const SUPABASE_URL = 'https://afbdrqrslgduomimkmyt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmYmRycXJzbGdkdW9taW1rbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTExMTEsImV4cCI6MjA5NTk4NzExMX0.uvOvP-2cfgrIPdOrThLERwOGKid8OYExq1xro-5TAb8';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var currentUser = null;
+var currentContributor = null;
+var parsedFilms = null;
+
+// ── INIT ─────────────────────────────────────────────────────
+(async function(){
+  // Détecter un token d'invitation ou de récupération dans l'URL
+  var hash = window.location.hash;
+  var isInvite = hash.includes('type=invite') || hash.includes('type=recovery');
+
+  sb.auth.onAuthStateChange(async function(event, session){
+    if((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session && isInvite){
+      // Invitation : montrer le formulaire de mot de passe
+      document.getElementById('section-setpwd').style.display = 'block';
+      document.getElementById('section-login').style.display = 'none';
+      isInvite = false; // ne déclencher qu'une fois
+    } else if(event === 'SIGNED_IN' && session && !isInvite){
+      await onLogin(session.user);
+    } else if(event === 'USER_UPDATED' && session){
+      // Mot de passe défini avec succès
+      document.getElementById('section-setpwd').style.display = 'none';
+      await onLogin(session.user);
+    } else if(event === 'SIGNED_OUT'){
+      onLogout();
+    }
+  });
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && !isInvite){
+    await onLogin(session.user);
+  }
+})();
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function login(){
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-password').value;
+  var btn = document.getElementById('btn-login');
+  var errEl = document.getElementById('login-error');
+
+  if(!email || !password){
+    showError('Veuillez remplir les deux champs.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion…';
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+    showError('Email ou mot de passe incorrect.');
+  }
+}
+
+function showError(msg){
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function formatPrenom(displayName){
+  if(!displayName) return '';
+  var prenom = displayName.split(' ')[0];
+  return prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
+}
+
+async function onLogin(user){
+  currentUser = user;
+  // Récupérer le contributeur lié
+  const { data, error } = await sb.from('contributors')
+    .select('*')
+    .eq('auth_id', user.id)
+    .single();
+
+  if(error || !data){
+    // Pas de contributeur lié
+    showError('Votre compte n\'est pas encore lié à un profil contributeur. Contactez Mathieu.');
+    await sb.auth.signOut();
+    return;
+  }
+
+  currentContributor = data;
+
+  // Afficher l'interface
+  document.getElementById('section-login').style.display = 'none';
+  document.getElementById('section-submit').style.display = 'block';
+  document.getElementById('header-user').style.display = 'block';
+  document.getElementById('btn-logout').style.display = 'block';
+  document.getElementById('header-name').textContent = formatPrenom(data.display_name);
+  document.getElementById('submit-title').textContent = 'Mes tops — ' + formatPrenom(data.display_name);
+
+  // Charger les soumissions précédentes
+  loadPrevSubmissions();
+  initProfil();
+}
+
+function onLogout(){
+  currentUser = null;
+  currentContributor = null;
+  document.getElementById('section-login').style.display = 'block';
+  document.getElementById('section-submit').style.display = 'none';
+  document.getElementById('header-user').style.display = 'none';
+  document.getElementById('btn-logout').style.display = 'none';
+}
+
+async function logout(){
+  await sb.auth.signOut();
+}
+
+// ── AUTOCOMPLETE CINÉASTES ────────────────────────────────────
+var cineastesIndex = [];
+var selectedCineaste = null;
+var acSelectedIdx = -1;
+
+// Charger cineastes.json
+fetch('cineastes.json').then(function(r){ return r.json(); }).then(function(data){
+  cineastesIndex = data.cineastes.map(function(c){ return c.nom; });
+}).catch(function(){ /* silencieux si hors site */ });
+
+function normAc(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+function filterCineastes(){
+  var q = normAc(document.getElementById('cineaste-input').value.trim());
+  var dropdown = document.getElementById('cineaste-dropdown');
+  selectedCineaste = null;
+  acSelectedIdx = -1;
+
+  if(q.length < 2){
+    dropdown.classList.remove('visible');
+    dropdown.innerHTML = '';
+    return;
+  }
+
+  var results = cineastesIndex.filter(function(nom){
+    return normAc(nom).indexOf(q) !== -1;
+  }).slice(0, 12);
+
+  if(!results.length){
+    dropdown.classList.remove('visible');
+    return;
+  }
+
+    dropdown.innerHTML = '';
+  results.forEach(function(nom, i){
+    var normNom = normAc(nom);
+    var idx = normNom.indexOf(q);
+    var highlighted = nom.slice(0, idx)
+      + '<b>' + nom.slice(idx, idx + q.length) + '</b>'
+      + nom.slice(idx + q.length);
+    var div = document.createElement('div');
+    div.className = 'autocomplete-item';
+    div.setAttribute('data-nom', nom);
+    div.setAttribute('data-idx', i);
+    div.innerHTML = highlighted;
+    div.addEventListener('click', function(){ selectCineaste(this.getAttribute('data-nom')); });
+    dropdown.appendChild(div);
+  });
+
+  dropdown.classList.add('visible');
+}
+
+function selectCineaste(nom){
+  selectedCineaste = nom;
+  document.getElementById('cineaste-input').value = nom;
+  document.getElementById('cineaste-dropdown').classList.remove('visible');
+  document.getElementById('cineaste-dropdown').innerHTML = '';
+  acSelectedIdx = -1;
+}
+
+function handleKey(e){
+  var dropdown = document.getElementById('cineaste-dropdown');
+  var items = dropdown.querySelectorAll('.autocomplete-item');
+  if(!items.length) return;
+
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    acSelectedIdx = Math.min(acSelectedIdx + 1, items.length - 1);
+    items.forEach(function(el, i){ el.classList.toggle('selected', i === acSelectedIdx); });
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    acSelectedIdx = Math.max(acSelectedIdx - 1, 0);
+    items.forEach(function(el, i){ el.classList.toggle('selected', i === acSelectedIdx); });
+  } else if(e.key === 'Enter' && acSelectedIdx >= 0){
+    e.preventDefault();
+    selectCineaste(items[acSelectedIdx].getAttribute('data-nom'));
+  } else if(e.key === 'Escape'){
+    dropdown.classList.remove('visible');
+  }
+}
+
+// Fermer le dropdown si clic ailleurs
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.autocomplete-wrap')){
+    var dropdown = document.getElementById('cineaste-dropdown');
+    if(dropdown) dropdown.classList.remove('visible');
+  }
+});
+
+// ── PARSING JS PUR ───────────────────────────────────────────
+function parseTopsBrut(texte){
+  var films = [];
+  var rang = 0;
+  var lines = texte.split('\n');
+
+  lines.forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+
+    // Supprimer les émojis et commentaires courants
+    line = line.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').trim();
+    line = line.replace(/[\u2600-\u27BF]/gu, '').trim();
+
+    // Pattern : commence par un numéro (1. / 1- / 1) / 01. etc.)
+    var m = line.match(/^(\d+)[\.\-\)]\s*(.+)$/);
+    if(!m) return;
+
+    rang++;
+    var contenu = m[2].trim();
+
+    // Extraire l'année : (1982) en fin de chaîne
+    var annee = null;
+    var anneeM = contenu.match(/\((\d{4})\)\s*(?:–.*)?$/);
+    if(anneeM){
+      annee = parseInt(anneeM[1]);
+      contenu = contenu.slice(0, anneeM.index).trim();
+    }
+
+    // Supprimer les commentaires après – ou — ou "à revoir" etc.
+    contenu = contenu.replace(/\s*[–—]\s*à revoir.*$/i, '').trim();
+    contenu = contenu.replace(/\s*–\s*à revoir.*$/i, '').trim();
+    contenu = contenu.replace(/\(à revoir.*?\)/i, '').trim();
+    contenu = contenu.replace(/\s*❤.*$/, '').trim();
+
+    // Si le titre contient " - " ou " – ", garder le titre français (avant)
+    // sauf si le titre anglais est entre parenthèses
+    var titreFr = contenu;
+    var titreParenM = contenu.match(/^(.+?)\s*[\(\-–]\s*(.+?)\s*[\)\-–]?\s*$/);
+    if(titreParenM && !anneeM){
+      // Deux titres séparés par – ou ( ) : garder le premier
+      titreFr = titreParenM[1].trim();
+    } else {
+      // Nettoyer les parenthèses résiduelles sans année
+      titreFr = contenu.replace(/\([^0-9][^)]*\)/g, '').trim();
+    }
+
+    // Nettoyer les tirets résiduels en fin
+    titreFr = titreFr.replace(/\s*[-–—]+\s*$/, '').trim();
+
+    if(titreFr){
+      films.push({ rang: rang, titre: titreFr, annee: annee });
+    }
+  });
+
+  return films;
+}
+
+// ── PARSING via Claude API ────────────────────────────────────
+async function parseTops(){
+  var cineaste = selectedCineaste || document.getElementById('cineaste-input').value.trim();
+  var texte = document.getElementById('tops-textarea').value.trim();
+
+  if(!cineaste){
+    alert('Veuillez sélectionner un cinéaste dans la liste.');
+    return;
+  }
+  if(!texte){
+    alert('Veuillez coller votre liste de films.');
+    return;
+  }
+
+  var btn = document.getElementById('btn-parse');
+  var loadingBar = document.getElementById('loading-bar');
+  btn.disabled = true;
+  btn.textContent = 'Analyse…';
+  loadingBar.classList.add('visible');
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('success-msg').classList.remove('visible');
+
+  // Parser en JS pur
+  var films = parseTopsBrut(texte);
+
+  btn.disabled = false;
+  btn.textContent = 'Analyser ma liste';
+  loadingBar.classList.remove('visible');
+
+  if(!films.length){
+    alert('Aucun film détecté. Vérifiez que votre liste commence bien par des numéros (1. / 1- / 1) etc.)');
+    return;
+  }
+
+  parsedFilms = films;
+  renderResult(cineaste, parsedFilms);
+}
+
+function renderResult(cineaste, films){
+  // Afficher le cinéaste
+  var parts = cineaste.trim().split(' ');
+  var nom = parts[parts.length - 1].toUpperCase();
+  var prenom = parts.slice(0, -1).join(' ');
+  document.getElementById('result-cineaste').innerHTML =
+    (prenom ? prenom + ' ' : '') + '<strong>' + nom + '</strong>';
+
+  // Afficher les films
+  var list = document.getElementById('films-list');
+  list.innerHTML = films.map(function(f){
+    return '<li>'
+      + '<span class="film-titre">' + f.titre + '</span>'
+      + (f.annee ? '<span class="film-annee">' + f.annee + '</span>' : '')
+      + '</li>';
+  }).join('');
+
+  // Avertissement si films sans année
+  var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+  var warn = document.getElementById('parse-warning');
+  if(sansAnnee > 0){
+    warn.textContent = sansAnnee + ' film' + (sansAnnee > 1 ? 's' : '') + ' sans année détectée — vous pourrez les compléter après validation.';
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+
+  document.getElementById('result-wrap').classList.add('visible');
+}
+
+// ── SOUMISSION ────────────────────────────────────────────────
+async function submitTops(){
+  if(!parsedFilms || !currentContributor) return;
+
+  var cineaste = document.getElementById('cineaste-input').value.trim();
+  var rawText = document.getElementById('tops-textarea').value.trim();
+  var btn = document.getElementById('btn-submit');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Envoi…';
+
+  const { error } = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: rawText,
+    parsed_json: {
+      cineaste: cineaste,
+      films: parsedFilms
+    },
+    status: 'pending'
+  });
+
+  if(error){
+    alert('Erreur lors de la soumission : ' + error.message);
+    btn.disabled = false;
+    btn.textContent = 'Soumettre pour validation';
+    return;
+  }
+
+  // Succès
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('success-msg').classList.add('visible');
+  btn.disabled = false;
+  btn.textContent = 'Soumettre pour validation';
+
+  // Recharger les soumissions
+  loadPrevSubmissions();
+  resetForm();
+}
+
+// ── SOUMISSIONS PRÉCÉDENTES ───────────────────────────────────
+async function loadPrevSubmissions(){
+  if(!currentContributor) return;
+
+  const { data, error } = await sb.from('submissions')
+    .select('id, parsed_json, status, submitted_at')
+    .eq('contributor_id', currentContributor.id)
+    .order('submitted_at', { ascending: false })
+    .limit(20);
+
+  if(error || !data || !data.length){
+    document.getElementById('prev-section').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('prev-section').style.display = 'block';
+  var list = document.getElementById('prev-list');
+  list.innerHTML = data.map(function(s){
+    var cineaste = s.parsed_json && s.parsed_json.cineaste ? s.parsed_json.cineaste : '—';
+    var nbFilms = s.parsed_json && s.parsed_json.films ? s.parsed_json.films.length : 0;
+    var date = new Date(s.submitted_at).toLocaleDateString('fr-FR');
+    var statusLabel = {pending: 'En attente', approved: 'Validé', rejected: 'Refusé'}[s.status] || s.status;
+    return '<div class="prev-item">'
+      + '<span class="prev-name">' + cineaste + ' <span style="opacity:0.45;font-size:14px">(' + nbFilms + ' films · ' + date + ')</span></span>'
+      + '<span class="prev-status ' + s.status + '">' + statusLabel + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ── RESET ─────────────────────────────────────────────────────
+function resetForm(){
+  document.getElementById('cineaste-input').value = '';
+  document.getElementById('tops-textarea').value = '';
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('cineaste-dropdown').classList.remove('visible');
+  selectedCineaste = null;
+  parsedFilms = null;
+}
+
+// ── SET PASSWORD ─────────────────────────────────────────────
+async function setPassword(){
+  var pwd = document.getElementById('setpwd-password').value;
+  var confirm = document.getElementById('setpwd-confirm').value;
+  var btn = document.getElementById('btn-setpwd');
+  var errEl = document.getElementById('setpwd-error');
+
+  errEl.style.display = 'none';
+  if(!pwd || pwd.length < 6){
+    errEl.textContent = 'Le mot de passe doit contenir au moins 6 caractères.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(pwd !== confirm){
+    errEl.textContent = 'Les deux mots de passe ne correspondent pas.';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Validation…';
+
+  const { error } = await sb.auth.updateUser({ password: pwd });
+  if(error){
+    btn.disabled = false;
+    btn.textContent = 'Valider';
+    errEl.textContent = 'Erreur : ' + error.message;
+    errEl.style.display = 'block';
+  }
+  // onAuthStateChange gère la suite (USER_UPDATED)
+}
+
+document.getElementById('btn-setpwd').addEventListener('click', setPassword);
+['setpwd-password','setpwd-confirm'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){
+    if(e.key==='Enter') setPassword();
+  });
+});
+
+// ── ENTER sur les champs login ────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  ['login-email','login-password'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
+  });
+});
+
+// ── WIRING ONGLET TOPS ────────────────────────────────────────
+document.getElementById('btn-parse').addEventListener('click', parseTops);
+document.getElementById('btn-reset-tops').addEventListener('click', resetForm);
+document.getElementById('btn-submit').addEventListener('click', submitTops);
+document.getElementById('cineaste-input').addEventListener('input', filterCineastes);
+document.getElementById('cineaste-input').addEventListener('keydown', handleKey);
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#panel-tops .autocomplete-wrap')){
+    document.getElementById('cineaste-dropdown').classList.remove('visible');
+  }
+});
+
+// ── ONGLETS ───────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.getAttribute('data-tab')).classList.add('active');
+  });
+});
+
+// ── MULTI-SELECT GÉNÉRIQUE ────────────────────────────────────
+function createMultiSelect(opts){
+  // opts: { inputId, dropdownId, chipsId, maxId, max, showRank }
+  var selected = [];
+  var acIdx = -1;
+
+  var input = document.getElementById(opts.inputId);
+  var dropdown = document.getElementById(opts.dropdownId);
+  var chipsEl = document.getElementById(opts.chipsId);
+  var maxEl = opts.maxId ? document.getElementById(opts.maxId) : null;
+
+  function normAcLocal(s){
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  }
+
+  function render(){
+    chipsEl.innerHTML = '';
+    selected.forEach(function(nom, i){
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.draggable = true;
+      chip.setAttribute('data-idx', i);
+      chip.innerHTML = (opts.showRank ? '<span class="chip-rank">'+(i+1)+'.</span>' : '')
+        + '<span>'+nom+'</span>'
+        + '<button class="chip-remove" data-nom="'+nom.replace(/"/g,'&quot;')+'">&times;</button>';
+      chip.querySelector('.chip-remove').addEventListener('click', function(){
+        remove(this.getAttribute('data-nom'));
+      });
+      // Drag-and-drop
+      chip.addEventListener('dragstart', function(){
+        this.classList.add('dragging');
+        chip.setAttribute('data-drag-idx', i);
+      });
+      chip.addEventListener('dragend', function(){
+        this.classList.remove('dragging');
+        document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('drag-over'); });
+      });
+      chip.addEventListener('dragover', function(e){
+        e.preventDefault();
+        this.classList.add('drag-over');
+      });
+      chip.addEventListener('dragleave', function(){
+        this.classList.remove('drag-over');
+      });
+      chip.addEventListener('drop', function(e){
+        e.preventDefault();
+        var fromIdx = parseInt(document.querySelector('.chip.dragging').getAttribute('data-drag-idx'));
+        var toIdx = parseInt(this.getAttribute('data-idx'));
+        if(fromIdx !== toIdx){
+          var moved = selected.splice(fromIdx, 1)[0];
+          selected.splice(toIdx, 0, moved);
+          render();
+        }
+      });
+      chipsEl.appendChild(chip);
+    });
+    if(maxEl){
+      maxEl.style.display = (opts.max && selected.length >= opts.max) ? 'block' : 'none';
+    }
+    if(opts.max && selected.length >= opts.max){
+      input.style.display = 'none';
+    } else {
+      input.style.display = '';
+    }
+  }
+
+  function add(nom){
+    if(selected.indexOf(nom) !== -1) return;
+    if(opts.max && selected.length >= opts.max) return;
+    selected.push(nom);
+    input.value = '';
+    dropdown.classList.remove('visible');
+    acIdx = -1;
+    render();
+  }
+
+  function remove(nom){
+    selected = selected.filter(function(n){ return n !== nom; });
+    render();
+  }
+
+  input.addEventListener('input', function(){
+    var q = normAcLocal(input.value.trim());
+    acIdx = -1;
+    if(q.length < 2){ dropdown.classList.remove('visible'); return; }
+    var results = cineastesIndex.filter(function(nom){
+      return normAcLocal(nom).indexOf(q) !== -1 && selected.indexOf(nom) === -1;
+    }).slice(0, 10);
+    if(!results.length){ dropdown.classList.remove('visible'); return; }
+    dropdown.innerHTML = '';
+    results.forEach(function(nom, i){
+      var normNom = normAcLocal(nom);
+      var idx = normNom.indexOf(q);
+      var hl = nom.slice(0,idx)+'<b>'+nom.slice(idx,idx+q.length)+'</b>'+nom.slice(idx+q.length);
+      var div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.setAttribute('data-nom', nom);
+      div.innerHTML = hl;
+      div.addEventListener('click', function(){ add(this.getAttribute('data-nom')); });
+      dropdown.appendChild(div);
+    });
+    dropdown.classList.add('visible');
+  });
+
+  input.addEventListener('keydown', function(e){
+    var items = dropdown.querySelectorAll('.autocomplete-item');
+    if(!items.length) return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); acIdx=Math.min(acIdx+1,items.length-1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); acIdx=Math.max(acIdx-1,0); }
+    else if(e.key==='Enter' && acIdx>=0){ e.preventDefault(); add(items[acIdx].getAttribute('data-nom')); return; }
+    else if(e.key==='Escape'){ dropdown.classList.remove('visible'); return; }
+    items.forEach(function(el,i){ el.classList.toggle('selected', i===acIdx); });
+  });
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#'+opts.inputId) && !e.target.closest('#'+opts.dropdownId)){
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  return {
+    getSelected: function(){ return selected.slice(); },
+    setSelected: function(arr){ selected = arr.slice(); render(); }
+  };
+}
+
+// ── INSTANCES MULTI-SELECT ────────────────────────────────────
+var favorisSelect, autresSelect;
+function initMultiSelects(){
+  favorisSelect = createMultiSelect({
+    inputId: 'favoris-input',
+    dropdownId: 'favoris-dropdown',
+    chipsId: 'favoris-chips',
+    maxId: 'favoris-max',
+    max: 3,
+    showRank: false
+  });
+  autresSelect = createMultiSelect({
+    inputId: 'autres-input',
+    dropdownId: 'autres-dropdown',
+    chipsId: 'autres-chips',
+    maxId: null,
+    max: null,
+    showRank: false
+  });
+}
+
+// ── PARSEUR FILMS LIBRES (sans numérotation obligatoire) ──────
+function parseFilmsLibre(texte, maxFilms){
+  var films = [];
+  var lines = texte.split('\n');
+  lines.forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+    // Retirer numérotation si présente
+    line = line.replace(/^\d+[.\-\)\s]+/, '').trim();
+    // Retirer emoji
+    line = line.replace(/[❤😍🎬🎥]+/g,'').trim();
+    if(!line) return;
+    // Extraire année
+    var am = line.match(/\((\d{4})\)\s*$/);
+    var annee = am ? parseInt(am[1]) : null;
+    var titre = line.replace(/\(\d{4}\)\s*$/, '').replace(/[-–]\s*$/, '').trim();
+    if(titre) films.push({ titre: titre, annee: annee });
+  });
+  if(maxFilms && films.length > maxFilms) films = films.slice(0, maxFilms);
+  return films;
+}
+
+function renderFilmsLibre(films, listId, countId, warnId, maxFilms){
+  var listEl = document.getElementById(listId);
+  var countEl = document.getElementById(countId);
+  var warnEl = document.getElementById(warnId);
+  listEl.innerHTML = films.map(function(f){
+    return '<li><span class="film-titre">'+f.titre+'</span>'
+      +(f.annee?'<span class="film-annee">'+f.annee+'</span>':'')+'</li>';
+  }).join('');
+  countEl.textContent = films.length+' film'+(films.length>1?'s':'');
+  if(maxFilms && films.length >= maxFilms) countEl.className = 'films-count warn';
+  else countEl.className = 'films-count';
+  var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+  if(sansAnnee > 0){
+    warnEl.textContent = sansAnnee+' film'+(sansAnnee>1?'s':'')+' sans année détectée.';
+    warnEl.style.display = 'block';
+  } else { warnEl.style.display = 'none'; }
+}
+
+// ── FILMS FAVORIS ─────────────────────────────────────────────
+var parsedFilmsFav = null;
+document.getElementById('btn-parse-films-fav').addEventListener('click', function(){
+  var texte = document.getElementById('films-fav-textarea').value.trim();
+  if(!texte){ alert('Collez vos films.'); return; }
+  parsedFilmsFav = parseFilmsLibre(texte, 10);
+  if(!parsedFilmsFav.length){ alert('Aucun film détecté.'); return; }
+  renderFilmsLibre(parsedFilmsFav, 'list-films-fav', 'count-films-fav', 'warn-films-fav', 10);
+  document.getElementById('result-films-fav').classList.add('visible');
+  document.getElementById('success-films-fav').classList.remove('visible');
+});
+document.getElementById('btn-reset-films-fav').addEventListener('click', function(){
+  document.getElementById('films-fav-textarea').value = '';
+  document.getElementById('result-films-fav').classList.remove('visible');
+  parsedFilmsFav = null;
+});
+document.getElementById('btn-submit-films-fav').addEventListener('click', async function(){
+  if(!parsedFilmsFav || !currentContributor) return;
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  var raw = document.getElementById('films-fav-textarea').value.trim();
+  var res = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: raw,
+    parsed_json: { type: 'films_favoris', films: parsedFilmsFav },
+    status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Soumettre pour validation';
+  if(res.error){ alert('Erreur : '+res.error.message); return; }
+  document.getElementById('result-films-fav').classList.remove('visible');
+  document.getElementById('success-films-fav').classList.add('visible');
+  parsedFilmsFav = null;
+});
+
+// ── AUTRES FILMS ──────────────────────────────────────────────
+var parsedAutresFilms = null;
+document.getElementById('btn-parse-autres-films').addEventListener('click', function(){
+  var texte = document.getElementById('autres-films-textarea').value.trim();
+  if(!texte){ alert('Collez vos films.'); return; }
+  parsedAutresFilms = parseFilmsLibre(texte, null);
+  if(!parsedAutresFilms.length){ alert('Aucun film détecté.'); return; }
+  renderFilmsLibre(parsedAutresFilms, 'list-autres-films', 'count-autres-films', 'warn-autres-films', null);
+  document.getElementById('result-autres-films').classList.add('visible');
+  document.getElementById('success-autres-films').classList.remove('visible');
+});
+document.getElementById('btn-reset-autres-films').addEventListener('click', function(){
+  document.getElementById('autres-films-textarea').value = '';
+  document.getElementById('result-autres-films').classList.remove('visible');
+  parsedAutresFilms = null;
+});
+document.getElementById('btn-submit-autres-films').addEventListener('click', async function(){
+  if(!parsedAutresFilms || !currentContributor) return;
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  var raw = document.getElementById('autres-films-textarea').value.trim();
+  var res = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: raw,
+    parsed_json: { type: 'autres_films', films: parsedAutresFilms },
+    status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Soumettre pour validation';
+  if(res.error){ alert('Erreur : '+res.error.message); return; }
+  document.getElementById('result-autres-films').classList.remove('visible');
+  document.getElementById('success-autres-films').classList.add('visible');
+  parsedAutresFilms = null;
+});
+
+// ── CINÉASTES FAVORIS ─────────────────────────────────────────
+document.getElementById('btn-submit-favoris').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var cineastes = favorisSelect.getSelected();
+  if(!cineastes.length){ alert('Sélectionnez au moins un cinéaste.'); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  var res = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: cineastes.join('\n'),
+    parsed_json: { type: 'favoris', cineastes: cineastes },
+    status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Soumettre pour validation';
+  if(res.error){ alert('Erreur : '+res.error.message); return; }
+  document.getElementById('success-favoris').classList.add('visible');
+});
+
+// ── AUTRES CINÉASTES ──────────────────────────────────────────
+document.getElementById('btn-submit-autres').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var cineastes = autresSelect.getSelected();
+  if(!cineastes.length){ alert('Sélectionnez au moins un cinéaste.'); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  var res = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: cineastes.join('\n'),
+    parsed_json: { type: 'autres_cineastes', cineastes: cineastes },
+    status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Soumettre pour validation';
+  if(res.error){ alert('Erreur : '+res.error.message); return; }
+  document.getElementById('success-autres').classList.add('visible');
+});
+
+// ── PRÉSENTATION ──────────────────────────────────────────────
+document.getElementById('btn-submit-presentation').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var texte = document.getElementById('presentation-textarea').value.trim();
+  if(!texte){ alert('Rédigez votre présentation.'); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  var res = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    raw_text: texte,
+    parsed_json: { type: 'presentation', texte: texte },
+    status: 'pending'
+  });
+  btn.disabled = false; btn.textContent = 'Soumettre pour validation';
+  if(res.error){ alert('Erreur : '+res.error.message); return; }
+  document.getElementById('success-presentation').classList.add('visible');
+});
+
+// ── AVATAR ────────────────────────────────────────────────────
+function getAvatarFilenameLocal(displayName){
+  if(!displayName) return 'avatar.jpg';
+  return displayName.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
+    +'.jpg';
+}
+
+document.getElementById('avatar-input').addEventListener('change', function(){
+  var file = this.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var prev = document.getElementById('avatar-preview');
+    prev.innerHTML = '<img src="'+e.target.result+'" alt="aperçu">';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('btn-upload-avatar').style.display = 'block';
+  document.getElementById('avatar-success').style.display = 'none';
+});
+
+document.getElementById('btn-upload-avatar').addEventListener('click', async function(){
+  var file = document.getElementById('avatar-input').files[0];
+  if(!file || !currentContributor) return;
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Upload…';
+  var filename = getAvatarFilenameLocal(currentContributor.display_name);
+  var ext = file.name.split('.').pop().toLowerCase();
+  if(ext !== 'jpg' && ext !== 'jpeg') filename = filename.replace('.jpg', '.'+ext);
+  var res = await sb.storage.from('avatars').upload(filename, file, {
+    upsert: true,
+    contentType: file.type
+  });
+  btn.disabled = false; btn.textContent = 'Publier cette photo';
+  if(res.error){ alert('Erreur upload : '+res.error.message); return; }
+  document.getElementById('avatar-success').style.display = 'block';
+});
+
+// ── INIT PROFIL (appelé après login) ─────────────────────────
+function initProfil(){
+  // Initiales avatar
+  if(currentContributor){
+    var prenom = formatPrenom(currentContributor.display_name);
+    var parts = (currentContributor.display_name||'').split(' ');
+    var nom = parts[parts.length-1];
+    var initiales = (prenom.charAt(0)+(nom?nom.charAt(0):'')).toUpperCase();
+    document.getElementById('avatar-initiales').textContent = initiales;
+  }
+  initMultiSelects();
+}
+</script>
+</body>
+</html>
