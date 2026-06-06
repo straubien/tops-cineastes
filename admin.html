@@ -1110,7 +1110,11 @@ async function renderDashboard(){
     var muz = await fetch('muzard.json').then(function(r){ return r.json(); });
     importedCounts['MATHIEU MUZARD'] = Array.isArray(muz.tops) ? muz.tops.length : Object.keys(muz.tops||{}).length;
   } catch(e) { importedCounts['MATHIEU MUZARD'] = 0; }
-
+  // Cnudde depuis cnudde.json
+  try {
+    var cnu = await fetch('cnudde.json').then(function(r){ return r.json(); });
+    importedCounts['KARINE CNUDDE'] = Array.isArray(cnu.tops) ? cnu.tops.length : Object.keys(cnu.tops||{}).length;
+  } catch(e) { importedCounts['KARINE CNUDDE'] = 0; }
   // Autres : soumissions approved depuis Supabase
   var subRes = await sb.from('submissions')
     .select('contributor_name, contributor_id')
