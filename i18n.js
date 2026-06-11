@@ -1,0 +1,402 @@
+// ── INTERNATIONALISATION ──────────────────────────────────────
+var TC_TRANSLATIONS = {
+  fr: {
+    // Splash
+    splash_enter: "Explorer l’index",
+    // Nav
+    nav_index: "Index",
+    nav_contributeurs: "Contributeurs",
+    nav_statistiques: "Statistiques",
+    nav_mes_tops: "Mes tops",
+    nav_mon_profil: "Mon profil",
+    nav_se_connecter: "Se connecter",
+    nav_se_deconnecter: "Se déconnecter",
+    nav_dark_title: "Mode sombre",
+    // Index
+    search_placeholder: "Rechercher un cinéaste…",
+    filter_sans_tops: "Cinéastes sans aucun top",
+    filter_non_couvert: "Cinéastes sans top importé",
+    page_contributeurs_h: "Contributeurs",
+    page_statistiques_h: "Statistiques",
+    // Profil
+    profil_cin_favoris: "Cinéastes favoris",
+    profil_autres_cin: "Autres cinéastes appréciés",
+    profil_films_coeur: "Films favoris",
+    profil_films_autres: "Autres films",
+    profil_presentation: "Présentation cinéphile",
+    retour_contributeurs_title: "Retour aux contributeurs",
+    // Mes tops – statique
+    mt_titre: "Soumettre un nouveau top",
+    mt_cin_label: "Cinéaste",
+    mt_cin_ph: "Tapez un nom…",
+    mt_top_label: "Votre top",
+    mt_top_ph: "Collez votre liste ici, dans n’importe quel format…\n\nExemples acceptés :\n1. The Thing (1982)\n2- Halloween (1978)\n3. Fog – The Fog (1980)\n\nOu :\n1) The Thing\n2) Halloween\n3) Fog",
+    mt_hint: "Tous les formats sont acceptés — avec ou sans année, titre français ou anglais, commentaires inclus.",
+    mt_analyser: "Analyser ma liste",
+    mt_recommencer: "Recommencer",
+    mt_result_titre: "Résultat de l’analyse",
+    mt_soumettre: "Soumettre pour validation",
+    mt_submit_note: "Votre top sera vérifié par Mathieu avant publication.",
+    mt_success_h3: "Top soumis !",
+    mt_success_p: "Mathieu sera notifié et votre top apparaître sur le site après validation.",
+    mt_prev_titre: "Mes tops soumis",
+    // Statistiques
+    ranking_cineastes_titre: "Cinéastes les plus topés",
+    ranking_films_titre: "Films dans les tops",
+    // Dynamique – fonctions ou chaînes
+    cin_count: function(n){ return n + ' cinéaste' + (n > 1 ? 's' : ''); },
+    tops_postes: function(n){ return n + ' top' + (n > 1 ? 's' : '') + ' posté' + (n > 1 ? 's' : ''); },
+    tops_importes: function(n){ return n + ' top' + (n > 1 ? 's' : '') + ' importé' + (n > 1 ? 's' : ''); },
+    films_dans_tops: function(n){ return n + ' film' + (n !== 1 ? 's' : '') + ' dans les tops'; },
+    aucun_resultat: "Aucun résultat",
+    aucun_top_poste_cin: "Aucun top posté pour ce cinéaste",
+    tops_postes_par: "Tops postés par",
+    fiche_stat_label: "tops postés",
+    cin_classes: "Cinéastes classés",
+    aucun_import: "Aucun top importé pour l’instant.",
+    retour_fiche: "← Retour",
+    tops_in_ranking: "tops",
+    films_in_ranking: "films",
+    voir_plus_btn: function(n){ return "Voir les " + n + " autres ↓"; },
+    voir_moins_btn: "Voir moins ↑",
+    card_tops_postes: function(n){ return ' top'+(n>1?'s':'')+' posté'+(n>1?'s':''); },
+    card_tops_importes: function(n){ return ' top'+(n>1?'s':'')+' importé'+(n>1?'s':''); },
+    // Stats hero
+    stat_cin: "Cinéastes",
+    stat_en_activite: function(n){ return n + " en activité"; },
+    stat_tops_postes: "Tops postés",
+    stat_moy: function(n){ return n + " en moyenne par contributeur"; },
+    stat_contrib: "Contributeurs",
+    stat_deces: function(n){ return n + " cinéastes décédés indexés"; },
+    stat_sans_tops: function(n){ return "cinéaste" + (n > 1 ? 's' : '') + " sans aucun top posté"; },
+    stat_cin_sans_tops: "Cinéastes sans tops",
+    stat_films: "Films dans les tops",
+    stat_films_sub: "cumulés dans tous les tops importés",
+    // Mes tops JS dynamique
+    mt_analyse_loading: "Analyse…",
+    mt_no_cin_alert: "Veuillez sélectionner un cinéaste dans la liste.",
+    mt_no_texte_alert: "Veuillez coller votre liste de films.",
+    mt_no_films_alert: "Aucun film détecté. Vérifiez que votre liste commence bien par des numéros (1. / 1- / 1) etc.)",
+    mt_sans_annee: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' sans année détectée — vous pourrez les compléter après validation.'; },
+    mt_envoi: "Envoi…",
+    mt_err_submit: "Erreur lors de la soumission : ",
+    mt_modifier: "Modifier",
+    mt_fermer: "Fermer",
+    mt_annuler: "Annuler",
+    mt_sauvegarder: "Sauvegarder",
+    mt_enregistrement: "Enregistrement…",
+    mt_edit_note: "La modification repassera en attente de validation.",
+    mt_confirm_del: function(nom){ return "Supprimer le top « " + nom + " » ? Cette action est irréversible."; },
+    mt_status_pending: "En attente",
+    mt_status_approved: "Validé",
+    mt_status_rejected: "Refusé",
+    // Submit.html – statique
+    sub_header_sub: "Gérez vos cinéastes favoris, films et présentation.",
+    sub_favoris_title: "❤ Cinéastes favoris",
+    sub_modifier: "Modifier",
+    sub_favoris_empty: "Aucun cinéaste favori ajouté.",
+    sub_favoris_field: "Cinéastes favoris (max 3) — glissez pour réordonner",
+    sub_favoris_max: "Maximum 3 cinéastes favoris atteint.",
+    sub_add_cin_ph: "Ajouter un cinéaste…",
+    sub_save: "Sauvegarder",
+    sub_cancel: "Annuler",
+    sub_success_h3: "Modifications enregistrées ✓",
+    sub_favoris_success_p: "Vos cinéastes favoris sont mis à jour.",
+    sub_autres_cin_title: "Autres cinéastes appréciés",
+    sub_autres_cin_empty: "Aucun cinéaste ajouté.",
+    sub_autres_cin_field: "Autres cinéastes — glissez pour réordonner",
+    sub_autres_cin_success_p: "Votre liste est mise à jour.",
+    sub_films_title: "❤ Films favoris",
+    sub_films_empty: "Aucun film favori ajouté.",
+    sub_films_field: "Films favoris (max 10) — un par ligne",
+    sub_films_ph: "Un film par ligne…",
+    sub_films_success_p: "Vos films favoris sont mis à jour.",
+    sub_autresfilms_title: "Autres films",
+    sub_autresfilms_empty: "Aucun film ajouté.",
+    sub_autresfilms_field: "Autres films — un par ligne",
+    sub_autresfilms_success_p: "Votre liste de films est mise à jour.",
+    sub_presentation_title: "Présentation cinéphile",
+    sub_presentation_empty: "Aucune présentation ajoutée.",
+    sub_presentation_field: "Présentation",
+    sub_presentation_ph: "Décrivez votre rapport au cinéma…",
+    sub_presentation_success_p: "Votre présentation est mise à jour.",
+    // Auth submit.html
+    loading_auth: "Vérification de la session…",
+    setpwd_title: "Bienvenue",
+    setpwd_sub: "Choisissez votre mot de passe",
+    setpwd_pwd_ph: "Nouveau mot de passe",
+    setpwd_confirm_ph: "Confirmer le mot de passe",
+    setpwd_btn: "Valider",
+    login_title: "Connexion",
+    login_sub: "Espace réservé aux contributeurs",
+    login_email_ph: "Votre adresse email",
+    login_pwd_ph: "Mot de passe",
+    login_btn: "Se connecter",
+    forgot_btn: "Mot de passe oublié ?",
+    btn_logout: "Déconnexion",
+    header_connected: "Connecté en tant que",
+    // Submit.html JS dynamique
+    sp_min_cin: "Sélectionnez au moins un cinéaste.",
+    sp_no_presentation: "Rédigez votre présentation.",
+    sp_empty_item: "Aucun élément ajouté.",
+    sp_save_loading: "Enregistrement…",
+    sp_err_save: "Erreur : ",
+    sp_err_rights: "Erreur : la sauvegarde n’a pas abouti. Vérifiez vos droits.",
+    sp_err_upload_fmt: "Format non supporté. Utilisez JPEG, PNG ou WebP.",
+    sp_err_upload_size: "Fichier trop volumineux (max 2 Mo).",
+    sp_avatar_btn: "Changer la photo",
+    sp_avatar_publish: "Publier",
+    sp_avatar_success: "✓ Photo mise à jour",
+    sp_upload_loading: "Upload…",
+    sp_pwd_min: "Le mot de passe doit contenir au moins 8 caractères.",
+    sp_pwd_match: "Les deux mots de passe ne correspondent pas.",
+    sp_pwd_validating: "Validation…",
+    sp_forgot_sent: "Un email de réinitialisation a été envoyé à ",
+    sp_err_no_email: "Entrez votre adresse email pour recevoir le lien.",
+    sp_err_no_fields: "Veuillez remplir les deux champs.",
+    sp_err_login: "Email ou mot de passe incorrect.",
+    sp_err_no_profil: "Votre compte n’est pas encore lié à un profil contributeur. Contactez Mathieu.",
+    sp_reconnect: function(p){ return "Reconnexion en cours, " + p + "…"; },
+    sp_err_submission: "Erreur lors de la soumission : ",
+    sp_sans_annee_short: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' sans année détectée.'; },
+    sp_films_count: function(n){ return n + ' film' + (n > 1 ? 's' : ''); },
+    sp_confirm_del: function(nom){ return "Supprimer le top « " + nom + " » ? Cette action est irréversible."; },
+    sp_edit_note: "La modification repassera en attente de validation.",
+    sp_status_pending: "En attente",
+    sp_status_approved: "Validé",
+    sp_status_rejected: "Refusé",
+    sp_modifier: "Modifier",
+    sp_fermer: "Fermer",
+    sp_annuler: "Annuler",
+    sp_sauvegarder: "Sauvegarder",
+    sp_enregistrement: "Enregistrement…",
+    sp_soumettre: "Soumettre pour validation",
+    sp_envoi: "Envoi…",
+    sp_err_err: "Erreur : ",
+    sp_err_unexpected: "Erreur inattendue : ",
+  },
+  en: {
+    // Splash
+    splash_enter: "Explore the index",
+    // Nav
+    nav_index: "Index",
+    nav_contributeurs: "Contributors",
+    nav_statistiques: "Statistics",
+    nav_mes_tops: "My tops",
+    nav_mon_profil: "My profile",
+    nav_se_connecter: "Log in",
+    nav_se_deconnecter: "Log out",
+    nav_dark_title: "Dark mode",
+    // Index
+    search_placeholder: "Search for a filmmaker…",
+    filter_sans_tops: "Filmmakers with no tops",
+    filter_non_couvert: "Filmmakers without imported top",
+    page_contributeurs_h: "Contributors",
+    page_statistiques_h: "Statistics",
+    // Profil
+    profil_cin_favoris: "Favourite filmmakers",
+    profil_autres_cin: "Other appreciated filmmakers",
+    profil_films_coeur: "Favourite films",
+    profil_films_autres: "Other films",
+    profil_presentation: "Cinephile presentation",
+    retour_contributeurs_title: "Back to contributors",
+    // Mes tops – statique
+    mt_titre: "Submit a new top",
+    mt_cin_label: "Filmmaker",
+    mt_cin_ph: "Type a name…",
+    mt_top_label: "Your top",
+    mt_top_ph: "Paste your list here, in any format…\n\nAccepted examples:\n1. The Thing (1982)\n2- Halloween (1978)\n3. Fog – The Fog (1980)\n\nOr:\n1) The Thing\n2) Halloween\n3) Fog",
+    mt_hint: "All formats accepted — with or without year, French or English title, comments included.",
+    mt_analyser: "Analyse my list",
+    mt_recommencer: "Start over",
+    mt_result_titre: "Analysis result",
+    mt_soumettre: "Submit for review",
+    mt_submit_note: "Your top will be reviewed by Mathieu before publication.",
+    mt_success_h3: "Top submitted!",
+    mt_success_p: "Mathieu will be notified and your top will appear on the site after review.",
+    mt_prev_titre: "My submitted tops",
+    // Statistiques
+    ranking_cineastes_titre: "Top-ranked filmmakers",
+    ranking_films_titre: "Films in tops",
+    // Dynamique
+    cin_count: function(n){ return n + ' filmmaker' + (n > 1 ? 's' : ''); },
+    tops_postes: function(n){ return n + ' top' + (n > 1 ? 's' : '') + ' posted'; },
+    tops_importes: function(n){ return n + ' imported top' + (n > 1 ? 's' : ''); },
+    films_dans_tops: function(n){ return n + ' film' + (n !== 1 ? 's' : '') + ' in tops'; },
+    aucun_resultat: "No results",
+    aucun_top_poste_cin: "No tops posted for this filmmaker",
+    tops_postes_par: "Tops posted by",
+    fiche_stat_label: "tops posted",
+    cin_classes: "Ranked filmmakers",
+    aucun_import: "No imported tops yet.",
+    retour_fiche: "← Back",
+    tops_in_ranking: "tops",
+    films_in_ranking: "films",
+    voir_plus_btn: function(n){ return "See " + n + " more ↓"; },
+    voir_moins_btn: "See less ↑",
+    card_tops_postes: function(n){ return ' top'+(n>1?'s':'')+' posted'; },
+    card_tops_importes: function(n){ return ' imported top'+(n>1?'s':''); },
+    // Stats hero
+    stat_cin: "Filmmakers",
+    stat_en_activite: function(n){ return n + " currently active"; },
+    stat_tops_postes: "Tops posted",
+    stat_moy: function(n){ return n + " average per contributor"; },
+    stat_contrib: "Contributors",
+    stat_deces: function(n){ return n + " deceased filmmakers indexed"; },
+    stat_sans_tops: function(n){ return "filmmaker" + (n > 1 ? 's' : '') + " with no tops posted"; },
+    stat_cin_sans_tops: "Filmmakers without tops",
+    stat_films: "Films in tops",
+    stat_films_sub: "cumulated across all imported tops",
+    // Mes tops JS dynamique
+    mt_analyse_loading: "Analysing…",
+    mt_no_cin_alert: "Please select a filmmaker from the list.",
+    mt_no_texte_alert: "Please paste your film list.",
+    mt_no_films_alert: "No films detected. Make sure your list starts with numbers (1. / 1- / 1) etc.)",
+    mt_sans_annee: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' without detected year — you can complete them after review.'; },
+    mt_envoi: "Sending…",
+    mt_err_submit: "Submission error: ",
+    mt_modifier: "Edit",
+    mt_fermer: "Close",
+    mt_annuler: "Cancel",
+    mt_sauvegarder: "Save",
+    mt_enregistrement: "Saving…",
+    mt_edit_note: "The edit will go back to pending review.",
+    mt_confirm_del: function(nom){ return 'Delete the top « ' + nom + ' »? This action is irreversible.'; },
+    mt_status_pending: "Pending",
+    mt_status_approved: "Approved",
+    mt_status_rejected: "Rejected",
+    // Submit.html – statique
+    sub_header_sub: "Manage your favourite filmmakers, films and presentation.",
+    sub_favoris_title: "❤ Favourite filmmakers",
+    sub_modifier: "Edit",
+    sub_favoris_empty: "No favourite filmmaker added.",
+    sub_favoris_field: "Favourite filmmakers (max 3) — drag to reorder",
+    sub_favoris_max: "Maximum of 3 favourite filmmakers reached.",
+    sub_add_cin_ph: "Add a filmmaker…",
+    sub_save: "Save",
+    sub_cancel: "Cancel",
+    sub_success_h3: "Changes saved ✓",
+    sub_favoris_success_p: "Your favourite filmmakers have been updated.",
+    sub_autres_cin_title: "Other appreciated filmmakers",
+    sub_autres_cin_empty: "No filmmaker added.",
+    sub_autres_cin_field: "Other filmmakers — drag to reorder",
+    sub_autres_cin_success_p: "Your list has been updated.",
+    sub_films_title: "❤ Favourite films",
+    sub_films_empty: "No favourite film added.",
+    sub_films_field: "Favourite films (max 10) — one per line",
+    sub_films_ph: "One film per line…",
+    sub_films_success_p: "Your favourite films have been updated.",
+    sub_autresfilms_title: "Other films",
+    sub_autresfilms_empty: "No film added.",
+    sub_autresfilms_field: "Other films — one per line",
+    sub_autresfilms_success_p: "Your film list has been updated.",
+    sub_presentation_title: "Cinephile presentation",
+    sub_presentation_empty: "No presentation added.",
+    sub_presentation_field: "Presentation",
+    sub_presentation_ph: "Describe your relationship with cinema…",
+    sub_presentation_success_p: "Your presentation has been updated.",
+    // Auth submit.html
+    loading_auth: "Checking session…",
+    setpwd_title: "Welcome",
+    setpwd_sub: "Choose your password",
+    setpwd_pwd_ph: "New password",
+    setpwd_confirm_ph: "Confirm password",
+    setpwd_btn: "Confirm",
+    login_title: "Log in",
+    login_sub: "Contributors area",
+    login_email_ph: "Your email address",
+    login_pwd_ph: "Password",
+    login_btn: "Log in",
+    forgot_btn: "Forgot your password?",
+    btn_logout: "Log out",
+    header_connected: "Logged in as",
+    // Submit.html JS dynamique
+    sp_min_cin: "Please select at least one filmmaker.",
+    sp_no_presentation: "Please write your presentation.",
+    sp_empty_item: "No item added.",
+    sp_save_loading: "Saving…",
+    sp_err_save: "Error: ",
+    sp_err_rights: "Error: save failed. Check your permissions.",
+    sp_err_upload_fmt: "Unsupported format. Use JPEG, PNG or WebP.",
+    sp_err_upload_size: "File too large (max 2 MB).",
+    sp_avatar_btn: "Change photo",
+    sp_avatar_publish: "Publish",
+    sp_avatar_success: "✓ Photo updated",
+    sp_upload_loading: "Uploading…",
+    sp_pwd_min: "Password must be at least 8 characters.",
+    sp_pwd_match: "Passwords do not match.",
+    sp_pwd_validating: "Validating…",
+    sp_forgot_sent: "A password reset email has been sent to ",
+    sp_err_no_email: "Enter your email address to receive the link.",
+    sp_err_no_fields: "Please fill in both fields.",
+    sp_err_login: "Incorrect email or password.",
+    sp_err_no_profil: "Your account is not yet linked to a contributor profile. Contact Mathieu.",
+    sp_reconnect: function(p){ return "Reconnecting, " + p + "…"; },
+    sp_err_submission: "Submission error: ",
+    sp_sans_annee_short: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' without detected year.'; },
+    sp_films_count: function(n){ return n + ' film' + (n > 1 ? 's' : ''); },
+    sp_confirm_del: function(nom){ return 'Delete the top « ' + nom + ' »? This action is irreversible.'; },
+    sp_edit_note: "The edit will go back to pending review.",
+    sp_status_pending: "Pending",
+    sp_status_approved: "Approved",
+    sp_status_rejected: "Rejected",
+    sp_modifier: "Edit",
+    sp_fermer: "Close",
+    sp_annuler: "Cancel",
+    sp_sauvegarder: "Save",
+    sp_enregistrement: "Saving…",
+    sp_soumettre: "Submit for review",
+    sp_envoi: "Sending…",
+    sp_err_err: "Error: ",
+    sp_err_unexpected: "Unexpected error: ",
+  }
+};
+
+function t(key, arg){
+  var lang = localStorage.getItem('tc-lang') || 'fr';
+  var dict = TC_TRANSLATIONS[lang] || TC_TRANSLATIONS.fr;
+  var val = (dict[key] !== undefined) ? dict[key] : TC_TRANSLATIONS.fr[key];
+  if(typeof val === 'function') return val(arg);
+  return (val !== undefined) ? val : key;
+}
+
+function applyLang(lang){
+  localStorage.setItem('tc-lang', lang);
+  document.documentElement.setAttribute('lang', lang === 'en' ? 'en' : 'fr');
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var val = t(el.getAttribute('data-i18n'));
+    if(val) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(function(el){
+    var val = t(el.getAttribute('data-i18n-ph'));
+    if(val) el.placeholder = val;
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(function(el){
+    var val = t(el.getAttribute('data-i18n-title'));
+    if(val) el.title = val;
+  });
+  document.querySelectorAll('.btn-lang').forEach(function(btn){
+    var gifSrc = lang === 'fr' ? 'english.gif' : 'francais.gif';
+    var gifAlt = lang === 'fr' ? 'EN' : 'FR';
+    btn.innerHTML = '<img src="'+gifSrc+'" alt="'+gifAlt+'" style="width:22px;height:auto;display:block;vertical-align:middle">';
+    btn.title = lang === 'fr' ? 'Switch to English' : 'Passer en français';
+  });
+  if(typeof window.tcAfterLangChange === 'function') window.tcAfterLangChange();
+}
+
+function toggleLang(){
+  var lang = localStorage.getItem('tc-lang') || 'fr';
+  applyLang(lang === 'fr' ? 'en' : 'fr');
+}
+
+// Appliquer au chargement si la langue n'est pas FR
+(function(){
+  var lang = localStorage.getItem('tc-lang') || 'fr';
+  if(lang === 'en'){
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', function(){ applyLang('en'); });
+    } else {
+      applyLang('en');
+    }
+  }
+})();
