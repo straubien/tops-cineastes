@@ -612,12 +612,10 @@ function toggleVoirPlus(type){
 function renderProfil(name){
   _currentProfilName=name;
   var cin=DATA.cineastes.filter(function(c){return c.tops_contributeurs&&c.tops_contributeurs.indexOf(name)!==-1});
-  var nameEl = document.getElementById('profil-name');
-  nameEl.innerHTML = formatContribName(name);
-  var nameLen = name.trim().length;
-  nameEl.classList.remove('name-long', 'name-very-long');
-  if (nameLen > 28)      nameEl.classList.add('name-very-long');
-  else if (nameLen > 20) nameEl.classList.add('name-long');
+  var nameEl=document.getElementById('profil-name');
+  nameEl.innerHTML=formatContribName(name);
+  nameEl.style.fontSize='';
+  for(var fs=40;fs>=18;fs--){nameEl.style.fontSize=fs+'px';if(nameEl.scrollWidth<=nameEl.offsetWidth)break;}
   var imp=IMPORTED_COUNTS[name]||{tops:0,films:0};
   var statHtml='<span>'+t('tops_postes',cin.length)+'</span>'
     +'<span style="opacity:.5"> &nbsp;·&nbsp; </span>'
