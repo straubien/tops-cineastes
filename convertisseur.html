@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Convertisseur tops cinéastes</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 24px; background: #faf8f4; color: #111; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #7a6350; font-size: 14px; margin-bottom: 40px; }
+  .zone { border: 2px dashed #c8bfb0; border-radius: 6px; padding: 32px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 20px; }
+  .zone:hover, .zone.over { border-color: #C0392B; background: #fff5f4; }
+  .zone.ok { border-color: #2ecc71; background: #f4fdf6; border-style: solid; }
+  .zone-label { font-size: 15px; color: #555; }
+  .zone-label strong { display: block; font-size: 17px; color: #111; margin-bottom: 6px; }
+  .zone.ok .zone-label { color: #1a7a40; }
+  input[type=file] { display: none; }
+  button { background: #C0392B; color: #fff; border: none; padding: 14px 32px; font-size: 16px; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+  button:disabled { background: #c8bfb0; cursor: not-allowed; }
+  button:hover:not(:disabled) { background: #a93226; }
+  #log { margin-top: 28px; font-size: 13px; color: #555; min-height: 24px; }
+  #log.erreur { color: #C0392B; font-weight: bold; }
+  #log.ok { color: #1a7a40; font-weight: bold; }
+  .stats { margin-top: 16px; background: #fff; border: 1px solid #e0d8cc; border-radius: 4px; padding: 16px 20px; font-size: 14px; display: none; }
+  .stats table { border-collapse: collapse; width: 100%; }
+  .stats td { padding: 3px 0; }
+  .stats td:first-child { color: #7a6350; width: 60%; }
+</style>
+</head>
+<body>
+
+<h1>Convertisseur tops cinéastes</h1>
+<p class="subtitle">Génère <code>muzard.json</code> à partir du fichier Word.</p>
+
+<div class="zone" id="zone-docx" onclick="document.getElementById('input-docx').click()">
+  <div class="zone-label"><strong>Fichier Word</strong>Glisser-déposer ou cliquer pour sélectionner<br><small>tops cinéastes.docx</small></div>
+  <input type="file" id="input-docx" accept=".docx">
+</div>
+
+<button id="btn-convert" disabled>Convertir et télécharger muzard.json</button>
+
+<div id="log"></div>
+<div class="stats" id="stats">
+  <table id="stats-table"></table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script>
+var docxFile = null;
+
+function setupZone(zoneId, inputId, onFile) {
+  var zone = document.getElementById(zoneId);
+  var input = document.getElementById(inputId);
+  zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', function(){ zone.classList.remove('over'); });
+  zone.addEventListener('drop', function(e){
+    e.preventDefault(); zone.classList.remove('over');
+    var f = e.dataTransfer.files[0];
+    if(f) onFile(f);
+  });
+  input.addEventListener('change', function(){
+    if(input.files[0]) onFile(input.files[0]);
+  });
+}
+
+setupZone('zone-docx', 'input-docx', function(f){
+  docxFile = f;
+  var zone = document.getElementById('zone-docx');
+  zone.classList.add('ok');
+  zone.querySelector('.zone-label').innerHTML = '<strong>✓ ' + f.name + '</strong>Fichier chargé';
+  document.getElementById('btn-convert').disabled = false;
+});
+
+function log(msg, cls) {
+  var el = document.getElementById('log');
+  el.textContent = msg;
+  el.className = cls || '';
+}
+
+document.getElementById('btn-convert').addEventListener('click', function() {
+  if (!docxFile) return;
+  log('Lecture du fichier Word…');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    mammoth.convertToHtml({ arrayBuffer: e.target.result }).then(function(result) {
+      try {
+        var json = parseDocx(result.value);
+        download('muzard.json', JSON.stringify(json, null, 2));
+        log('muzard.json généré avec succès.', 'ok');
+        showStats(json);
+      } catch(err) {
+        log('Erreur : ' + err.message, 'erreur');
+        console.error(err);
+      }
+    }).catch(function(err) {
+      log('Erreur lecture Word : ' + err.message, 'erreur');
+    });
+  };
+  reader.readAsArrayBuffer(docxFile);
+});
+
+function parseDocx(html) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(html, 'text/html');
+  var nodes = doc.body.childNodes;
+
+  // Extrait la version depuis le premier <p> (ex: "Tops cinéastes (v7.0)")
+  var version = '';
+  for (var i = 0; i < nodes.length; i++) {
+    var txt = nodes[i].textContent || '';
+    var vm = txt.match(/\(v([^)]+)\)/);
+    if (vm) { version = vm[1]; break; }
+  }
+  if (!version) throw new Error('Version introuvable dans le document (attendu : "Tops cinéastes (vX.X)")');
+
+  var tops = [];
+  var currentCineaste = null;
+  var currentFilms = [];
+
+  function flush() {
+    if (currentCineaste) {
+      tops.push({ cineaste: currentCineaste, films: currentFilms });
+    }
+  }
+
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (node.nodeType !== 1) continue;
+    var tag = node.tagName.toLowerCase();
+    var text = node.textContent.trim();
+    if (!text) continue;
+
+    // Ligne de film : commence par un numéro suivi d'un point (numérotation manuelle)
+    var filmMatch = text.match(/^(\d+)\.\s+(.+)$/);
+    if (filmMatch) {
+      var film = parseFilmLine(filmMatch[2].trim(), parseInt(filmMatch[1], 10));
+      if (film) currentFilms.push(film);
+      continue;
+    }
+
+    // Nom du cinéaste = paragraphe contenant un <strong> dont le texte = texte complet du para
+    var strong = node.querySelector('strong');
+    if (strong && strong.textContent.trim() === text) {
+      flush();
+      currentCineaste = text;
+      currentFilms = [];
+      continue;
+    }
+
+    // Ligne de film dans une liste <ol> générée par mammoth
+    if (tag === 'ol') {
+      var items = node.querySelectorAll('li');
+      items.forEach(function(li, idx) {
+        var filmText = li.textContent.trim();
+        var film = parseFilmLine(filmText, idx + 1);
+        if (film) currentFilms.push(film);
+      });
+    }
+  }
+  flush();
+
+  if (tops.length === 0) throw new Error('Aucun cinéaste trouvé. Vérifiez le format du document.');
+
+  return {
+    contributeur: 'MATHIEU MUZARD',
+    version: version,
+    tops: tops
+  };
+}
+
+function parseFilmLine(text, rang) {
+  if (!text) return null;
+
+  // Cherche d'abord une plage d'années : (AAAA-AA) ou (AAAA-AAAA)
+  var rangeMatch = text.match(/^(.*?)\s*\((\d{4}-\d{2,4})\)\s*(.*)$/);
+  if (rangeMatch) {
+    var titre = rangeMatch[1].trim();
+    var anneeStr = rangeMatch[2];
+    // Normalise les années courtes : 1975-79 → 1975-1979
+    anneeStr = anneeStr.replace(/^(\d{4})-(\d{2})$/, function(_, a, b) {
+      return a.slice(0, 2) + b.length === 2 ? a + '-' + a.slice(0, 2) + b : a + '-' + b;
+    });
+    var reste = rangeMatch[3].trim();
+    var note = '';
+    if (reste) {
+      var nm = reste.match(/^\((.+)\)$/);
+      note = nm ? nm[1].trim() : reste;
+    }
+    var film = { rang: rang, titre: titre, annee: anneeStr };
+    if (note) film.note = note;
+    return film;
+  }
+
+  // Cherche une année simple : (AAAA)
+  var anneeMatch = text.match(/^(.*?)\s*\((\d{4})\)\s*(.*)$/);
+  if (anneeMatch) {
+    var titre = anneeMatch[1].trim();
+    var annee = parseInt(anneeMatch[2], 10);
+    var reste = anneeMatch[3].trim();
+    var note = '';
+    if (reste) {
+      var noteMatch = reste.match(/^\((.+)\)$/);
+      note = noteMatch ? noteMatch[1].trim() : reste.trim();
+    }
+    var film = { rang: rang, titre: titre, annee: annee };
+    if (note) film.note = note;
+    return film;
+  }
+
+  // Pas d'année
+  return { rang: rang, titre: text };
+}
+
+function showStats(json) {
+  var totalFilms = json.tops.reduce(function(n, t){ return n + t.films.length; }, 0);
+  var avecNote = json.tops.reduce(function(n, t){ return n + t.films.filter(function(f){ return f.note; }).length; }, 0);
+  var sansAnnee = json.tops.reduce(function(n, t){ return n + t.films.filter(function(f){ return !f.annee; }).length; }, 0);
+  var rows = [
+    ['Version', json.version],
+    ['Cinéastes', json.tops.length],
+    ['Films total', totalFilms],
+    ['Films avec mention', avecNote],
+    ['Films sans année', sansAnnee],
+  ];
+  var el = document.getElementById('stats-table');
+  el.innerHTML = rows.map(function(r){ return '<tr><td>'+r[0]+'</td><td><strong>'+r[1]+'</strong></td></tr>'; }).join('');
+  document.getElementById('stats').style.display = 'block';
+}
+
+function download(filename, content) {
+  var blob = new Blob([content], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
