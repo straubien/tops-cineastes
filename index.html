@@ -468,9 +468,12 @@ function init(){
 
 function formatNom(nom){
   if(nom.includes(' & ')){
-    return nom.split(' & ').map(function(p){
+    var parts=nom.split(' & ');
+    var hasComma=parts.some(function(p){return p.includes(',');});
+    return parts.map(function(p){
       if(p.includes(',')){var i=p.indexOf(',');return '<b>'+escapeHtml(p.slice(0,i))+'</b>'+escapeHtml(p.slice(i));}
-      return '<b>'+escapeHtml(p)+'</b>';
+      if(hasComma) return escapeHtml(p);
+      return '<b>'+escapeHtml(p)+'</b>';   
     }).join(' & ');
   }
   if(nom.includes(',')){var i=nom.indexOf(',');return '<b>'+escapeHtml(nom.slice(0,i))+'</b>'+escapeHtml(nom.slice(i))}
