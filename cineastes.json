@@ -27488,8 +27488,8 @@
       "duo": false,
       "provisoire": false,
       "naissance": 1929,
-      "deces": null,
-      "vivant": true,
+      "deces": 2020,
+      "vivant": false,
       "tops_contributeurs": [
         "BASTIEN TEKLOW",
         "VINZ J. ORLOV",
