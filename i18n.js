@@ -5,7 +5,7 @@ var TC_TRANSLATIONS = {
     splash_enter: "Explorer l’index",
     // Nav
     nav_index: "Index",
-    nav_contributeurs: "Contributeurs",
+    nav_contributeurs: "Cinéphiles",
     nav_statistiques: "Statistiques",
     nav_mes_tops: "Mes tops",
     nav_mon_profil: "Mon profil",
@@ -16,7 +16,7 @@ var TC_TRANSLATIONS = {
     search_placeholder: "Rechercher un cinéaste…",
     filter_sans_tops: "Cinéastes sans aucun top",
     filter_non_couvert: "Cinéastes sans top importé",
-    page_contributeurs_h: "Contributeurs",
+    page_contributeurs_h: "Cinéphiles",
     page_statistiques_h: "Statistiques",
     // Profil
     profil_cin_favoris: "Cinéastes favoris",
@@ -24,7 +24,7 @@ var TC_TRANSLATIONS = {
     profil_films_coeur: "Films favoris",
     profil_films_autres: "Autres films",
     profil_presentation: "Présentation cinéphile",
-    retour_contributeurs_title: "Retour aux contributeurs",
+    retour_contributeurs_title: "Retour aux cinéphiles",
     // Mes tops – statique
     mt_titre: "Soumettre un nouveau top",
     mt_cin_label: "Cinéaste",
@@ -66,7 +66,7 @@ var TC_TRANSLATIONS = {
     stat_en_activite: function(n){ return n + " en activité"; },
     stat_tops_postes: "Tops postés",
     stat_moy: function(n){ return n + " en moyenne par contributeur"; },
-    stat_contrib: "Contributeurs",
+    stat_contrib: "Cinéphiles",
     stat_deces: function(n){ return n + " cinéastes décédés indexés"; },
     stat_sans_tops: function(n){ return "cinéaste" + (n > 1 ? 's' : '') + " sans aucun top posté"; },
     stat_cin_sans_tops: "Cinéastes sans tops",
@@ -128,7 +128,7 @@ var TC_TRANSLATIONS = {
     setpwd_confirm_ph: "Confirmer le mot de passe",
     setpwd_btn: "Valider",
     login_title: "Connexion",
-    login_sub: "Espace réservé aux contributeurs",
+    login_sub: "Espace réservé aux cinéphiles",
     login_email_ph: "Votre adresse email",
     login_pwd_ph: "Mot de passe",
     login_btn: "Se connecter",
@@ -180,7 +180,7 @@ var TC_TRANSLATIONS = {
     splash_enter: "Explore the index",
     // Nav
     nav_index: "Index",
-    nav_contributeurs: "Contributors",
+    nav_contributeurs: "Cinephiles",
     nav_statistiques: "Statistics",
     nav_mes_tops: "My tops",
     nav_mon_profil: "My profile",
@@ -191,7 +191,7 @@ var TC_TRANSLATIONS = {
     search_placeholder: "Search for a filmmaker…",
     filter_sans_tops: "Filmmakers with no tops",
     filter_non_couvert: "Filmmakers without imported top",
-    page_contributeurs_h: "Contributors",
+    page_contributeurs_h: "Cinephiles",
     page_statistiques_h: "Statistics",
     // Profil
     profil_cin_favoris: "Favourite filmmakers",
@@ -199,7 +199,7 @@ var TC_TRANSLATIONS = {
     profil_films_coeur: "Favourite films",
     profil_films_autres: "Other films",
     profil_presentation: "Cinephile presentation",
-    retour_contributeurs_title: "Back to contributors",
+    retour_contributeurs_title: "Back to cinephiles",
     // Mes tops – statique
     mt_titre: "Submit a new top",
     mt_cin_label: "Filmmaker",
