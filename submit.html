@@ -680,7 +680,8 @@ createAutocomplete({
   getItems: function(){ return cineastesIndex; },
   onSelect: function(nom){ selectedCineaste = nom; }
 });
-document.getElementById('cineaste-input').addEventListener('input', function(){ selectedCineaste = null; });
+var _ciEl = document.getElementById('cineaste-input');
+if(_ciEl) _ciEl.addEventListener('input', function(){ selectedCineaste = null; });
 
 // ── PARSING JS PUR (parseTopsBrut défini dans utils.js) ──────
 
