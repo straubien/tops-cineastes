@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://afbdrqrslgduomimkmyt.supabase.co; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co;">
+<title>TOPS/CINÉASTES — Soumettre mes tops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="utils.js"></script>
+<script src="i18n.js"></script>
+<link rel="stylesheet" href="style.css">
+<script>
+(function(){
+  var stored=localStorage.getItem('tc-dark');
+  if(stored==='1'||(stored===null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+    document.documentElement.setAttribute('data-dark','1');
+  } else {
+    document.documentElement.setAttribute('data-dark','0');
+  }
+})();
+</script>
+<style>
+:root {
+  --rouge: #C0392B;
+  --noir: #1a1a1a;
+  --beige: #f7f3ec;
+  --beige2: #ede8df;
+  --bg-card: #faf8f4;
+  --bg-subtle: #ede8df;
+  --brun: #7a6350;
+  --brun-pale: #7a6350;
+  --border: #d0c8b8;
+  --border-dim: #e5dfd0;
+  --text: #111008;
+  --vert: #1a6b3a;
+  --font: 'Cormorant Garamond', Georgia, serif;
+}
+[data-dark="1"] {
+  --rouge: #d4604a;
+  --noir: #f0ece3;
+  --beige: #1a1714;
+  --beige2: #252019;
+  --bg-card: #211e19;
+  --bg-subtle: #252019;
+  --brun: #a89880;
+  --border: #3a352c;
+  --border-dim: #2e2a23;
+  --text: #f0ece3;
+  --vert: #4caf70;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-dark="0"]) {
+    --rouge: #d4604a;
+    --noir: #f0ece3;
+    --beige: #1a1714;
+    --beige2: #252019;
+    --bg-card: #211e19;
+    --bg-subtle: #252019;
+    --brun: #a89880;
+    --border: #3a352c;
+    --border-dim: #2e2a23;
+    --text: #f0ece3;
+    --vert: #4caf70;
+  }
+}
+[data-dark="1"] body { background: var(--beige); color: var(--text); }
+[data-dark="1"] .autocomplete-input, [data-dark="1"] .tops-textarea, [data-dark="1"] .login-form input, [data-dark="1"] .setpwd-form input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+[data-dark="1"] .header,
+[data-dark="1"] .sp-profil-header { background: #1a1714 !important; }
+[data-dark="1"] .sp-profil-header::before { background: var(--rouge) !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-dark="0"]) .header,
+  :root:not([data-dark="0"]) .sp-profil-header { background: #1a1714 !important; }
+  :root:not([data-dark="0"]) .sp-profil-header::before { background: var(--rouge) !important; }
+}
+[data-dark="1"] .sp-section { background: var(--bg-card); border-left-color: var(--rouge); }
+[data-dark="1"] .chip { background: #3a352c; }
+[data-dark="1"] .success-msg,
+[data-dark="1"] .profil-success { background: #252019 !important; }
+[data-dark="1"] .btn-primary { background: #3a352c; color: #f0ece3; }
+[data-dark="1"] .btn-primary:hover { background: var(--rouge); }
+[data-dark="1"] .tabs { border-bottom-color: var(--border); }
+[data-dark="1"] .tab-btn.active { background: var(--beige2); color: var(--text); }
+[data-dark="1"] .sp-view,
+[data-dark="1"] .sp-top-name,
+[data-dark="1"] .sp-presentation-text,
+[data-dark="1"] .result-cineaste,
+[data-dark="1"] .page-title,
+[data-dark="1"] .page-sub { color: var(--text); }
+[data-dark="1"] .login-title,
+[data-dark="1"] .setpwd-title { color: var(--text); }
+[data-dark="1"] .login-sub,
+[data-dark="1"] .setpwd-sub { color: var(--brun); }
+[data-dark="1"] .autocomplete-input::placeholder,
+[data-dark="1"] .tops-textarea::placeholder { color: rgba(240,236,227,0.3); }
+[data-dark="1"] .login-form input::placeholder,
+[data-dark="1"] .setpwd-form input::placeholder { color: rgba(240,236,227,0.3); }
+[data-dark="1"] .autocomplete-input { color: var(--text); }
+[data-dark="1"] .tops-textarea { color: var(--text); }
+[data-dark="1"] .fmt-btn { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+[data-dark="1"] .fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+[data-dark="1"] .textarea-hint { color: var(--text); opacity: 0.7; }
+[data-dark="1"] .prev-edit-zone textarea { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+[data-dark="1"] .prev-edit-zone textarea::placeholder { color: rgba(240,236,227,0.3); }
+[data-dark="1"] .result-wrap { border-top-color: var(--border); }
+[data-dark="1"] .films-list li::before { color: var(--text); }
+[data-dark="1"] .film-titre { color: var(--text); }
+[data-dark="1"] .prev-section { border-top-color: var(--border); }
+[data-dark="1"] .btn-secondary:hover { border-color: var(--border); color: var(--text); }
+[data-dark="1"] .autocomplete-dropdown { background: var(--bg-card); border-color: var(--border); }
+[data-dark="1"] .autocomplete-item:hover, [data-dark="1"] .autocomplete-item.selected { background: var(--beige2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-dark="0"]) .autocomplete-input, :root:not([data-dark="0"]) .tops-textarea,
+  :root:not([data-dark="0"]) .login-form input, :root:not([data-dark="0"]) .setpwd-form input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+  :root:not([data-dark="0"]) .autocomplete-dropdown { background: var(--bg-card); border-color: var(--border); }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--beige); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+.header { background: var(--noir); position: sticky; top: 0; z-index: 100; }
+.header-bar { height: 4px; display: flex; }
+.header-bar-main { flex: 1; background: var(--rouge); }
+.header-bar-end { width: 40px; background: var(--noir); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; }
+.logo { font-family: var(--font); font-size: 22px; letter-spacing: 0.1em; color: #f0ece3; text-decoration: none; }
+.logo span { background: var(--rouge); color: #f0ece3; padding: 1px 6px; margin: 0 4px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-user { font-family: var(--font); font-size: 15px; font-style: italic; color: rgba(240,236,227,0.85); }
+.header-user strong { color: #fff; font-style: normal; }
+.btn-logout { font-family: var(--font); font-size: 14px; color: rgba(240,236,227,0.85); background: none; border: none; cursor: pointer; transition: color 0.15s; }
+.btn-logout:hover { color: var(--rouge); }
+/* Wrapper pour champs password avec toggle visibilité */
+.pwd-wrap { position: relative; display: flex; align-items: center; }
+.pwd-wrap input { flex: 1; padding-right: 42px; }
+.pwd-toggle { position: absolute; right: 0; top: 0; height: 100%; width: 42px; background: none; border: none; cursor: pointer; color: rgba(0,0,0,0.35); font-size: 17px; display: flex; align-items: center; justify-content: center; transition: color 0.15s; padding: 0; }
+.pwd-toggle:hover { color: var(--rouge); }
+[data-dark="1"] .pwd-toggle, :root:not([data-dark="0"]):has(body) .pwd-toggle { color: rgba(240,236,227,0.35); }
+[data-dark="1"] .pwd-toggle:hover { color: var(--rouge); }
+/* sp-profil-header : band noire avec flèche retour rouge à droite */
+.sp-profil-header { background: var(--noir); margin: -2.5rem -2rem 2rem; padding: 1.6rem 2rem 1.6rem; position: relative; overflow: hidden; display: flex; align-items: center; gap: 20px; }
+.sp-profil-header::before { content: ''; position: absolute; top: 0; right: 0; width: 56px; height: 100%; background: var(--rouge); }
+.sp-profil-header-text { flex: 1; min-width: 0; padding-right: 70px; }
+.sp-profil-header-title { font-family: var(--font); font-size: 30px; font-weight: 400; color: #f0ece3; margin-bottom: 2px; line-height: 1.1; }
+.sp-profil-header-sub { font-family: var(--font); font-size: 14px; font-style: italic; color: #f0ece3; }
+.sp-profil-back { position: absolute; top: 0; right: 0; width: 56px; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(240,236,227,0.85); font-size: 22px; z-index: 2; text-decoration: none; transition: color 0.15s, background 0.15s; }
+.sp-profil-back:hover { color: #fff; background: rgba(0,0,0,0.15); }
+.sp-profil-avatar-wrap { text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
+.sp-profil-avatar-wrap .sp-avatar-btn { color: #f0ece3; }
+.sp-profil-avatar-wrap .sp-avatar-btn:hover { color: #fff; }
+.sp-profil-avatar-wrap .avatar-success { color: rgba(240,236,227,0.7); }
+
+.main { max-width: 640px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+.login-wrap, .setpwd-wrap { max-width: 420px; margin: 6rem auto; text-align: center; }
+.loading-auth { max-width: 420px; margin: 6rem auto; text-align: center; }
+.loading-auth-text { font-size: 22px; font-weight: 300; color: var(--brun); font-style: italic; }
+
+/* ── Layout profil ────────────────────────── */
+.sp-header { display: flex; align-items: center; gap: 24px; margin-bottom: 2rem; }
+.sp-avatar { width: 80px; height: 80px; background: var(--rouge); display: flex; align-items: center; justify-content: center; color: #f0ece3; font-size: 26px; font-weight: 700; font-family: system-ui; overflow: hidden; flex-shrink: 0; }
+.sp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sp-avatar-wrap { text-align: center; }
+.sp-avatar-btn { font-family: var(--font); font-size: 12px; color: var(--brun); background: none; border: none; cursor: pointer; margin-top: 6px; text-decoration: underline; display: block; }
+.sp-btn-modifier { font-family: var(--font); font-size: 13px; color: var(--brun); background: none; border: 1px solid var(--border); padding: 5px 14px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s; }
+.sp-btn-modifier:hover { color: var(--rouge); border-color: var(--rouge); }
+.sp-view { font-family: var(--font); font-size: 17px; line-height: 1.8; color: var(--noir); }
+.sp-view-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; }
+.sp-view-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-view-item:nth-child(3n+1) { text-align: left; }
+.sp-view-item:nth-child(3n+2) { text-align: center; }
+.sp-view-item:nth-child(3n) { text-align: right; }
+@media(max-width:600px){ .sp-view-list { grid-template-columns: repeat(2, 1fr); } }
+.sp-empty { font-style: italic; color: var(--brun); font-size: 15px; }
+.sp-edit { margin-top: 1rem; }
+.sp-edit-actions { display: flex; gap: 12px; margin-top: 1rem; }
+.sp-top-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-dim); }
+.sp-top-name { font-family: var(--font); font-size: 17px; color: var(--noir); }
+.sp-top-count { font-family: var(--font); font-size: 14px; color: var(--brun); font-style: italic; }
+.sp-presentation-text { font-family: var(--font); font-size: 16px; line-height: 1.8; color: var(--noir); font-style: italic; }
+.login-title, .setpwd-title { font-size: 38px; font-weight: 300; margin-bottom: 6px; color: var(--noir); }
+.login-sub, .setpwd-sub { font-size: 18px; font-style: italic; color: var(--brun); margin-bottom: 2.5rem; }
+.login-form, .setpwd-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form input, .setpwd-form input { font-family: var(--font); font-size: 18px; padding: 10px 16px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); outline: none; transition: border-color 0.2s; }
+.login-form input:focus, .setpwd-form input:focus { border-color: var(--rouge); }
+.login-form input::placeholder, .setpwd-form input::placeholder { color: rgba(0,0,0,0.4); font-style: italic; }
+.login-error { font-size: 15px; font-style: italic; color: var(--rouge); margin-top: 8px; }
+
+.page-title { font-size: 38px; font-weight: 400; color: var(--noir); margin-bottom: 4px; }
+.page-sub { font-size: 20px; font-weight: 400; font-style: italic; color: var(--noir); margin-bottom: 2rem; }
+
+.tabs { display: flex; flex-wrap: wrap; border-bottom: 3px solid var(--noir); margin-bottom: 2rem; }
+.tab-btn { font-family: var(--font); font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 14px; background: none; border: none; cursor: pointer; color: var(--brun); white-space: nowrap; position: relative; transition: color 0.15s; flex-shrink: 0; }
+.tab-btn:hover { color: var(--noir); }
+.tab-btn.active { color: var(--noir); background: var(--beige2); }
+.tab-btn.active::after { content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 3px; background: var(--rouge); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.cineaste-select-wrap { margin-bottom: 1.5rem; }
+.textarea-wrap { margin-bottom: 1.5rem; }
+.tops-textarea { font-family: var(--font); font-size: 19px; line-height: 1.7; padding: 10px 14px; border: 1px solid var(--border); background: var(--bg-card); color: var(--noir); outline: none; width: 100%; min-height: 110px; resize: vertical; transition: border-color 0.2s; }
+.tops-textarea:focus { border-color: var(--rouge); }
+.tops-textarea::placeholder { color: rgba(0,0,0,0.45); font-style: italic; }
+.format-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
+.fmt-btn { font-family: var(--font); font-size: 14px; padding: 3px 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--noir); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+.actions { display: flex; gap: 12px; align-items: center; margin-bottom: 2rem; }
+.prev-section { margin-top: 3rem; }
+
+.chips-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 36px; }
+.chip { display: flex; align-items: center; gap: 6px; background: var(--noir); color: #f0ece3; font-family: var(--font); font-size: 16px; padding: 5px 10px 5px 14px; cursor: grab; user-select: none; touch-action: none; transition: background 0.15s; position: relative; }
+.chip::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--rouge); }
+.chip.dragging { opacity: 0.4; }
+.chip.drag-over { outline: 2px solid var(--rouge); }
+.chip-remove { background: none; border: none; color: rgba(240,236,227,0.5); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; margin-left: 4px; transition: color 0.1s; }
+.chip-remove:hover { color: var(--rouge); }
+.chips-hint { font-size: 16px; font-style: italic; color: var(--noir); margin-bottom: 12px; }
+.chips-max-msg { font-size: 13px; font-style: italic; color: var(--rouge); margin-bottom: 8px; display: none; }
+
+.films-list-libre { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.films-list-libre li { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border-dim); font-size: 17px; }
+.films-list-libre li:last-child { border-bottom: none; }
+.films-list-libre .film-titre { flex: 1; font-family: 'Times New Roman', serif; }
+.films-list-libre .film-annee { font-size: 13px; color: var(--brun); }
+.films-count { font-size: 14px; font-style: italic; color: var(--brun); margin-bottom: 12px; }
+.films-count.warn { color: var(--rouge); }
+
+.avatar-wrap { display: flex; align-items: flex-start; gap: 2rem; margin-bottom: 1.5rem; }
+.avatar-preview { width: 100px; height: 100px; flex-shrink: 0; background: var(--rouge); display: flex; align-items: center; justify-content: center; color: #f0ece3; font-family: system-ui, sans-serif; font-size: 30px; font-weight: 700; }
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-upload-zone { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.avatar-input { display: none; }
+.avatar-label { font-family: var(--font); font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brun); background: none; border: 1px solid var(--border); padding: 10px 20px; cursor: pointer; display: inline-block; transition: all 0.15s; text-align: center; }
+.avatar-label:hover { border-color: var(--noir); color: var(--noir); }
+.avatar-hint { font-size: 16px; font-style: italic; color: var(--noir); }
+.avatar-success { display: none; font-size: 15px; font-style: italic; color: var(--vert); margin-top: 8px; }
+
+.profil-success { display: none; background: var(--noir); color: #f0ece3; padding: 1.2rem 1.8rem; margin-top: 1.5rem; position: relative; }
+.profil-success.visible { display: block; }
+.profil-success::before { content: ''; position: absolute; top: 0; right: 0; width: 8px; height: 100%; background: var(--rouge); }
+.profil-success h3 { font-size: 19px; font-weight: 600; margin-bottom: 4px; }
+.profil-success p { font-size: 14px; font-style: italic; opacity: 0.6; }
+
+@media (max-width: 600px) {
+  .main { padding: 1.5rem 1.2rem; }
+  .header-inner { padding: 0.8rem 1.2rem; }
+  .page-title { font-size: 30px; }
+  .tab-btn { font-size: 12px; padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-bar">
+    <div class="header-bar-main"></div>
+    <div class="header-bar-end"></div>
+  </div>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:20px">
+      <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="header-user" id="header-user" style="display:none">
+        <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
+      </div>
+      <button class="btn-logout" id="btn-logout" style="display:none" data-i18n="btn_logout">Déconnexion</button>
+      <button id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" onclick="toggleDarkMode()" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
+      <button class="btn-lang" id="btn-lang" onclick="toggleLang()" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" style="display:block;opacity:0.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"></button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="section-setpwd" style="display:none">
+  <div class="setpwd-wrap">
+    <div class="setpwd-title" data-i18n="setpwd_title">Bienvenue</div>
+    <div class="setpwd-sub" data-i18n="setpwd_sub">Choisissez votre mot de passe</div>
+    <div class="setpwd-form">
+      <div class="pwd-wrap">
+        <input type="password" id="setpwd-password" placeholder="Nouveau mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_pwd_ph">
+        <button type="button" class="pwd-toggle" data-for="setpwd-password" title="Voir/masquer">&#128065;</button>
+      </div>
+      <div class="pwd-wrap">
+        <input type="password" id="setpwd-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_confirm_ph">
+        <button type="button" class="pwd-toggle" data-for="setpwd-confirm" title="Voir/masquer">&#128065;</button>
+      </div>
+      <button class="btn-primary" id="btn-setpwd" data-i18n="setpwd_btn">Valider</button>
+      <div class="login-error" id="setpwd-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="section-loading">
+  <div class="loading-auth">
+    <div class="loading-auth-text" id="loading-auth-msg" data-i18n="loading_auth">Vérification de la session…</div>
+  </div>
+</div>
+
+<div id="section-login" style="display:none">
+  <div class="login-wrap">
+    <div class="login-title" data-i18n="login_title">Connexion</div>
+    <div class="login-sub" data-i18n="login_sub">Espace réservé aux cinéphiles</div>
+    <div class="login-form">
+      <input type="email" id="login-email" placeholder="Votre adresse email" autocomplete="email" data-i18n-ph="login_email_ph">
+      <div class="pwd-wrap">
+        <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" data-i18n-ph="login_pwd_ph">
+        <button type="button" class="pwd-toggle" data-for="login-password" title="Voir/masquer">&#128065;</button>
+      </div>
+      <button class="btn-primary" id="btn-login" onclick="login()" data-i18n="login_btn">Se connecter</button>
+      <div class="login-error" id="login-error" style="display:none"></div>
+      <button type="button" id="btn-forgot" onclick="sendPasswordReset()" style="font-family:var(--font);font-size:14px;font-style:italic;color:var(--brun);background:none;border:none;cursor:pointer;text-decoration:underline;margin-top:6px;" data-i18n="forgot_btn">Mot de passe oublié ?</button>
+      <div id="forgot-msg" style="display:none;font-size:14px;font-style:italic;color:var(--vert);margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SOUMISSION -->
+<div id="section-submit" style="display:none">
+  <div class="main">
+
+    <!-- HEADER PROFIL -->
+    <div class="sp-profil-header">
+      <div class="sp-profil-avatar-wrap sp-avatar-wrap" style="text-align:center">
+        <div class="sp-avatar" id="sp-avatar" style="margin:0 auto">
+          <span id="avatar-initiales"></span>
+        </div>
+        <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <button class="sp-avatar-btn" id="btn-change-avatar" data-i18n="sp_avatar_btn" style="text-align:center;margin:6px auto 0">Changer la photo</button>
+        <button class="btn-primary" id="btn-upload-avatar" style="display:none;margin-top:6px;font-size:12px;padding:6px 14px">Publier</button>
+        <div class="avatar-success" id="avatar-success" style="display:none">✓ Photo mise à jour</div>
+      </div>
+      <div class="sp-profil-header-text">
+        <div class="sp-profil-header-title" id="submit-title">Mon profil</div>
+        <div class="sp-profil-header-sub" data-i18n="sub_header_sub">Gérez vos cinéastes favoris, films et présentation.</div>
+      </div>
+      <a class="sp-profil-back" href="index.html" onclick="sessionStorage.setItem('tc-page','index')" title="Retour au site">&#8592;</a>
+    </div>
+
+    <!-- SECTION: Cinéastes favoris -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_favoris_title">❤ Cinéastes favoris</div>
+        <button class="sp-btn-modifier" id="sp-edit-favoris" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-favoris-view"><span class="sp-empty" data-i18n="sub_favoris_empty">Aucun cinéaste favori ajouté.</span></div>
+      <div class="sp-edit" id="sp-favoris-edit" style="display:none">
+        <div class="field-label" data-i18n="sub_favoris_field">Cinéastes favoris (max 3) — glissez pour réordonner</div>
+        <div class="chips-list" id="favoris-chips"></div>
+        <div class="chips-max-msg" id="favoris-max" data-i18n="sub_favoris_max">Maximum 3 cinéastes favoris atteint.</div>
+        <div class="autocomplete-wrap" id="favoris-ac-wrap">
+          <input type="text" class="autocomplete-input" id="favoris-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <div class="autocomplete-dropdown" id="favoris-dropdown"></div>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-favoris" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-favoris" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-favoris"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_favoris_success_p">Vos cinéastes favoris sont mis à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Autres cinéastes -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_autres_cin_title">Autres cinéastes appréciés</div>
+        <button class="sp-btn-modifier" id="sp-edit-autres" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-autres-view"><span class="sp-empty" data-i18n="sub_autres_cin_empty">Aucun cinéaste ajouté.</span></div>
+      <div class="sp-edit" id="sp-autres-edit" style="display:none">
+        <div class="field-label" data-i18n="sub_autres_cin_field">Autres cinéastes — glissez pour réordonner</div>
+        <div class="chips-list" id="autres-chips"></div>
+        <div class="autocomplete-wrap">
+          <input type="text" class="autocomplete-input" id="autres-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <div class="autocomplete-dropdown" id="autres-dropdown"></div>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-autres" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-autres" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-autres"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_autres_cin_success_p">Votre liste est mise à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Films favoris -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_films_title">❤ Films favoris</div>
+        <button class="sp-btn-modifier" id="sp-edit-films" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-films-view"><span class="sp-empty" data-i18n="sub_films_empty">Aucun film favori ajouté.</span></div>
+      <div class="sp-edit" id="sp-films-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_films_field">Films favoris (max 10) — un par ligne</div>
+          <textarea class="tops-textarea" id="films-fav-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-save-films-fav" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-films" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-films-fav"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_films_success_p">Vos films favoris sont mis à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Autres films -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_autresfilms_title">Autres films</div>
+        <button class="sp-btn-modifier" id="sp-edit-autresfilms" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-autresfilms-view"><span class="sp-empty" data-i18n="sub_autresfilms_empty">Aucun film ajouté.</span></div>
+      <div class="sp-edit" id="sp-autresfilms-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_autresfilms_field">Autres films — un par ligne</div>
+          <textarea class="tops-textarea" id="autres-films-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-save-autres-films" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-autresfilms" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-autres-films"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_autresfilms_success_p">Votre liste de films est mise à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Présentation -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_presentation_title">Présentation cinéphile</div>
+        <button class="sp-btn-modifier" id="sp-edit-presentation" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-presentation-view"><span class="sp-empty" data-i18n="sub_presentation_empty">Aucune présentation ajoutée.</span></div>
+      <div class="sp-edit" id="sp-presentation-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_presentation_field">Présentation</div>
+          <div class="format-toolbar">
+            <button type="button" class="fmt-btn" data-fmt="bold" title="Gras"><b>G</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" title="Italique"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="underline" title="Souligné"><u>S</u></button>
+          </div>
+          <textarea class="tops-textarea" id="presentation-textarea" placeholder="Décrivez votre rapport au cinéma…" data-i18n-ph="sub_presentation_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-presentation" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-presentation" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-presentation"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_presentation_success_p">Votre présentation est mise à jour.</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── MODE SOMBRE ───────────────────────────────────────────────
+function toggleDarkMode(){
+  var on=document.documentElement.getAttribute('data-dark')==='1';
+  document.documentElement.setAttribute('data-dark',on?'0':'1');
+  localStorage.setItem('tc-dark',on?'0':'1');
+}
+
+// ── CONFIG SUPABASE ──────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(TC_SUPABASE_URL, TC_SUPABASE_KEY, {
+  auth: {
+    flowType: 'implicit',
+    detectSessionInUrl: true
+  }
+});
+
+var currentUser = null;
+var currentContributor = null;
+var parsedFilms = null;
+
+// ── INIT ─────────────────────────────────────────────────────
+(function(){
+  // Détecter un token d'invitation ou de récupération dans l'URL (hash ou query string)
+  var hash = window.location.hash;
+  var search = window.location.search;
+  var isInvite = hash.includes('type=invite') || hash.includes('type=recovery')
+    || search.includes('type=invite') || search.includes('type=recovery')
+    || hash.includes('type=signup') || search.includes('type=signup');
+
+  // Personnaliser le message de chargement si on connaît déjà le nom
+  var knownName = localStorage.getItem('tc-display-name');
+  if(knownName){
+    var prenom = knownName.split(' ')[0];
+    prenom = prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
+    document.getElementById('loading-auth-msg').textContent = t('sp_reconnect', prenom);
+  }
+
+  // Timeout de sécurité : si aucune session après 4s, afficher le login
+  var authResolved = false;
+  var loadingTimeout = setTimeout(function(){
+    if(!authResolved){
+      authResolved = true;
+      document.getElementById('section-loading').style.display = 'none';
+      document.getElementById('section-login').style.display = 'block';
+    }
+  }, 8000);
+
+  function hideLoading(){
+    if(authResolved) return;
+    authResolved = true;
+    clearTimeout(loadingTimeout);
+    document.getElementById('section-loading').style.display = 'none';
+  }
+
+  sb.auth.onAuthStateChange(function(event, session){
+    // Session initiale
+    if(event === 'INITIAL_SESSION'){
+      if(session && isInvite){
+        hideLoading();
+        document.getElementById('section-setpwd').style.display = 'block';
+        isInvite = false;
+      } else if(session){
+        hideLoading();
+        var u = session.user;
+        setTimeout(function(){ onLogin(u); }, 0);
+      }
+      // Si null : on reste en loading, on attend TOKEN_REFRESHED
+      return;
+    }
+    if((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session && isInvite){
+      hideLoading();
+      document.getElementById('section-setpwd').style.display = 'block';
+      document.getElementById('section-login').style.display = 'none';
+      isInvite = false;
+    } else if(event === 'SIGNED_IN' && session && !isInvite){
+      hideLoading();
+      var u = session.user;
+      setTimeout(function(){ onLogin(u); }, 0);
+    } else if(event === 'USER_UPDATED' && session){
+      // Mot de passe défini avec succès
+      document.getElementById('section-setpwd').style.display = 'none';
+      var u = session.user;
+      setTimeout(function(){ onLogin(u); }, 0);
+    } else if(event === 'TOKEN_REFRESHED' && session){
+      hideLoading();
+      if(!currentUser){
+        var u = session.user;
+        setTimeout(function(){ onLogin(u); }, 0);
+      }
+    } else if(event === 'SIGNED_OUT'){
+      hideLoading();
+      onLogout();
+    }
+  });
+})();
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function login(){
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-password').value;
+  var btn = document.getElementById('btn-login');
+  var errEl = document.getElementById('login-error');
+
+  if(!email || !password){
+    showError(t('sp_err_no_fields'));
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>'+t('login_btn')+'…';
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){
+    btn.disabled = false;
+    btn.textContent = t('login_btn');
+    showError(t('sp_err_login'));
+  }
+}
+
+function showError(msg){
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function sendPasswordReset(){
+  var email = document.getElementById('login-email').value.trim();
+  var msgEl = document.getElementById('forgot-msg');
+  if(!email){ showError(t('sp_err_no_email')); return; }
+  msgEl.style.display = 'none';
+  var btn = document.getElementById('btn-forgot');
+  btn.disabled = true;
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  btn.disabled = false;
+  if(error){
+    showError('Erreur : ' + error.message);
+  } else {
+    msgEl.textContent = t('sp_forgot_sent') + email + '.';
+    msgEl.style.display = 'block';
+  }
+}
+
+function formatPrenom(displayName){
+  if(!displayName) return '';
+  var prenom = displayName.split(' ')[0];
+  return prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
+}
+
+async function onLogin(user){
+  currentUser = user;
+  // Récupérer le contributeur lié
+  const { data, error } = await sb.from('contributors')
+    .select('*')
+    .eq('auth_id', user.id)
+    .single();
+
+  if(error || !data){
+    // Vérifier si c'est un compte invité récent (email confirmé très récemment = premier login)
+    var confirmedAt = user.email_confirmed_at ? new Date(user.email_confirmed_at).getTime() : 0;
+    var now = Date.now();
+    if(confirmedAt && (now - confirmedAt < 900000)){ // moins de 15 minutes
+      // Probablement un nouvel invité qui n'a pas encore défini son mot de passe
+      document.getElementById('section-login').style.display = 'none';
+      document.getElementById('section-setpwd').style.display = 'block';
+      return;
+    }
+    showError(t('sp_err_no_profil'));
+    await sb.auth.signOut();
+    return;
+  }
+
+  currentContributor = data;
+  localStorage.setItem('tc-display-name', data.display_name);
+
+  // Afficher l'interface
+  document.getElementById('section-login').style.display = 'none';
+  document.getElementById('section-submit').style.display = 'block';
+  document.getElementById('header-user').style.display = 'block';
+  document.getElementById('btn-logout').style.display = 'block';
+  document.getElementById('header-name').textContent = formatPrenom(data.display_name);
+  var titleEl = document.getElementById('submit-title');
+  titleEl.textContent = t('nav_mon_profil') + ' — ';
+  var nameSpan = document.createElement('span');
+  nameSpan.style.color = 'var(--rouge)';
+  nameSpan.textContent = formatPrenom(data.display_name);
+  titleEl.appendChild(nameSpan);
+
+  initProfil();
+}
+
+function onLogout(){
+  currentUser = null;
+  currentContributor = null;
+  localStorage.removeItem('tc-display-name');
+  document.getElementById('section-loading').style.display = 'none';
+  document.getElementById('section-login').style.display = 'block';
+  document.getElementById('section-submit').style.display = 'none';
+  document.getElementById('header-user').style.display = 'none';
+  document.getElementById('btn-logout').style.display = 'none';
+}
+
+async function logout(){
+  await sb.auth.signOut();
+}
+document.getElementById('btn-logout').addEventListener('click', logout);
+
+// ── AUTOCOMPLETE CINÉASTES ────────────────────────────────────
+var cineastesIndex = [];
+var selectedCineaste = null;
+
+// Charger cineastes.json
+fetch('cineastes.json').then(function(r){ return r.json(); }).then(function(data){
+  cineastesIndex = data.cineastes.map(function(c){ return c.nom; });
+}).catch(function(){ /* silencieux si hors site */ });
+
+createAutocomplete({
+  inputId: 'cineaste-input',
+  dropdownId: 'cineaste-dropdown',
+  getItems: function(){ return cineastesIndex; },
+  onSelect: function(nom){ selectedCineaste = nom; }
+});
+var _ciEl = document.getElementById('cineaste-input');
+if(_ciEl) _ciEl.addEventListener('input', function(){ selectedCineaste = null; });
+
+// ── PARSING JS PUR (parseTopsBrut défini dans utils.js) ──────
+
+// ── PARSING via Claude API ────────────────────────────────────
+async function parseTops(){
+  var cineaste = selectedCineaste || document.getElementById('cineaste-input').value.trim();
+  var texte = document.getElementById('tops-textarea').value.trim();
+
+  if(!cineaste){
+    alert(t('mt_no_cin_alert'));
+    return;
+  }
+  if(!texte){
+    alert(t('mt_no_texte_alert'));
+    return;
+  }
+
+  var btn = document.getElementById('btn-parse');
+  var loadingBar = document.getElementById('loading-bar');
+  btn.disabled = true;
+  btn.textContent = t('mt_analyse_loading');
+  loadingBar.classList.add('visible');
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('success-msg').classList.remove('visible');
+
+  // Parser en JS pur
+  var films = parseTopsBrut(texte);
+
+  btn.disabled = false;
+  btn.textContent = t('mt_analyser');
+  loadingBar.classList.remove('visible');
+
+  if(!films.length){
+    alert(t('mt_no_films_alert'));
+    return;
+  }
+
+  parsedFilms = films;
+  renderResult(cineaste, parsedFilms);
+}
+
+function renderResult(cineaste, films){
+  // Afficher le cinéaste
+  var parts = cineaste.trim().split(' ');
+  var nom = parts[parts.length - 1].toUpperCase();
+  var prenom = parts.slice(0, -1).join(' ');
+  var resultEl = document.getElementById('result-cineaste');
+  resultEl.textContent = prenom ? prenom + ' ' : '';
+  var strongEl = document.createElement('strong');
+  strongEl.textContent = nom;
+  resultEl.appendChild(strongEl);
+
+  // Afficher les films
+  var list = document.getElementById('films-list');
+  list.innerHTML = '';
+  films.forEach(function(f){
+    var li = document.createElement('li');
+    var titreEl = document.createElement('span');
+    titreEl.className = 'film-titre';
+    titreEl.textContent = f.titre;
+    li.appendChild(titreEl);
+    if(f.annee){
+      var anneeEl = document.createElement('span');
+      anneeEl.className = 'film-annee';
+      anneeEl.textContent = f.annee;
+      li.appendChild(anneeEl);
+    }
+    list.appendChild(li);
+  });
+
+  // Avertissement si films sans année
+  var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+  var warn = document.getElementById('parse-warning');
+  if(sansAnnee > 0){
+    warn.textContent = t('mt_sans_annee', sansAnnee);
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+
+  document.getElementById('result-wrap').classList.add('visible');
+}
+
+// ── SOUMISSION ────────────────────────────────────────────────
+async function submitTops(){
+  if(!parsedFilms || !currentContributor) return;
+
+  var cineaste = document.getElementById('cineaste-input').value.trim();
+  var rawText = document.getElementById('tops-textarea').value.trim();
+  var btn = document.getElementById('btn-submit');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>'+t('sp_envoi');
+
+  const { error } = await sb.from('submissions').insert({
+    contributor_id: currentContributor.id,
+    contributor_name: currentContributor.json_name || currentContributor.display_name,
+    raw_text: rawText,
+    parsed_json: {
+      cineaste: cineaste,
+      films: parsedFilms
+    },
+    status: 'pending'
+  });
+
+  if(error){
+    alert(t('sp_err_submission') + error.message);
+    btn.disabled = false;
+    btn.textContent = t('sp_soumettre');
+    return;
+  }
+
+  // Succès
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('success-msg').classList.add('visible');
+  btn.disabled = false;
+  btn.textContent = t('sp_soumettre');
+
+  // Recharger les soumissions
+  loadPrevSubmissions();
+  resetForm();
+}
+
+// ── SOUMISSIONS PRÉCÉDENTES ───────────────────────────────────
+async function loadPrevSubmissions(){
+  if(!currentContributor) return;
+
+  const { data, error } = await sb.from('submissions')
+    .select('id, parsed_json, status, submitted_at')
+    .eq('contributor_id', currentContributor.id)
+    .order('submitted_at', { ascending: false })
+    .limit(50);
+
+  if(error || !data || !data.length){
+    document.getElementById('prev-section').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('prev-section').style.display = 'block';
+  var list = document.getElementById('prev-list');
+  list.innerHTML = '';
+
+  data.forEach(function(s){
+    var cineaste = s.parsed_json && s.parsed_json.cineaste ? s.parsed_json.cineaste : '—';
+    var films = (s.parsed_json && s.parsed_json.films) || [];
+    var nbFilms = films.length;
+    var date = new Date(s.submitted_at).toLocaleDateString('fr-FR');
+    var statusLabel = {pending: t('sp_status_pending'), approved: t('sp_status_approved'), rejected: t('sp_status_rejected')}[s.status] || s.status;
+
+    var item = document.createElement('div');
+    item.className = 'prev-item';
+
+    // Ligne principale
+    var row = document.createElement('div');
+    row.className = 'prev-item-row';
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'prev-name';
+    nameSpan.textContent = cineaste + ' ';
+    var metaSpan = document.createElement('span');
+    metaSpan.style.cssText = 'opacity:0.45;font-size:14px';
+    metaSpan.textContent = '(' + nbFilms + ' film' + (nbFilms > 1 ? 's' : '') + ' · ' + date + ')';
+    nameSpan.appendChild(metaSpan);
+
+    var actionsDiv = document.createElement('div');
+    actionsDiv.className = 'prev-item-actions';
+
+    var statusSpan = document.createElement('span');
+    statusSpan.className = 'prev-status ' + s.status;
+    statusSpan.textContent = statusLabel;
+
+    var editBtn = document.createElement('button');
+    editBtn.className = 'prev-btn';
+    editBtn.textContent = t('sp_modifier');
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'prev-btn delete';
+    delBtn.textContent = 'Supprimer';
+
+    actionsDiv.appendChild(statusSpan);
+    actionsDiv.appendChild(editBtn);
+    actionsDiv.appendChild(delBtn);
+    row.appendChild(nameSpan);
+    row.appendChild(actionsDiv);
+
+    // Zone d'édition inline
+    var editZone = document.createElement('div');
+    editZone.className = 'prev-edit-zone';
+    var filmsText = films.map(function(f, i){
+      return (i + 1) + '. ' + f.titre + (f.annee ? ' (' + f.annee + ')' : '');
+    }).join('\n');
+    var ta = document.createElement('textarea');
+    ta.value = filmsText;
+    var editActions = document.createElement('div');
+    editActions.className = 'prev-edit-actions';
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-primary';
+    saveBtn.style.cssText = 'font-size:13px;padding:7px 18px';
+    saveBtn.textContent = t('sp_sauvegarder');
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.style.cssText = 'font-size:13px;padding:7px 18px';
+    cancelBtn.textContent = t('sp_annuler');
+    var note = document.createElement('div');
+    note.className = 'prev-edit-note';
+    note.textContent = t('sp_edit_note');
+    editActions.appendChild(saveBtn);
+    editActions.appendChild(cancelBtn);
+    editZone.appendChild(ta);
+    editZone.appendChild(editActions);
+    editZone.appendChild(note);
+
+    item.appendChild(row);
+    item.appendChild(editZone);
+    list.appendChild(item);
+
+    // Logique boutons
+    editBtn.addEventListener('click', function(){
+      var open = editZone.classList.toggle('visible');
+      editBtn.textContent = open ? t('sp_fermer') : t('sp_modifier');
+    });
+    cancelBtn.addEventListener('click', function(){
+      editZone.classList.remove('visible');
+      editBtn.textContent = t('sp_modifier');
+      ta.value = filmsText;
+    });
+    saveBtn.addEventListener('click', async function(){
+      saveBtn.disabled = true;
+      saveBtn.textContent = t('sp_enregistrement');
+      var lines = ta.value.split('\n').filter(function(l){ return l.trim(); });
+      var newFilms = lines.map(function(line, i){
+        line = line.replace(/^\d+[.\-)\s]+/, '').trim();
+        var am = line.match(/\((\d{4})\)\s*$/);
+        var annee = am ? parseInt(am[1]) : null;
+        var titre = line.replace(/\(\d{4}\)\s*$/, '').trim();
+        return { rang: i + 1, titre: titre, annee: annee };
+      });
+      var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
+      var res = await sb.from('submissions').update({ parsed_json: newParsedJson, status: 'pending' }).eq('id', s.id);
+      if(res.error){ alert(t('sp_err_err') + res.error.message); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
+      loadPrevSubmissions();
+    });
+    delBtn.addEventListener('click', async function(){
+      if(!confirm(t('sp_confirm_del', cineaste))) return;
+      delBtn.disabled = true;
+      var res = await sb.from('submissions').delete().eq('id', s.id);
+      if(res.error){ alert(t('sp_err_err') + res.error.message); delBtn.disabled = false; return; }
+      loadPrevSubmissions();
+    });
+  });
+}
+
+// ── RESET ─────────────────────────────────────────────────────
+function resetForm(){
+  document.getElementById('cineaste-input').value = '';
+  document.getElementById('tops-textarea').value = '';
+  document.getElementById('result-wrap').classList.remove('visible');
+  document.getElementById('cineaste-dropdown').classList.remove('visible');
+  selectedCineaste = null;
+  parsedFilms = null;
+}
+
+// ── SET PASSWORD ─────────────────────────────────────────────
+async function setPassword(){
+  var pwd = document.getElementById('setpwd-password').value;
+  var confirm = document.getElementById('setpwd-confirm').value;
+  var btn = document.getElementById('btn-setpwd');
+  var errEl = document.getElementById('setpwd-error');
+
+  errEl.style.display = 'none';
+  if(!pwd || pwd.length < 8){
+    errEl.textContent = t('sp_pwd_min');
+    errEl.style.display = 'block';
+    return;
+  }
+  if(pwd !== confirm){
+    errEl.textContent = t('sp_pwd_match');
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = t('sp_pwd_validating');
+
+  const { error } = await sb.auth.updateUser({ password: pwd });
+  if(error){
+    btn.disabled = false;
+    btn.textContent = t('setpwd_btn');
+    errEl.textContent = 'Erreur : ' + error.message;
+    errEl.style.display = 'block';
+  }
+  // onAuthStateChange gère la suite (USER_UPDATED)
+}
+
+document.getElementById('btn-setpwd').addEventListener('click', setPassword);
+['setpwd-password','setpwd-confirm'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){
+    if(e.key==='Enter') setPassword();
+  });
+});
+
+// ── ENTER sur les champs login ────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  ['login-email','login-password'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
+  });
+});
+
+// ── ONGLETS ───────────────────────────────────────────────────
+// ── PROFIL : TOGGLE ÉDITION ────────────────────────────────────
+function toggleEdit(section){
+  var viewEl = document.getElementById('sp-'+section+'-view');
+  var editEl = document.getElementById('sp-'+section+'-edit');
+  var btnEl = document.getElementById('sp-edit-'+section);
+  if(editEl.style.display === 'none'){
+    editEl.style.display = 'block';
+    viewEl.style.display = 'none';
+    btnEl.textContent = t('sp_fermer');
+  } else {
+    editEl.style.display = 'none';
+    viewEl.style.display = 'block';
+    btnEl.textContent = t('sp_modifier');
+    // Masquer les success
+    var succ = editEl.querySelector('.profil-success');
+    if(succ) succ.classList.remove('visible');
+  }
+}
+function closeEdit(section){
+  document.getElementById('sp-'+section+'-edit').style.display = 'none';
+  document.getElementById('sp-'+section+'-view').style.display = 'block';
+  document.getElementById('sp-edit-'+section).textContent = t('sp_modifier');
+}
+
+// ── PROFIL : RENDU VUE LECTURE ─────────────────────────────────
+function boldNomFamille(n){
+  // Met en gras la partie en majuscules (nom de famille)
+  return n.replace(/([A-ZÀ-Ü\-]{2,}(?:\s[A-ZÀ-Ü\-]{2,})*)/g, function(m){ return '<b>'+m+'</b>'; });
+}
+function renderViewList(containerId, items){
+  var el = document.getElementById(containerId);
+  if(!items || !items.length){ el.innerHTML = '<span class="sp-empty">'+t('sp_empty_item')+'</span>'; return; }
+  el.innerHTML = '<div class="sp-view-list">' + items.map(function(n){
+    var clean=n.replace(/,.*$/,'');
+    var parts=clean.split(' ').filter(function(w){return w.length>=2&&w===w.toUpperCase();});
+    var nom=parts.length?parts.join(' '):clean.trim();
+    if(nom.indexOf('STRAUB')!==-1&&nom.indexOf('HUILLET')!==-1) nom='STRAUB/HUILLET';
+    return '<span class="sp-view-item"><b>'+nom+'</b></span>';
+  }).join('') + '</div>';
+}
+function renderViewFilms(containerId, films){
+  var el = document.getElementById(containerId);
+  if(!films || !films.length){ el.innerHTML = '<span class="sp-empty">Aucun film ajouté.</span>'; return; }
+  el.innerHTML = films.map(function(f){ return '<div style="padding:3px 0">'+escapeHtml(f)+'</div>'; }).join('');
+}
+function renderViewPresentation(text){
+  var el = document.getElementById('sp-presentation-view');
+  if(!text){ el.innerHTML = '<span class="sp-empty">Aucune présentation ajoutée.</span>'; return; }
+  el.innerHTML = '<div class="sp-presentation-text">'+formatPresentation(text)+'</div>';
+}
+function refreshProfilViews(){
+  if(!currentContributor) return;
+  renderViewList('sp-favoris-view', currentContributor.cineaste_coeur);
+  renderViewList('sp-autres-view', currentContributor.cineaste_autres);
+  renderViewFilms('sp-films-view', currentContributor.film_coeur);
+  renderViewFilms('sp-autresfilms-view', currentContributor.film_autres);
+  renderViewPresentation(currentContributor.presentation);
+}
+
+// ── PRÉSENTATION : TOOLBAR MISE EN FORME ──────────────────────
+document.querySelectorAll('.fmt-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var ta=document.getElementById('presentation-textarea');
+    var start=ta.selectionStart, end=ta.selectionEnd;
+    var sel=ta.value.substring(start,end);
+    var wrap={'bold':['**','**'],'italic':['*','*'],'underline':['__','__']}[btn.getAttribute('data-fmt')];
+    if(!wrap) return;
+    ta.setRangeText(wrap[0]+sel+wrap[1], start, end, 'select');
+    ta.focus();
+  });
+});
+
+// ── PROFIL : BOUTONS MODIFIER / ANNULER ────────────────────────
+['favoris','autres','films','autresfilms','presentation'].forEach(function(s){
+  document.getElementById('sp-edit-'+s).addEventListener('click', function(){ toggleEdit(s); });
+  var cancelBtn = document.getElementById('sp-cancel-'+s);
+  if(cancelBtn) cancelBtn.addEventListener('click', function(){ closeEdit(s); });
+});
+
+// ── PROFIL : AVATAR ────────────────────────────────────────────
+document.getElementById('btn-change-avatar').addEventListener('click', function(){
+  document.getElementById('avatar-input').click();
+});
+
+// ── MULTI-SELECT GÉNÉRIQUE ────────────────────────────────────
+function formatChipCineaste(n){
+  // "KUBRICK, Stanley" → "Stanley KUBRICK"
+  var idx = n.indexOf(',');
+  if(idx === -1) return n;
+  var last = n.slice(0, idx).trim();
+  var first = n.slice(idx + 1).trim();
+  return first ? first + ' ' + last : last;
+}
+
+function createMultiSelect(opts){
+  // opts: { inputId, dropdownId, chipsId, maxId, max, showRank }
+  var selected = [];
+  var acIdx = -1;
+
+  var input = document.getElementById(opts.inputId);
+  var dropdown = document.getElementById(opts.dropdownId);
+  var chipsEl = document.getElementById(opts.chipsId);
+  var maxEl = opts.maxId ? document.getElementById(opts.maxId) : null;
+
+  input.setAttribute('role','combobox');
+  input.setAttribute('aria-autocomplete','list');
+  input.setAttribute('aria-expanded','false');
+  input.setAttribute('aria-haspopup','listbox');
+  input.setAttribute('aria-controls',opts.dropdownId);
+  dropdown.setAttribute('role','listbox');
+
+  function render(){
+    chipsEl.innerHTML = '';
+    selected.forEach(function(nom, i){
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.setAttribute('data-idx', i);
+      chip.innerHTML = (opts.showRank ? '<span class="chip-rank" style="pointer-events:none">'+(i+1)+'.</span>' : '')
+        + '<span style="pointer-events:none">'+formatChipCineaste(nom)+'</span>'
+        + '<button class="chip-remove" data-nom="'+nom.replace(/"/g,'&quot;')+'">&times;</button>';
+      chip.querySelector('.chip-remove').addEventListener('click', function(e){
+        e.stopPropagation();
+        remove(this.getAttribute('data-nom'));
+      });
+      // Drag via Pointer Events (desktop + mobile, fiable cross-browser)
+      (function(chipEl, chipIdx){
+        var dragging = false;
+        var THRESHOLD = 6;
+        var startX, startY;
+
+        chipEl.addEventListener('pointerdown', function(e){
+          if(e.target.classList.contains('chip-remove')) return;
+          e.preventDefault();
+          startX = e.clientX; startY = e.clientY;
+          dragging = false;
+
+          function onMove(ev){
+            var dx = ev.clientX - startX, dy = ev.clientY - startY;
+            if(!dragging && Math.sqrt(dx*dx+dy*dy) > THRESHOLD){
+              dragging = true;
+              chipEl.classList.add('dragging');
+            }
+            if(!dragging) return;
+            document.querySelectorAll('#'+opts.chipsId+' .chip').forEach(function(c){ c.classList.remove('drag-over'); });
+            var over = document.elementFromPoint(ev.clientX, ev.clientY);
+            var target = over && over.closest ? over.closest('#'+opts.chipsId+' .chip') : null;
+            if(target && target !== chipEl) target.classList.add('drag-over');
+          }
+
+          function onUp(ev){
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            chipEl.classList.remove('dragging');
+            document.querySelectorAll('#'+opts.chipsId+' .chip').forEach(function(c){ c.classList.remove('drag-over'); });
+            if(!dragging){ dragging = false; return; }
+            dragging = false;
+            var over = document.elementFromPoint(ev.clientX, ev.clientY);
+            var target = over && over.closest ? over.closest('#'+opts.chipsId+' .chip') : null;
+            if(target){
+              var toIdx = parseInt(target.getAttribute('data-idx'));
+              if(!isNaN(toIdx) && toIdx !== chipIdx){
+                var moved = selected.splice(chipIdx, 1)[0];
+                selected.splice(toIdx, 0, moved);
+                render();
+              }
+            }
+          }
+
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', onUp);
+        });
+      })(chip, i);
+      chipsEl.appendChild(chip);
+    });
+    if(maxEl){
+      maxEl.style.display = (opts.max && selected.length >= opts.max) ? 'block' : 'none';
+    }
+    if(opts.max && selected.length >= opts.max){
+      input.style.display = 'none';
+    } else {
+      input.style.display = '';
+    }
+  }
+
+  function add(nom){
+    if(selected.indexOf(nom) !== -1) return;
+    if(opts.max && selected.length >= opts.max) return;
+    selected.push(nom);
+    input.value = '';
+    dropdown.classList.remove('visible');
+    input.setAttribute('aria-expanded','false');
+    acIdx = -1;
+    render();
+  }
+
+  function remove(nom){
+    selected = selected.filter(function(n){ return n !== nom; });
+    render();
+  }
+
+  input.addEventListener('input', function(){
+    var q = normStr(input.value.trim());
+    acIdx = -1;
+    if(q.length < 2){ dropdown.classList.remove('visible'); input.setAttribute('aria-expanded','false'); return; }
+    var results = cineastesIndex.filter(function(nom){
+      return normStr(nom).indexOf(q) !== -1 && selected.indexOf(nom) === -1;
+    }).slice(0, TC_AUTOCOMPLETE_MAX);
+    if(!results.length){ dropdown.classList.remove('visible'); input.setAttribute('aria-expanded','false'); return; }
+    dropdown.innerHTML = '';
+    results.forEach(function(nom, i){
+      var normNom = normStr(nom);
+      var idx = normNom.indexOf(q);
+      var div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.setAttribute('role','option');
+      div.setAttribute('aria-selected','false');
+      div.setAttribute('data-nom', nom);
+      div.appendChild(document.createTextNode(nom.slice(0, idx)));
+      var bold = document.createElement('b');
+      bold.textContent = nom.slice(idx, idx + q.length);
+      div.appendChild(bold);
+      div.appendChild(document.createTextNode(nom.slice(idx + q.length)));
+      div.addEventListener('mousedown', function(e){ e.preventDefault(); add(this.getAttribute('data-nom')); });
+      dropdown.appendChild(div);
+    });
+    dropdown.classList.add('visible'); input.setAttribute('aria-expanded','true');
+  });
+
+  input.addEventListener('keydown', function(e){
+    var items = dropdown.querySelectorAll('.autocomplete-item');
+    if(!items.length) return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); acIdx=Math.min(acIdx+1,items.length-1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); acIdx=Math.max(acIdx-1,0); }
+    else if(e.key==='Enter' && acIdx>=0){ e.preventDefault(); add(items[acIdx].getAttribute('data-nom')); return; }
+    else if(e.key==='Escape'){ dropdown.classList.remove('visible'); return; }
+    items.forEach(function(el,i){ el.classList.toggle('selected', i===acIdx); });
+  });
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#'+opts.inputId) && !e.target.closest('#'+opts.dropdownId)){
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  return {
+    getSelected: function(){ return selected.slice(); },
+    setSelected: function(arr){ selected = arr.slice(); render(); }
+  };
+}
+
+// ── INSTANCES MULTI-SELECT ────────────────────────────────────
+var favorisSelect, autresSelect;
+function initMultiSelects(){
+  favorisSelect = createMultiSelect({
+    inputId: 'favoris-input',
+    dropdownId: 'favoris-dropdown',
+    chipsId: 'favoris-chips',
+    maxId: 'favoris-max',
+    max: 3,
+    showRank: false
+  });
+  autresSelect = createMultiSelect({
+    inputId: 'autres-input',
+    dropdownId: 'autres-dropdown',
+    chipsId: 'autres-chips',
+    maxId: null,
+    max: null,
+    showRank: false
+  });
+}
+
+// ── PARSEUR FILMS LIBRES (sans numérotation obligatoire) ──────
+function parseFilmsLibre(texte, maxFilms){
+  var films = [];
+  var lines = texte.split('\n');
+  lines.forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+    // Retirer numérotation si présente
+    line = line.replace(/^\d+[.\-\)\s]+/, '').trim();
+    // Retirer emoji
+    line = line.replace(/[❤😍🎬🎥]+/g,'').trim();
+    if(!line) return;
+    // Extraire année
+    var am = line.match(/\((\d{4})\)\s*$/);
+    var annee = am ? parseInt(am[1]) : null;
+    var titre = line.replace(/\(\d{4}\)\s*$/, '').replace(/[-–]\s*$/, '').trim();
+    if(titre) films.push({ titre: titre, annee: annee });
+  });
+  if(maxFilms && films.length > maxFilms) films = films.slice(0, maxFilms);
+  return films;
+}
+
+function renderFilmsLibre(films, listId, countId, warnId, maxFilms){
+  var listEl = document.getElementById(listId);
+  var countEl = document.getElementById(countId);
+  var warnEl = document.getElementById(warnId);
+  listEl.innerHTML = films.map(function(f){
+    return '<li><span class="film-titre">'+f.titre+'</span>'
+      +(f.annee?'<span class="film-annee">'+f.annee+'</span>':'')+'</li>';
+  }).join('');
+  countEl.textContent = films.length+' film'+(films.length>1?'s':'');
+  if(maxFilms && films.length >= maxFilms) countEl.className = 'films-count warn';
+  else countEl.className = 'films-count';
+  var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+  if(sansAnnee > 0){
+    warnEl.textContent = sansAnnee+' film'+(sansAnnee>1?'s':'')+' sans année détectée.';
+    warnEl.style.display = 'block';
+  } else { warnEl.style.display = 'none'; }
+}
+
+// ── FILMS FAVORIS ─────────────────────────────────────────────
+document.getElementById('btn-save-films-fav').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var texte = document.getElementById('films-fav-textarea').value.trim();
+  var films = texte ? texte.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;}) : [];
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_enregistrement');
+  try {
+    var res = await sb.from('contributors').update({
+      film_coeur: films
+    }).eq('id', currentContributor.id).select();
+    btn.disabled = false; btn.textContent = t('sp_sauvegarder');
+    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    currentContributor.film_coeur = films;
+    document.getElementById('success-films-fav').classList.add('visible');
+    refreshProfilViews();
+    setTimeout(function(){ closeEdit('films'); }, 1500);
+  } catch(e){ btn.disabled = false; btn.textContent = t('sp_sauvegarder'); alert(t('sp_err_unexpected')+e.message); }
+});
+
+// ── AUTRES FILMS ──────────────────────────────────────────────
+document.getElementById('btn-save-autres-films').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var texte = document.getElementById('autres-films-textarea').value.trim();
+  var films = texte ? texte.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;}) : [];
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_enregistrement');
+  try {
+    var res = await sb.from('contributors').update({
+      film_autres: films
+    }).eq('id', currentContributor.id).select();
+    btn.disabled = false; btn.textContent = t('sp_sauvegarder');
+    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    currentContributor.film_autres = films;
+    document.getElementById('success-autres-films').classList.add('visible');
+    refreshProfilViews();
+    setTimeout(function(){ closeEdit('autresfilms'); }, 1500);
+  } catch(e){ btn.disabled = false; btn.textContent = t('sp_sauvegarder'); alert(t('sp_err_unexpected')+e.message); }
+});
+
+// ── CINÉASTES FAVORIS ─────────────────────────────────────────
+document.getElementById('btn-submit-favoris').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var cineastes = favorisSelect.getSelected();
+  if(!cineastes.length){ alert(t('sp_min_cin')); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_enregistrement');
+  try {
+    var res = await sb.from('contributors').update({
+      cineaste_coeur: cineastes
+    }).eq('id', currentContributor.id).select();
+    btn.disabled = false; btn.textContent = t('sp_sauvegarder');
+    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    currentContributor.cineaste_coeur = cineastes;
+    document.getElementById('success-favoris').classList.add('visible');
+    refreshProfilViews();
+    setTimeout(function(){ closeEdit('favoris'); }, 1500);
+  } catch(e){ btn.disabled = false; btn.textContent = t('sp_sauvegarder'); alert(t('sp_err_unexpected')+e.message); }
+});
+
+// ── AUTRES CINÉASTES ──────────────────────────────────────────
+document.getElementById('btn-submit-autres').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var cineastes = autresSelect.getSelected();
+  if(!cineastes.length){ alert(t('sp_min_cin')); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_enregistrement');
+  try {
+    var res = await sb.from('contributors').update({
+      cineaste_autres: cineastes
+    }).eq('id', currentContributor.id).select();
+    btn.disabled = false; btn.textContent = t('sp_sauvegarder');
+    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    currentContributor.cineaste_autres = cineastes;
+    document.getElementById('success-autres').classList.add('visible');
+    refreshProfilViews();
+    setTimeout(function(){ closeEdit('autres'); }, 1500);
+  } catch(e){ btn.disabled = false; btn.textContent = t('sp_sauvegarder'); alert(t('sp_err_unexpected')+e.message); }
+});
+
+// ── PRÉSENTATION ──────────────────────────────────────────────
+document.getElementById('btn-submit-presentation').addEventListener('click', async function(){
+  if(!currentContributor) return;
+  var texte = document.getElementById('presentation-textarea').value.trim();
+  if(!texte){ alert(t('sp_no_presentation')); return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_enregistrement');
+  try {
+    var res = await sb.from('contributors').update({
+      presentation: texte
+    }).eq('id', currentContributor.id).select();
+    btn.disabled = false; btn.textContent = t('sp_sauvegarder');
+    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    currentContributor.presentation = texte;
+    document.getElementById('success-presentation').classList.add('visible');
+    refreshProfilViews();
+    setTimeout(function(){ closeEdit('presentation'); }, 1500);
+  } catch(e){ btn.disabled = false; btn.textContent = t('sp_sauvegarder'); alert(t('sp_err_unexpected')+e.message); }
+});
+
+// ── AVATAR ────────────────────────────────────────────────────
+
+document.getElementById('avatar-input').addEventListener('change', function(){
+  var file = this.files[0];
+  var inputEl = this;
+  if(!file) return;
+  var allowed = ['image/jpeg','image/png','image/webp'];
+  if(!allowed.includes(file.type)){
+    alert(t('sp_err_upload_fmt'));
+    inputEl.value = '';
+    return;
+  }
+  if(file.size > TC_AVATAR_MAX_SIZE){
+    alert(t('sp_err_upload_size'));
+    inputEl.value = '';
+    return;
+  }
+  // Validate magic bytes to prevent MIME-type spoofing
+  var sliceReader = new FileReader();
+  sliceReader.onload = function(ev){
+    var bytes = new Uint8Array(ev.target.result);
+    var valid = (
+      (bytes[0]===0xFF&&bytes[1]===0xD8&&bytes[2]===0xFF) || // JPEG
+      (bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4E&&bytes[3]===0x47) || // PNG
+      (bytes[0]===0x52&&bytes[1]===0x49&&bytes[2]===0x46&&bytes[3]===0x46) // WebP (RIFF)
+    );
+    if(!valid){ alert(t('sp_err_upload_fmt')); inputEl.value=''; return; }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      document.getElementById('sp-avatar').innerHTML = '<img src="'+e.target.result+'" alt="aperçu">';
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('btn-upload-avatar').style.display = 'inline-block';
+    document.getElementById('avatar-success').style.display = 'none';
+  };
+  sliceReader.readAsArrayBuffer(file.slice(0,4));
+});
+
+document.getElementById('btn-upload-avatar').addEventListener('click', async function(){
+  var file = document.getElementById('avatar-input').files[0];
+  if(!file || !currentContributor) return;
+  var btn = this;
+  btn.disabled = true; btn.textContent = t('sp_upload_loading');
+  try {
+    var filename = getAvatarFilename(currentContributor.display_name);
+    var ext = file.name.split('.').pop().toLowerCase();
+    if(ext !== 'jpg' && ext !== 'jpeg') filename = filename.replace('.jpg', '.'+ext);
+    var res = await sb.storage.from('avatars').upload(filename, file, {
+      upsert: true,
+      contentType: file.type
+    });
+    if(res.error){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert(t('sp_err_save')+res.error.message); return; }
+    var publicUrl = sb.storage.from('avatars').getPublicUrl(filename).data.publicUrl;
+    var upd = await sb.from('contributors').update({
+      avatar_url: publicUrl
+    }).eq('id', currentContributor.id).select();
+    if(upd.error){ alert('Erreur enregistrement URL : '+upd.error.message); }
+    currentContributor.avatar_url = publicUrl;
+    btn.disabled = false; btn.textContent = t('sp_avatar_publish');
+    document.getElementById('avatar-success').style.display = 'block';
+  } catch(e){ btn.disabled = false; btn.textContent = 'Publier'; alert('Erreur inattendue : '+e.message); }
+});
+
+// ── TOGGLE VISIBILITÉ MOT DE PASSE ──────────────────────────
+document.querySelectorAll('.pwd-toggle').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var input = document.getElementById(this.getAttribute('data-for'));
+    if(!input) return;
+    var isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    this.style.color = isPassword ? 'var(--rouge)' : '';
+  });
+});
+
+// ── TRADUCTION DYNAMIQUE (changement de langue) ──────────────
+window.tcAfterLangChange = function(){
+  if(currentContributor){
+    var titleEl = document.getElementById('submit-title');
+    if(titleEl){
+      titleEl.textContent = t('nav_mon_profil') + ' — ';
+      var nameSpan = document.createElement('span');
+      nameSpan.style.color = 'var(--rouge)';
+      nameSpan.textContent = formatPrenom(currentContributor.display_name);
+      titleEl.appendChild(nameSpan);
+    }
+  }
+};
+
+// ── INIT PROFIL (appelé après login) ─────────────────────────
+function initProfil(){
+  if(!currentContributor) return;
+  // Initiales avatar
+  var prenom = formatPrenom(currentContributor.display_name);
+  var parts = (currentContributor.display_name||'').split(' ');
+  var nom = parts[parts.length-1];
+  var initiales = (prenom.charAt(0)+(nom?nom.charAt(0):'')).toUpperCase();
+  var initialesEl = document.getElementById('avatar-initiales');
+  if(initialesEl) initialesEl.textContent = initiales;
+
+  // Avatar existant
+  if(currentContributor.avatar_url){
+    var spAvatar = document.getElementById('sp-avatar');
+    spAvatar.innerHTML = '';
+    var img = document.createElement('img');
+    img.alt = 'avatar';
+    img.src = currentContributor.avatar_url;
+    spAvatar.appendChild(img);
+  }
+
+  initMultiSelects();
+
+  // Pré-remplir les formulaires d'édition
+  var cc = currentContributor.cineaste_coeur;
+  if(cc && Array.isArray(cc) && cc.length) favorisSelect.setSelected(cc);
+  var ca = currentContributor.cineaste_autres;
+  if(ca && Array.isArray(ca) && ca.length) autresSelect.setSelected(ca);
+  var fc = currentContributor.film_coeur;
+  if(fc && Array.isArray(fc) && fc.length)
+    document.getElementById('films-fav-textarea').value = fc.join('\n');
+  var fa = currentContributor.film_autres;
+  if(fa && Array.isArray(fa) && fa.length)
+    document.getElementById('autres-films-textarea').value = fa.join('\n');
+  if(currentContributor.presentation)
+    document.getElementById('presentation-textarea').value = currentContributor.presentation;
+
+  // Rendre les vues lecture
+  refreshProfilViews();
+}
+</script>
+</body>
+</html>
