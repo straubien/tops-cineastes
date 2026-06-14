@@ -776,7 +776,13 @@ function openFiche(c){
   // Construire la liste des contributeurs avec leurs films si disponibles
   var contribsDiv=document.createElement('div');
   if(nb>0){
-    c.tops_contributeurs.forEach(function(t){
+    c.tops_contributeurs.slice().sort(function(a,b){
+      var fa=(MUZARD_DATA&&a==='MATHIEU MUZARD'?MUZARD_DATA[c.nom]:CNUDDE_DATA&&a==='KARINE CNUDDE'?
+    CNUDDE_DATA[c.nom]:SUPABASE_TOPS[a]?SUPABASE_TOPS[a][c.nom]:null)||[];
+      var fb=(MUZARD_DATA&&b==='MATHIEU MUZARD'?MUZARD_DATA[c.nom]:CNUDDE_DATA&&b==='KARINE CNUDDE'?
+    CNUDDE_DATA[c.nom]:SUPABASE_TOPS[b]?SUPABASE_TOPS[b][c.nom]:null)||[];
+      return fb.length-fa.length;
+    }).forEach(function(t){
       var films=null;
       if(MUZARD_DATA&&t==='MATHIEU MUZARD')films=MUZARD_DATA[c.nom]||null;
       else if(CNUDDE_DATA&&t==='KARINE CNUDDE')films=CNUDDE_DATA[c.nom]||null;
