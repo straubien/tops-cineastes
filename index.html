@@ -575,10 +575,21 @@ function parseFilmStr(s){
   return{titre:s,realisateur:'',annee:''};
 }
 
+function formatFavName(f){
+  // "Mizoguchi, Kenji" → "Kenji Mizoguchi"
+  if(f.indexOf(',')!==-1){
+    var p=f.split(',');
+    return p.slice(1).join(',').trim()+' '+p[0].trim();
+  }
+  return f;
+}
+
 function buildPortraitSrc(f){
   var particles=['De','Van','von','Von','Du','du','Di','di','Da','da','Le','La','del','Del','Della','lo','Lo'];
   if(f==='Straub/Huillet'||(/straub/i.test(f)&&/huillet/i.test(f)))return{src:'portraits/portrait-Straub.jpg',initials:'S'};
-  var parts=f.split(' ');
+  var normalized=f;
+  if(f.indexOf(',')!==-1){normalized=f.split(',')[0].trim();}
+  var parts=normalized.split(' ');
   var last=parts[parts.length-1];
   var secondLast=parts.length>1?parts[parts.length-2]:'';
   var lastName=particles.indexOf(secondLast)!==-1?secondLast+' '+last:last;
@@ -596,7 +607,8 @@ function renderProfilFavs(favs){
     var initClass='profil-fav-initials'+(isFirst?' profil-fav-first':'');
     item.innerHTML='<img class="'+imgClass+'" src="'+escapeHtml(p.src)+'" alt="'+escapeHtml(f)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" loading="lazy">'
       +'<div class="'+initClass+'" style="display:none">'+escapeHtml(p.initials)+'</div>'
-      +'<div class="profil-fav-name">'+((/straub/i.test(f)&&/huillet/i.test(f))?'Straub/Huillet':escapeHtml(f))+'</div>';
+      +'<div class="profil-fav-name">'+
+      ((/straub/i.test(f)&&/huillet/i.test(f))?'Straub/Huillet':escapeHtml(formatFavName(f)))+'</div>';
     grid.appendChild(item);
   });
 }
