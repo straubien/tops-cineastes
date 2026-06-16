@@ -414,8 +414,14 @@ function attributeAll(data) {
   const result = {}; // { excelKey → { nomCourt → [{ source, text, films }] } }
 
   for (const [key, entry] of Object.entries(data)) {
-    const nomCourt = entry.nomCourt ? entry.nomCourt.trim().toUpperCase() : null;
+    let nomCourt = entry.nomCourt ? entry.nomCourt.trim().toUpperCase() : null;
     if (!nomCourt) continue;
+    // Corriger les nomCourt avec caractères de remplacement (encoding corrompu)
+    if (nomCourt.includes('�')) {
+      const re = new RegExp('^' + nomCourt.replace(/�/g, '.') + '$', 'i');
+      const fixed = Object.keys(CINEASTE_NOM).find(k => re.test(k));
+      if (fixed) nomCourt = fixed;
+    }
     const cineasteName = CINEASTE_NOM[nomCourt] || nomCompletClean(entry.nomComplet || entry.nomCourt || '');
 
     for (const comment of (entry.commentaires || [])) {
