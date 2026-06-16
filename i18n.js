@@ -26,6 +26,8 @@ var TC_TRANSLATIONS = {
     profil_presentation: "Présentation cinéphile",
     retour_contributeurs_title: "Retour aux cinéphiles",
     // Mes tops – statique
+    mt_tab_soumettre: "Soumettre un top",
+    mt_tab_proposer: "Proposer un cinéaste",
     mt_titre: "Soumettre un nouveau top",
     mt_cin_label: "Cinéaste",
     mt_cin_ph: "Tapez un nom…",
@@ -203,6 +205,8 @@ var TC_TRANSLATIONS = {
     profil_presentation: "Cinephile presentation",
     retour_contributeurs_title: "Back to cinephiles",
     // Mes tops – statique
+    mt_tab_soumettre: "Submit a top",
+    mt_tab_proposer: "Suggest a filmmaker",
     mt_titre: "Submit a new top",
     mt_cin_label: "Filmmaker",
     mt_cin_ph: "Type a name…",
