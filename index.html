@@ -1265,29 +1265,42 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         else if(_cp2==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
         else if(_cp2==='statistiques'){renderStatistiques();}
         // Charger aussi les tops importés manuellement (table tops, submission_id = NULL)
-        TC_SB.from('tops').select('contributor_id, cineaste_nom, films').limit(20000).then(function(res3){
-          if(!res3.data||!res3.data.length)return;
-          res3.data.forEach(function(top){
-            var jsonName=idToName[top.contributor_id];
-            if(!jsonName)return;
-            var cinNom=top.cineaste_nom;
-            var films=top.films||[];
-            if(!cinNom)return;
-            // Ne pas écraser un top déjà chargé via submissions
-            if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
-            if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
-            SUPABASE_TOPS[jsonName][cinNom]=films;
-            if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
-            IMPORTED_COUNTS[jsonName].tops++;
-            IMPORTED_COUNTS[jsonName].films+=films.length;
-            if(DATA){
-              var cin=DATA.cineastes.find(function(c){return c.nom===cinNom;});
-              if(cin){
-                if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
-                if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
+        // Note : Supabase/PostgREST plafonne le nombre de lignes renvoyées par requête
+        // (db.max_rows, souvent 1000) quel que soit le .limit() demandé côté client.
+        // On pagine donc avec .range() jusqu'à récupérer toutes les lignes.
+        function loadAllTops(offset, pageSize){
+          return TC_SB.from('tops').select('contributor_id, cineaste_nom, films')
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1)
+            .then(function(res3){
+              var rows = res3.data || [];
+              rows.forEach(function(top){
+                var jsonName=idToName[top.contributor_id];
+                if(!jsonName)return;
+                var cinNom=top.cineaste_nom;
+                var films=top.films||[];
+                if(!cinNom)return;
+                // Ne pas écraser un top déjà chargé via submissions
+                if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
+                if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
+                SUPABASE_TOPS[jsonName][cinNom]=films;
+                if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
+                IMPORTED_COUNTS[jsonName].tops++;
+                IMPORTED_COUNTS[jsonName].films+=films.length;
+                if(DATA){
+                  var cin=DATA.cineastes.find(function(c){return c.nom===cinNom;});
+                  if(cin){
+                    if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
+                    if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
+                  }
+                }
+              });
+              if(rows.length===pageSize){
+                return loadAllTops(offset+pageSize, pageSize);
               }
-            }
-          });
+            });
+        }
+        loadAllTops(0, 1000).then(function(){
           var _cp3=sessionStorage.getItem('tc-page');
           if(_cp3==='index'){selectLetter(currentLetter);}
           else if(_cp3==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
