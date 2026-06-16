@@ -1265,7 +1265,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         else if(_cp2==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
         else if(_cp2==='statistiques'){renderStatistiques();}
         // Charger aussi les tops importés manuellement (table tops, submission_id = NULL)
-        sbAuth.from('tops').select('contributor_id, cineaste_nom, films').limit(20000).then(function(res3){
+        TC_SB.from('tops').select('contributor_id, cineaste_nom, films').limit(20000).then(function(res3){
           if(!res3.data||!res3.data.length)return;
           res3.data.forEach(function(top){
             var jsonName=idToName[top.contributor_id];

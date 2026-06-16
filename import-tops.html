@@ -190,8 +190,10 @@ button.small { font-size: 12px; padding: 4px 10px; }
   </div>
   <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
     <button onclick="validateAll()">✓ Valider tous les trouvés</button>
+    <button onclick="checkSupabase()" id="btn-check-supa">☁ Vérifier dans Supabase</button>
     <button onclick="goToExport()">→ Générer SQL</button>
   </div>
+  <div id="supa-status" style="font-size:13px;color:var(--brun-pale);margin-bottom:8px;"></div>
 
   <div id="review-list"></div>
 </section>
@@ -613,6 +615,99 @@ const MANUAL_TOPS = {
         {rang:18, titre:"Burn After Reading",                          annee:2008}
       ]
     }
+  },
+  "THORACENTESE RUBIS": {
+    "ANGER CÉDRIC": {
+      cineasteName: "ANGER, Cédric",
+      films: [
+        {rang:1, titre:"Le tueur",                                annee:2007},
+        {rang:2, titre:"La prochaine fois je viserai le cœur",   annee:2014},
+        {rang:3, titre:"L'amour est une fête",                    annee:2018}
+      ]
+    },
+    "BENAZERAF JOSÉ": {
+      cineasteName: "BENAZERAF, José",
+      films: [
+        {rang:1, titre:"Joë Caligula",                           annee:1969},
+        {rang:2, titre:"St. Pauli zwischen Nacht und Morgen",    annee:1967}
+      ]
+    },
+    "BENIGNI": {
+      cineasteName: "BENIGNI, Roberto",
+      films: [
+        {rang:1, titre:"La vita è bella", annee:1997}
+      ]
+    },
+    "BOLL": {
+      cineasteName: "BOLL, Uwe",
+      films: [
+        {rang:1, titre:"Amoklauf",  annee:1994},
+        {rang:2, titre:"Auschwitz", annee:2011}
+      ]
+    },
+    "BROWNING": {
+      cineasteName: "BROWNING, Tod",
+      films: [
+        {rang:1,  titre:"Dracula",                              annee:1931},
+        {rang:2,  titre:"Freaks",                               annee:1932},
+        {rang:3,  titre:"The Unknown",                          annee:1927},
+        {rang:4,  titre:"Outside the Law",                      annee:1920},
+        {rang:5,  titre:"The Mystic",                           annee:1925},
+        {rang:6,  titre:"Mark of the Vampire",                  annee:1935},
+        {rang:7,  titre:"The Devil-Doll",                       annee:1936},
+        {rang:8,  titre:"The Show",                             annee:1927},
+        {rang:9,  titre:"West of Zanzibar",                     annee:1928},
+        {rang:10, titre:"The Wicked Darling",                   annee:1919},
+        {rang:11, titre:"The Unholy Three",                     annee:1925},
+        {rang:12, titre:"The Exquisite Thief [Fragment]",       annee:1919},
+        {rang:13, titre:"White Tiger",                          annee:1923},
+        {rang:14, titre:"The Blackbird",                        annee:1926},
+        {rang:15, titre:"Where East Is East",                   annee:1929},
+        {rang:16, titre:"Miracles for Sale",                    annee:1939},
+        {rang:17, titre:"The Virgin of Stamboul",               annee:1920},
+        {rang:18, titre:"Drifting",                             annee:1923},
+        {rang:19, titre:"The Road to Mandalay",                 annee:1926},
+        {rang:20, titre:"The Thirteenth Chair",                 annee:1929},
+        {rang:21, titre:"Fast Workers",                         annee:1933},
+        {rang:22, titre:"Outside the Law",                      annee:1930},
+        {rang:23, titre:"Iron Man",                             annee:1931},
+        {rang:24, titre:"Under Two Flags",                      annee:1922},
+        {rang:25, titre:"London After Midnight [Photo Reconstruction]", annee:1927}
+      ]
+    },
+    "CLAIR RENÉ": {
+      cineasteName: "CLAIR, René",
+      films: [
+        {rang:1,  titre:"Entr'acte",                            annee:1924},
+        {rang:2,  titre:"Paris qui dort",                       annee:1925},
+        {rang:3,  titre:"Le fantôme du Moulin-Rouge",           annee:1925},
+        {rang:4,  titre:"La tour",                              annee:1928},
+        {rang:5,  titre:"Le voyage imaginaire",                 annee:1926},
+        {rang:6,  titre:"La proie du vent",                     annee:1927},
+        {rang:7,  titre:"Les deux timides",                     annee:1928},
+        {rang:8,  titre:"Sous les toits de Paris",              annee:1930},
+        {rang:9,  titre:"Quatorze juillet",                     annee:1933},
+        {rang:10, titre:"Le silence est d'or",                  annee:1947},
+        {rang:11, titre:"Porte des Lilas",                      annee:1957},
+        {rang:12, titre:"Un chapeau de paille d'Italie",        annee:1928},
+        {rang:13, titre:"À nous la liberté",                    annee:1931},
+        {rang:14, titre:"The Flame of New Orleans",             annee:1941},
+        {rang:15, titre:"And Then There Were None",             annee:1945},
+        {rang:16, titre:"La beauté du diable",                  annee:1950},
+        {rang:17, titre:"Tout l'or du monde",                   annee:1961},
+        {rang:18, titre:"Le million",                           annee:1931},
+        {rang:19, titre:"The Ghost Goes West",                  annee:1935},
+        {rang:20, titre:"I Married a Witch",                    annee:1942},
+        {rang:21, titre:"Les belles de nuit",                   annee:1952},
+        {rang:22, titre:"Forever and a Day",                    annee:1943},
+        {rang:23, titre:"It Happened Tomorrow",                 annee:1944},
+        {rang:24, titre:"Les grandes manœuvres",                annee:1955},
+        {rang:25, titre:"Le mariage",                           annee:1960},
+        {rang:26, titre:"Le dernier milliardaire",              annee:1934},
+        {rang:27, titre:"Les deux pigeons",                     annee:1962},
+        {rang:28, titre:"Les fêtes galantes",                   annee:1965}
+      ]
+    }
   }
 };
 
@@ -620,6 +715,11 @@ const MANUAL_TOPS = {
 // Format : { excelKey: Set(nomCourt_uppercase) }
 const MANUAL_EXCLUSIONS = {
   "THOMAS F. FLAVIER": new Set(["DE TOTH", "DEBORD", "DEUTSCH GUSTAV", "KARGL"])
+};
+
+// Tops à ignorer (pas de liste disponible, intentionnellement laissés vides)
+const MANUAL_SKIPS = {
+  "THORACENTESE RUBIS": new Set(["ABBASI", "ABRAHAM", "ABU SEIF", "ANGER KENNETH"])
 };
 
 function applyExclusions(attributed) {
@@ -741,6 +841,14 @@ function buildReviewSection(key) {
       } else {
         rev[nomCourt] = { status: 'missing', films: [], versions: [] };
       }
+    }
+  }
+
+  // Appliquer les skips manuels
+  const skips = MANUAL_SKIPS[key];
+  if (skips) {
+    for (const nc of skips) {
+      if (rev[nc] && rev[nc].status === 'missing') rev[nc].status = 'skipped';
     }
   }
 
@@ -1067,6 +1175,56 @@ function validateAll() {
   }
   updateStats();
   notify(`${count} tops validés`);
+}
+
+// ─── VÉRIFICATION SUPABASE ────────────────────────────────────────────────────
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmYmRycXJzbGdkdW9taW1rbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTExMTEsImV4cCI6MjA5NTk4NzExMX0.uvOvP-2cfgrIPdOrThLERwOGKid8OYExq1xro-5TAb8';
+
+async function checkSupabase() {
+  const key = currentContrib;
+  const uuid = CONTRIBUTOR_UUID[key];
+  if (!uuid) { alert('UUID inconnu pour ce contributeur.'); return; }
+
+  const btn = document.getElementById('btn-check-supa');
+  const status = document.getElementById('supa-status');
+  btn.disabled = true;
+  status.textContent = 'Interrogation de Supabase…';
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tops?contributor_id=eq.${uuid}&select=cineaste_nom`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    const imported = new Set(rows.map(r => r.cineaste_nom));
+
+    const rev = reviews[key] || {};
+    const expected = EXPECTED[key] || [];
+    let dejaImportes = 0, manquantsNonValides = 0;
+
+    for (const nomCourt of expected) {
+      const cineasteName = (rev[nomCourt] && rev[nomCourt].versions && rev[nomCourt].versions[0])
+        ? rev[nomCourt].versions[0].cineasteName
+        : (CINEASTE_NOM[nomCourt] || nomCourt);
+      if (imported.has(cineasteName)) {
+        dejaImportes++;
+        // Marquer automatiquement comme validé si déjà dans Supabase
+        if (rev[nomCourt] && rev[nomCourt].status !== 'validated') {
+          rev[nomCourt].alreadyImported = true;
+        }
+      } else if (!rev[nomCourt] || rev[nomCourt].status === 'missing') {
+        manquantsNonValides++;
+      }
+    }
+
+    status.textContent = `☁ ${dejaImportes} tops déjà dans Supabase — ${manquantsNonValides} manquants non importés.`;
+    renderCards();
+  } catch(e) {
+    status.textContent = 'Erreur : ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ─── GÉNÉRATION SQL ───────────────────────────────────────────────────────────
