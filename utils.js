@@ -55,7 +55,12 @@ function parseTopsBrut(texte){
     rang++;
     var contenu = m[2].trim();
     var annee = null;
-    var anneeM = contenu.match(/\((\d{4})\)\s*(?:–.*)?$/);
+    // Cas 1 : (YYYY) ou (YYYY, cm) éventuellement suivi d'un tiret et note
+    var anneeM = contenu.match(/\((\d{4})(?:,[^)]+)?\)\s*(?:[-–—].*)?$/)
+    // Cas 2 : [titre alternatif, YYYY]
+              || contenu.match(/\[(?:[^\]]*,\s*)?(\d{4})\s*\]/)
+    // Cas 3 : (titre alternatif, YYYY) — l'année est après une virgule
+              || contenu.match(/\([^)]+,\s*(\d{4})\)\s*(?:[-–—].*)?$/);
     if(anneeM){
       annee = parseInt(anneeM[1]);
       contenu = contenu.slice(0, anneeM.index).trim();
