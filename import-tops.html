@@ -565,6 +565,26 @@ const MANUAL_TOPS = {
         {rang:1, titre:"Cousin, cousine", annee:1975}
       ]
     },
+    "PERCONTE": {
+      cineasteName: "PERCONTE, Jacques",
+      films: [
+        {rang:1, titre:"Avant l'effondrement du Mont Blanc"}
+      ]
+    },
+    "GREEN EUGÈNE": {
+      cineasteName: "GREEN, Eugène",
+      films: [
+        {rang:1, titre:"Le Pont des Arts",                                    annee:2004},
+        {rang:2, titre:"La Religieuse portugaise",                            annee:2009},
+        {rang:3, titre:"Toutes les nuits",                                    annee:2001},
+        {rang:4, titre:"Le Fils de Joseph",                                   annee:2015},
+        {rang:5, titre:"Comment Fernando Pessoa sauva le Portugal",           annee:2018},
+        {rang:6, titre:"Le Monde vivant",                                     annee:2003},
+        {rang:7, titre:"Les Signes",                                          annee:2006},
+        {rang:8, titre:"Correspondances",                                     annee:2007},
+        {rang:9, titre:"La Sapienza",                                         annee:2015}
+      ]
+    },
     "COEN": {
       cineasteName: "COEN, Joel & Ethan",
       films: [
@@ -610,7 +630,7 @@ function injectManualTops(attributed) {
   for (const [excelKey, cineaMap] of Object.entries(MANUAL_TOPS)) {
     if (!attributed[excelKey]) attributed[excelKey] = {};
     for (const [nomCourt, data] of Object.entries(cineaMap)) {
-      if (attributed[excelKey][nomCourt]) continue; // ne pas écraser un top existant
+      // Les tops manuels ont la priorité sur l'auto-parsing
       attributed[excelKey][nomCourt] = [{
         source: 'Saisie manuelle (admin)',
         text: data.films.map(f => `${f.rang}. ${f.titre}${f.annee ? ' ('+f.annee+')' : ''}`).join('\n'),
