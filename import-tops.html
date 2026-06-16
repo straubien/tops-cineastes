@@ -203,6 +203,11 @@ button.small { font-size: 12px; padding: 4px 10px; }
     Coller ce SQL dans <strong>Supabase → SQL Editor</strong>. Il insère chaque top validé directement dans la table <code>tops</code> avec <code>submission_id = NULL</code>.
   </div>
   <div id="export-stats" style="margin-bottom:12px;font-size:13px;color:var(--brun-pale);"></div>
+  <div class="copy-bar" style="margin-bottom:10px;gap:8px;flex-wrap:wrap;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+      <input type="checkbox" id="chk-delete-first" onchange="goToExport()"> Supprimer les tops existants avant d'insérer (DELETE + INSERT)
+    </label>
+  </div>
   <div class="copy-bar" style="margin-bottom:10px;">
     <button class="primary" onclick="copySQL()">Copier le SQL</button>
     <button onclick="downloadSQL()">Télécharger .sql</button>
@@ -1071,14 +1076,22 @@ function goToExport() {
   const rev = reviews[key] || {};
   const expected = EXPECTED[key] || [];
 
+  const deleteFirst = document.getElementById('chk-delete-first') && document.getElementById('chk-delete-first').checked;
+  const uuid = CONTRIBUTOR_UUID[key];
+
   let lines = [];
   let count = 0;
-  const displayName = label;
 
   lines.push(`-- Import tops de ${label} depuis Facebook`);
   lines.push(`-- Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`);
   lines.push(`-- submission_id = NULL (import manuel admin)`);
   lines.push('');
+
+  if (deleteFirst && uuid) {
+    lines.push(`-- Suppression des tops existants pour ce contributeur`);
+    lines.push(`DELETE FROM tops WHERE contributor_id = '${uuid}';`);
+    lines.push('');
+  }
 
   for (const nomCourt of expected) {
     const r = rev[nomCourt];
@@ -1091,10 +1104,10 @@ function goToExport() {
       : nomCourt;
 
     const filmsJson = JSON.stringify(films).replace(/'/g, "''");
-    const uuid = CONTRIBUTOR_UUID[key];
     if (uuid) {
+      const onConflict = deleteFirst ? '' : '\nON CONFLICT (contributor_id, cineaste_nom) DO NOTHING';
       lines.push(`INSERT INTO tops (contributor_id, cineaste_nom, films)`);
-      lines.push(`VALUES ('${uuid}', '${cineasteName.replace(/'/g,"''")}', '${filmsJson}'::jsonb);`);
+      lines.push(`VALUES ('${uuid}', '${cineasteName.replace(/'/g,"''")}', '${filmsJson}'::jsonb)${deleteFirst ? '' : '\nON CONFLICT (contributor_id, cineaste_nom) DO NOTHING'};`);
     } else {
       lines.push(`-- ATTENTION: UUID inconnu pour ${key} — contributeur absent de la table contributors`);
       lines.push(`-- INSERT INTO tops (contributor_id, cineaste_nom, films)`);
