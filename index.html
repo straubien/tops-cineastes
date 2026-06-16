@@ -1264,6 +1264,35 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         if(_cp2==='index'){selectLetter(currentLetter);}
         else if(_cp2==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
         else if(_cp2==='statistiques'){renderStatistiques();}
+        // Charger aussi les tops importés manuellement (table tops, submission_id = NULL)
+        sbAuth.from('tops').select('contributor_id, cineaste_nom, films').limit(20000).then(function(res3){
+          if(!res3.data||!res3.data.length)return;
+          res3.data.forEach(function(top){
+            var jsonName=idToName[top.contributor_id];
+            if(!jsonName)return;
+            var cinNom=top.cineaste_nom;
+            var films=top.films||[];
+            if(!cinNom)return;
+            // Ne pas écraser un top déjà chargé via submissions
+            if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
+            if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
+            SUPABASE_TOPS[jsonName][cinNom]=films;
+            if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
+            IMPORTED_COUNTS[jsonName].tops++;
+            IMPORTED_COUNTS[jsonName].films+=films.length;
+            if(DATA){
+              var cin=DATA.cineastes.find(function(c){return c.nom===cinNom;});
+              if(cin){
+                if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
+                if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
+              }
+            }
+          });
+          var _cp3=sessionStorage.getItem('tc-page');
+          if(_cp3==='index'){selectLetter(currentLetter);}
+          else if(_cp3==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
+          else if(_cp3==='statistiques'){renderStatistiques();}
+        });
       });
       // Re-rendre la page courante si elle attendait les données Supabase
       var _curPage=sessionStorage.getItem('tc-page');
