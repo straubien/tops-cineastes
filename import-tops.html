@@ -151,7 +151,13 @@ button.small { font-size: 12px; padding: 4px 10px; }
 <section id="sec-audit">
   <h2>🔍 Audit — tops crédités sans liste de films</h2>
   <div class="info">
-    Compare <code>tops_contributeurs</code> (cineastes.json) avec les films réellement disponibles (submissions, table <code>tops</code>, muzard.json, cnudde.json). Repère les tops "fantômes" comme Grégory Lescard / Eastwood.
+    Compare <code>tops_contributeurs</code> (cineastes.json) avec les films réellement disponibles (submissions, table <code>tops</code>, muzard.json, cnudde.json). Repère les tops "fantômes" comme Grégory Lescard / Eastwood.<br>
+    Charge <code>cineastes.json</code> (obligatoire) — <code>muzard.json</code> et <code>cnudde.json</code> sont optionnels.
+  </div>
+  <div style="display:flex;gap:14px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">
+    <label style="font-size:13px;">cineastes.json <input type="file" id="audit-file-cineastes" accept=".json"></label>
+    <label style="font-size:13px;">muzard.json <input type="file" id="audit-file-muzard" accept=".json"></label>
+    <label style="font-size:13px;">cnudde.json <input type="file" id="audit-file-cnudde" accept=".json"></label>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center;">
     <button class="primary" onclick="runAudit()" id="btn-run-audit">Lancer l'audit</button>
@@ -1491,6 +1497,20 @@ function applyJsonNameAliases(t) {
   return t;
 }
 
+function readJSONFile(input) {
+  return new Promise((resolve, reject) => {
+    const file = input.files && input.files[0];
+    if (!file) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { resolve(JSON.parse(reader.result)); }
+      catch (e) { reject(new Error('JSON invalide dans ' + file.name)); }
+    };
+    reader.onerror = () => reject(new Error('Impossible de lire ' + file.name));
+    reader.readAsText(file);
+  });
+}
+
 async function runAudit() {
   const btn = document.getElementById('btn-run-audit');
   const status = document.getElementById('audit-status');
@@ -1498,12 +1518,11 @@ async function runAudit() {
   btn.disabled = true;
   results.innerHTML = '';
   try {
-    status.textContent = 'Chargement de cineastes.json, muzard.json, cnudde.json…';
-    const [cineastesData, muzard, cnudde] = await Promise.all([
-      fetch('cineastes.json').then(r => r.json()),
-      fetch('muzard.json').then(r => r.json()).catch(() => null),
-      fetch('cnudde.json').then(r => r.json()).catch(() => null)
-    ]);
+    status.textContent = 'Lecture des fichiers locaux…';
+    const cineastesData = await readJSONFile(document.getElementById('audit-file-cineastes'));
+    if (!cineastesData) { status.textContent = 'Merci de sélectionner cineastes.json.'; btn.disabled = false; return; }
+    const muzard = await readJSONFile(document.getElementById('audit-file-muzard'));
+    const cnudde = await readJSONFile(document.getElementById('audit-file-cnudde'));
     const MUZARD_IDX = buildAuditTopIndex(muzard);
     const CNUDDE_IDX = buildAuditTopIndex(cnudde);
 
