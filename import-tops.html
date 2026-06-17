@@ -1535,11 +1535,10 @@ async function runAudit() {
     });
 
     status.textContent = 'Chargement des submissions…';
-    const submissions = await fetchAllRows('submissions?status=eq.approved&select=contributor_id,contributor_name,parsed_json,contributors(display_name)');
+    const submissions = await fetchAllRows('submissions?status=eq.approved&select=contributor_id,contributor_name,parsed_json');
     const hasFilms = {};
     submissions.forEach(s => {
       const jsonName = (s.contributor_name ? s.contributor_name.toUpperCase() : null) ||
-        (s.contributors && s.contributors.display_name ? s.contributors.display_name.toUpperCase() : null) ||
         (s.contributor_id && idToName[s.contributor_id] ? idToName[s.contributor_id] : null);
       if (!jsonName || !s.parsed_json) return;
       const cinNom = s.parsed_json.cineaste;
