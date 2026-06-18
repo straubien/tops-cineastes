@@ -104,6 +104,9 @@ button.small { font-size: 12px; padding: 4px 10px; }
 .film-annee { width: 70px; font-size: 13px; padding: 4px 6px; border: 1px solid var(--border); font-family: var(--font); }
 .film-del { color: var(--brun-pale); background: none; border: none; cursor: pointer; font-size: 16px; padding: 2px 6px; }
 .film-del:hover { color: var(--rouge); }
+.film-add-after { color: var(--brun-pale); background: none; border: 1px solid var(--border); cursor: pointer; font-size: 14px; padding: 2px 8px; line-height: 1; }
+.film-add-after:hover { color: var(--vert); border-color: var(--vert); }
+.film-rang[readonly] { background: #f4f1ec; color: var(--brun-pale); cursor: default; }
 .add-film { font-size: 12px; color: var(--brun-pale); background: none; border: 1px dashed var(--border); padding: 4px 12px; cursor: pointer; margin-top: 4px; }
 .add-film:hover { border-color: var(--brun); color: var(--brun); }
 
@@ -1252,9 +1255,10 @@ function buildCardBody(key, nomCourt, r, st) {
 
 function filmRowHTML(nomCourt, i, f) {
   return `<div class="film-row" id="filmrow-${safeId(nomCourt)}-${i}">
-    <input class="film-rang" type="number" min="1" value="${f.rang}" onchange="updateFilm('${nomCourt}',${i},'rang',this.value)">
+    <input class="film-rang" type="number" min="1" value="${f.rang}" readonly title="Numéro automatique">
     <input class="film-titre" type="text" value="${escAttr(f.titre)}" onchange="updateFilm('${nomCourt}',${i},'titre',this.value)">
     <input class="film-annee" type="number" min="1888" max="2030" value="${f.annee || ''}" placeholder="Année" onchange="updateFilm('${nomCourt}',${i},'annee',this.value)">
+    <button class="film-add-after" onclick="insertFilmAfter('${currentContrib}',ncGet(${ncIdx(nomCourt)}),${i})" title="Insérer un film après celui-ci">+</button>
     <button class="film-del" onclick="removeFilm('${currentContrib}',ncGet(${ncIdx(nomCourt)}),${i})" title="Supprimer">×</button>
   </div>`;
 }
@@ -1279,29 +1283,40 @@ function chooseVersion(key, nomCourt, vIdx) {
 function updateFilm(nomCourt, i, field, value) {
   const r = reviews[currentContrib][nomCourt];
   if (!r.films[i]) return;
-  if (field === 'rang' || field === 'annee') {
+  if (field === 'annee') {
     const n = parseInt(value);
-    if (field === 'annee') {
-      if (n) r.films[i].annee = n; else delete r.films[i].annee;
-    } else {
-      r.films[i].rang = n || r.films[i].rang;
-    }
+    if (n) r.films[i].annee = n; else delete r.films[i].annee;
   } else {
     r.films[i][field] = value;
   }
 }
 
+function renumberFilms(r) {
+  r.films.forEach((f, i) => { f.rang = i + 1; });
+}
+
 function removeFilm(key, nomCourt, i) {
+  syncFilmsFromDOM(nomCourt);
   const r = reviews[key][nomCourt];
   r.films.splice(i, 1);
+  renumberFilms(r);
   const st = getCardStatus(key, nomCourt);
   document.getElementById(`body-${safeId(nomCourt)}`).innerHTML = buildCardBody(key, nomCourt, r, st);
 }
 
 function addFilm(key, nomCourt) {
+  syncFilmsFromDOM(nomCourt);
   const r = reviews[key][nomCourt];
-  const nextRang = (r.films.length > 0 ? Math.max(...r.films.map(f => f.rang)) + 1 : 1);
-  r.films.push({ rang: nextRang, titre: '' });
+  r.films.push({ rang: r.films.length + 1, titre: '' });
+  const st = getCardStatus(key, nomCourt);
+  document.getElementById(`body-${safeId(nomCourt)}`).innerHTML = buildCardBody(key, nomCourt, r, st);
+}
+
+function insertFilmAfter(key, nomCourt, i) {
+  syncFilmsFromDOM(nomCourt);
+  const r = reviews[key][nomCourt];
+  r.films.splice(i + 1, 0, { rang: i + 2, titre: '' });
+  renumberFilms(r);
   const st = getCardStatus(key, nomCourt);
   document.getElementById(`body-${safeId(nomCourt)}`).innerHTML = buildCardBody(key, nomCourt, r, st);
 }
