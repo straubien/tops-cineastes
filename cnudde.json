@@ -406,7 +406,7 @@
         },
         {
           "rang": 9,
-          "titre": "Par-delà les nuages",
+          "titre": "Par-delà les nuages (coréalisation avec Wim Wenders)",
           "annee": 1995
         }
       ]
@@ -595,7 +595,7 @@
         },
         {
           "rang": 2,
-          "titre": "[●REC]",
+          "titre": "[●REC] (coréalisé avec Paco Plaza)",
           "annee": 2007
         }
       ]
@@ -675,7 +675,7 @@
         },
         {
           "rang": 2,
-          "titre": "Why man creates",
+          "titre": "Why man creates (court-métrage)",
           "annee": 1968
         }
       ]
@@ -970,12 +970,12 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Dom Juan ou le Festin de Pierre",
+          "titre": "Dom Juan ou le Festin de Pierre (pour la télévision)",
           "annee": 1965
         },
         {
           "rang": 2,
-          "titre": "On purge bébé",
+          "titre": "On purge bébé (pour la télévision)",
           "annee": 1961
         }
       ]
@@ -1459,7 +1459,7 @@
         },
         {
           "rang": 8,
-          "titre": "Xenogenesis",
+          "titre": "Xenogenesis (court-métrage)",
           "annee": 1978
         }
       ]
@@ -1864,7 +1864,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "3 extrêmes",
+          "titre": "3 extrêmes (segment Dumplings)",
           "annee": 2004
         },
         {
@@ -2447,17 +2447,17 @@
         },
         {
           "rang": 19,
-          "titre": "Transfer",
+          "titre": "Transfer (court-métrage)",
           "annee": 1966
         },
         {
           "rang": 20,
-          "titre": "From the Drain",
+          "titre": "From the Drain (court-métrage)",
           "annee": 1967
         },
         {
           "rang": 21,
-          "titre": "Chacun son cinéma",
+          "titre": "Chacun son cinéma (segment “At the suicide of the last Jew in the world in the last cinema in the world”)",
           "annee": 2007
         },
         {
@@ -2472,7 +2472,7 @@
         },
         {
           "rang": 24,
-          "titre": "The lie chair",
+          "titre": "The lie chair (court-métrage)",
           "annee": 1975
         },
         {
@@ -2482,12 +2482,12 @@
         },
         {
           "rang": 26,
-          "titre": "Camera",
+          "titre": "Camera (court-métrage)",
           "annee": 2000
         },
         {
           "rang": 27,
-          "titre": "The Nest",
+          "titre": "The Nest (court-métrage)",
           "annee": 2014
         },
         {
@@ -3292,7 +3292,7 @@
         },
         {
           "rang": 3,
-          "titre": "Histoires extraordinaires",
+          "titre": "Histoires extraordinaires (segment : Il ne faut jamais parier sa tête avec le diable)",
           "annee": 1968
         },
         {
@@ -3322,7 +3322,7 @@
         },
         {
           "rang": 9,
-          "titre": "Boccace 70",
+          "titre": "Boccace 70 (segment : Les Tentations du docteur Antonio)",
           "annee": 1962
         },
         {
@@ -3487,7 +3487,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Selfie",
+          "titre": "Selfie (segment "Le Troll")",
           "annee": 2019
         }
       ]
@@ -3627,7 +3627,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Les Vampires",
+          "titre": "Les Vampires (co-réalisation avec Mario Bava)",
           "annee": 1957
         },
         {
@@ -3727,7 +3727,7 @@
         },
         {
           "rang": 3,
-          "titre": "Le Père Noël est une ordure",
+          "titre": "Le Père Noël est une ordure (captation de la pièce)",
           "annee": 1985
         }
       ]
@@ -3782,7 +3782,7 @@
         },
         {
           "rang": 4,
-          "titre": "DEVS",
+          "titre": "DEVS (série)",
           "annee": 2020
         }
       ]
@@ -3917,7 +3917,8 @@
         },
         {
           "rang": 4,
-          "titre": "Peacan pie"
+          "titre": "Peacan pie (court-métrage)",
+          "annee": 2003
         },
         {
           "rang": 5,
@@ -4200,12 +4201,12 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Le Monstre",
+          "titre": "Le Monstre (The Quatermass Xperiment)",
           "annee": 1955
         },
         {
           "rang": 2,
-          "titre": "La Marque",
+          "titre": "La Marque (Quatermass 2)",
           "annee": 1957
         },
         {
@@ -4903,7 +4904,7 @@
         },
         {
           "rang": 3,
-          "titre": "Seuls two",
+          "titre": "Seuls two (co-réalisation avec Ramzy Bedia)",
           "annee": 2008
         }
       ]
@@ -4963,17 +4964,17 @@
         },
         {
           "rang": 2,
-          "titre": "The Toxic Avenger, codirection avec Michael Herz",
+          "titre": "The Toxic Avenger, (codirection avec Michael Herz)",
           "annee": 1985
         },
         {
           "rang": 3,
-          "titre": "The Toxic Avenger, Part 2, codirection avec Michael Herz",
+          "titre": "The Toxic Avenger, Part 2 (codirection avec Michael Herz)",
           "annee": 1989
         },
         {
           "rang": 4,
-          "titre": "The Toxic Avenger Part 3, codirection avec Michael Herz",
+          "titre": "The Toxic Avenger, Part 3 (codirection avec Michael Herz)",
           "annee": 1989
         }
       ]
@@ -5133,7 +5134,7 @@
         },
         {
           "rang": 2,
-          "titre": "Trois histoires de l'au-delà",
+          "titre": "Trois histoires de l'au-delà (segment Souvenirs)",
           "annee": 2002
         }
       ]
@@ -5483,7 +5484,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "La Planète sauvage"
+          "titre": "La Planète sauvage (en collaboration avec Roland Topor)"
         }
       ]
     },
@@ -6082,7 +6083,7 @@
         },
         {
           "rang": 2,
-          "titre": "Ultra rêve",
+          "titre": "Ultra rêve (segment Ultra pulpe)",
           "annee": 2018
         },
         {
@@ -6266,7 +6267,7 @@
         },
         {
           "rang": 2,
-          "titre": "La Cité de Dieu",
+          "titre": "La Cité de Dieu (co-réalisation avec avec Kátia Lund)",
           "annee": 2002
         },
         {
@@ -6986,7 +6987,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Dark Crystal",
+          "titre": "Dark Crystal (co-réalisation avec Jim Henson)",
           "annee": 1982
         },
         {
@@ -7076,7 +7077,7 @@
         },
         {
           "rang": 4,
-          "titre": "Cut",
+          "titre": "Cut (segment de 3 Extrêmes)",
           "annee": 2004
         },
         {
@@ -7736,7 +7737,7 @@
         },
         {
           "rang": 5,
-          "titre": "Les Statues meurent aussi",
+          "titre": "Les Statues meurent aussi (co-réalisation avec Chris Marker et Ghislain Cloquet)",
           "annee": 1953
         },
         {
@@ -7871,7 +7872,7 @@
         },
         {
           "rang": 4,
-          "titre": "Austin Powers",
+          "titre": "Austin Powers (Austin Powers : International Man of Mystery)",
           "annee": 1997
         },
         {
@@ -7926,12 +7927,12 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Sin City : J'ai tué pour elle",
+          "titre": "Sin City : J'ai tué pour elle (coréalisation avec Frank Miller)",
           "annee": 2014
         },
         {
           "rang": 2,
-          "titre": "Sin City",
+          "titre": "Sin City (coréalisation avec Frank Miller)",
           "annee": 2005
         },
         {
@@ -7971,7 +7972,7 @@
         },
         {
           "rang": 2,
-          "titre": "Tous ses clips musicaux"
+          "titre": "Tous ses clips musicaux (surtout ceux pour NIN et David Bowie)"
         }
       ]
     },
@@ -7995,7 +7996,7 @@
         },
         {
           "rang": 4,
-          "titre": "La Vérité sur le cas de Monsieur Valdemar",
+          "titre": "La Vérité sur le cas de Monsieur Valdemar (in Deux yeux maléfiques)",
           "annee": 1990
         },
         {
@@ -8215,7 +8216,7 @@
         },
         {
           "rang": 2,
-          "titre": "Paris, je t'aime",
+          "titre": "Paris, je t'aime (segment "Loin du 16e")",
           "annee": 2006
         }
       ]
@@ -8380,7 +8381,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "L'Honneur perdu de Katharina Blum",
+          "titre": "L'Honneur perdu de Katharina Blum (co-réalisé avec Margarethe von Trotta)",
           "annee": 1975
         },
         {
@@ -8810,7 +8811,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Ziegfeld Follies",
+          "titre": "Ziegfeld Follies (co-réalisation avec Vincente Minnelli et al.)",
           "annee": 1947
         }
       ]
@@ -9250,12 +9251,12 @@
         },
         {
           "rang": 5,
-          "titre": "Cold meridian",
+          "titre": "Cold meridian (court-métrage)",
           "annee": 2020
         },
         {
           "rang": 6,
-          "titre": "GUO4",
+          "titre": "GUO4 (court-métrage)",
           "annee": 2019
         }
       ]
@@ -9320,7 +9321,7 @@
         },
         {
           "rang": 7,
-          "titre": "Survivre à sa vie",
+          "titre": "Survivre à sa vie (Théorie et pratique)",
           "annee": 2010
         },
         {
@@ -9479,7 +9480,7 @@
         },
         {
           "rang": 5,
-          "titre": "Histoires de vies brisées : Les « double peine » de Lyon",
+          "titre": "Histoires de vies brisées : Les « double peine » de Lyon (coréalisé avec Nils Tavernier)",
           "annee": 2001
         },
         {
@@ -9559,7 +9560,7 @@
         },
         {
           "rang": 2,
-          "titre": "En thérapie",
+          "titre": "En thérapie (série)",
           "annee": "2021-2022"
         },
         {
@@ -9778,7 +9779,7 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Fulltime killer",
+          "titre": "Fulltime killer (coréalisation avec Johnny To)",
           "annee": 2001
         }
       ]
