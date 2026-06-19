@@ -1909,3 +1909,31 @@ a { text-decoration: none; color: inherit; }
   .sp-section { padding: 1.1rem 1.2rem 1.3rem; }
   .sp-group-label { padding: 1.5rem 0 0.5rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   REFONTE — première vague de retouches (apercu-refonte.html)
+   Aucune donnée ni structure HTML modifiée : uniquement l'habillage.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Header : barre tripartite plus affirmée + ombre de séparation */
+.header-geo-bar { height: 6px; }
+.header { box-shadow: 0 1px 0 var(--border); }
+.logo { font-size: 32px; }
+
+/* Index : lignes plus "tactiles" au survol */
+.cineaste-row { transition: background 0.12s, box-shadow 0.12s; }
+.cineaste-row:hover { box-shadow: inset 6px 0 0 var(--rouge); }
+.c-bar { display: none; } /* remplacé par l'ombre intérieure ci-dessus, plus net */
+
+/* Fiche : profondeur plus marquée, cohérente avec le bloc plein du splash */
+.fiche { box-shadow: 10px 10px 0 var(--noir); }
+.fiche-header::before { width: var(--sq, 64px); }
+
+/* Boutons : léger effet de levier au survol/clic */
+.btn-primary, .btn-secondary { transition: background 0.2s, border-color 0.15s, color 0.15s, transform 0.1s; }
+.btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); }
+.btn-primary:active, .btn-secondary:active { transform: translateY(0); }
+
+/* Recherche : champ plus présent */
+.search-bar input { padding: 12px 20px; }
+.search-bar input:focus { box-shadow: 0 0 0 3px var(--rouge-glow), 2px 2px 0 var(--noir); }
