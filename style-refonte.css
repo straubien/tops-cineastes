@@ -1937,3 +1937,31 @@ a { text-decoration: none; color: inherit; }
 /* Recherche : champ plus présent */
 .search-bar input { padding: 12px 20px; }
 .search-bar input:focus { box-shadow: 0 0 0 3px var(--rouge-glow), 2px 2px 0 var(--noir); }
+
+/* ════════════════════════════════════════════════════════════════
+   REFONTE — deuxième vague (Statistiques, Cinéphiles, profondeur)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Statistiques : blocs hero plus sculptés, accents agrandis */
+.stat-hero-item::before { width: 22px; height: 22px; }
+.stat-hero-item:nth-child(2) { box-shadow: -6px 0 0 var(--noir), 6px 0 0 var(--noir); }
+.ranking-title { letter-spacing: 0.1em; }
+.ranking-title::before { width: 10px; height: 10px; }
+.ranking-row:hover { box-shadow: inset 6px 0 0 var(--rouge); }
+.ranking-rank.top3 { box-shadow: 2px 2px 0 var(--noir); }
+
+/* Cinéphiles : bulles avec relief et bande d'accent renforcée */
+.contrib-bubble { box-shadow: 0 0 0 1px var(--border-dim); transition: background 0.15s, box-shadow 0.15s, transform 0.15s; }
+.contrib-bubble:hover { box-shadow: 4px 4px 0 var(--noir); transform: translateY(-2px); }
+.contrib-bubble-band::after { width: 28px; }
+
+/* Header : carré d'accent rouge au coin, écho du logo */
+.header-inner { position: relative; }
+.header-inner::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 2rem;
+  width: 10px; height: 100%;
+  background: var(--rouge);
+  opacity: 0.85;
+}
