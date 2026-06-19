@@ -116,7 +116,8 @@ body{
 .cineaste-row:hover{ background:rgba(192,57,43,.06); }
 .c-bar{ height:26px; background:var(--noir); transition:background .15s; }
 .cineaste-row:hover .c-bar{ background:var(--rouge); }
-.c-name{ font-family:var(--font-body); font-weight:600; font-size:20px; text-transform:uppercase; }
+.c-name{ font-family:var(--font-body); font-size:20px; }
+.c-name b{ font-weight:700; }
 .c-dates{ font-size:14px; color:var(--muted); margin-left:10px; }
 .c-badge{
   font-family:var(--font-title); font-size:16px; min-width:38px; text-align:center;
@@ -134,7 +135,8 @@ body{
 }
 .fiche-head{ background:var(--noir); color:var(--bg); padding:26px 28px; position:relative; }
 .fiche-back{ font-family:var(--font-title); font-size:13px; letter-spacing:.1em; color:var(--rouge); text-transform:uppercase; margin-bottom:10px; }
-.fiche-name{ font-family:var(--font-body); font-weight:600; font-size:36px; text-transform:uppercase; line-height:1.05; }
+.fiche-name{ font-family:var(--font-body); font-size:36px; line-height:1.05; }
+.fiche-name b{ font-weight:700; }
 .fiche-dates{ font-size:15px; color:#c8bfaf; margin-top:4px; }
 
 .fiche-body{ padding:28px; display:flex; gap:28px; }
@@ -163,7 +165,7 @@ body{
   font-family:var(--font-title); font-size:14px; flex-shrink:0;
 }
 .contrib-cell:nth-child(3n+1) .contrib-avatar{ background:var(--rouge); }
-.contrib-name{ font-family:var(--font-body); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:.02em; }
+.contrib-name{ font-family:var(--font-body); font-size:15px; }
 
 footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; color:var(--muted); }
 </style>
@@ -186,7 +188,7 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
 </header>
 
 <nav class="nav">
-  <a href="#annuaire" class="active">Cinéastes</a>
+  <a href="#index" class="active">Index</a>
   <a href="#fiche">Fiche</a>
   <a href="#contributeurs">Cinéphiles</a>
   <a href="#stats">Statistiques</a>
@@ -194,8 +196,8 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
 </nav>
 
 <!-- ── ANNUAIRE : la vraie page d'accueil du site ── -->
-<section class="section" id="annuaire">
-  <h2>Annuaire des cinéastes</h2>
+<section class="section" id="index">
+  <h2>Index des cinéastes</h2>
   <p class="sub">2 904 cinéastes — recherche, filtres et navigation alphabétique, comme sur le site actuel.</p>
 
   <div class="search-row">
@@ -218,22 +220,22 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
     <span class="alpha-col no-data">Y</span><span class="alpha-col">Z</span>
   </div>
 
-  <div class="cineaste-row"><div class="c-bar" style="height:14px"></div><div><span class="c-name">Babenco, Héctor</span><span class="c-dates">1946 – 2016</span></div><div class="c-badge">4</div></div>
-  <div class="cineaste-row"><div class="c-bar" style="height:18px"></div><div><span class="c-name">Bacon, Lloyd</span><span class="c-dates">1889 – 1955</span></div><div class="c-badge">5</div></div>
-  <div class="cineaste-row"><div class="c-bar" style="height:8px"></div><div><span class="c-name">Bacso, Péter</span><span class="c-dates">1928 – 2009</span></div><div class="c-badge">1</div></div>
-  <div class="cineaste-row"><div class="c-bar" style="height:12px"></div><div><span class="c-name">Badham, John</span><span class="c-dates">né en 1939</span></div><div class="c-badge">6</div></div>
-  <div class="cineaste-row"><div class="c-bar" style="height:38px;background:var(--rouge)"></div><div><span class="c-name">Bresson, Robert</span><span class="c-dates">1901 – 1999</span></div><div class="c-badge" style="background:var(--rouge)">18</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:14px"></div><div><span class="c-name"><b>BABENCO</b>, Héctor</span><span class="c-dates">1946 – 2016</span></div><div class="c-badge">4</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:18px"></div><div><span class="c-name"><b>BACON</b>, Lloyd</span><span class="c-dates">1889 – 1955</span></div><div class="c-badge">5</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:8px"></div><div><span class="c-name"><b>BACSO</b>, Péter</span><span class="c-dates">1928 – 2009</span></div><div class="c-badge">1</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:12px"></div><div><span class="c-name"><b>BADHAM</b>, John</span><span class="c-dates">né en 1939</span></div><div class="c-badge">6</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:38px;background:var(--rouge)"></div><div><span class="c-name"><b>BRESSON</b>, Robert</span><span class="c-dates">1901 – 1999</span></div><div class="c-badge" style="background:var(--rouge)">18</div></div>
 </section>
 
 <!-- ── FICHE CINÉASTE ── -->
 <section class="section" id="fiche">
   <h2>Fiche cinéaste</h2>
-  <p class="sub">Panneau ouvert au clic sur une ligne de l'annuaire — ici Robert Bresson, 18 tops postés.</p>
+  <p class="sub">Panneau ouvert au clic sur une ligne de l'index — ici Robert Bresson, 18 tops postés.</p>
 
   <div class="fiche-card">
     <div class="fiche-head">
-      <div class="fiche-back">← Retour à l'annuaire</div>
-      <div class="fiche-name">Bresson, Robert</div>
+      <div class="fiche-back">← Retour à l'index</div>
+      <div class="fiche-name"><b>BRESSON</b>, Robert</div>
       <div class="fiche-dates">1901 – 1999</div>
     </div>
     <div class="fiche-body">
