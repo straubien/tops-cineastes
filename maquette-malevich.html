@@ -15,6 +15,7 @@
   --noir:#15120f;
   --text:#15120f;
   --border:#15120f;
+  --muted:#6a5d4a;
   --font-body:'GoudyOldStyle', Georgia, serif;
   --font-title:'TWCenCondEB', 'Arial Narrow', sans-serif;
 }
@@ -24,13 +25,12 @@ body{
   font-family:var(--font-body);
 }
 
-/* ── bannière de méthode (à retirer dans la version finale) ── */
 .note{
   background:var(--noir); color:var(--bg); font-family:var(--font-body);
   font-size:13px; text-align:center; padding:6px 10px; letter-spacing:.03em;
 }
 
-/* ── 1. GÉOMÉTRIE STRUCTURANTE — bandeau diagonal de section ── */
+/* ── HERO ── */
 .hero{
   position:relative; overflow:hidden;
   border-bottom:6px solid var(--noir);
@@ -55,10 +55,10 @@ body{
 .h1 span{ color:var(--rouge); }
 .lede{ font-size:19px; line-height:1.5; max-width:520px; margin:0; }
 
-/* ── 2. NAV EN BLOCS, deux voix typographiques ── */
+/* ── NAV ── */
 .nav{
   display:flex; border-top:3px solid var(--noir); border-bottom:3px solid var(--noir);
-  background:var(--bg);
+  background:var(--bg); position:sticky; top:0; z-index:50;
 }
 .nav a{
   font-family:var(--font-title); font-size:15px; letter-spacing:.12em;
@@ -70,62 +70,102 @@ body{
 .nav a:hover{ background:var(--rouge); color:var(--bg); transform:translateY(-2px); }
 .nav a.active{ background:var(--noir); color:var(--bg); }
 
-/* ── 3. CLASSEMENT — grille asymétrique constructiviste ── */
-.ranking{ padding:70px 5vw 90px; max-width:1100px; margin:0 auto; }
-.ranking h2{
-  font-family:var(--font-title); font-size:32px; text-transform:uppercase;
-  letter-spacing:.04em; margin:0 0 36px; display:flex; align-items:baseline; gap:14px;
+/* ── section générique ── */
+.section{ padding:60px 5vw; max-width:1100px; margin:0 auto; }
+.section + .section{ border-top:3px solid var(--noir); }
+.section h2{
+  font-family:var(--font-title); font-size:30px; text-transform:uppercase;
+  letter-spacing:.04em; margin:0 0 8px; display:flex; align-items:baseline; gap:14px;
 }
-.ranking h2::after{ content:""; flex:1; height:3px; background:var(--noir); }
+.section h2::after{ content:""; flex:1; height:3px; background:var(--noir); }
+.section .sub{ color:var(--muted); font-size:16px; margin:0 0 32px; }
 
-.rank-row{
-  display:grid; grid-template-columns:90px 96px 1fr 120px; align-items:center;
-  gap:0; border-bottom:2px solid var(--noir);
+/* ── ANNUAIRE : recherche, filtres, A-Z, liste alpha ── */
+.search-row{ display:flex; gap:0; margin-bottom:18px; }
+.search-row input{
+  flex:1; font-family:var(--font-body); font-size:18px; padding:12px 16px;
+  border:3px solid var(--noir); background:var(--bg); color:var(--text);
 }
-.rank-row:nth-child(odd){ background:rgba(192,57,43,.05); }
+.search-row input:focus{ outline:2px solid var(--rouge); outline-offset:-2px; }
+.search-row button{
+  font-family:var(--font-title); letter-spacing:.1em; text-transform:uppercase;
+  font-size:14px; padding:0 22px; border:3px solid var(--noir); border-left:none;
+  background:var(--noir); color:var(--bg); cursor:pointer;
+}
 
-.rank-num{
-  font-family:var(--font-title); font-size:46px; line-height:1;
-  color:var(--bg); background:var(--noir); align-self:stretch;
+.filter-row{ display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+.filter-chip{
+  font-family:var(--font-title); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  border:2px solid var(--noir); padding:7px 14px; background:var(--bg); cursor:default;
+}
+.filter-chip.active{ background:var(--rouge); border-color:var(--rouge); color:var(--bg); }
+
+.alpha-bar{ display:flex; flex-wrap:wrap; gap:2px; margin-bottom:30px; }
+.alpha-col{
+  width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-title); font-size:15px; border:1px solid var(--noir);
+  background:var(--bg); color:var(--noir);
+}
+.alpha-col.active{ background:var(--noir); color:var(--bg); }
+.alpha-col.no-data{ color:#c8bfaf; border-color:#d8d0c0; }
+
+.cineaste-row{
+  display:grid; grid-template-columns:6px 1fr auto; align-items:center;
+  border-bottom:1px solid #d8d0c0; padding:12px 0; gap:14px; cursor:pointer;
+}
+.cineaste-row:hover{ background:rgba(192,57,43,.06); }
+.c-bar{ height:26px; background:var(--noir); transition:background .15s; }
+.cineaste-row:hover .c-bar{ background:var(--rouge); }
+.c-name{ font-family:var(--font-title); font-size:19px; text-transform:uppercase; }
+.c-dates{ font-size:14px; color:var(--muted); margin-left:10px; }
+.c-badge{
+  font-family:var(--font-title); font-size:16px; min-width:38px; text-align:center;
+  background:var(--noir); color:var(--bg); padding:5px 0;
+}
+.cineaste-row:hover .c-badge{ background:var(--rouge); }
+
+/* ── FICHE CINÉASTE (panneau détail) ── */
+.fiche-card{
+  border:3px solid var(--noir); background:var(--bg); max-width:640px; position:relative;
+}
+.fiche-card::before{
+  content:""; position:absolute; top:-14px; left:-14px; width:60px; height:60px;
+  background:var(--rouge); z-index:-1;
+}
+.fiche-head{ background:var(--noir); color:var(--bg); padding:26px 28px; position:relative; }
+.fiche-back{ font-family:var(--font-title); font-size:13px; letter-spacing:.1em; color:var(--rouge); text-transform:uppercase; margin-bottom:10px; }
+.fiche-name{ font-family:var(--font-title); font-size:34px; text-transform:uppercase; line-height:1.05; }
+.fiche-dates{ font-size:15px; color:#c8bfaf; margin-top:4px; }
+
+.fiche-body{ padding:28px; display:flex; gap:28px; }
+.fiche-stat{ text-align:center; flex-shrink:0; }
+.fiche-stat-num{ font-family:var(--font-title); font-size:64px; color:var(--rouge); line-height:1; }
+.fiche-stat-bar{ width:56px; height:5px; background:var(--noir); margin:8px auto; }
+.fiche-stat-label{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+
+.fiche-contribs{ flex:1; }
+.fiche-contribs h3{ font-family:var(--font-title); font-size:14px; letter-spacing:.1em; text-transform:uppercase; margin:0 0 12px; }
+.fiche-contrib-chip{
+  display:inline-block; font-family:var(--font-body); font-size:15px;
+  border:1px solid var(--noir); padding:5px 10px; margin:0 6px 6px 0;
+}
+.fiche-contrib-chip.has-films{ border-color:var(--rouge); color:var(--rouge); font-weight:600; }
+
+/* ── CINÉPHILES (contributeurs) ── */
+.contrib-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:0; border:2px solid var(--noir); }
+.contrib-cell{
+  display:flex; align-items:center; gap:10px; padding:14px 16px;
+  border-right:1px solid var(--noir); border-bottom:1px solid var(--noir);
+}
+.contrib-avatar{
+  width:36px; height:36px; background:var(--noir); color:var(--bg);
   display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-title); font-size:14px; flex-shrink:0;
 }
-.rank-row:nth-child(1) .rank-num{ background:var(--rouge); font-size:58px; }
+.contrib-cell:nth-child(3n+1) .contrib-avatar{ background:var(--rouge); }
+.contrib-name{ font-family:var(--font-title); font-size:14px; text-transform:uppercase; letter-spacing:.02em; }
 
-.rank-photo{
-  width:72px; height:72px; margin:12px; object-fit:cover;
-  border:3px solid var(--noir); filter:grayscale(1) contrast(1.15);
-  transition:transform .2s ease, filter .2s ease;
-}
-.rank-row:hover .rank-photo{ transform:rotate(-3deg) scale(1.04); filter:none; }
-
-.rank-meta{ padding:14px 10px; }
-.rank-name{ font-family:var(--font-title); font-size:21px; text-transform:uppercase; letter-spacing:.02em; }
-.rank-years{ font-size:14px; color:#6a5d4a; }
-
-.rank-score{
-  font-family:var(--font-title); font-size:30px; text-align:right; padding-right:18px;
-  color:var(--rouge); white-space:nowrap;
-}
-.rank-score small{ display:block; font-size:11px; letter-spacing:.1em; color:var(--noir); text-transform:uppercase; }
-
-/* bande de rang à gauche, couleur dégressive */
-.rank-row{ position:relative; padding-left:8px; }
-.rank-row::before{
-  content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--rouge);
-}
-.rank-row:nth-child(n+2)::before{ opacity:.7; }
-.rank-row:nth-child(n+4)::before{ opacity:.4; }
-
-/* ── 5. micro-interaction carrés ── */
-.tag-grid{ display:flex; gap:8px; flex-wrap:wrap; margin-top:40px; }
-.tag{
-  font-family:var(--font-title); font-size:13px; letter-spacing:.1em; text-transform:uppercase;
-  border:2px solid var(--noir); padding:8px 14px; cursor:default;
-  transition:transform .15s ease, background .15s ease, color .15s ease;
-}
-.tag:hover{ background:var(--rouge); border-color:var(--rouge); color:var(--bg); transform:rotate(-2deg); }
-
-footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; color:#6a5d4a; }
+footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -141,79 +181,106 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
   <div class="hero-content">
     <p class="kicker">Suprématisme · Cinéphilie</p>
     <h1 class="h1">Tops<br><span>/</span> Cinéastes</h1>
-    <p class="lede">Refonte graphique du classement collaboratif, structurée par la géométrie plutôt que décorée par elle — à la manière de Malevitch et des affichistes constructivistes.</p>
+    <p class="lede">Refonte graphique du site collaboratif, structurée par la géométrie plutôt que décorée par elle — à la manière de Malevitch et des affichistes constructivistes.</p>
   </div>
 </header>
 
 <nav class="nav">
-  <a href="#" class="active">Classement</a>
-  <a href="#">Cinéastes</a>
-  <a href="#">Contributeurs</a>
-  <a href="#">Statistiques</a>
+  <a href="#annuaire" class="active">Cinéastes</a>
+  <a href="#fiche">Fiche</a>
+  <a href="#contributeurs">Cinéphiles</a>
+  <a href="#stats">Statistiques</a>
   <a href="#">À propos</a>
 </nav>
 
-<main class="ranking">
-  <h2>Classement général</h2>
+<!-- ── ANNUAIRE : la vraie page d'accueil du site ── -->
+<section class="section" id="annuaire">
+  <h2>Annuaire des cinéastes</h2>
+  <p class="sub">2 904 cinéastes — recherche, filtres et navigation alphabétique, comme sur le site actuel.</p>
 
-  <div class="rank-row">
-    <div class="rank-num">01</div>
-    <img class="rank-photo" src="portraits/portrait-Carpenter.jpg" alt="John Carpenter">
-    <div class="rank-meta">
-      <div class="rank-name">Carpenter, John</div>
-      <div class="rank-years">né en 1948</div>
+  <div class="search-row">
+    <input type="text" placeholder="Rechercher un cinéaste…" value="ba">
+    <button>Rechercher</button>
+  </div>
+  <div class="filter-row">
+    <span class="filter-chip">Cinéastes sans aucun top</span>
+    <span class="filter-chip">Cinéastes sans top importé</span>
+  </div>
+  <div class="alpha-bar">
+    <span class="alpha-col active">A</span><span class="alpha-col">B</span><span class="alpha-col">C</span>
+    <span class="alpha-col">D</span><span class="alpha-col">E</span><span class="alpha-col">F</span>
+    <span class="alpha-col">G</span><span class="alpha-col">H</span><span class="alpha-col no-data">I</span>
+    <span class="alpha-col">J</span><span class="alpha-col">K</span><span class="alpha-col">L</span>
+    <span class="alpha-col">M</span><span class="alpha-col">N</span><span class="alpha-col">O</span>
+    <span class="alpha-col">P</span><span class="alpha-col no-data">Q</span><span class="alpha-col">R</span>
+    <span class="alpha-col">S</span><span class="alpha-col">T</span><span class="alpha-col">U</span>
+    <span class="alpha-col">V</span><span class="alpha-col no-data">W</span><span class="alpha-col no-data">X</span>
+    <span class="alpha-col no-data">Y</span><span class="alpha-col">Z</span>
+  </div>
+
+  <div class="cineaste-row"><div class="c-bar" style="height:14px"></div><div><span class="c-name">Babenco, Héctor</span><span class="c-dates">1946 – 2016</span></div><div class="c-badge">4</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:18px"></div><div><span class="c-name">Bacon, Lloyd</span><span class="c-dates">1889 – 1955</span></div><div class="c-badge">5</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:8px"></div><div><span class="c-name">Bacso, Péter</span><span class="c-dates">1928 – 2009</span></div><div class="c-badge">1</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:12px"></div><div><span class="c-name">Badham, John</span><span class="c-dates">né en 1939</span></div><div class="c-badge">6</div></div>
+  <div class="cineaste-row"><div class="c-bar" style="height:38px;background:var(--rouge)"></div><div><span class="c-name">Bresson, Robert</span><span class="c-dates">1901 – 1999</span></div><div class="c-badge" style="background:var(--rouge)">18</div></div>
+</section>
+
+<!-- ── FICHE CINÉASTE ── -->
+<section class="section" id="fiche">
+  <h2>Fiche cinéaste</h2>
+  <p class="sub">Panneau ouvert au clic sur une ligne de l'annuaire — ici Robert Bresson, 18 tops postés.</p>
+
+  <div class="fiche-card">
+    <div class="fiche-head">
+      <div class="fiche-back">← Retour à l'annuaire</div>
+      <div class="fiche-name">Bresson, Robert</div>
+      <div class="fiche-dates">1901 – 1999</div>
     </div>
-    <div class="rank-score">19<small>tops</small></div>
-  </div>
-
-  <div class="rank-row">
-    <div class="rank-num">02</div>
-    <img class="rank-photo" src="portraits/portrait-Bresson.jpg" alt="Robert Bresson">
-    <div class="rank-meta">
-      <div class="rank-name">Bresson, Robert</div>
-      <div class="rank-years">1901 – 1999</div>
+    <div class="fiche-body">
+      <div class="fiche-stat">
+        <div class="fiche-stat-num">18</div>
+        <div class="fiche-stat-bar"></div>
+        <div class="fiche-stat-label">tops postés</div>
+      </div>
+      <div class="fiche-contribs">
+        <h3>Tops postés par</h3>
+        <span class="fiche-contrib-chip has-films">Mathieu Muzard (3)</span>
+        <span class="fiche-contrib-chip has-films">Karine Cnudde (2)</span>
+        <span class="fiche-contrib-chip">Keefe Murphy</span>
+        <span class="fiche-contrib-chip">Daniel Jirden</span>
+        <span class="fiche-contrib-chip">Bastien Teklow</span>
+        <span class="fiche-contrib-chip">Seb Lapin</span>
+        <span class="fiche-contrib-chip">Franky Fockers</span>
+        <span class="fiche-contrib-chip">+ 11 autres</span>
+      </div>
     </div>
-    <div class="rank-score">18<small>tops</small></div>
   </div>
+</section>
 
-  <div class="rank-row">
-    <div class="rank-num">03</div>
-    <img class="rank-photo" src="portraits/portrait-Allen.jpg" alt="Woody Allen">
-    <div class="rank-meta">
-      <div class="rank-name">Allen, Woody</div>
-      <div class="rank-years">né en 1935</div>
-    </div>
-    <div class="rank-score">17<small>tops</small></div>
+<!-- ── CINÉPHILES ── -->
+<section class="section" id="contributeurs">
+  <h2>Cinéphiles</h2>
+  <p class="sub">Liste des contributeurs ayant posté un top.</p>
+  <div class="contrib-grid">
+    <div class="contrib-cell"><div class="contrib-avatar">MM</div><div class="contrib-name">Mathieu Muzard</div></div>
+    <div class="contrib-cell"><div class="contrib-avatar">KC</div><div class="contrib-name">Karine Cnudde</div></div>
+    <div class="contrib-cell"><div class="contrib-avatar">KM</div><div class="contrib-name">Keefe Murphy</div></div>
+    <div class="contrib-cell"><div class="contrib-avatar">DJ</div><div class="contrib-name">Daniel Jirden</div></div>
+    <div class="contrib-cell"><div class="contrib-avatar">BT</div><div class="contrib-name">Bastien Teklow</div></div>
+    <div class="contrib-cell"><div class="contrib-avatar">SL</div><div class="contrib-name">Seb Lapin</div></div>
   </div>
+</section>
 
-  <div class="rank-row">
-    <div class="rank-num">04</div>
-    <img class="rank-photo" src="portraits/portrait-Antonioni.jpg" alt="Michelangelo Antonioni">
-    <div class="rank-meta">
-      <div class="rank-name">Antonioni, Michelangelo</div>
-      <div class="rank-years">1912 – 2007</div>
-    </div>
-    <div class="rank-score">17<small>tops</small></div>
+<!-- ── STATISTIQUES (teaser) ── -->
+<section class="section" id="stats">
+  <h2>Statistiques</h2>
+  <p class="sub">Aperçu des chiffres clés — graphiques à reconstruire en aplats géométriques plutôt qu'en courbes douces.</p>
+  <div class="tag-grid" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="filter-chip">2 904 cinéastes</span>
+    <span class="filter-chip">18 cinéphiles actifs</span>
+    <span class="filter-chip">Top : Carpenter (19)</span>
   </div>
-
-  <div class="rank-row">
-    <div class="rank-num">05</div>
-    <img class="rank-photo" src="portraits/portrait-De Palma.jpg" alt="Brian De Palma">
-    <div class="rank-meta">
-      <div class="rank-name">De Palma, Brian</div>
-      <div class="rank-years">né en 1940</div>
-    </div>
-    <div class="rank-score">17<small>tops</small></div>
-  </div>
-
-  <div class="tag-grid">
-    <span class="tag">Nouvelle Vague</span>
-    <span class="tag">Giallo</span>
-    <span class="tag">Néoréalisme</span>
-    <span class="tag">Body Horror</span>
-    <span class="tag">Slow Cinema</span>
-  </div>
-</main>
+</section>
 
 <footer>Données réelles issues de cineastes.json — maquette de réflexion, non connectée au site.</footer>
 
