@@ -1944,7 +1944,6 @@ a { text-decoration: none; color: inherit; }
 
 /* Statistiques : blocs hero plus sculptés, accents agrandis */
 .stat-hero-item::before { width: 22px; height: 22px; }
-.stat-hero-item:nth-child(2) { box-shadow: -6px 0 0 var(--noir), 6px 0 0 var(--noir); }
 .ranking-title { letter-spacing: 0.1em; }
 .ranking-title::before { width: 10px; height: 10px; }
 .ranking-row:hover { box-shadow: inset 6px 0 0 var(--rouge); }
@@ -1980,16 +1979,19 @@ a { text-decoration: none; color: inherit; }
 .contrib-tag:hover { transform: translateY(-1px); box-shadow: 2px 2px 0 var(--noir); }
 
 /* Liste des contributeurs dans la fiche : accent rouge au survol */
-.fiche-contrib-header { transition: background 0.12s, box-shadow 0.12s; }
-.fiche-contrib-header:hover { box-shadow: inset 4px 0 0 var(--rouge); }
+.fiche-contrib-header {
+  transition: background 0.12s, border-color 0.12s;
+  border-left: 4px solid transparent;
+  padding-left: 10px;
+}
+.fiche-contrib-header:hover { border-left-color: var(--rouge); }
 .fiche-contrib-count { color: var(--brun-pale); }
 
 /* ════════════════════════════════════════════════════════════════
    REFONTE — quatrième vague (Profil, filtres, Mes tops)
    ════════════════════════════════════════════════════════════════ */
 
-/* Profil : avatar avec liseré rouge, favoris avec relief au survol */
-.profil-avatar { box-shadow: 0 0 0 3px var(--rouge); }
+/* Profil : favoris avec relief au survol */
 .profil-fav-portrait { transition: border-color 0.2s, transform 0.15s; }
 .profil-fav-portrait:hover { transform: translateY(-3px); }
 
