@@ -71,8 +71,9 @@ body{
 .nav a.active{ background:var(--noir); color:var(--bg); }
 
 /* ── section générique ── */
-.section{ padding:60px 5vw; max-width:1100px; margin:0 auto; }
-.section + .section{ border-top:3px solid var(--noir); }
+.section{ padding:60px 5vw; max-width:1100px; margin:0 auto; display:none; }
+.section.active{ display:block; }
+.section + .section{ border-top:none; }
 .section h2{
   font-family:var(--font-title); font-size:30px; text-transform:uppercase;
   letter-spacing:.04em; margin:0 0 8px; display:flex; align-items:baseline; gap:14px;
@@ -188,15 +189,15 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
 </header>
 
 <nav class="nav">
-  <a href="#index" class="active">Index</a>
-  <a href="#fiche">Fiche</a>
-  <a href="#contributeurs">Cinéphiles</a>
-  <a href="#stats">Statistiques</a>
-  <a href="#">À propos</a>
+  <a href="#index" data-tab="index" class="active">Index</a>
+  <a href="#fiche" data-tab="fiche">Fiche</a>
+  <a href="#contributeurs" data-tab="contributeurs">Cinéphiles</a>
+  <a href="#stats" data-tab="stats">Statistiques</a>
+  <a href="#apropos" data-tab="apropos">À propos</a>
 </nav>
 
 <!-- ── ANNUAIRE : la vraie page d'accueil du site ── -->
-<section class="section" id="index">
+<section class="section active" id="index">
   <h2>Index des cinéastes</h2>
   <p class="sub">2 904 cinéastes — recherche, filtres et navigation alphabétique, comme sur le site actuel.</p>
 
@@ -294,7 +295,38 @@ footer{ padding:40px 5vw; border-top:6px solid var(--noir); font-size:14px; colo
   </div>
 </section>
 
+<!-- ── À PROPOS ── -->
+<section class="section" id="apropos">
+  <h2>À propos</h2>
+  <p class="sub">Onglet à compléter — pas encore maquetté.</p>
+</section>
+
 <footer>Données réelles issues de cineastes.json — maquette de réflexion, non connectée au site.</footer>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.toggle('active', s.id === name); });
+  document.querySelectorAll('.nav a').forEach(function(a){ a.classList.toggle('active', a.dataset.tab === name); });
+  window.scrollTo({top:0, behavior:'instant'});
+}
+document.querySelectorAll('.nav a').forEach(function(a){
+  a.addEventListener('click', function(e){
+    e.preventDefault();
+    showTab(a.dataset.tab);
+  });
+});
+// Clic sur une ligne de l'index → ouvre la fiche (comme sur le vrai site)
+document.querySelectorAll('#index .cineaste-row').forEach(function(row){
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', function(){ showTab('fiche'); });
+});
+// Retour à l'index depuis la fiche
+var ficheBack = document.querySelector('.fiche-back');
+if (ficheBack) {
+  ficheBack.style.cursor = 'pointer';
+  ficheBack.addEventListener('click', function(){ showTab('index'); });
+}
+</script>
 
 </body>
 </html>
