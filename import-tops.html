@@ -483,6 +483,47 @@ function attributeAll(data) {
 
 // ─── TOPS MANUELS (ajoutés par l'admin quand le json n'a pas de liste numérotée) ──
 const MANUAL_TOPS = {
+  "THOMAS D. DEMAEREL": {
+    "BROWNING": {
+      cineasteName: "BROWNING, Tod",
+      films: [
+        {rang:1, titre:"Freaks, la monstrueuse parade", annee:1932},
+        {rang:2, titre:"La marque du vampire",           annee:1935},
+        {rang:3, titre:"Les poupées du diable",          annee:1936}
+      ]
+    },
+    "DEVERS": {
+      cineasteName: "DEVERS, Claire",
+      films: [
+        {rang:1, titre:"Max et Jérémie", annee:1992}
+      ]
+    },
+    "DUVAL": {
+      cineasteName: "DUVAL, Daniel",
+      films: [
+        {rang:1, titre:"Effraction"}
+      ]
+    },
+    "LAUGHTON": {
+      cineasteName: "LAUGHTON, Charles",
+      films: [
+        {rang:1, titre:"La nuit du chasseur", annee:1955}
+      ]
+    },
+    "SCIAMMA CÉLINE": {
+      cineasteName: "SCIAMMA, Céline",
+      films: [
+        {rang:1, titre:"Tomboy",                              annee:2011},
+        {rang:2, titre:"Portrait de la jeune fille en feu",   annee:2019}
+      ]
+    },
+    "ZELLER": {
+      cineasteName: "ZELLER, Florian",
+      films: [
+        {rang:1, titre:"The Father", annee:2020}
+      ]
+    }
+  },
   "THOMAS F. FLAVIER": {
     "SAITO DAÏCHI": {
       cineasteName: "SAITO, Daïchi",
@@ -935,7 +976,8 @@ const MANUAL_EXCLUSIONS = {
 
 // Tops à ignorer (pas de liste disponible, intentionnellement laissés vides)
 const MANUAL_SKIPS = {
-  "THORACENTESE RUBIS": new Set(["ABBASI", "ABRAHAM", "ABU SEIF", "ANGER KENNETH"])
+  "THORACENTESE RUBIS": new Set(["ABBASI", "ABRAHAM", "ABU SEIF", "ANGER KENNETH"]),
+  "THOMAS D. DEMAEREL": new Set(["DORCEL", "POLANSKI"])
 };
 
 function applyExclusions(attributed) {
