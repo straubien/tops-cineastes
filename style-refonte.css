@@ -2001,3 +2001,50 @@ a { text-decoration: none; color: inherit; }
 .mt-block-step { box-shadow: 2px 2px 0 var(--noir); }
 .mt-block-step.mt-step-dark { box-shadow: 2px 2px 0 var(--rouge); }
 .mt-block::before { width: 5px; }
+
+/* ════════════════════════════════════════════════════════════════
+   REFONTE — cinquième vague : composition diagonale en haut à droite
+   du splash, reprise de la maquette. On réutilise les 6 div déjà
+   présentes dans le HTML (.splash-geo-*) — aucun markup ajouté.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Grand triangle noir, coin supérieur droit */
+.splash::before {
+  content: '';
+  position: absolute;
+  top: -10%; right: -10%;
+  width: 55%; height: 75%;
+  background: var(--noir);
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  z-index: 1;
+}
+
+/* Bloc rouge 1 — réutilise le petit carré noir d'origine */
+.splash-geo-sq1 {
+  top: 14%; right: 16%;
+  width: 150px; height: 95px;
+  background: var(--rouge);
+  transform: rotate(-14deg);
+  z-index: 2;
+}
+/* Bloc rouge 2 — réutilise le petit carré rouge d'origine */
+.splash-geo-sq2 {
+  top: 26%; right: 10%;
+  bottom: auto; left: auto;
+  width: 150px; height: 60px;
+  background: var(--rouge);
+  opacity: 1;
+  transform: rotate(-14deg);
+  z-index: 2;
+}
+/* Barre diagonale noire qui prolonge la pointe des blocs rouges */
+.splash-geo-h1 {
+  top: 38%; left: auto; right: 6%; bottom: auto;
+  width: 420px; height: 12px;
+  background: var(--noir);
+  transform: rotate(-32deg);
+  transform-origin: right center;
+  z-index: 2;
+}
+/* v1 / v2 / h2 : accents gauches conservés mais discrets, sous la composition */
+.splash-geo-v1, .splash-geo-v2, .splash-geo-h2 { z-index: 1; }
