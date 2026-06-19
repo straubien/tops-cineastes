@@ -1965,3 +1965,21 @@ a { text-decoration: none; color: inherit; }
   background: var(--rouge);
   opacity: 0.85;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   REFONTE — troisième vague (fiche cinéaste, tags contributeurs)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Fiche : en-tête plus structuré, trait inférieur pleine largeur */
+.fiche-header::after { width: calc(100% - 3.6rem - var(--sq, 56px)); opacity: 0.55; }
+.fiche-stat-bar { width: 48px; height: 4px; background: var(--rouge); }
+.fiche-stat-number { font-size: 68px; }
+
+/* Tags favoris (profil) : relief net au survol, cohérent avec les bulles cinéphiles */
+.contrib-tag { transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.1s; }
+.contrib-tag:hover { transform: translateY(-1px); box-shadow: 2px 2px 0 var(--noir); }
+
+/* Liste des contributeurs dans la fiche : accent rouge au survol */
+.fiche-contrib-header { transition: background 0.12s, box-shadow 0.12s; }
+.fiche-contrib-header:hover { box-shadow: inset 4px 0 0 var(--rouge); }
+.fiche-contrib-count { color: var(--brun-pale); }
