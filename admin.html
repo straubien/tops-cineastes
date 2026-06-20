@@ -939,15 +939,17 @@ var TOTAUX_ATTENDUS = {
 
 var TOTAL_ATTENDU_GLOBAL = Object.values(TOTAUX_ATTENDUS).reduce(function(a,b){return a+b;}, 0);
 
+// ── Total de tops dans l'index (saisi à la main, indépendant de cineastes.json) ──
+var TOTAL_TOPS_INDEX_MANUEL = 14050;
+var TOTAL_CINEASTES_INDEX_MANUEL = 2904;
+
 async function renderDashboard(){
   if(!DATA) return;
 
-  // Compter les tops dans cineastes.json (tops attendus = total global connu)
-  var totalIndex = 0;
-  DATA.cineastes.forEach(function(c){ totalIndex += (c.tops_contributeurs||[]).length; });
-
-  document.getElementById('dash-total-tops').textContent = totalIndex.toLocaleString('fr-FR');
-  document.getElementById('dash-total-cineastes').textContent = DATA.cineastes.length.toLocaleString('fr-FR') + ' cinéastes indexés';
+  // Tops dans l'index : valeur saisie à la main (cf. TOTAL_TOPS_INDEX_MANUEL),
+  // car cineastes.json n'est pas synchronisé automatiquement avec Supabase.
+  document.getElementById('dash-total-tops').textContent = TOTAL_TOPS_INDEX_MANUEL.toLocaleString('fr-FR');
+  document.getElementById('dash-total-cineastes').textContent = TOTAL_CINEASTES_INDEX_MANUEL.toLocaleString('fr-FR') + ' cinéastes indexés';
 
   // Soumissions pending
   var pendingRes = await sb.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending');
