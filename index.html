@@ -2113,10 +2113,10 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     var now = new Date().toISOString();
     for(var i=0;i<list.length;i++){
       var p = list[i];
-      var res = await sbMT.from(mtSeenTableFor(p.kind)).update({ seen_at: now }).eq('id', p.id);
+      var res = await sbMT.from(mtSeenTableFor(p.kind)).update({ seen_at: now }).eq('id', p.id).select('id');
       if(res.error){
         console.error('Échec persistant de la synchronisation seen_at pour', p.kind, p.id, res.error.message);
-      } else {
+      } else if(res.data && res.data.length){
         mtClearPendingSeen(p.kind, p.id);
       }
     }
@@ -2134,9 +2134,11 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     var countEl = document.getElementById('nav-mes-tops-count');
     if(countEl) countEl.textContent = hasNotif ? String(mtUnseenNotifications.length) : '';
     var now = new Date().toISOString();
-    sbMT.from(mtSeenTableFor(n.kind)).update({ seen_at: now }).eq('id', n.id).then(function(res){
+    sbMT.from(mtSeenTableFor(n.kind)).update({ seen_at: now }).eq('id', n.id).select('id').then(function(res){
       if(res && res.error){
         console.error('Erreur lors du marquage "vu" de la notification:', res.error.message);
+        mtQueuePendingSeen(n.kind, n.id);
+      } else if(!res.data || !res.data.length){
         mtQueuePendingSeen(n.kind, n.id);
       }
     }, function(err){
@@ -2147,21 +2149,25 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
 
   async function mtMarkNotificationsSeen(){
     if(!mtUnseenNotifications.length) return;
+    mtUnseenNotifications.forEach(function(n){ mtAddDismissedId(n.kind, n.id); });
     var subIds = mtUnseenNotifications.filter(function(n){ return n.kind === 'submission'; }).map(function(n){ return n.id; });
     var propIds = mtUnseenNotifications.filter(function(n){ return n.kind === 'proposal'; }).map(function(n){ return n.id; });
     var commentIds = mtUnseenNotifications.filter(function(n){ return n.kind === 'comment'; }).map(function(n){ return n.id; });
     var now = new Date().toISOString();
     if(subIds.length){
-      var subRes2 = await sbMT.from('submissions').update({ seen_at: now }).in('id', subIds);
+      var subRes2 = await sbMT.from('submissions').update({ seen_at: now }).in('id', subIds).select('id');
       if(subRes2.error){ console.error('Erreur marquage seen_at submissions:', subRes2.error.message); subIds.forEach(function(id){ mtQueuePendingSeen('submission', id); }); }
+      else if(!subRes2.data || !subRes2.data.length){ subIds.forEach(function(id){ mtQueuePendingSeen('submission', id); }); }
     }
     if(propIds.length){
-      var propRes2 = await sbMT.from('cineaste_proposals').update({ seen_at: now }).in('id', propIds);
+      var propRes2 = await sbMT.from('cineaste_proposals').update({ seen_at: now }).in('id', propIds).select('id');
       if(propRes2.error){ console.error('Erreur marquage seen_at cineaste_proposals:', propRes2.error.message); propIds.forEach(function(id){ mtQueuePendingSeen('proposal', id); }); }
+      else if(!propRes2.data || !propRes2.data.length){ propIds.forEach(function(id){ mtQueuePendingSeen('proposal', id); }); }
     }
     if(commentIds.length){
-      var comRes2 = await sbMT.from('comments').update({ seen_at: now }).in('id', commentIds);
+      var comRes2 = await sbMT.from('comments').update({ seen_at: now }).in('id', commentIds).select('id');
       if(comRes2.error){ console.error('Erreur marquage seen_at comments:', comRes2.error.message); commentIds.forEach(function(id){ mtQueuePendingSeen('comment', id); }); }
+      else if(!comRes2.data || !comRes2.data.length){ commentIds.forEach(function(id){ mtQueuePendingSeen('comment', id); }); }
     }
     mtUnseenNotifications = [];
     var navMesTops = document.getElementById('nav-mes-tops');
