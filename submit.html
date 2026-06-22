@@ -791,7 +791,7 @@ async function submitTops(){
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>'+t('sp_envoi');
 
-  const { error } = await sb.from('submissions').insert({
+  var insertRes = await sb.from('submissions').insert({
     contributor_id: currentContributor.id,
     raw_text: rawText,
     parsed_json: {
@@ -799,10 +799,16 @@ async function submitTops(){
       films: parsedFilms
     },
     status: 'pending'
-  });
+  }).select('id');
 
-  if(error){
-    alert(t('sp_err_submission') + error.message);
+  if(insertRes.error){
+    alert(t('sp_err_submission') + insertRes.error.message);
+    btn.disabled = false;
+    btn.textContent = t('sp_soumettre');
+    return;
+  }
+  if(!insertRes.data || !insertRes.data.length){
+    alert(t('sp_err_rights'));
     btn.disabled = false;
     btn.textContent = t('sp_soumettre');
     return;
@@ -934,8 +940,9 @@ async function loadPrevSubmissions(){
         return { rang: i + 1, titre: titre, annee: annee };
       });
       var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
-      var res = await sb.from('submissions').update({ parsed_json: newParsedJson, status: 'pending' }).eq('id', s.id);
+      var res = await sb.from('submissions').update({ parsed_json: newParsedJson, status: 'pending' }).eq('id', s.id).select('id');
       if(res.error){ alert(t('sp_err_err') + res.error.message); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
+      if(!res.data || !res.data.length){ alert(t('sp_err_rights')); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
       loadPrevSubmissions();
     });
     delBtn.addEventListener('click', async function(){

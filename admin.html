@@ -1756,8 +1756,9 @@ async function applySubmissionToContributor(submission, parsedJson){
   }
 
   if(Object.keys(update).length === 0) return;
-  var res = await sb.from('contributors').update(update).eq('id', contributorId);
-  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); }
+  var res = await sb.from('contributors').update(update).eq('id', contributorId).select('id');
+  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); showSubmissionsError('Erreur mise à jour profil : ' + res.error.message); }
+  else if(!res.data || !res.data.length){ console.error('Mise à jour profil contributeur : 0 lignes affectées'); showSubmissionsError('La mise à jour du profil contributeur n\'a pas abouti — vérifiez les droits de la table contributors.'); }
 }
 
 async function updateSubmission(id, status, submission){
@@ -1849,8 +1850,9 @@ async function loadProposals(){
 
 async function updateProposal(id, status, approveBtn, rejectBtn){
   approveBtn.disabled = true; rejectBtn.disabled = true;
-  var res = await sb.from('cineaste_proposals').update({ status: status }).eq('id', id);
+  var res = await sb.from('cineaste_proposals').update({ status: status }).eq('id', id).select('id');
   if(res.error){ alert('Erreur : ' + res.error.message); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
+  if(!res.data || !res.data.length){ alert('La mise à jour n\'a pas abouti — vérifiez les droits de la table cineaste_proposals.'); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
   loadProposals();
 }
 

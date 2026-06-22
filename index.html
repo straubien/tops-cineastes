@@ -2301,9 +2301,10 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       raw_text: rawText,
       parsed_json: { cineaste: cineaste, films: mtParsedFilms },
       status: 'pending'
-    });
+    }).select('id');
 
     if(res.error){ alert(t('mt_err_submit') + res.error.message); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
+    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
 
     document.getElementById('mt-result-wrap').classList.remove('visible');
     document.getElementById('mt-success-msg').classList.add('visible');
@@ -2368,8 +2369,9 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
           return { rang: i + 1, titre: titre, annee: annee };
         });
         var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
-        var r = await sbMT.from('submissions').update({ parsed_json: newParsedJson, status: 'pending', seen_at: null }).eq('id', s.id);
+        var r = await sbMT.from('submissions').update({ parsed_json: newParsedJson, status: 'pending', seen_at: null }).eq('id', s.id).select('id');
         if(r.error){ alert(t('mt_err_submit') + r.error.message); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
+        if(!r.data || !r.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
         mtLoadPrevSubmissions();
       });
       delBtn.addEventListener('click', async function(){
@@ -2517,8 +2519,9 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       var res = await sbMT.from('cineaste_proposal_votes').insert({
         proposal_id: proposalId,
         contributor_id: mtCurrentContributor.id
-      });
+      }).select('proposal_id');
       if(res.error) throw new Error(res.error.message);
+      if(!res.data || !res.data.length) throw new Error('Droits insuffisants.');
     }
   }
 
@@ -2544,11 +2547,12 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       annee_naissance: naissance,
       annee_deces: deces,
       status: 'pending'
-    });
+    }).select('id');
 
     btn.disabled = false; btn.textContent = t('prop_btn_submit');
 
     if(res.error){ alert(t('prop_err_err') + res.error.message); return; }
+    if(!res.data || !res.data.length){ alert(t('prop_err_err') + 'Droits insuffisants.'); return; }
 
     document.getElementById('prop-prenom').value = '';
     document.getElementById('prop-nom').value = '';
