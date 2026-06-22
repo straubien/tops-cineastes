@@ -1269,18 +1269,29 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
       if(contribRes.data) contribId = contribRes.data.id;
     }
 
+    if(!contribId){
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer dans Supabase';
+      showImportError('Contributeur "' + contrib + '" introuvable dans la table contributors.');
+      return;
+    }
+
     var res = await sb.from('submissions').insert({
       contributor_id: contribId,
       raw_text: rawText,
       parsed_json: { cineaste: cineaste, films: parsedFilms },
       status: 'approved'
-    });
+    }).select('id');
 
     btn.disabled = false;
     btn.textContent = 'Enregistrer dans Supabase';
 
     if(res.error){
       showImportError('Erreur : ' + res.error.message);
+      return;
+    }
+    if(!res.data || !res.data.length){
+      showImportError('L\'enregistrement n\'a pas abouti — vérifiez les droits de la table submissions.');
       return;
     }
 
@@ -1702,8 +1713,10 @@ async function updateSubmissionWithEdit(id, s, type, editedText){
   showSubmissionsError('');
   var res = await sb.from('submissions')
     .update({ status: 'approved', parsed_json: newParsedJson })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
   if(res.error){ console.error('Erreur approbation:', res.error.message); showSubmissionsError('Erreur lors de la validation : ' + res.error.message); return false; }
+  if(!res.data || !res.data.length){ showSubmissionsError('La validation n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   await applySubmissionToContributor(s, newParsedJson);
   await removeLegacyTopDuplicate(s, newParsedJson);
   loadSubmissions();
@@ -1754,8 +1767,9 @@ async function updateSubmission(id, status, submission){
     var prevCount = (submission.parsed_json && submission.parsed_json.approvalCount) || 0;
     update.parsed_json = Object.assign({}, submission.parsed_json, { approvalCount: prevCount + 1 });
   }
-  var res = await sb.from('submissions').update(update).eq('id', id);
+  var res = await sb.from('submissions').update(update).eq('id', id).select('id');
   if(res.error){ console.error('Erreur mise à jour statut:', res.error.message); showSubmissionsError('Erreur lors de la mise à jour : ' + res.error.message); return false; }
+  if(!res.data || !res.data.length){ showSubmissionsError('La mise à jour n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   if(status === 'approved' && submission){
     await applySubmissionToContributor(submission, submission.parsed_json);
     await removeLegacyTopDuplicate(submission, submission.parsed_json);
