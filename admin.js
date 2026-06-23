@@ -408,7 +408,7 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
     btn.textContent = 'Enregistrer dans Supabase';
 
     if(res.error){
-      showImportError('Erreur : ' + res.error.message);
+      showImportError('Erreur : ' + friendlyError(res.error));
       return;
     }
     if(!res.data || !res.data.length){
@@ -423,7 +423,7 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
     console.error('Erreur lors de l\'enregistrement:', err);
     btn.disabled = false;
     btn.textContent = 'Enregistrer dans Supabase';
-    showImportError('Erreur inattendue : ' + (err && err.message ? err.message : err));
+    showImportError('Erreur inattendue : ' + friendlyError(err));
   }
 });
 
@@ -747,7 +747,7 @@ function buildSubmissionCard(s, container){
           }
         }catch(err){
           console.error('Erreur lors de la validation:', err);
-          showSubmissionsError('Erreur inattendue lors de la validation : ' + (err && err.message ? err.message : err));
+          showSubmissionsError('Erreur inattendue lors de la validation : ' + friendlyError(err));
           approveBtn.disabled = false;
           approveBtn.textContent = 'Valider';
         }
@@ -836,7 +836,7 @@ async function updateSubmissionWithEdit(id, s, type, editedText){
     .update({ status: 'approved', parsed_json: newParsedJson })
     .eq('id', id)
     .select('id');
-  if(res.error){ console.error('Erreur approbation:', res.error.message); showSubmissionsError('Erreur lors de la validation : ' + res.error.message); return false; }
+  if(res.error){ console.error('Erreur approbation:', res.error.message); showSubmissionsError('Erreur lors de la validation : ' + friendlyError(res.error)); return false; }
   if(!res.data || !res.data.length){ showSubmissionsError('La validation n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   await applySubmissionToContributor(s, newParsedJson);
   await removeLegacyTopDuplicate(s, newParsedJson);
@@ -878,7 +878,7 @@ async function applySubmissionToContributor(submission, parsedJson){
 
   if(Object.keys(update).length === 0) return;
   var res = await sb.from('contributors').update(update).eq('id', contributorId).select('id');
-  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); showSubmissionsError('Erreur mise à jour profil : ' + res.error.message); }
+  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); showSubmissionsError('Erreur mise à jour profil : ' + friendlyError(res.error)); }
   else if(!res.data || !res.data.length){ console.error('Mise à jour profil contributeur : 0 lignes affectées'); showSubmissionsError('La mise à jour du profil contributeur n\'a pas abouti — vérifiez les droits de la table contributors.'); }
 }
 
@@ -890,7 +890,7 @@ async function updateSubmission(id, status, submission){
     update.parsed_json = Object.assign({}, submission.parsed_json, { approvalCount: prevCount + 1 });
   }
   var res = await sb.from('submissions').update(update).eq('id', id).select('id');
-  if(res.error){ console.error('Erreur mise à jour statut:', res.error.message); showSubmissionsError('Erreur lors de la mise à jour : ' + res.error.message); return false; }
+  if(res.error){ console.error('Erreur mise à jour statut:', res.error.message); showSubmissionsError('Erreur lors de la mise à jour : ' + friendlyError(res.error)); return false; }
   if(!res.data || !res.data.length){ showSubmissionsError('La mise à jour n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   if(status === 'approved' && submission){
     await applySubmissionToContributor(submission, submission.parsed_json);
@@ -920,7 +920,7 @@ async function loadProposals(){
     .order('submitted_at', { ascending: false })
     .limit(100);
 
-  if(res.error){ container.innerHTML = '<div class="empty-state">Erreur : ' + escapeHtml(res.error.message) + '</div>'; return; }
+  if(res.error){ container.innerHTML = '<div class="empty-state">Erreur : ' + escapeHtml(friendlyError(res.error)) + '</div>'; return; }
   if(!res.data || !res.data.length){ container.innerHTML = '<div class="empty-state">Aucune proposition.</div>'; return; }
 
   container.innerHTML = '';
@@ -972,7 +972,7 @@ async function loadProposals(){
 async function updateProposal(id, status, approveBtn, rejectBtn){
   approveBtn.disabled = true; rejectBtn.disabled = true;
   var res = await sb.from('cineaste_proposals').update({ status: status }).eq('id', id).select('id');
-  if(res.error){ alert('Erreur : ' + res.error.message); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
+  if(res.error){ alert('Erreur : ' + friendlyError(res.error)); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
   if(!res.data || !res.data.length){ alert('La mise à jour n\'a pas abouti — vérifiez les droits de la table cineaste_proposals.'); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
   loadProposals();
 }
@@ -994,7 +994,7 @@ async function loadCommentsAdmin(){
 
   var res = await sb.from('comments').select('*').order('created_at', { ascending: false }).limit(200);
   if(res.error){
-    errEl.textContent = 'Erreur de chargement : ' + res.error.message;
+    errEl.textContent = 'Erreur de chargement : ' + friendlyError(res.error);
     errEl.style.display = 'block';
     container.innerHTML = '';
     return;
@@ -1028,7 +1028,7 @@ async function deleteCommentAdmin(id, delBtn){
   if(!confirm('Supprimer ce commentaire (et ses éventuelles réponses) ?')) return;
   delBtn.disabled = true;
   var res = await sb.from('comments').delete().eq('id', id).select('id');
-  if(res.error){ alert('Erreur : ' + res.error.message); delBtn.disabled = false; return; }
+  if(res.error){ alert('Erreur : ' + friendlyError(res.error)); delBtn.disabled = false; return; }
   if(!res.data || !res.data.length){ alert('Erreur : droits insuffisants.'); delBtn.disabled = false; return; }
   loadCommentsAdmin();
 }

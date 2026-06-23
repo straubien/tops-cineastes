@@ -71,6 +71,16 @@ function formatPresentation(text){
   return s;
 }
 
+function friendlyError(err){
+  if(!err) return 'Une erreur est survenue.';
+  var msg = err.message || String(err);
+  if(/JWT|session|expired|invalid.*token/i.test(msg)) return 'Votre session a expiré. Merci de vous reconnecter.';
+  if(/duplicate key|unique constraint/i.test(msg)) return 'Cette entrée existe déjà.';
+  if(/Failed to fetch|NetworkError|network|fetch/i.test(msg)) return 'Problème de connexion. Vérifiez votre réseau et réessayez.';
+  if(/permission|RLS|policy|row-level security/i.test(msg)) return 'Action non autorisée.';
+  return 'Une erreur est survenue : ' + msg;
+}
+
 document.addEventListener('click',function(e){
   if(!e.target.closest('.autocomplete-wrap')){
     document.querySelectorAll('.autocomplete-dropdown.visible').forEach(function(dd){
@@ -130,7 +140,10 @@ function createAutocomplete(config){
       it.classList.toggle('selected',i===_idx);
       it.setAttribute('aria-selected',i===_idx?'true':'false');
     });
-    if(_idx>=0&&el)el.setAttribute('aria-activedescendant',dropdownId+'-o'+_idx);
+    if(_idx>=0&&el){
+      el.setAttribute('aria-activedescendant',dropdownId+'-o'+_idx);
+      if(items[_idx])items[_idx].scrollIntoView({block:'nearest'});
+    }
     else if(el)el.removeAttribute('aria-activedescendant');
   }
   function setup(){

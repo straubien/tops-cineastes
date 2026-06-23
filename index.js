@@ -1843,7 +1843,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       status: 'pending'
     }).select('id');
 
-    if(res.error){ alert(t('mt_err_submit') + res.error.message); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
+    if(res.error){ alert(t('mt_err_submit') + friendlyError(res.error)); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
     if(!res.data || !res.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
 
     document.getElementById('mt-result-wrap').classList.remove('visible');
@@ -1910,7 +1910,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         });
         var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
         var r = await sbMT.from('submissions').update({ parsed_json: newParsedJson, status: 'pending', seen_at: null }).eq('id', s.id).select('id');
-        if(r.error){ alert(t('mt_err_submit') + r.error.message); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
+        if(r.error){ alert(t('mt_err_submit') + friendlyError(r.error)); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
         if(!r.data || !r.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
         mtLoadPrevSubmissions();
       });
@@ -1918,7 +1918,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         if(!confirm(t('mt_confirm_del', cineaste))) return;
         delBtn.disabled = true;
         var r = await sbMT.from('submissions').delete().eq('id', s.id).select('id');
-        if(r.error){ alert('Erreur : ' + r.error.message); delBtn.disabled = false; return; }
+        if(r.error){ alert('Erreur : ' + friendlyError(r.error)); delBtn.disabled = false; return; }
         if(!r.data || !r.data.length){ alert('Erreur : droits insuffisants.'); delBtn.disabled = false; return; }
         mtLoadPrevSubmissions();
       });
@@ -2042,7 +2042,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         btn.addEventListener('click', function(){
           if(!mtCurrentContributor){ alert(t('prop_alert_login_vote')); return; }
           btn.disabled = true;
-          mtToggleVote(proposalId, voted).then(function(){ mtLoadProposals(); }).catch(function(err){ btn.disabled = false; alert(t('prop_err_err') + err.message); });
+          mtToggleVote(proposalId, voted).then(function(){ mtLoadProposals(); }).catch(function(err){ btn.disabled = false; alert(t('prop_err_err') + friendlyError(err)); });
           voted = !voted;
         });
       })(p.id, voteBtn);
@@ -2094,7 +2094,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
 
     btn.disabled = false; btn.textContent = t('prop_btn_submit');
 
-    if(res.error){ alert(t('prop_err_err') + res.error.message); return; }
+    if(res.error){ alert(t('prop_err_err') + friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('prop_err_err') + 'Droits insuffisants.'); return; }
 
     document.getElementById('prop-prenom').value = '';

@@ -112,7 +112,7 @@ async function sendPasswordReset(){
   });
   btn.disabled = false;
   if(error){
-    showError('Erreur : ' + error.message);
+    showError('Erreur : ' + friendlyError(error));
   } else {
     msgEl.textContent = t('sp_forgot_sent') + email + '.';
     msgEl.style.display = 'block';
@@ -309,7 +309,7 @@ async function submitTops(){
   }).select('id');
 
   if(insertRes.error){
-    alert(t('sp_err_submission') + insertRes.error.message);
+    alert(t('sp_err_submission') + friendlyError(insertRes.error));
     btn.disabled = false;
     btn.textContent = t('sp_soumettre');
     return;
@@ -448,7 +448,7 @@ async function loadPrevSubmissions(){
       });
       var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
       var res = await sb.from('submissions').update({ parsed_json: newParsedJson, status: 'pending' }).eq('id', s.id).select('id');
-      if(res.error){ alert(t('sp_err_err') + res.error.message); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
+      if(res.error){ alert(t('sp_err_err') + friendlyError(res.error)); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
       if(!res.data || !res.data.length){ alert(t('sp_err_rights')); saveBtn.disabled = false; saveBtn.textContent = t('sp_sauvegarder'); return; }
       loadPrevSubmissions();
     });
@@ -456,7 +456,7 @@ async function loadPrevSubmissions(){
       if(!confirm(t('sp_confirm_del', cineaste))) return;
       delBtn.disabled = true;
       var res = await sb.from('submissions').delete().eq('id', s.id).select('id');
-      if(res.error){ alert(t('sp_err_err') + res.error.message); delBtn.disabled = false; return; }
+      if(res.error){ alert(t('sp_err_err') + friendlyError(res.error)); delBtn.disabled = false; return; }
       if(!res.data || !res.data.length){ alert(t('sp_err_rights')); delBtn.disabled = false; return; }
       loadPrevSubmissions();
     });
@@ -498,7 +498,7 @@ async function setPassword(){
   if(error){
     btn.disabled = false;
     btn.textContent = t('setpwd_btn');
-    errEl.textContent = 'Erreur : ' + error.message;
+    errEl.textContent = 'Erreur : ' + friendlyError(error);
     errEl.style.display = 'block';
   }
   // onAuthStateChange gère la suite (USER_UPDATED)
@@ -794,6 +794,7 @@ function createMultiSelect(opts){
     else if(e.key==='Enter' && acIdx>=0){ e.preventDefault(); add(items[acIdx].getAttribute('data-nom')); return; }
     else if(e.key==='Escape'){ dropdown.classList.remove('visible'); return; }
     items.forEach(function(el,i){ el.classList.toggle('selected', i===acIdx); });
+    if(acIdx>=0&&items[acIdx])items[acIdx].scrollIntoView({block:'nearest'});
   });
 
   var outsideClickHandler = function(e){
@@ -885,7 +886,7 @@ document.getElementById('btn-save-films-fav').addEventListener('click', async fu
       film_coeur: films
     }).eq('id', currentContributor.id).select();
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
-    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
     currentContributor.film_coeur = films;
     document.getElementById('success-films-fav').classList.add('visible');
@@ -906,7 +907,7 @@ document.getElementById('btn-save-autres-films').addEventListener('click', async
       film_autres: films
     }).eq('id', currentContributor.id).select();
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
-    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
     currentContributor.film_autres = films;
     document.getElementById('success-autres-films').classList.add('visible');
@@ -927,7 +928,7 @@ document.getElementById('btn-submit-favoris').addEventListener('click', async fu
       cineaste_coeur: cineastes
     }).eq('id', currentContributor.id).select();
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
-    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
     currentContributor.cineaste_coeur = cineastes;
     document.getElementById('success-favoris').classList.add('visible');
@@ -948,7 +949,7 @@ document.getElementById('btn-submit-autres').addEventListener('click', async fun
       cineaste_autres: cineastes
     }).eq('id', currentContributor.id).select();
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
-    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
     currentContributor.cineaste_autres = cineastes;
     document.getElementById('success-autres').classList.add('visible');
@@ -969,7 +970,7 @@ document.getElementById('btn-submit-presentation').addEventListener('click', asy
       presentation: texte
     }).eq('id', currentContributor.id).select();
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
-    if(res.error){ alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
     currentContributor.presentation = texte;
     document.getElementById('success-presentation').classList.add('visible');
@@ -1029,12 +1030,12 @@ document.getElementById('btn-upload-avatar').addEventListener('click', async fun
       upsert: true,
       contentType: file.type
     });
-    if(res.error){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert(t('sp_err_save')+res.error.message); return; }
+    if(res.error){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     var publicUrl = sb.storage.from('avatars').getPublicUrl(filename).data.publicUrl;
     var upd = await sb.from('contributors').update({
       avatar_url: publicUrl
     }).eq('id', currentContributor.id).select();
-    if(upd.error){ alert('Erreur enregistrement URL : '+upd.error.message); }
+    if(upd.error){ alert('Erreur enregistrement URL : '+friendlyError(upd.error)); }
     currentContributor.avatar_url = publicUrl;
     btn.disabled = false; btn.textContent = t('sp_avatar_publish');
     document.getElementById('avatar-success').style.display = 'block';
