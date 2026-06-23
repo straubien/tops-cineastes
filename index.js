@@ -971,7 +971,18 @@ function _tcGoToMesTops(cineaste,cb){
   var ready=(typeof window.mtOnNavigate==='function')?window.mtOnNavigate():Promise.resolve();
   Promise.resolve(ready).then(function(){cb(cineaste);});
 }
-function tcSubmitTopFor(cineaste){_tcGoToMesTops(cineaste,function(c){if(window.mtSetCineaste)window.mtSetCineaste(c);});}
+function tcSubmitTopFor(cineaste){
+  var hasExisting=currentUserJsonName&&(
+    (SUPABASE_TOPS[currentUserJsonName]&&SUPABASE_TOPS[currentUserJsonName][cineaste])||
+    (currentUserJsonName==='MATHIEU MUZARD'&&MUZARD_DATA&&MUZARD_DATA[cineaste])||
+    (currentUserJsonName==='KARINE CNUDDE'&&CNUDDE_DATA&&CNUDDE_DATA[cineaste])
+  );
+  if(hasExisting){
+    _tcGoToMesTops(cineaste,function(c){if(window.mtGoEditTop)window.mtGoEditTop(c);});
+  } else {
+    _tcGoToMesTops(cineaste,function(c){if(window.mtSetCineaste)window.mtSetCineaste(c);});
+  }
+}
 function tcEditTop(cineaste){_tcGoToMesTops(cineaste,function(c){if(window.mtGoEditTop)window.mtGoEditTop(c);});}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeFiche()});
 
@@ -1662,7 +1673,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     }
   }
 
-  function mtDismissNotification(n, item){
+  async function mtDismissNotification(n, item){
     mtAddDismissedId(n.kind, n.id);
     mtUnseenNotifications = mtUnseenNotifications.filter(function(u){ return !(u.kind === n.kind && u.id === n.id); });
     item.remove();
@@ -1674,17 +1685,14 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     var countEl = document.getElementById('nav-mes-tops-count');
     if(countEl) countEl.textContent = hasNotif ? String(mtUnseenNotifications.length) : '';
     var now = new Date().toISOString();
-    sbMT.from(mtSeenTableFor(n.kind)).update({ seen_at: now }).eq('id', n.id).select('id').then(function(res){
-      if(res && res.error){
-        console.error('Erreur lors du marquage "vu" de la notification:', res.error.message);
-        mtQueuePendingSeen(n.kind, n.id);
-      } else if(!res.data || !res.data.length){
-        mtQueuePendingSeen(n.kind, n.id);
-      }
-    }, function(err){
-      console.error('Erreur réseau lors du marquage "vu" de la notification:', err);
-      mtQueuePendingSeen(n.kind, n.id);
-    });
+    var success = false;
+    for(var attempt = 0; attempt < 3 && !success; attempt++){
+      try{
+        var res = await sbMT.from(mtSeenTableFor(n.kind)).update({ seen_at: now }).eq('id', n.id).select('id');
+        if(res && !res.error && res.data && res.data.length) success = true;
+      } catch(e){}
+    }
+    if(!success) mtQueuePendingSeen(n.kind, n.id);
   }
 
   async function mtMarkNotificationsSeen(){
@@ -1716,6 +1724,8 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     if(navSoumettre) navSoumettre.classList.remove('has-notif');
     var countEl = document.getElementById('nav-mes-tops-count');
     if(countEl) countEl.textContent = '';
+    var banner = document.getElementById('mt-notif-banner');
+    if(banner) banner.innerHTML = '';
   }
 
   // Exposed for navigate()
