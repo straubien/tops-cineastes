@@ -61,7 +61,7 @@ function tcPresenceUntrackSelf(){
 function tcRefreshOnlineBadges(){
   document.querySelectorAll('.contrib-bubble').forEach(function(div){
     var nm=div.getAttribute('data-name');
-    var c=CONTRIB_DATA.find(function(x){return x.display_name===nm;});
+    var c=CONTRIB_DATA.find(function(x){return x.json_name===nm||x.display_name===nm;});
     var dot=div.querySelector('.online-dot');
     if(dot)dot.style.display=(c&&TC_ONLINE_IDS.has(String(c.id)))?'':'none';
   });
@@ -1827,8 +1827,6 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     if(navSoumettre) navSoumettre.classList.remove('has-notif');
     var countEl = document.getElementById('nav-mes-tops-count');
     if(countEl) countEl.textContent = '';
-    var banner = document.getElementById('mt-notif-banner');
-    if(banner) banner.innerHTML = '';
   }
 
   // Exposed for navigate()
@@ -1853,7 +1851,11 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       sbMT.from('contributors').select('*').eq('auth_id', mtCurrentUser.id).single().then(function(r){
         if(r.data){
           mtCurrentContributor = r.data;
-          mtCheckNotifications();
+          mtCheckNotifications().then(function(){
+            if(document.getElementById('page-mes-tops').classList.contains('visible')){
+              mtRenderNotifBanner();
+            }
+          });
           // If already on the page, load now
           if(document.getElementById('page-mes-tops').classList.contains('visible')){
             mtLoaded = true;
