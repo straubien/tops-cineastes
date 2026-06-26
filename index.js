@@ -70,32 +70,37 @@ function tcRefreshOnlineBadges(){
 }
 tcInitPresence();
 
+function loadCineastesFromSupabase(){
+  var all=[];
+  function fetchPage(offset,pageSize){
+    return TC_SB.from('cineastes').select('nom,fbid,url_facebook,duo,naissance,deces,vivant,tops_contributeurs')
+      .order('nom',{ascending:true})
+      .range(offset,offset+pageSize-1)
+      .then(function(res){
+        var rows=res.data||[];
+        all=all.concat(rows);
+        if(rows.length===pageSize)return fetchPage(offset+pageSize,pageSize);
+        return all;
+      });
+  }
+  return fetchPage(0,1000);
+}
+
 function loadData(){
   var listEl=document.getElementById('cineaste-list');
   if(listEl)listEl.innerHTML='<div class="empty-msg">Chargement…</div>';
   Promise.all([
-    fetch('cineastes.json').then(function(r){return r.json()}),
+    loadCineastesFromSupabase(),
     fetch('muzard.json').then(function(r){return r.json()}).catch(function(){return null;}),
     fetch('cnudde.json').then(function(r){return r.json()}).catch(function(){return null;}),
     fetch('photos-tmdb.json').then(function(r){return r.json()}).catch(function(){return null;})
   ]).then(function(results){
-  var data=results[0];
+  var cineastes=results[0];
   var muzard=results[1];
   var cnudde=results[2];
   PHOTOS_TMDB=results[3]||{};
 
-  DATA=data;
-  DATA.cineastes.forEach(function(c){
-    if(c.tops_contributeurs){
-      c.tops_contributeurs=c.tops_contributeurs.map(function(t){
-        if(t==='MAT'||t==='MAT ')return 'MATHIEU MUZARD';
-        if(t==='THOMAS F. FLAVIER')return 'THOMAS FLAVIER';
-        if(t==='VINZ ORLOV')return 'VINZ J. ORLOV';
-        if(t==='THOMAS D. DEMAEREL')return 'THOMAS DEMAEREL';
-        return t;
-      });
-    }
-  });
+  DATA={cineastes:cineastes};
 
   // Construire un index nom cinéaste → liste de films à partir d'un objet tops
   function buildTopIndex(data){
@@ -170,7 +175,6 @@ function formatDateSimple(n,d,v){
   if(!n)return '';if(d)return n+'\u2013'+d;if(v)return String(n);return String(n);
 }
 function formatDates(c){
-  if(c.provisoire)return'(fiche provisoire)';
   if(c.duo&&Array.isArray(c.naissance)){
     var d1=formatDateSimple(c.naissance[0],Array.isArray(c.deces)?c.deces[0]:null,Array.isArray(c.vivant)?c.vivant[0]:null);
     var d2=formatDateSimple(c.naissance[1],Array.isArray(c.deces)?c.deces[1]:null,Array.isArray(c.vivant)?c.vivant[1]:null);
@@ -1146,10 +1150,10 @@ function renderActualites(){
 function renderContributeurs(){
   if(!DATA)return;
   var list=document.getElementById('contrib-list');
-  _contribs=DATA.contributeurs
-    .filter(function(c){var n=(c.prenom+(c.nom?' '+c.nom:'')).trim();return n!=='version 22.8'&&n!==''})
+  _contribs=CONTRIB_DATA
+    .filter(function(c){return c.json_name;})
     .map(function(c){
-      var dn=(c.prenom+(c.nom?' '+c.nom:'')).trim();var nb=0;
+      var dn=c.json_name;var nb=0;
       DATA.cineastes.forEach(function(x){if(x.tops_contributeurs&&x.tops_contributeurs.indexOf(dn)!==-1)nb++});
       return{name:dn,tops:nb};
     });
@@ -1254,7 +1258,7 @@ function openContribDetail(name){
 function renderStatistiques(){
   if(!DATA)return;
   var totalC=DATA.cineastes.length;
-  var totalContribs=DATA.contributeurs.filter(function(c){var n=(c.prenom+(c.nom?' '+c.nom:'')).trim();return n!=='version 22.8'&&n!==''}).length;
+  var totalContribs=CONTRIB_DATA.filter(function(c){return c.json_name;}).length;
   var enA=0,dec=0,st=0,tt=0;
   DATA.cineastes.forEach(function(c){var nb=(c.tops_contributeurs||[]).length;tt+=nb;if(c.vivant===true)enA++;if(c.vivant===false)dec++;if(nb===0)st++});
   var totalFilms=Object.keys(IMPORTED_COUNTS).reduce(function(s,k){return s+IMPORTED_COUNTS[k].films;},0);

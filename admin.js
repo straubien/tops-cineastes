@@ -22,14 +22,26 @@ var parsedFilms = null;
   });
 })();
 
-// Charger cineastes.json
-fetch('cineastes.json')
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    DATA = d;
-    cineastesIndex = d.cineastes.map(function(c){ return c.nom; });
-    if(currentUser){ renderDashboard(); populateContribSelect(); }
+// Charger cinéastes depuis Supabase
+(function(){
+  var all=[];
+  function fetchPage(offset,pageSize){
+    return sb.from('cineastes').select('nom,fbid,url_facebook,duo,naissance,deces,vivant,tops_contributeurs')
+      .order('nom',{ascending:true})
+      .range(offset,offset+pageSize-1)
+      .then(function(res){
+        var rows=res.data||[];
+        all=all.concat(rows);
+        if(rows.length===pageSize)return fetchPage(offset+pageSize,pageSize);
+        return all;
+      });
+  }
+  fetchPage(0,1000).then(function(cineastes){
+    DATA={cineastes:cineastes};
+    cineastesIndex=cineastes.map(function(c){return c.nom;});
+    if(currentUser){renderDashboard();populateContribSelect();}
   });
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // AUTH
@@ -153,15 +165,14 @@ var TOTAUX_ATTENDUS = {
 
 var TOTAL_ATTENDU_GLOBAL = Object.values(TOTAUX_ATTENDUS).reduce(function(a,b){return a+b;}, 0);
 
-// ── Total de tops dans l'index (saisi à la main, indépendant de cineastes.json) ──
+// ── Total de tops dans l'index (saisi à la main) ──
 var TOTAL_TOPS_INDEX_MANUEL = 14077;
 var TOTAL_CINEASTES_INDEX_MANUEL = 2904;
 
 async function renderDashboard(){
   if(!DATA) return;
 
-  // Tops dans l'index : valeur saisie à la main (cf. TOTAL_TOPS_INDEX_MANUEL),
-  // car cineastes.json n'est pas synchronisé automatiquement avec Supabase.
+  // Tops dans l'index : valeur saisie à la main (cf. TOTAL_TOPS_INDEX_MANUEL)
   document.getElementById('dash-total-tops').textContent = TOTAL_TOPS_INDEX_MANUEL.toLocaleString('fr-FR');
   document.getElementById('dash-total-cineastes').textContent = TOTAL_CINEASTES_INDEX_MANUEL.toLocaleString('fr-FR') + ' cinéastes indexés';
 
@@ -296,7 +307,7 @@ async function renderDashboard(){
 function populateContribSelect(){
   if(!DATA) return;
   var sel = document.getElementById('import-contrib');
-  // Uniquement depuis cineastes.json — pas de doublon possible
+  // Noms distincts tirés des tops_contributeurs
   var names = {};
   DATA.cineastes.forEach(function(c){
     (c.tops_contributeurs || []).forEach(function(n){ names[n] = true; });

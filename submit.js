@@ -191,10 +191,24 @@ tcSyncAuthHashOnPopstate('#mon-profil', function(){ return !!currentContributor;
 var cineastesIndex = [];
 var selectedCineaste = null;
 
-// Charger cineastes.json
-fetch('cineastes.json').then(function(r){ return r.json(); }).then(function(data){
-  cineastesIndex = data.cineastes.map(function(c){ return c.nom; });
-}).catch(function(){ /* silencieux si hors site */ });
+// Charger cinéastes depuis Supabase
+(function(){
+  var all=[];
+  function fetchPage(offset,pageSize){
+    return sb.from('cineastes').select('nom')
+      .order('nom',{ascending:true})
+      .range(offset,offset+pageSize-1)
+      .then(function(res){
+        var rows=res.data||[];
+        all=all.concat(rows);
+        if(rows.length===pageSize)return fetchPage(offset+pageSize,pageSize);
+        return all;
+      });
+  }
+  fetchPage(0,1000).then(function(cineastes){
+    cineastesIndex=cineastes.map(function(c){return c.nom;});
+  }).catch(function(){});
+})();
 
 createAutocomplete({
   inputId: 'cineaste-input',
