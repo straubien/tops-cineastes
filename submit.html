@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://afbdrqrslgduomimkmyt.supabase.co https://image.tmdb.org; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co;">
+<title>TOPS/CINÉASTES — Soumettre mes tops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=20260623"></script>
+<script src="utils.js?v=20260623"></script>
+<script src="auth-shared.js?v=20260623"></script>
+<script src="i18n.js?v=20260623"></script>
+<link rel="stylesheet" href="style.css?v=20260623">
+<script src="shared.js?v=20260623"></script>
+<style>
+:root {
+  --rouge: #A33025;
+  --noir: #1a1a1a;
+  --beige: #f7f3ec;
+  --beige2: #ede8df;
+  --bg-card: #faf8f4;
+  --bg-subtle: #ede8df;
+  --brun: #7a6350;
+  --brun-pale: #7a6350;
+  --border: #d0c8b8;
+  --border-dim: #e5dfd0;
+  --text: #111008;
+  --vert: #1a6b3a;
+  --font: 'Cormorant Garamond', Georgia, serif;
+}
+.dark {
+  --rouge: #B4523F;
+  --noir: #f0ece3;
+  --beige: #1a1714;
+  --beige2: #252019;
+  --bg-card: #211e19;
+  --bg-subtle: #252019;
+  --brun: #a89880;
+  --border: #3a352c;
+  --border-dim: #2e2a23;
+  --text: #f0ece3;
+  --vert: #4caf70;
+}
+.dark body { background: var(--beige); color: var(--text); }
+.dark .autocomplete-input, .dark .tops-textarea, .dark .login-form input, .dark .setpwd-form input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.dark .header,
+.dark .sp-profil-header { background: #1a1714 !important; }
+.dark .sp-profil-header::before { background: var(--rouge) !important; }
+.dark .sp-view-avatar-empty { background: rgba(240,236,227,0.1); border-color: var(--border); }
+.dark .chip { background: #3a352c; }
+.dark .success-msg,
+.dark .profil-success { background: #252019 !important; }
+.dark .btn-primary { background: #3a352c; color: #f0ece3; }
+.dark .btn-primary:hover { background: var(--rouge); }
+.dark .tabs { border-bottom-color: var(--border); }
+.dark .tab-btn.active { background: var(--beige2); color: var(--text); }
+.dark .sp-view,
+.dark .sp-top-name,
+.dark .sp-presentation-text,
+.dark .result-cineaste,
+.dark .page-title,
+.dark .page-sub { color: var(--text); }
+.dark .login-title,
+.dark .setpwd-title { color: var(--text); }
+.dark .login-sub,
+.dark .setpwd-sub { color: var(--brun); }
+.dark .autocomplete-input::placeholder,
+.dark .tops-textarea::placeholder { color: rgba(240,236,227,0.3); }
+.dark .login-form input::placeholder,
+.dark .setpwd-form input::placeholder { color: rgba(240,236,227,0.3); }
+.dark .autocomplete-input { color: var(--text); }
+.dark .tops-textarea { color: var(--text); }
+.dark .fmt-btn { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.dark .fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+.dark .textarea-hint { color: var(--text); opacity: 0.7; }
+.dark .prev-edit-zone textarea { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.dark .prev-edit-zone textarea::placeholder { color: rgba(240,236,227,0.3); }
+.dark .result-wrap { border-top-color: var(--border); }
+.dark .films-list li::before { color: var(--text); }
+.dark .film-titre { color: var(--text); }
+.dark .prev-section { border-top-color: var(--border); }
+.dark .btn-secondary:hover { border-color: var(--border); color: var(--text); }
+.dark .autocomplete-dropdown { background: var(--bg-card); border-color: var(--border); }
+.dark .autocomplete-item:hover, .dark .autocomplete-item.selected { background: var(--beige2); }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--beige); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+.header { background: var(--noir); position: sticky; top: 0; z-index: 100; }
+.header-bar { height: 4px; display: flex; }
+.header-bar-main { flex: 1; background: var(--rouge); }
+.header-bar-end { width: 40px; background: var(--noir); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; }
+.logo { font-family: var(--font); font-size: 22px; letter-spacing: 0.1em; color: #f0ece3; text-decoration: none; }
+.logo span { background: var(--rouge); color: #f0ece3; padding: 1px 6px; margin: 0 4px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-user { font-family: var(--font); font-size: 15px; font-style: italic; color: rgba(240,236,227,0.85); }
+.header-user strong { color: #fff; font-style: normal; }
+.btn-logout { font-family: var(--font); font-size: 14px; color: rgba(240,236,227,0.85); background: none; border: none; cursor: pointer; transition: color 0.15s; }
+.btn-logout:hover { color: var(--rouge); }
+/* Wrapper pour champs password avec toggle visibilité */
+.pwd-wrap { position: relative; display: flex; align-items: center; }
+.pwd-wrap input { flex: 1; padding-right: 42px; }
+.pwd-toggle { position: absolute; right: 0; top: 0; height: 100%; width: 42px; background: none; border: none; cursor: pointer; color: rgba(0,0,0,0.35); font-size: 17px; display: flex; align-items: center; justify-content: center; transition: color 0.15s; padding: 0; }
+.pwd-toggle:hover { color: var(--rouge); }
+.dark .pwd-toggle { color: rgba(240,236,227,0.35); }
+.dark .pwd-toggle:hover { color: var(--rouge); }
+/* sp-profil-header : band noire avec flèche retour rouge à droite */
+.sp-profil-header { background: linear-gradient(135deg, var(--noir) 0%, #262420 100%); margin: 0 0 2.2rem; padding: 2.2rem 2.2rem 1.9rem; position: relative; overflow: hidden; display: flex; align-items: center; gap: 26px; }
+.sp-profil-header::before { content: ''; position: absolute; top: 0; right: 0; width: 64px; height: 100%; background: var(--rouge); }
+.sp-profil-header-text { flex: 1; min-width: 0; padding-right: 76px; }
+.sp-profil-header { box-shadow: 0 10px 26px rgba(0,0,0,0.26); }
+.sp-profil-header-title { font-family: var(--font); font-size: 36px; font-weight: 400; color: #f0ece3; margin-bottom: 6px; line-height: 1.1; }
+.sp-profil-header-sub { font-family: var(--font); font-size: 16px; font-style: italic; color: rgba(240,236,227,0.65); }
+.sp-profil-back { position: absolute; top: 0; right: 0; width: 64px; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(240,236,227,0.85); font-size: 22px; z-index: 2; text-decoration: none; }
+.sp-profil-avatar-wrap { text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
+.sp-profil-avatar-wrap .sp-avatar-btn { color: #f0ece3; }
+.sp-profil-avatar-wrap .sp-avatar-btn:hover { color: #fff; }
+.sp-profil-avatar-wrap .avatar-success { color: rgba(240,236,227,0.7); }
+
+.main { max-width: 640px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+.login-wrap, .setpwd-wrap { max-width: 420px; margin: 6rem auto; text-align: center; }
+.loading-auth { max-width: 420px; margin: 6rem auto; text-align: center; }
+.loading-auth-text { font-size: 22px; font-weight: 300; color: var(--brun); font-style: italic; }
+.loading-auth-sub { font-size: 15px; color: var(--brun-pale); margin-top: 0.5rem; }
+
+/* ── Layout profil ────────────────────────── */
+.sp-header { display: flex; align-items: center; gap: 24px; margin-bottom: 2rem; }
+.sp-avatar { width: 80px; height: 80px; background: var(--rouge); display: flex; align-items: center; justify-content: center; color: #f0ece3; font-size: 26px; font-weight: 700; font-family: system-ui; overflow: hidden; flex-shrink: 0; }
+.sp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sp-avatar-wrap { text-align: center; }
+.sp-avatar-btn { font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text); background: none; border: none; cursor: pointer; margin-top: 8px; text-decoration: underline; display: block; }
+.sp-btn-modifier { font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--text); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 8px 22px; margin-right: 8px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s; }
+.sp-btn-modifier:hover { color: var(--rouge); border-color: var(--rouge); }
+.sp-view { font-family: var(--font); font-size: 18px; line-height: 1.8; color: var(--noir); }
+.sp-view-list { display: flex; flex-wrap: wrap; gap: 14px; }
+.sp-view-item { display: inline-flex; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.22); transition: transform 0.15s, box-shadow 0.15s; cursor: default; }
+.sp-view-item:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.28); }
+.sp-view-avatar { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; flex-shrink: 0; display: block; }
+.sp-view-avatar-empty { background: rgba(26,26,26,0.08); border: 2px solid var(--border,#d0c8b8); }
+@media(max-width:600px){ .sp-view-list { gap: 10px; } .sp-view-avatar { width: 50px; height: 50px; } }
+.sp-empty { font-style: italic; color: var(--text); font-size: 16px; }
+.sp-edit { margin-top: 1rem; }
+.sp-edit-actions { display: flex; gap: 12px; margin-top: 1rem; }
+.sp-top-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 4px; border-bottom: 1px solid var(--border-dim); transition: background 0.15s; }
+.sp-top-item:hover { background: var(--bg-subtle); }
+.sp-top-name { font-family: var(--font); font-size: 18px; font-weight: 500; color: var(--noir); }
+.sp-top-count { font-family: var(--font); font-size: 15px; color: var(--text); font-style: italic; }
+.sp-presentation-text { font-family: var(--font); font-size: 17px; line-height: 1.85; color: var(--noir); font-style: italic; }
+.login-title, .setpwd-title { font-size: 38px; font-weight: 300; margin-bottom: 6px; color: var(--noir); }
+.login-sub, .setpwd-sub { font-size: 18px; font-style: italic; color: var(--brun); margin-bottom: 2.5rem; }
+.login-form, .setpwd-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form input, .setpwd-form input { font-family: var(--font); font-size: 18px; padding: 10px 16px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); outline: none; transition: border-color 0.2s; }
+.login-form input:focus, .setpwd-form input:focus { border-color: var(--rouge); }
+.login-form input::placeholder, .setpwd-form input::placeholder { color: rgba(0,0,0,0.4); font-style: italic; }
+.login-error { font-size: 15px; font-style: italic; color: var(--rouge); margin-top: 8px; }
+
+.page-title { font-size: 38px; font-weight: 400; color: var(--noir); margin-bottom: 4px; }
+.page-sub { font-size: 20px; font-weight: 400; font-style: italic; color: var(--noir); margin-bottom: 2rem; }
+
+.tabs { display: flex; flex-wrap: wrap; border-bottom: 4px solid var(--noir); margin-bottom: 2.2rem; }
+.tab-btn { font-family: var(--font); font-size: 16px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 13px 20px; background: none; border: none; cursor: pointer; color: var(--text); white-space: nowrap; position: relative; transition: color 0.15s, background 0.15s; flex-shrink: 0; border-radius: 4px 4px 0 0; }
+.tab-btn:hover { color: var(--rouge); background: var(--bg-subtle); }
+.tab-btn.active { color: var(--noir); background: var(--beige2); font-weight: 700; }
+.tab-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--rouge); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.cineaste-select-wrap { margin-bottom: 1.5rem; }
+.textarea-wrap { margin-bottom: 1.5rem; }
+.tops-textarea { font-family: var(--font); font-size: 19px; line-height: 1.7; padding: 10px 14px; border: 1px solid var(--border); background: var(--bg-card); color: var(--noir); outline: none; width: 100%; min-height: 110px; resize: vertical; transition: border-color 0.2s; }
+.tops-textarea:focus { border-color: var(--rouge); }
+.tops-textarea::placeholder { color: rgba(0,0,0,0.45); font-style: italic; }
+.format-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
+.fmt-btn { font-family: var(--font); font-size: 14px; padding: 3px 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--noir); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+.actions { display: flex; gap: 12px; align-items: center; margin-bottom: 2rem; }
+.prev-section { margin-top: 3rem; }
+
+.chips-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; min-height: 36px; }
+.chip { display: flex; align-items: center; background: var(--noir); color: #f0ece3; font-family: var(--font); font-size: 17px; font-weight: 500; border-radius: 0 4px 4px 0; padding: 10px 0 10px 17px; cursor: grab; user-select: none; touch-action: none; position: relative; box-shadow: 0 3px 9px rgba(0,0,0,0.22); transition: box-shadow 0.15s, transform 0.15s; }
+.chip:hover { box-shadow: 0 5px 14px rgba(0,0,0,0.28); }
+.chip::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--rouge); }
+.chip-label { pointer-events: none; padding-right: 6px; }
+.chip-remove { background: none; border: none; border-left: 1px solid rgba(240,236,227,0.15); color: rgba(240,236,227,0.5); cursor: pointer; font-size: 17px; line-height: 1; padding: 0 11px; margin: 0; height: 100%; display: flex; align-items: center; transition: color 0.12s, background 0.12s; }
+.chip-remove:hover { color: var(--rouge); background: rgba(255,255,255,0.07); border-left-color: rgba(240,236,227,0.25); }
+.chips-hint { font-size: 16px; font-style: italic; color: var(--noir); margin-bottom: 12px; }
+.chips-max-msg { font-size: 14px; font-style: italic; color: var(--rouge); margin-bottom: 8px; display: none; }
+
+.films-list-libre { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.films-list-libre li { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border-dim); font-size: 17px; }
+.films-list-libre li:last-child { border-bottom: none; }
+.films-list-libre .film-titre { flex: 1; font-family: 'Times New Roman', serif; }
+.films-list-libre .film-annee { font-size: 14px; color: var(--text); }
+.films-count { font-size: 15px; font-style: italic; color: var(--text); margin-bottom: 12px; }
+.films-count.warn { color: var(--rouge); }
+
+.avatar-wrap { display: flex; align-items: flex-start; gap: 2rem; margin-bottom: 1.5rem; }
+.avatar-preview { width: 110px; height: 110px; flex-shrink: 0; border-radius: 50%; background: var(--rouge); display: flex; align-items: center; justify-content: center; color: #f0ece3; font-family: system-ui, sans-serif; font-size: 32px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,0.2); border: 3px solid var(--noir); }
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.avatar-upload-zone { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.avatar-input { display: none; }
+.avatar-label { font-family: var(--font); font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); background: none; border: 2px solid var(--border); border-radius: 4px; padding: 12px 22px; cursor: pointer; display: inline-block; transition: all 0.15s; text-align: center; }
+.avatar-label:hover { border-color: var(--noir); color: var(--noir); transform: translateY(-1px); }
+.avatar-hint { font-size: 16px; font-style: italic; color: var(--noir); }
+.avatar-success { display: none; font-size: 15px; font-style: italic; color: var(--vert); margin-top: 8px; }
+
+.profil-success { display: none; background: var(--noir); color: #f0ece3; border-radius: 0 6px 6px 0; padding: 1.3rem 1.9rem; margin-top: 1.5rem; position: relative; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.profil-success.visible { display: block; }
+.profil-success::before { content: ''; position: absolute; top: 0; right: 0; width: 8px; height: 100%; background: var(--rouge); }
+.profil-success h3 { font-size: 20px; font-weight: 600; margin-bottom: 5px; }
+.profil-success p { font-size: 15px; font-style: italic; opacity: 0.7; }
+
+/* Dans submit.html, .main fournit déjà le padding latéral :
+   on réduit le padding-right de .sp-section et on garde juste
+   assez d'espace à gauche pour la barre d'accent rouge */
+.sp-section { padding-left: 1rem; padding-right: 0; }
+@media (max-width: 600px) {
+  .main { padding: 1.5rem 1.2rem; }
+  .header-inner { padding: 0.8rem 1.2rem; }
+  .page-title { font-size: 30px; }
+  .tab-btn { font-size: 12px; padding: 8px 10px; }
+  .sp-section { padding-left: 0.8rem; }
+  .sp-profil-header {
+    flex-direction: column;
+    align-items: flex-start;
+    overflow: visible;
+    padding: 1.6rem 1.6rem 1.4rem 1.2rem;
+  }
+  .sp-profil-header-text {
+    padding-right: 50px;
+  }
+  .sp-profil-header-title {
+    font-size: 22px;
+  }
+  .sp-profil-back {
+    top: 1.2rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-bar">
+    <div class="header-bar-main"></div>
+    <div class="header-bar-end"></div>
+  </div>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:20px">
+      <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="header-user" id="header-user" style="display:none">
+        <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
+      </div>
+      <button class="btn-logout" id="btn-logout" style="display:none" data-i18n="btn_logout">Déconnexion</button>
+      <button id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" onclick="toggleDark()" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
+      <button class="btn-lang" id="btn-lang" onclick="toggleLang()" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" style="display:block;opacity:0.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"></button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="section-setpwd" style="display:none">
+  <div class="setpwd-wrap">
+    <div class="setpwd-title" data-i18n="setpwd_title">Bienvenue</div>
+    <div class="setpwd-sub" data-i18n="setpwd_sub">Choisissez votre mot de passe</div>
+    <div class="setpwd-form">
+      <div class="pwd-wrap">
+        <input type="password" id="setpwd-password" placeholder="Nouveau mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_pwd_ph">
+        <button type="button" class="pwd-toggle" data-for="setpwd-password" title="Voir/masquer">&#128065;</button>
+      </div>
+      <div class="pwd-wrap">
+        <input type="password" id="setpwd-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_confirm_ph">
+        <button type="button" class="pwd-toggle" data-for="setpwd-confirm" title="Voir/masquer">&#128065;</button>
+      </div>
+      <button class="btn-primary" id="btn-setpwd" data-i18n="setpwd_btn">Valider</button>
+      <div class="login-error" id="setpwd-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="section-loading">
+  <div class="loading-auth">
+    <div class="loading-auth-text" id="loading-auth-msg" data-i18n="loading_auth">Vérification de la session…</div>
+    <div class="loading-auth-sub" data-i18n="loading_auth_patience">Merci de patienter…</div>
+  </div>
+</div>
+
+<div id="section-login" style="display:none">
+  <div class="login-wrap">
+    <div class="login-title" data-i18n="login_title">Connexion</div>
+    <div class="login-sub" data-i18n="login_sub">Espace réservé aux cinéphiles</div>
+    <div class="login-form">
+      <input type="email" id="login-email" placeholder="Votre adresse email" aria-label="Votre adresse email" autocomplete="email" data-i18n-ph="login_email_ph" data-i18n-aria="login_email_ph">
+      <div class="pwd-wrap">
+        <input type="password" id="login-password" placeholder="Mot de passe" aria-label="Mot de passe" autocomplete="current-password" data-i18n-ph="login_pwd_ph" data-i18n-aria="login_pwd_ph">
+        <button type="button" class="pwd-toggle" data-for="login-password" title="Voir/masquer">&#128065;</button>
+      </div>
+      <button class="btn-primary" id="btn-login" onclick="login()" data-i18n="login_btn">Se connecter</button>
+      <div class="login-error" id="login-error" style="display:none"></div>
+      <button type="button" id="btn-forgot" onclick="sendPasswordReset()" style="font-family:var(--font);font-size:14px;font-style:italic;color:var(--brun);background:none;border:none;cursor:pointer;text-decoration:underline;margin-top:6px;" data-i18n="forgot_btn">Mot de passe oublié ?</button>
+      <div id="forgot-msg" style="display:none;font-size:14px;font-style:italic;color:var(--vert);margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SOUMISSION -->
+<div id="section-submit" style="display:none">
+  <div class="main">
+
+    <!-- HEADER PROFIL -->
+    <div class="sp-profil-header">
+      <div class="sp-profil-avatar-wrap sp-avatar-wrap" style="text-align:center">
+        <div class="sp-avatar" id="sp-avatar" style="margin:0 auto">
+          <span id="avatar-initiales"></span>
+        </div>
+        <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <button class="sp-avatar-btn" id="btn-change-avatar" data-i18n="sp_avatar_btn" style="text-align:center;margin:6px auto 0">Changer la photo</button>
+        <button class="btn-primary" id="btn-upload-avatar" style="display:none;margin-top:6px;font-size:12px;padding:6px 14px">Publier</button>
+        <div class="avatar-success" id="avatar-success" style="display:none">✓ Photo mise à jour</div>
+      </div>
+      <div class="sp-profil-header-text">
+        <div class="sp-profil-header-title" id="submit-title">Mon profil</div>
+        <div class="sp-profil-header-sub" data-i18n="sub_header_sub">Gérez vos cinéastes favoris, films et présentation.</div>
+      </div>
+      <a class="sp-profil-back" href="index.html" onclick="sessionStorage.setItem('tc-page','index')" title="Retour au site">&#8592;</a>
+    </div>
+
+    <!-- GROUPE : Cinéastes -->
+    <div class="sp-group">
+    <div class="sp-group-label">Cinéastes</div>
+
+    <!-- SECTION: Cinéastes favoris -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_favoris_title">❤ Cinéastes favoris</div>
+        <button class="sp-btn-modifier" id="sp-edit-favoris" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-favoris-view"><span class="sp-empty" data-i18n="sub_favoris_empty">Aucun cinéaste favori ajouté.</span></div>
+      <div class="sp-edit" id="sp-favoris-edit" style="display:none">
+        <div class="field-label" data-i18n="sub_favoris_field">Cinéastes favoris (max 3) — glissez pour réordonner</div>
+        <div class="chips-list" id="favoris-chips"></div>
+        <div class="chips-max-msg" id="favoris-max" data-i18n="sub_favoris_max">Maximum 3 cinéastes favoris atteint.</div>
+        <div class="autocomplete-wrap" id="favoris-ac-wrap">
+          <input type="text" class="autocomplete-input" id="favoris-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <div class="autocomplete-dropdown" id="favoris-dropdown"></div>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-favoris" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-favoris" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-favoris"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_favoris_success_p">Vos cinéastes favoris sont mis à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Autres cinéastes -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_autres_cin_title">Autres cinéastes appréciés</div>
+        <button class="sp-btn-modifier" id="sp-edit-autres" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-autres-view"><span class="sp-empty" data-i18n="sub_autres_cin_empty">Aucun cinéaste ajouté.</span></div>
+      <div class="sp-edit" id="sp-autres-edit" style="display:none">
+        <div class="field-label" data-i18n="sub_autres_cin_field">Autres cinéastes — glissez pour réordonner</div>
+        <div class="chips-list" id="autres-chips"></div>
+        <div class="autocomplete-wrap">
+          <input type="text" class="autocomplete-input" id="autres-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <div class="autocomplete-dropdown" id="autres-dropdown"></div>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-autres" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-autres" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-autres"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_autres_cin_success_p">Votre liste est mise à jour.</p></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- GROUPE : Films -->
+    <div class="sp-group">
+    <div class="sp-group-label">Films</div>
+
+    <!-- SECTION: Films favoris -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_films_title">❤ Films favoris</div>
+        <button class="sp-btn-modifier" id="sp-edit-films" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-films-view"><span class="sp-empty" data-i18n="sub_films_empty">Aucun film favori ajouté.</span></div>
+      <div class="sp-edit" id="sp-films-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_films_field">Films favoris (max 10) — un par ligne</div>
+          <textarea class="tops-textarea" id="films-fav-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-save-films-fav" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-films" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-films-fav"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_films_success_p">Vos films favoris sont mis à jour.</p></div>
+      </div>
+    </div>
+
+    <!-- SECTION: Autres films -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_autresfilms_title">Autres films</div>
+        <button class="sp-btn-modifier" id="sp-edit-autresfilms" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-autresfilms-view"><span class="sp-empty" data-i18n="sub_autresfilms_empty">Aucun film ajouté.</span></div>
+      <div class="sp-edit" id="sp-autresfilms-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_autresfilms_field">Autres films — un par ligne</div>
+          <textarea class="tops-textarea" id="autres-films-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-save-autres-films" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-autresfilms" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-autres-films"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_autresfilms_success_p">Votre liste de films est mise à jour.</p></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- GROUPE : Présentation -->
+    <div class="sp-group">
+    <div class="sp-group-label">Présentation</div>
+
+    <!-- SECTION: Présentation -->
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sub_presentation_title">Présentation cinéphile</div>
+        <button class="sp-btn-modifier" id="sp-edit-presentation" data-i18n="sub_modifier">Modifier</button>
+      </div>
+      <div class="sp-view" id="sp-presentation-view"><span class="sp-empty" data-i18n="sub_presentation_empty">Aucune présentation ajoutée.</span></div>
+      <div class="sp-edit" id="sp-presentation-edit" style="display:none">
+        <div class="textarea-wrap">
+          <div class="field-label" data-i18n="sub_presentation_field">Présentation</div>
+          <div class="format-toolbar">
+            <button type="button" class="fmt-btn" data-fmt="bold" title="Gras"><b>G</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" title="Italique"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="underline" title="Souligné"><u>S</u></button>
+          </div>
+          <textarea class="tops-textarea" id="presentation-textarea" placeholder="Décrivez votre rapport au cinéma…" data-i18n-ph="sub_presentation_ph"></textarea>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary" id="btn-submit-presentation" data-i18n="sub_save">Sauvegarder</button>
+          <button class="btn-secondary" id="sp-cancel-presentation" data-i18n="sub_cancel">Annuler</button>
+        </div>
+        <div class="profil-success" id="success-presentation"><h3 data-i18n="sub_success_h3">Modifications enregistrées ✓</h3><p data-i18n="sub_presentation_success_p">Votre présentation est mise à jour.</p></div>
+      </div>
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="submit.js?v=20260623"></script>
+</body>
+</html>
