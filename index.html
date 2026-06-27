@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://afbdrqrslgduomimkmyt.supabase.co https://image.tmdb.org; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co https://topscineastes.goatcounter.com;">
+<title>TOPS / CINEASTES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css?v=20260625">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=20260623"></script>
+<script src="shared.js?v=20260623"></script>
+<script src="utils.js?v=20260623"></script>
+<script src="i18n.js?v=20260624"></script>
+<style>
+/* Wrapper nom connecté + tooltip déconnexion */
+#nav-user-wrap { position: relative; display: inline-flex; align-items: center; }
+/* Mini-avatar connecté dans la nav */
+.nav-user-avatar { width: 24px; height: 24px; background: #C0392B; display: inline-flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700; color: #f0ece3; overflow: hidden; vertical-align: middle; margin-right: 5px; flex-shrink: 0; border-radius: 0; }
+.nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nav-logout-tip { display: none; position: absolute; top: 100%; right: 0; margin-top: 0; background: #1a1a1a; color: rgba(240,236,227,0.8); padding: 8px 16px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; z-index: 200; border-top: 2px solid #C0392B; }
+.nav-logout-tip:hover { color: #C0392B; }
+/* Flèche retour dans le carré rouge du profil-header */
+.profil-header-back {
+  position: absolute;
+  top: 0; right: 0;
+  width: 56px; height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(240,236,227,0.85);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: color 0.15s, background 0.15s;
+  padding: 0;
+}
+.profil-header-back:hover {
+  color: #fff;
+  background: rgba(0,0,0,0.15);
+}
+@media (max-width: 600px) {
+  .profil-header-back { width: 44px; font-size: 18px; }
+}
+/* Taille réduite pour noms longs */
+.profil-autre-small { font-size: 92% !important; }
+/* Bouton langue */
+.btn-lang { font-size: 16px; background: none; border: none; cursor: pointer; padding: 0 2px; line-height: 1; vertical-align: middle; opacity: 0.7; transition: opacity 0.15s; }
+.btn-lang:hover { opacity: 1; }
+/* Filtres index */
+.filter-bar { display: flex; gap: 10px; padding: 0.5rem 0 0.75rem; flex-wrap: wrap; }
+.filter-btn { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 16px; border: 1px solid var(--border); background: none; color: var(--text-dim,#7a6350); cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { border-color: var(--rouge,#C0392B); color: var(--rouge,#C0392B); }
+.filter-btn.active { background: var(--rouge,#C0392B); border-color: var(--rouge,#C0392B); color: #f0ece3; }
+/* Tops importés dans les cartes contributeurs */
+.contrib-card-stat-imported { opacity: 0.7; font-size: 92%; }
+/* Profil stat multi-info */
+#profil-stat { font-size: 14px; line-height: 2; }
+/* Colonnes ranking statistiques */
+.ranking-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+@media (max-width: 760px) { .ranking-columns { grid-template-columns: 1fr; } }
+/* Fix mode sombre : forcer fond noir sur profil-header */
+.dark .profil-header { background: #1a1714; }
+.dark .profil-header::before { background: #d4604a; }
+/* ── Page Mes tops ───────────────────────────────────────────── */
+.mt-wrap { max-width: 680px; margin: 0 auto; padding: 0 0 4rem; }
+.cineaste-select-wrap { margin-bottom: 0; }
+.textarea-wrap { margin-bottom: 1.2rem; }
+.tops-textarea { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; line-height: 1.7; padding: 12px 16px; border: 1px solid var(--border,#d0c8b8); border-radius: 4px; background: var(--bg-card,#faf8f4); color: var(--text,#111008); outline: none; width: 100%; min-height: 110px; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s; }
+.tops-textarea:focus { border-color: var(--rouge,#C0392B); box-shadow: 0 0 0 3px rgba(192,57,43,0.12); }
+.tops-textarea::placeholder { color: rgba(0,0,0,0.45); font-style: italic; }
+.actions { display: flex; gap: 12px; align-items: center; margin-bottom: 2rem; }
+.result-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rouge,#C0392B); display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+.result-title::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--rouge,#C0392B); }
+.result-cineaste { font-size: 26px; font-weight: 400; margin-bottom: 1rem; color: var(--text,#111008); }
+.result-cineaste strong { font-weight: 600; color: var(--rouge,#C0392B); }
+.parse-warning { font-size: 15px; font-style: italic; color: var(--text,#111008); background: var(--beige2,#ede8df); border-left: 4px solid var(--rouge,#C0392B); border-radius: 0 4px 4px 0; padding: 12px 18px; margin-bottom: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.film-titre { font-family: 'Times New Roman', serif; font-size: 21px; flex: 1; }
+.film-annee { font-family: system-ui, sans-serif; font-size: 14px; font-weight: 500; color: var(--text,#111008); white-space: nowrap; }
+.film-note { font-family: system-ui, sans-serif; font-size: 14px; font-style: italic; color: var(--text,#111008); white-space: nowrap; }
+.submit-note { font-size: 16px; font-style: italic; color: var(--text,#111008); }
+.prev-title { font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text,#111008); margin-bottom: 1.1rem; }
+.dark .tops-textarea { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.dark .tops-textarea::placeholder { color: rgba(240,236,227,0.3); }
+.dark .film-titre { color: var(--text); }
+.dark .result-cineaste { color: var(--text); }
+/* ── Tabs Mes tops ───────────────────────────────────────────── */
+.mt-tabs { display: flex; border-bottom: 4px solid var(--noir,#1a1a1a); margin-bottom: 2.2rem; }
+.mt-tab-btn { flex: 1; text-align: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 14px 22px; background: none; border: none; cursor: pointer; color: var(--text,#111008); position: relative; white-space: nowrap; transition: color 0.15s, background 0.15s; border-radius: 4px 4px 0 0; }
+.mt-tab-btn:hover { color: var(--rouge,#C0392B); background: var(--bg-subtle,#f0ece3); }
+.mt-tab-btn.active { color: var(--text,#111008); background: var(--beige2,#ede8df); }
+.mt-tab-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--rouge,#C0392B); }
+.mt-tab-panel { display: none; }
+.mt-tab-panel.active { display: block; }
+/* ── Propositions cinéastes ──────────────────────────────────── */
+.prop-form-row { display: flex; gap: 12px; margin-bottom: 1rem; flex-wrap: wrap; }
+.prop-form-field { flex: 1; min-width: 120px; }
+.prop-form-field label { display: block; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text,#111008); margin-bottom: 7px; }
+.prop-form-field input { width: 100%; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 18px; padding: 9px 13px; border: 1px solid var(--border,#d0c8b8); border-radius: 4px; background: var(--bg-card,#faf8f4); color: var(--text,#111008); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+.prop-form-field input:focus { border-color: var(--rouge,#C0392B); box-shadow: 0 0 0 3px rgba(192,57,43,0.12); }
+.prop-section-title { font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text,#111008); margin: 2rem 0 1.1rem; }
+.prop-card { border: 1px solid var(--border,#d0c8b8); border-left: 4px solid var(--rouge,#C0392B); border-radius: 0 8px 8px 0; padding: 1.3rem 1.5rem; margin-bottom: 1.2rem; background: var(--bg-card,#faf8f4); box-shadow: 0 4px 16px rgba(0,0,0,0.07); transition: box-shadow 0.2s, transform 0.2s; }
+.prop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.11); border-left-color: var(--rouge,#C0392B); }
+.prop-card-name { font-size: 23px; font-weight: 700; color: var(--text,#111008); margin-bottom: 4px; }
+.prop-card-meta { font-size: 15px; color: var(--text,#111008); margin-bottom: 10px; }
+.prop-card-footer { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+.prop-vote-btn { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 17px; border-radius: 3px; border: 2px solid var(--rouge,#C0392B); color: var(--rouge,#C0392B); background: none; cursor: pointer; transition: background 0.15s, color 0.15s, transform 0.15s; }
+.prop-vote-btn:hover { transform: translateY(-1px); }
+.prop-vote-btn.voted { background: var(--rouge,#C0392B); color: #fff; }
+.prop-vote-btn:disabled { opacity: 0.5; cursor: default; }
+.prop-voters { font-size: 15px; color: var(--text,#111008); font-style: italic; }
+.prop-by { font-size: 14px; color: var(--text,#111008); opacity: 0.8; margin-left: auto; }
+.prop-submit-success { color: var(--vert,#1a6b3a); font-size: 15px; font-style: italic; margin-bottom: 1.2rem; display: none; }
+.prop-empty { font-size: 17px; font-style: italic; color: var(--text,#111008); margin-top: 1rem; }
+.dark .prop-form-field input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.dark .prop-card { background: var(--bg-card); border-color: var(--border); }
+.dark .prop-card-name { color: var(--text); }
+/* ── Panel tops importés ─────────────────────────────────────── */
+.profil-liste-tops-wrap { margin-top: 12px; }
+#imp-panel-alpha { margin: 0; padding: 0.7rem 1rem 0.6rem; border-bottom: 1px solid var(--border,#d0c8b8); }
+#imp-panel-alpha .alpha-col { width: 24px; height: 30px; }
+#imp-panel-alpha .alpha-char { font-size: 17px; }
+.profil-liste-tops-btn { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 16px; border: 1px solid rgba(240,236,227,0.5); color: rgba(240,236,227,0.85); background: transparent; cursor: pointer; transition: all 0.15s; }
+.profil-liste-tops-btn:hover { background: var(--rouge,#C0392B); border-color: var(--rouge,#C0392B); color: #fff; }
+.imp-panel-back { position: absolute; top: 0; right: 0; width: 56px; height: 100%; background: transparent; border: none; cursor: pointer; color: rgba(240,236,227,0.85); font-size: 22px; display: flex; align-items: center; justify-content: center; z-index: 2; transition: color 0.15s, background 0.15s; padding: 0; }
+.imp-panel-back:hover { color: #fff; background: rgba(0,0,0,0.15); }
+.imp-panel-content { display: block; }
+.imp-panel-controls { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.8rem; border-bottom: 1px solid var(--border,#d0c8b8); }
+.imp-panel-meta { font-size: 15px; opacity: .6; }
+.imp-panel-row { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.8rem; font-size: 24px; line-height: 1.4; color: #000; }
+.imp-panel-cin { flex: 1; padding-right: 1rem; }
+.imp-panel-count { font-size: 19px; opacity: 1; color: #000; white-space: nowrap; }
+.imp-panel-block { border-bottom: 1px solid var(--border,#d0c8b8); }
+.imp-panel-block:last-child { border-bottom: none; }
+.imp-panel-block.has-films .imp-panel-row { cursor: pointer; }
+.imp-panel-block.has-films .imp-panel-row:hover { background: var(--bg-subtle); }
+.imp-panel-toggle { font-family: system-ui, Arial, sans-serif; font-size: 11px; color: rgba(0,0,0,.45); margin-left: 12px; flex-shrink: 0; transition: transform 0.2s; }
+.imp-panel-block.open .imp-panel-toggle { transform: rotate(180deg); }
+.imp-panel-block .fiche-contrib-films { display: none; margin: 0 1.8rem 12px; }
+.imp-panel-block.open .fiche-contrib-films { display: block; }
+#nav-soumettre.has-notif::after { content:''; display:inline-block; position:relative; top:-8px; left:3px; width:7px; height:7px; border-radius:50%; background:#C0392B; }
+.nav-notif-count { display:none; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; margin-left:6px; background:#C0392B; color:#fff; font-family:system-ui,Arial,sans-serif; font-size:11px; font-weight:700; line-height:1; border-radius:9px; vertical-align:middle; }
+#nav-mes-tops.has-notif .nav-notif-count { display:inline-flex; }
+.mt-notif-banner { margin: 0 0 1.2rem; padding: 0; }
+.mt-notif-item { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.7rem 1rem; margin-bottom:0.5rem; border-radius:4px; font-size:15px; }
+.mt-notif-item.approved { background: rgba(26,107,58,0.1); color:#1a6b3a; }
+.mt-notif-item.rejected { background: rgba(192,57,43,0.1); color:#C0392B; }
+.mt-notif-item-close { background:none; border:none; cursor:pointer; font-size:16px; line-height:1; color:inherit; opacity:0.6; padding:0 0.2rem; }
+.mt-notif-item-close:hover { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ─────────────────────────────────────────────────── -->
+<div class="splash" id="splash">
+  <!-- Composition géométrique suprématiste -->
+  <div class="splash-geo">
+    <div class="splash-geo-v1"></div>
+    <div class="splash-geo-v2"></div>
+    <div class="splash-geo-h1"></div>
+    <div class="splash-geo-sq1"></div>
+    <div class="splash-geo-sq2"></div>
+    <div class="splash-geo-h2"></div>
+  </div>
+  <!-- Contenu central -->
+  <div class="splash-center">
+    <div class="splash-title">TOPS<span class="slash-block">/</span>CINÉASTES</div>
+    <button class="splash-enter" id="btn-splash-enter" data-i18n="splash_enter">Explorer l'index</button>
+  </div>
+</div>
+
+<!-- ── SITE ───────────────────────────────────────────────────── -->
+<div class="main-wrapper" id="main-wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+    <!-- Barre tripartite Malevich -->
+    <div class="header-geo-bar">
+      <div class="hgb-main"></div>
+      <div class="hgb-red"></div>
+      <div class="hgb-end"></div>
+    </div>
+    <!-- Logo + nav -->
+    <div class="header-inner">
+      <div class="logo" id="logo-home">
+        TOPS<span class="slash-sq">/</span>CINÉASTES
+      </div>
+      <nav class="nav">
+        <a id="nav-index" class="active" data-i18n="nav_index">Index</a>
+        <a id="nav-actualites" data-i18n="nav_actualites">Actualités</a>
+        <a id="nav-contributeurs" data-i18n="nav_contributeurs">Cinéphiles</a>
+        <a id="nav-statistiques" data-i18n="nav_statistiques">Statistiques</a>
+        <a id="nav-mes-tops" style="display:none"><span data-i18n="nav_mes_tops">Mes tops</span><span class="nav-notif-count" id="nav-mes-tops-count"></span></a>
+        <a href="submit.html?v=2" id="nav-soumettre" style="display:none" data-i18n="nav_mon_profil">Mon profil</a>
+        <span id="nav-user-wrap">
+          <a href="submit.html?v=2" id="nav-submit" data-i18n="nav_se_connecter">Se connecter</a>
+          <span class="nav-logout-tip" id="nav-logout-tip" data-i18n="nav_se_deconnecter">Se déconnecter</span>
+        </span>
+        <a id="nav-dark" data-i18n-title="nav_dark_title" title="Mode sombre" role="button" tabindex="0" aria-label="Activer/désactiver le mode sombre" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></a>
+        <button class="btn-lang" id="btn-lang" onclick="toggleLang()" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0 2px;line-height:1;vertical-align:middle;"><img src="english.gif" alt="EN" style="display:block"></button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- PAGE INDEX -->
+    <div class="page visible" id="page-index">
+      <div class="search-bar">
+        <input type="text" placeholder="Rechercher un cinéaste…" id="search-input" data-i18n-ph="search_placeholder">
+      </div>
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn" id="filter-sans-tops" data-i18n="filter_sans_tops">Cinéastes sans aucun top</button>
+        <button class="filter-btn" id="filter-non-couvert" style="display:none" data-i18n="filter_non_couvert">Cinéastes sans top importé</button>
+      </div>
+      <div class="alpha-bar" id="alpha-bar"></div>
+      <div class="list-count-bar">
+        <div class="list-count" id="list-count"></div>
+      </div>
+      <div class="cineaste-list" id="cineaste-list"></div>
+    </div>
+
+    <!-- PAGE ACTUALITÉS -->
+    <div class="page" id="page-actualites">
+      <div class="list-header" style="margin-bottom:1.5rem">
+        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_actualites_h">Actualités</div>
+      </div>
+      <div class="actu-feed" id="actu-feed"></div>
+    </div>
+
+    <!-- PAGE CONTRIBUTEURS -->
+    <div class="page" id="page-contributeurs">
+      <div class="list-header" style="margin-bottom:1.5rem">
+        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_contributeurs_h">Cinéphiles</div>
+      </div>
+      <div class="contrib-list" id="contrib-list"></div>
+    </div>
+
+    <!-- PAGE PROFIL -->
+    <div class="page" id="page-profil">
+      <div class="profil-header">
+        <div class="profil-header-inner">
+          <div class="profil-avatar-wrap">
+            <div class="profil-avatar" id="profil-avatar"></div>
+            <span class="online-dot" id="profil-online-dot" style="display:none" title="En ligne"></span>
+          </div>
+          <div class="profil-header-text">
+            <div class="profil-name" id="profil-name"></div>
+            <div class="profil-stat" id="profil-stat"></div>
+            <div class="profil-liste-tops-wrap" id="profil-liste-tops-wrap" style="display:none"></div>
+          </div>
+        </div>
+        <button class="profil-header-back" id="profil-header-back" title="Retour aux cinéphiles" data-i18n-title="retour_contributeurs_title">&#8592;</button>
+      </div>
+      <div class="profil-block">
+        <div class="profil-section-title" data-i18n="profil_cin_favoris">Cinéastes favoris</div>
+        <div class="profil-favs-grid" id="profil-favs-grid"></div>
+      </div>
+      <div class="profil-block" id="profil-autres-cineaste-block">
+        <div class="profil-section-title" data-i18n="profil_autres_cin">Autres cinéastes appréciés</div>
+        <div class="profil-autres-grid" id="profil-autres-cineaste"></div>
+        <div style="text-align:center">
+          <button class="profil-voir-plus" id="profil-autres-cineaste-btn" data-i18n="voir_tous_cin">Voir tous les cinéastes ↓</button>
+        </div>
+      </div>
+      <div class="profil-block" id="profil-films-coeur-block">
+        <div class="profil-section-title" data-i18n="profil_films_coeur">Films favoris</div>
+        <div class="profil-films-list" id="profil-films-coeur"></div>
+      </div>
+      <div class="profil-block" id="profil-films-autres-block">
+        <div class="profil-section-title" data-i18n="profil_films_autres">Autres films</div>
+        <div class="profil-films-list" id="profil-films-autres"></div>
+        <div style="text-align:center">
+          <button class="profil-voir-plus" id="profil-films-autres-btn" data-i18n="voir_tous_films">Voir tous les films ↓</button>
+        </div>
+      </div>
+      <div class="profil-block" id="profil-presentation-block" style="display:none">
+        <div class="profil-presentation">
+          <div class="profil-presentation-label" data-i18n="profil_presentation">Présentation cinéphile</div>
+          <div class="profil-presentation-text" id="profil-presentation-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE MES TOPS -->
+    <div class="page" id="page-mes-tops">
+      <div class="mt-wrap">
+
+        <!-- En-tête de page -->
+        <div class="mt-page-header">
+          <div class="mt-page-title">Mes tops</div>
+          <button class="mt-page-back" id="mt-page-back" title="Retour" aria-label="Retour à l'accueil">&#8592;</button>
+        </div>
+
+        <!-- Notifications de statut -->
+        <div class="mt-notif-banner" id="mt-notif-banner"></div>
+
+        <!-- Onglets -->
+        <div class="mt-tabs">
+          <button class="mt-tab-btn active" data-mt-tab="tops" data-i18n="mt_tab_soumettre">Soumettre/Modifier un top</button>
+          <button class="mt-tab-btn" data-mt-tab="propositions" data-i18n="mt_tab_proposer">Proposer un cinéaste</button>
+        </div>
+
+        <!-- TAB : Soumettre un top -->
+        <div class="mt-tab-panel active" id="mt-panel-tops">
+
+          <div class="mt-page-sub" data-i18n="mt_hint">Tous les formats sont acceptés — avec ou sans année, titre français ou anglais, commentaires inclus.</div>
+
+          <!-- Bloc formulaire -->
+          <div class="mt-block">
+            <div class="mt-block-header">
+              <div class="mt-block-step">1</div>
+              <div class="mt-block-title" data-i18n="mt_cin_label">Cinéaste</div>
+            </div>
+            <div class="cineaste-select-wrap">
+              <div class="autocomplete-wrap">
+                <input type="text" class="autocomplete-input" id="mt-cineaste-input" placeholder="Tapez un nom…" autocomplete="off" data-i18n-ph="mt_cin_ph">
+                <div class="autocomplete-dropdown" id="mt-cineaste-dropdown"></div>
+              </div>
+            </div>
+
+            <div class="mt-block-header" style="margin-top:1.2rem">
+              <div class="mt-block-step">2</div>
+              <div class="mt-block-title" data-i18n="mt_top_label">Votre top</div>
+            </div>
+            <div class="textarea-wrap">
+              <textarea class="tops-textarea" id="mt-tops-textarea" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
+            </div>
+            <div class="parse-warning" id="mt-duplicate-msg" style="display:none"></div>
+            <div class="actions">
+              <button class="btn-primary" id="mt-btn-parse" data-i18n="mt_analyser">Analyser ma liste</button>
+              <button class="btn-secondary" id="mt-btn-reset" data-i18n="mt_recommencer">Recommencer</button>
+            </div>
+          </div>
+
+          <div class="loading-bar" id="mt-loading-bar"></div>
+
+          <!-- Bloc résultat -->
+          <div class="result-wrap mt-result-card" id="mt-result-wrap">
+            <div class="mt-block-header">
+              <div class="mt-block-step mt-step-dark">3</div>
+              <div class="mt-block-title" data-i18n="mt_result_titre">Résultat de l'analyse</div>
+            </div>
+            <div class="result-cineaste" id="mt-result-cineaste"></div>
+            <div class="parse-warning" id="mt-parse-warning" style="display:none"></div>
+            <ol class="films-list" id="mt-films-list"></ol>
+            <div class="submit-confirm">
+              <button class="btn-primary" id="mt-btn-submit" data-i18n="mt_soumettre">Soumettre pour validation</button>
+              <div class="submit-note" data-i18n="mt_submit_note">Votre top sera vérifié par Mathieu avant publication.</div>
+            </div>
+          </div>
+
+          <div class="success-msg" id="mt-success-msg">
+            <h3 data-i18n="mt_success_h3">Top soumis !</h3>
+            <p data-i18n="mt_success_p">Mathieu sera notifié et votre top apparaîtra sur le site après validation.</p>
+          </div>
+
+          <!-- Mes tops soumis -->
+          <div class="mt-prev-block" id="mt-prev-section" style="display:none">
+            <div class="mt-prev-block-header">
+              <div class="mt-prev-block-title" data-i18n="mt_prev_titre">Mes tops soumis</div>
+            </div>
+            <div id="mt-prev-list"></div>
+          </div>
+
+        </div><!-- end mt-panel-tops -->
+
+        <!-- TAB : Proposer un cinéaste -->
+        <div class="mt-tab-panel" id="mt-panel-propositions">
+
+          <div class="prop-form-row">
+            <div class="prop-form-field">
+              <label data-i18n="prop_prenom_label">Prénom</label>
+              <input type="text" id="prop-prenom" placeholder="Prénom" data-i18n-ph="prop_prenom_ph" autocomplete="off">
+            </div>
+            <div class="prop-form-field">
+              <label data-i18n="prop_nom_label">Nom *</label>
+              <input type="text" id="prop-nom" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off" style="text-transform:uppercase">
+            </div>
+          </div>
+          <div class="prop-form-row">
+            <div class="prop-form-field">
+              <label data-i18n="prop_naissance_label">Année de naissance</label>
+              <input type="number" id="prop-naissance" placeholder="ex. 1940" data-i18n-ph="prop_naissance_ph" min="1800" max="2010">
+            </div>
+            <div class="prop-form-field">
+              <label><span data-i18n="prop_deces_label">Année de décès</span> <span style="font-weight:400;text-transform:none;letter-spacing:0" data-i18n="prop_deces_optional">(si applicable)</span></label>
+              <input type="number" id="prop-deces" placeholder="ex. 2010" data-i18n-ph="prop_deces_ph" min="1800" max="2030">
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-primary" id="prop-btn-submit" data-i18n="prop_btn_submit">Soumettre la proposition</button>
+          </div>
+          <div class="prop-submit-success" id="prop-success" data-i18n="prop_success">Proposition soumise — merci !</div>
+
+          <div class="prop-section-title" data-i18n="prop_section_title">Propositions en attente</div>
+          <div id="prop-list"></div>
+
+        </div><!-- end mt-panel-propositions -->
+
+      </div>
+    </div>
+
+    <!-- PAGE STATISTIQUES -->
+    <div class="page" id="page-statistiques">
+      <div class="list-header" style="margin-bottom:1.5rem">
+        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_statistiques_h">Statistiques</div>
+      </div>
+      <div class="stats-hero" id="stats-hero"></div>
+      <div class="stats-secondary" id="stats-secondary"></div>
+      <div class="ranking-columns">
+        <div class="ranking-section">
+          <div class="ranking-title" data-i18n="ranking_cineastes_titre">Cinéastes les plus topés</div>
+          <div id="ranking-cineastes"></div>
+        </div>
+        <div class="ranking-section">
+          <div class="ranking-title" data-i18n="ranking_films_titre">Films dans les tops</div>
+          <div id="ranking-films-contrib"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FICHE OVERLAY -->
+  <div class="fiche-overlay" id="fiche-overlay" role="dialog" aria-modal="true">
+    <div class="fiche" id="fiche-content"></div>
+  </div>
+
+  <!-- SCROLL TO TOP -->
+  <div class="bottom-nav" id="bottom-nav" style="display:none">
+    <button class="bottom-back" id="btn-back-contrib" title="Retour aux cinéphiles">&#8592; Contributeurs</button>
+  </div>
+  <button class="scroll-top" id="scroll-top" title="Remonter en haut" aria-label="Remonter en haut">&#8593;</button>
+
+</div>
+
+<script src="index.js?v=20260625"></script>
+<script data-goatcounter="https://topscineastes.goatcounter.com/count"
+        async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
