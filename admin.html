@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://afbdrqrslgduomimkmyt.supabase.co; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co https://topscineastes.goatcounter.com;">
+<title>TOPS/CINÉASTES — Administration</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://afbdrqrslgduomimkmyt.supabase.co">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script defer src="config.js?v=20260623"></script>
+<script defer src="utils.js?v=20260623"></script>
+<script defer src="auth-shared.js?v=20260623"></script>
+<script defer src="i18n.js?v=20260623"></script>
+<script src="shared.js?v=20260623"></script>
+<link rel="stylesheet" href="style.css?v=20260623">
+<style>
+:root {
+  --bg: #f7f3ec;
+  --bg-subtle: #ede8df;
+  --bg-card: #faf8f4;
+  --rouge: #A33025;
+  --rouge-dim: rgba(163,48,37,0.12);
+  --noir: #1a1a1a;
+  --brun: #3d2b1a;
+  --brun-pale: #7a6350;
+  --text: #111008;
+  --border: #d0c8b8;
+  --border-dim: #ddd6c8;
+  --vert: #1a6b3a;
+  --vert-dim: rgba(26,107,58,0.1);
+  --font: 'Cormorant Garamond', Georgia, serif;
+}
+
+.dark {
+  --bg: #1a1714;
+  --bg-subtle: #252019;
+  --bg-card: #211e19;
+  --rouge: #B4523F;
+  --rouge-dim: rgba(180,82,63,0.15);
+  --noir: #f0ece3;
+  --brun: #a89880;
+  --brun-pale: #8a7d68;
+  --text: #f0ece3;
+  --border: #3a352c;
+  --border-dim: #2e2a23;
+  --vert: #4caf70;
+  --vert-dim: rgba(76,175,112,0.12);
+}
+.dark .header, .dark .header-bar-end { background: #1a1714 !important; }
+.dark .logo, .dark .logo span, .dark .dash-hero-item:first-child, .dark .dash-hero-item:last-child,
+.dark .sub-filter.active, .dark .admin-chip, .dark .type-badge.top { color: #1a1714; }
+.dark .submission-status.pending, .dark .prop-status-badge.pending, .dark .modif-badge.nouveau { background: #4d3c0a; color: #f0d878; }
+.dark .submission-status.approved, .dark .prop-status-badge.approved { background: #163a22; color: #7fd8a0; }
+.dark .submission-status.rejected, .dark .prop-status-badge.rejected { background: #3a1418; color: #e89aa0; }
+.dark .modif-badge.modification { background: #4d3c0a; color: #f0d878; }
+.dark #submissions-truncated-warning { background: #252019 !important; color: var(--text) !important; }
+.dark .btn-logout { color: rgba(240,236,227,0.4); }
+.dark .header-user { color: rgba(240,236,227,0.55); }
+
+.btn-lang-img:hover { opacity: 1; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--noir);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-bar { height: 4px; display: flex; }
+.header-bar-main { flex: 1; background: var(--rouge); }
+.header-bar-end  { width: 40px; background: var(--noir); }
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+.logo {
+  font-family: var(--font);
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: #f0ece3;
+  text-decoration: none;
+}
+.logo span {
+  background: var(--rouge);
+  color: #f0ece3;
+  padding: 1px 6px;
+  margin: 0 4px;
+}
+.logo-admin {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(240,236,227,0.4);
+  margin-left: 12px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-user {
+  font-family: var(--font);
+  font-size: 15px;
+  font-style: italic;
+  color: rgba(240,236,227,0.55);
+}
+.header-user strong { color: rgba(240,236,227,0.85); font-style: normal; }
+.btn-logout {
+  font-family: var(--font);
+  font-size: 14px;
+  color: rgba(240,236,227,0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.btn-logout:hover { color: var(--rouge); }
+
+/* ── MAIN ── */
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+}
+
+/* ── LOGIN ── */
+.login-wrap {
+  max-width: 420px;
+  margin: 6rem auto;
+  text-align: center;
+}
+.login-title {
+  font-size: 38px;
+  font-weight: 300;
+  margin-bottom: 6px;
+}
+.login-sub {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-bottom: 2.5rem;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.login-form input {
+  font-family: var(--font);
+  font-size: 18px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-form input:focus { border-color: var(--rouge); }
+.login-form input::placeholder { color: var(--brun-pale); font-style: italic; }
+.login-error {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--rouge);
+  margin-top: 8px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  border-bottom: 3px solid var(--noir);
+  margin-bottom: 2rem;
+}
+.tab {
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--brun-pale);
+  position: relative;
+  transition: color 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--noir);
+  background: var(--bg-subtle);
+}
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0; right: 0;
+  height: 3px;
+  background: var(--rouge);
+}
+.tab-panel { display: none; }
+.tab-panel.visible { display: block; }
+
+/* ── SECTION TITLES ── */
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rouge);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--rouge);
+  flex-shrink: 0;
+}
+
+/* ── DASHBOARD ── */
+.dash-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-bottom: 2.5rem;
+}
+.dash-hero-item {
+  padding: 2rem 1.8rem;
+  position: relative;
+}
+.dash-hero-item:first-child {
+  background: var(--noir);
+  color: #f0ece3;
+}
+.dash-hero-item:first-child::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 10px; height: 100%;
+  background: var(--rouge);
+}
+.dash-hero-item:last-child {
+  background: var(--rouge);
+  color: #f0ece3;
+}
+.dash-hero-value {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+}
+.dash-hero-label {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+  display: block;
+}
+.dash-hero-sub {
+  font-size: 18px;
+  font-style: italic;
+  margin-top: 4px;
+  display: block;
+  opacity: 0.9;
+}
+
+/* Progress bar global */
+.dash-progress {
+  height: 6px;
+  background: var(--border-dim);
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+.dash-progress-fill {
+  height: 100%;
+  background: var(--rouge);
+  transition: width 0.6s ease;
+}
+.dash-progress-label {
+  font-size: 13px;
+  color: var(--brun-pale);
+  font-style: italic;
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* Contributor rows */
+.contrib-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.contrib-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-dim);
+  padding: 10px 0;
+  gap: 12px;
+}
+.contrib-row:hover { background: var(--bg-subtle); }
+.contrib-rank {
+  width: 28px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--brun-pale);
+  text-align: center;
+  flex-shrink: 0;
+}
+.contrib-name-cell {
+  flex: 1;
+  font-size: 22px;
+  color: var(--text);
+}
+.contrib-name-cell .nom { font-weight: 700; }
+.contrib-bar-wrap {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.contrib-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: var(--border-dim);
+  position: relative;
+}
+.contrib-bar-fill {
+  height: 100%;
+  background: var(--rouge);
+  transition: width 0.4s ease;
+}
+.contrib-bar-fill.full { background: var(--vert); }
+.contrib-count {
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  color: var(--brun-pale);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+.contrib-count .done { color: var(--vert); font-weight: 600; }
+
+/* ── IMPORT MANUEL ── */
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.field-wrap { margin-bottom: 0; }
+
+/* Select contributeur */
+.contrib-select {
+  font-family: var(--font);
+  font-size: 20px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.contrib-select:focus { border-color: var(--rouge); }
+
+/* Zone de texte */
+.tops-textarea {
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.7;
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+.tops-textarea:focus { border-color: var(--rouge); }
+.tops-textarea::placeholder { color: var(--brun-pale); font-style: italic; }
+.textarea-hint {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--brun-pale);
+  margin-top: 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ── SOUMISSIONS ── */
+.submission-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.submission-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.submission-card.pending::before { background: var(--brun-pale); }
+.submission-card.approved::before { background: var(--vert); }
+.submission-card.rejected::before { background: var(--rouge); }
+.submission-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 18px 24px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.submission-header:hover { background: var(--bg-subtle); }
+.submission-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.submission-names {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.submission-contrib {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+}
+.submission-names-sep {
+  font-size: 17px;
+  color: var(--brun-pale);
+}
+.submission-cineaste-nom {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--rouge);
+}
+.submission-meta-line {
+  font-size: 15px;
+  color: var(--brun-pale);
+  font-style: italic;
+}
+.submission-meta {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  color: var(--brun-pale);
+}
+.submission-status {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  padding: 2px 10px;
+  flex-shrink: 0;
+}
+.submission-status.pending  { background: #fff3cd; color: #856404; }
+.submission-status.approved { background: #d4edda; color: #1a6b3a; }
+.submission-status.rejected { background: #f8d7da; color: #721c24; }
+.submission-body {
+  display: none;
+  padding: 0 20px 16px;
+  border-top: 1px solid var(--border-dim);
+}
+.submission-body.visible { display: block; }
+.submission-films {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0;
+  counter-reset: sf;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-dim);
+}
+.submission-films li {
+  counter-increment: sf;
+  padding: 10px 16px 10px 3rem;
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 16px;
+  line-height: 1.4;
+  position: relative;
+}
+.submission-films li::before {
+  content: counter(sf) '.';
+  position: absolute;
+  left: 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rouge);
+}
+.submission-films li:last-child { border-bottom: none; }
+.submission-raw {
+  font-size: 13px;
+  color: var(--brun-pale);
+  background: var(--bg-subtle);
+  padding: 10px;
+  margin: 8px 0;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.submission-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.btn-approve {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--vert);
+  border: none;
+  padding: 9px 22px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-approve:hover { opacity: 0.85; }
+.btn-approve:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-reject {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--rouge);
+  border: none;
+  padding: 9px 22px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-reject:hover { opacity: 0.85; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--brun-pale);
+  font-size: 18px;
+  font-style: italic;
+}
+/* Propositions cinéastes */
+.prop-card { border: 1px solid var(--border,#d0c8b8); padding: 1rem 1.4rem; margin-bottom: 1rem; background: var(--bg-card,#faf8f4); }
+.prop-card-name { font-size: 22px; font-weight: 600; margin-bottom: 3px; }
+.prop-card-meta { font-size: 14px; color: var(--brun-pale); margin-bottom: 10px; }
+.prop-card-footer { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.prop-voters { font-size: 14px; color: var(--brun-pale); font-style: italic; flex: 1; }
+.prop-by { font-size: 13px; color: var(--brun-pale); }
+.prop-vote-count { font-size: 15px; font-weight: 700; color: var(--rouge); min-width: 70px; }
+.prop-actions { display: flex; gap: 8px; margin-left: auto; }
+.prop-btn-approve { font-family: var(--font); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border: none; background: var(--vert,#1a6b3a); color: #fff; cursor: pointer; }
+.prop-btn-reject { font-family: var(--font); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border: none; background: var(--rouge); color: #fff; cursor: pointer; }
+.prop-status-badge { font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 10px; }
+.prop-status-badge.approved { background: #d4edda; color: #1a6b3a; }
+.prop-status-badge.rejected { background: #f8d7da; color: #721c24; }
+.prop-status-badge.pending { background: #fff3cd; color: #856404; }
+/* Modération des commentaires */
+.cm-card { border: 1px solid var(--border,#d0c8b8); padding: 0.9rem 1.4rem; margin-bottom: 0.8rem; background: var(--bg-card,#faf8f4); }
+.cm-card-meta { font-size: 13px; color: var(--brun-pale); margin-bottom: 6px; }
+.cm-card-meta b { color: var(--text); }
+.cm-card-body { font-size: 15px; white-space: pre-wrap; margin-bottom: 8px; }
+.cm-card-footer { display: flex; justify-content: flex-end; }
+.cm-btn-delete { font-family: var(--font); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border: none; background: var(--rouge); color: #fff; cursor: pointer; }
+/* Type badges */
+.type-badge {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.type-badge.top             { background: var(--noir); color: #f0ece3; }
+.type-badge.favoris         { background: var(--rouge); color: #f0ece3; }
+.type-badge.autres_cineastes{ background: #6a4020; color: #f0ece3; }
+.type-badge.films_favoris   { background: #1a3a6a; color: #f0ece3; }
+.type-badge.autres_films    { background: #2a4a2a; color: #f0ece3; }
+.type-badge.presentation    { background: #3a2a5a; color: #f0ece3; }
+.modif-badge {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.modif-badge.nouveau      { background: #d6e4f0; color: #1a3a6a; }
+.modif-badge.modification { background: #fff3cd; color: #856404; }
+
+/* Filtre par type */
+.sub-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+.sub-filter {
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--brun-pale);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sub-filter.active { background: var(--noir); color: #f0ece3; border-color: var(--noir); }
+.sub-filter:hover:not(.active) { border-color: var(--brun); color: var(--brun); }
+
+/* Edit textarea */
+.edit-zone {
+  display: none;
+  margin-top: 10px;
+}
+.edit-zone.visible { display: block; }
+.edit-textarea {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  width: 100%;
+  min-height: 140px;
+  padding: 12px;
+  border: 1px solid var(--rouge);
+  background: var(--bg-card);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  margin-bottom: 8px;
+}
+.btn-edit {
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-edit:hover { color: var(--text); border-color: var(--brun); }
+
+/* Fenêtre de confirmation */
+.confirm-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.confirm-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1.8rem 2rem;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+.confirm-message {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 1.4rem;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.confirm-btn-no {
+  font-family: var(--font);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.confirm-btn-no:hover { color: var(--text); border-color: var(--brun); }
+.confirm-btn-yes {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--vert);
+  border: none;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.confirm-btn-yes:hover { opacity: 0.85; }
+
+/* Chips in admin */
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.admin-chip {
+  background: var(--noir);
+  color: #f0ece3;
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 4px 12px;
+  position: relative;
+}
+.admin-chip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--rouge);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .main { padding: 1.5rem 1.2rem; }
+  .header-inner { padding: 0.8rem 1.2rem; }
+  .dash-hero { grid-template-columns: 1fr; }
+  .contrib-bar-wrap { width: 120px; }
+  .tab { padding: 10px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-bar">
+    <div class="header-bar-main"></div>
+    <div class="header-bar-end"></div>
+  </div>
+  <div class="header-inner">
+    <div style="display:flex;align-items:baseline">
+      <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
+      <span class="logo-admin">Admin</span>
+    </div>
+    <div class="header-right">
+      <div class="header-user" id="header-user" style="display:none">
+        <strong id="header-name"></strong>
+      </div>
+      <button class="btn-logout" id="btn-logout" style="display:none">Déconnexion</button>
+      <button id="btn-dark" title="Mode sombre" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
+      <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block;opacity:0.7"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN ── -->
+<div id="section-login">
+  <div class="login-wrap">
+    <div class="login-title">Administration</div>
+    <div class="login-sub">Accès réservé</div>
+    <div class="login-form">
+      <input type="email" id="login-email" placeholder="Adresse email" aria-label="Adresse email" autocomplete="email">
+      <input type="password" id="login-password" placeholder="Mot de passe" aria-label="Mot de passe" autocomplete="current-password">
+      <button class="btn-primary" id="btn-login">Se connecter</button>
+      <div class="login-error" id="login-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN ── -->
+<div id="section-admin" style="display:none">
+  <div class="main">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Tableau de bord</button>
+      <button class="tab" data-tab="import">Import manuel</button>
+      <button class="tab" data-tab="submissions">Soumissions</button>
+      <button class="tab" data-tab="propositions">Propositions cinéastes</button>
+      <button class="tab" data-tab="comments">Commentaires</button>
+    </div>
+
+    <!-- ── TAB 1 : DASHBOARD ── -->
+    <div class="tab-panel visible" id="panel-dashboard">
+
+      <div class="dash-hero">
+        <div class="dash-hero-item">
+          <span class="dash-hero-value" id="dash-total-tops">—</span>
+          <span class="dash-hero-label">Tops dans l'index</span>
+          <span class="dash-hero-sub" id="dash-total-cineastes"></span>
+        </div>
+        <div class="dash-hero-item">
+          <span class="dash-hero-value" id="dash-total-contribs">—</span>
+          <span class="dash-hero-label">Tops importés</span>
+          <span class="dash-hero-sub" id="dash-pending-count"></span>
+        </div>
+      </div>
+
+      <div id="dash-json-warning" style="color:#A33025;font-size:13px;margin-bottom:0.5rem;"></div>
+      <div class="section-title">Imports par contributeur</div>
+      <div id="contrib-dashboard"></div>
+    </div>
+
+    <!-- ── TAB 2 : IMPORT MANUEL ── -->
+    <div class="tab-panel" id="panel-import">
+      <div class="section-title">Import manuel (commentaires FB)</div>
+
+      <div class="import-form">
+        <div class="field-wrap">
+          <div class="field-label">Contributeur</div>
+          <select class="contrib-select" id="import-contrib">
+            <option value="">Sélectionner un contributeur…</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <div class="field-label">Cinéaste</div>
+          <div class="autocomplete-wrap">
+            <input type="text" class="autocomplete-input" id="import-cineaste"
+              placeholder="Tapez un nom…" autocomplete="off">
+            <div class="autocomplete-dropdown" id="import-dropdown"></div>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <div class="field-label">Contenu du commentaire</div>
+          <textarea class="tops-textarea" id="import-textarea"
+            placeholder="Collez le commentaire FB ici…"></textarea>
+          <div class="textarea-hint">Le parseur extrait automatiquement les films numérotés.</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" id="btn-parse">Analyser</button>
+          <button class="btn-secondary" id="btn-reset-import">Recommencer</button>
+        </div>
+        <div id="import-error" style="display:none;color:var(--rouge);font-size:15px;font-style:italic;margin-top:8px"></div>
+
+        <div class="result-wrap" id="import-result">
+          <div class="section-title">Résultat de l'analyse</div>
+          <div class="result-cineaste" id="import-result-cineaste"></div>
+          <div class="parse-warning" id="import-warning" style="display:none"></div>
+          <ol class="films-list" id="import-films-list"></ol>
+          <div class="actions">
+            <button class="btn-primary" id="btn-submit-import">Enregistrer dans Supabase</button>
+          </div>
+        </div>
+
+        <div class="success-msg" id="import-success">
+          <h3>Import enregistré</h3>
+          <p>Le top a été ajouté avec le statut « approved ».</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 3 : SOUMISSIONS ── -->
+    <div class="tab-panel" id="panel-submissions">
+      <div class="section-title">Soumissions</div>
+      <div class="sub-filters">
+        <button class="sub-filter" data-filter="approved">Validés</button>
+        <button class="sub-filter active" data-filter="pending">En attente</button>
+      </div>
+      <div id="submissions-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin-bottom:1rem;font-size:15px;"></div>
+      <div id="submissions-truncated-warning" style="display:none;color:#555;background:#f4f0e8;padding:8px 16px;margin-bottom:1rem;font-size:13px;border-radius:4px;"></div>
+      <div id="submissions-list"></div>
+    </div>
+
+    <!-- ── TAB 4 : PROPOSITIONS CINÉASTES ── -->
+    <div class="tab-panel" id="panel-propositions">
+      <div class="section-title">Propositions d'ajout de cinéastes</div>
+      <div id="propositions-list"></div>
+    </div>
+
+    <!-- ── TAB 5 : COMMENTAIRES ── -->
+    <div class="tab-panel" id="panel-comments">
+      <div class="section-title">Commentaires récents (modération)</div>
+      <div id="comments-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin-bottom:1rem;font-size:15px;"></div>
+      <div id="comments-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script defer src="admin.js?v=20260623"></script>
+
+<script data-goatcounter="https://topscineastes.goatcounter.com/count"
+        async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
