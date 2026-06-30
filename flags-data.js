@@ -85,7 +85,7 @@ function tcIsHistoricCode(code){
 function tcFlagUrl(code){
   if(!code) return null;
   if(tcIsHistoricCode(code)) return TC_HISTORIC_FLAGS[code];
-  if(TC_ISO_COUNTRIES[code]) return 'https://flagcdn.com/w80/' + code + '.png';
+  if(TC_ISO_COUNTRIES[code]) return 'https://flagcdn.com/w160/' + code + '.png';
   return null;
 }
 
