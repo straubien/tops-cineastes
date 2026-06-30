@@ -738,8 +738,7 @@ a { text-decoration: none; color: inherit; }
   object-fit: cover;
   margin-left: 10px;
   vertical-align: middle;
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+  border-radius: 2px;  
 }
 .fiche-dates {
   font-family: var(--font);
