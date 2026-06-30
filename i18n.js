@@ -189,8 +189,8 @@ var TC_TRANSLATIONS = {
     sub_presentation_ph: "Décrivez votre rapport au cinéma…",
     sub_presentation_success_p: "Votre présentation est mise à jour.",
     // Auth submit.html
-    loading_auth: "Vérification de la session…",
-    loading_auth_patience: "Merci de patienter…",
+    loading_auth: "Vérification de la session...",
+    loading_auth_patience: "Merci de patienter quelques instants",
     setpwd_title: "Bienvenue",
     setpwd_sub: "Choisissez votre mot de passe",
     setpwd_pwd_ph: "Nouveau mot de passe",
@@ -433,8 +433,8 @@ var TC_TRANSLATIONS = {
     sub_presentation_ph: "Describe your relationship with cinema…",
     sub_presentation_success_p: "Your presentation has been updated.",
     // Auth submit.html
-    loading_auth: "Checking session…",
-    loading_auth_patience: "Please wait…",
+    loading_auth: "Checking session...",
+    loading_auth_patience: "Please wait for a moment",
     setpwd_title: "Welcome",
     setpwd_sub: "Choose your password",
     setpwd_pwd_ph: "New password",
