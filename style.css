@@ -733,8 +733,8 @@ a { text-decoration: none; color: inherit; }
 .fiche-name b { font-weight: 700; }
 .fiche-name-line { display: none; }
 .fiche-flag {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   object-fit: cover;
   margin-left: 10px;
   vertical-align: middle;
