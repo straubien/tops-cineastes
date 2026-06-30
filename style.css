@@ -739,7 +739,7 @@ a { text-decoration: none; color: inherit; }
   margin-left: 10px;
   vertical-align: middle;
   border-radius: 2px;
-  filter: drop-shadow(0 0 0.5px rgba(0,0,0,0.35));
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
 }
 .fiche-dates {
   font-family: var(--font);
