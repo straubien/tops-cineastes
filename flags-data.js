@@ -9,13 +9,11 @@
 // tcFlagHtml(code, opts) : retourne le HTML <img> du drapeau, ou '' si code vide/inconnu
 
 var TC_HISTORIC_FLAGS = {
-  'URSS':  'flags/URSS.svg',
+  'URSS':  'flags/su.gif',
   'RDA':   'flags/RDA.svg',
   'RFA':   'flags/RFA.svg',
-  'TCH':   'flags/TCH.svg',
-  'YOUG':  'flags/YOUG.svg',
-  'SCG':   'flags/SCG.svg',
-  'ZAIRE': 'flags/ZAIRE.svg'
+  'TCH':   'flags/cz.gif',
+  'YOUG':  'flags/yu.gif',    
 };
 
 var TC_HISTORIC_LABELS = {
@@ -23,9 +21,7 @@ var TC_HISTORIC_LABELS = {
   'RDA':   'Allemagne de l’Est (RDA)',
   'RFA':   'Allemagne de l’Ouest (RFA)',
   'TCH':   'Tchécoslovaquie',
-  'YOUG':  'Yougoslavie (RFSY)',
-  'SCG':   'Serbie-et-Monténégro',
-  'ZAIRE': 'Zaïre'
+  'YOUG':  'Yougoslavie',
 };
 
 // Liste des pays ISO 3166-1 alpha-2 courants, libellés en français
