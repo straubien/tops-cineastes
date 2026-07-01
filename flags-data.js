@@ -9,18 +9,14 @@
 // tcFlagHtml(code, opts) : retourne le HTML <img> du drapeau, ou '' si code vide/inconnu
 
 var TC_HISTORIC_FLAGS = {
-  'su':  'flags/su.gif',
-  'RDA':   'flags/RDA.svg',
-  'RFA':   'flags/RFA.svg',
-  'cs':   'flags/cs.gif',
+  'su':  'flags/su.gif',  
+  'cs':  'flags/cs.gif',
   'yu':  'flags/yu.gif',    
 };
 
 var TC_HISTORIC_LABELS = {
-  'su':  'URSS',
-  'RDA':   'Allemagne de l’Est (RDA)',
-  'RFA':   'Allemagne de l’Ouest (RFA)',
-  'cs':   'Tchécoslovaquie',
+  'su':  'URSS',  
+  'cs':  'Tchécoslovaquie',
   'yu':  'Yougoslavie',
 };
 
