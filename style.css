@@ -742,9 +742,9 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
 }
 .fiche-flag-historic {
-  width: 54px;
-  height: 36px;
-  object-fit: contain;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
 }
 .tc-flag {
   width: 32px;
@@ -755,9 +755,9 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
 }
 .tc-flag-historic {
-  width: 44px;
-  height: 28px;
-  object-fit: contain;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
 }
 .fiche-dates {
   font-family: var(--font);
