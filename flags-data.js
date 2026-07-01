@@ -9,15 +9,11 @@
 // tcFlagHtml(code, opts) : retourne le HTML <img> du drapeau, ou '' si code vide/inconnu
 
 var TC_HISTORIC_FLAGS = {
-  'su':  'flags/su.png',  
-  'cs':  'flags/cs.gif',
-  'yu':  'flags/yu.gif',    
+  'su':  'flags/su.png',       
 };
 
 var TC_HISTORIC_LABELS = {
-  'su':  'URSS',  
-  'cs':  'Tchécoslovaquie',
-  'yu':  'Yougoslavie',
+  'su':  'URSS',
 };
 
 // Liste des pays ISO 3166-1 alpha-2 courants, libellés en français
