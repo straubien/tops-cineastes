@@ -9,7 +9,7 @@
 // tcFlagHtml(code, opts) : retourne le HTML <img> du drapeau, ou '' si code vide/inconnu
 
 var TC_HISTORIC_FLAGS = {
-  'su':  'flags/su.gif',  
+  'su':  'flags/su.png',  
   'cs':  'flags/cs.gif',
   'yu':  'flags/yu.gif',    
 };
