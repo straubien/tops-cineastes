@@ -256,6 +256,7 @@ function formatFavName(f){
 function buildPortraitSrc(f){
   var particles=['De','Van','von','Von','Du','du','Di','di','Da','da','Le','La','del','Del','Della','lo','Lo'];
   if(f==='Straub/Huillet'||(/straub/i.test(f)&&/huillet/i.test(f)))return{src:'portraits/portrait-Straub.jpg',initials:'S'};
+  if(/reis/i.test(f)&&/cordeiro/i.test(f))return{src:'portraits/portrait-Reis.jpg',initials:'R'};
   var normalized=f;
   if(f.indexOf(',')!==-1){normalized=f.split(',')[0].trim();}
   if(normalized.indexOf(' & ')!==-1){normalized=normalized.split(' & ')[0].trim();}
