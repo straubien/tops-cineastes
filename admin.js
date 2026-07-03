@@ -48,6 +48,7 @@ var _loadingSafety = setTimeout(function(){
   sb.auth.onAuthStateChange(async function(ev, sess){
     if(ev === 'SIGNED_IN' && sess){ hideAdminLoading(); await onLogin(sess.user); }
     if(ev === 'SIGNED_OUT'){ hideAdminLoading(); onLogout(); }
+    if(ev === 'TOKEN_REFRESHED' && sess && currentUser){ currentUser = sess.user; }
   });
 })();
 
