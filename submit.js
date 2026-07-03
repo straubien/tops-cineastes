@@ -67,6 +67,7 @@ function lookupPhoto(nom){
 // Portrait local (dossier /portraits) en priorité sur les photos TMDB
 function localPortraitPath(n){
   if(/straub/i.test(n) && /huillet/i.test(n)) return 'portraits/portrait-Straub.jpg';
+  if(/reis/i.test(n) && /cordeiro/i.test(n)) return 'portraits/portrait-Reis.jpg';
   var clean = n.replace(/,.*$/, '');
   var parts = clean.split(' ').filter(function(w){ return w.length >= 2 && w === w.toUpperCase(); });
   var surnameUpper = parts.length ? parts.join(' ') : clean.trim().toUpperCase();
@@ -664,6 +665,7 @@ function renderViewList(containerId, items, fallbackToTmdb){
     var parts=clean.split(' ').filter(function(w){return w.length>=2&&w===w.toUpperCase();});
     var nom=parts.length?parts.join(' '):clean.trim();
     if(nom.indexOf('STRAUB')!==-1&&nom.indexOf('HUILLET')!==-1) nom='STRAUB/HUILLET';
+    if(nom.indexOf('REIS')!==-1&&nom.indexOf('CORDEIRO')!==-1) nom='REIS/CORDEIRO';
     var item = document.createElement('span');
     item.className = 'sp-view-item';
     item.title = nom;
