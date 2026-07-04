@@ -759,7 +759,7 @@ a { text-decoration: none; color: inherit; }
 }
 .fiche-dates {
   font-family: var(--font);
-  font-size: 18px;
+  font-size: 22px;
   color: #fff;
   font-style: italic;
   margin-top: 6px;
