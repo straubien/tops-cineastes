@@ -761,7 +761,7 @@ a { text-decoration: none; color: inherit; }
   font-family: var(--font);
   font-size: 22px;
   color: #fff;
-  font-style: italic;
+  font-style: normal;
   margin-top: 6px;
   margin-bottom: 0;
   position: relative;
