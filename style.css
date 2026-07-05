@@ -607,7 +607,7 @@ a { text-decoration: none; color: inherit; }
 }
 .c-name b { font-weight: 700; }
 .c-dates {
-  font-family: var(--font-names);
+  font-family: var(--font);
   font-style: italic;
   color: var(--brun);
   font-size: 19px;
