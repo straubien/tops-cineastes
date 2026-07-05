@@ -331,6 +331,28 @@ var TC_TRANSLATIONS = {
     adm_confirm_reject: function(n){ return "Confirmer le rejet de cette soumission de " + n + " ?"; },
     adm_confirm_prop_approve: function(n){ return "Confirmer l'approbation de la proposition « " + n + " » ?"; },
     adm_confirm_prop_reject: function(n){ return "Confirmer le rejet de la proposition « " + n + " » ?"; },
+    // Nav — thématiques
+    nav_thematiques: "Tops thématiques",
+    // Page thématiques
+    thematique_chargement: "Chargement…",
+    thematique_erreur: "Erreur de chargement des tops thématiques.",
+    thematique_vide: "Aucun top thématique approuvé pour l'instant.",
+    thematique_count: function(n){ return n + ' thème' + (n > 1 ? 's' : ''); },
+    thematique_search_ph: "Rechercher un thème…",
+    // Mes tops — onglet thématique
+    mt_tab_thematique: "Top thématique",
+    thematique_theme_label: "Thème",
+    thematique_theme_ph: "Ex: Giallo, Hammer Films, Films de prison…",
+    thematique_films_label: "Votre top",
+    thematique_btn_parse: "Analyser ma liste",
+    thematique_btn_reset: "Recommencer",
+    thematique_btn_submit: "Soumettre pour validation",
+    thematique_alert_no_theme: "Veuillez indiquer un thème.",
+    thematique_success_h3: "Top thématique soumis !",
+    thematique_success_p: "Votre top sera vérifié par Mathieu avant publication.",
+    thematique_mes_soumissions: "Mes tops thématiques soumis",
+    thematique_aucun_soumis: "Vous n'avez pas encore soumis de top thématique.",
+    mt_alert_login: "Vous devez être connecté pour soumettre un top.",
   },
   en: {
     // Splash
@@ -581,6 +603,28 @@ var TC_TRANSLATIONS = {
     adm_confirm_reject: function(n){ return "Confirm rejection of this submission from " + n + "?"; },
     adm_confirm_prop_approve: function(n){ return "Confirm approval of the proposal « " + n + " »?"; },
     adm_confirm_prop_reject: function(n){ return "Confirm rejection of the proposal « " + n + " »?"; },
+    // Nav — thématiques
+    nav_thematiques: "Thematic tops",
+    // Page thématiques
+    thematique_chargement: "Loading…",
+    thematique_erreur: "Error loading thematic tops.",
+    thematique_vide: "No approved thematic tops yet.",
+    thematique_count: function(n){ return n + ' theme' + (n > 1 ? 's' : ''); },
+    thematique_search_ph: "Search for a theme…",
+    // Mes tops — onglet thématique
+    mt_tab_thematique: "Thematic top",
+    thematique_theme_label: "Theme",
+    thematique_theme_ph: "E.g. Giallo, Hammer Films, Prison films…",
+    thematique_films_label: "Your top",
+    thematique_btn_parse: "Analyse my list",
+    thematique_btn_reset: "Start over",
+    thematique_btn_submit: "Submit for review",
+    thematique_alert_no_theme: "Please enter a theme.",
+    thematique_success_h3: "Thematic top submitted!",
+    thematique_success_p: "Your top will be reviewed by Mathieu before publication.",
+    thematique_mes_soumissions: "My submitted thematic tops",
+    thematique_aucun_soumis: "You have not submitted any thematic tops yet.",
+    mt_alert_login: "You must be logged in to submit a top.",
   }
 };
 
