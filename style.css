@@ -758,7 +758,7 @@ a { text-decoration: none; color: inherit; }
   height: 32px;
 }
 .fiche-dates {
-  font-family: var(--font);
+  font-family: var(--font-names);
   font-size: 21px;
   color: #fff;
   font-style: italic;
