@@ -608,7 +608,7 @@ a { text-decoration: none; color: inherit; }
 .c-name b { font-weight: 700; }
 .c-dates {
   font-family: var(--font-names);
-  font-style: italic;
+  font-style: normal;
   color: var(--brun);
   font-size: 19px;
   margin-left: 12px;
@@ -759,9 +759,9 @@ a { text-decoration: none; color: inherit; }
 }
 .fiche-dates {
   font-family: var(--font-names);
-  font-size: 21px;
+  font-size: 20px;
   color: #fff;
-  font-style: italic;
+  font-style: normal;
   margin-top: 6px;
   margin-bottom: 0;
   position: relative;
