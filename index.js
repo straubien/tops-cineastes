@@ -626,7 +626,7 @@ function renderList(items){
     var dates=formatDates(c);
     var datesHtml=dates?'<span class="c-dates">'+dates+'</span>':'';
     var photoPath=PHOTOS_TMDB[c.nom];
-    var photoHtml=photoPath?buildPhotoHtml(photoPath,'c-photo',92):'<img class="c-photo" src="'+escapeHtml(buildPortraitSrc(c.nom).src)+'" alt="" loading="lazy" onerror="this.parentNode.replaceChild((function(){var d=document.createElement(\'div\');d.className=\'c-photo c-photo-empty\';return d})(),this)">';
+    var photoHtml=buildPhotoHtml(photoPath,'c-photo',92);
     row.innerHTML='<div class="c-bar"></div>'
       +photoHtml
       +'<div class="c-info"><span class="c-name">'+formatNom(c.nom)+'</span>'+datesHtml+'</div>'
@@ -760,7 +760,7 @@ function openFiche(c){
   }
 
   var fichePhotoPath=PHOTOS_TMDB[c.nom];
-  var fichePhotoHtml=fichePhotoPath?buildPhotoHtml(fichePhotoPath,'fiche-photo',185):'<img class="fiche-photo" src="'+escapeHtml(buildPortraitSrc(c.nom).src)+'" alt="" loading="lazy" onerror="this.parentNode.replaceChild((function(){var d=document.createElement(\'div\');d.className=\'fiche-photo fiche-photo-empty\';return d})(),this)">';
+  var fichePhotoHtml=buildPhotoHtml(fichePhotoPath,'fiche-photo',185);
 
   document.getElementById('fiche-content').innerHTML=
     '<div class="fiche-header">'
