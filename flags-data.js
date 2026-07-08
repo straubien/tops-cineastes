@@ -9,10 +9,12 @@
 // tcFlagHtml(code, opts) : retourne le HTML <img> du drapeau, ou '' si code vide/inconnu
 
 var TC_HISTORIC_FLAGS = {
+  'cs':  'flags/cs.png',
   'su':  'flags/su.png',       
 };
 
 var TC_HISTORIC_LABELS = {
+  'cs':  'Tchécoslovaquie',
   'su':  'URSS',
 };
 
