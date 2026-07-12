@@ -1235,9 +1235,9 @@ function renderActualites(){
   var feed=document.getElementById('actu-feed');
   feed.innerHTML='<div class="empty-msg">'+t('actu_chargement')+'</div>';
   Promise.all([
-    tcWithRetryTimeout(function(){ return TC_SB.from('cineaste_proposals').select('*').in('status',['pending','approved']).order('submitted_at',{ascending:false}).limit(20); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
+    tcWithRetryTimeout(function(){ return TC_SB.from('cineaste_proposals').select('*').in('status',['pending','approved']).order('submitted_at',{ascending:false}).limit(250); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
     tcLoadAllApprovedSubmissions('*, contributors(display_name)').then(function(r){return r.data||[];}).catch(function(){return[];}),
-    tcWithRetryTimeout(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}).limit(20); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
+    tcWithRetryTimeout(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}).limit(250); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
     tcActuLoadLegacyTopsKeys(0,1000).catch(function(){return[];})
   ]).then(function(results){
     var props=results[0],subs=results[1],coms=results[2],legacyKeys=new Set(results[3]);
@@ -1266,7 +1266,7 @@ function renderActualites(){
       items.push({date:c.created_at,html:'<span class="actu-icon">💬</span> '+t('actu_commentaire',[escapeHtml(dn),formatNom(c.cineaste_nom||'')]),cineaste:c.cineaste_nom});
     });
     items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-    items=items.slice(0,40);
+    items=items.slice(0,250);
     if(!items.length){feed.innerHTML='<div class="empty-msg">'+t('actu_vide')+'</div>';return;}
     feed.innerHTML=items.map(function(it){
       var clickable=it.cineaste&&getLetterData(it.cineaste.charAt(0).toUpperCase()).some(function(c){return c.nom.toLowerCase()===it.cineaste.toLowerCase();});
