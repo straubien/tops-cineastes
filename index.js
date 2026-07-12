@@ -1422,13 +1422,13 @@ function renderStatistiques(){
   }
   var ranked=shuffled
     .sort(function(a,b){return(b.tops_contributeurs||[]).length-(a.tops_contributeurs||[]).length})
-    .slice(0,22);
+    .filter(function(c){return(c.tops_contributeurs||[]).length>=17;});
 
   var rankEl=document.getElementById('ranking-cineastes');
   rankEl.innerHTML='';
   ranked.forEach(function(c,i){
     var nb=(c.tops_contributeurs||[]).length;
-    var rankClass=i<3?'ranking-rank top3':'ranking-rank';
+    var rankClass=i<2?'ranking-rank top3':'ranking-rank';
     var row=document.createElement('div');
     row.className='ranking-row';
     row.innerHTML='<div class="'+rankClass+'">'+(i+1)+'</div>'
@@ -1449,7 +1449,7 @@ function renderStatistiques(){
     filmsRankEl.innerHTML='<div class="empty-msg">'+t('aucun_import')+'</div>';
   } else {
     filmsRanking.forEach(function(c,i){
-      var rankClass=i<3?'ranking-rank top3':'ranking-rank';
+      var rankClass=i<5?'ranking-rank top3':'ranking-rank';
       var row=document.createElement('div');
       row.className='ranking-row';
       row.style.cursor='default';
