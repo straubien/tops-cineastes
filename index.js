@@ -175,17 +175,7 @@ function loadData(){
       warnEl.style.display='block';
     }
   }
-  DATA.cineastes.forEach(function(c){
-    if(Array.isArray(c.tops_contributeurs)){
-      c.tops_contributeurs=c.tops_contributeurs.map(function(t){
-        if(t==='MAT'||t==='MAT ')return 'MATHIEU MUZARD';
-        if(t==='THOMAS F. FLAVIER')return 'THOMAS FLAVIER';
-        if(t==='VINZ ORLOV')return 'VINZ J. ORLOV';
-        if(t==='THOMAS D. DEMAEREL')return 'THOMAS DEMAEREL';
-        return t;
-      });
-    }
-  });
+  DATA.cineastes.forEach(function(c){ if(!Array.isArray(c.tops_contributeurs)) c.tops_contributeurs=[]; });
 
   // Construire un index nom cinéaste → liste de films à partir d'un objet tops
   function buildTopIndex(data){
