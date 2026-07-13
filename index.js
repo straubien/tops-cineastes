@@ -416,7 +416,7 @@ function renderProfil(name){
   nameEl.style.fontSize='';
   for(var fs=40;fs>=18;fs--){nameEl.style.fontSize=fs+'px';if(nameEl.scrollWidth<=nameEl.offsetWidth)break;}
   var imp=IMPORTED_COUNTS[name]||{tops:0,films:0};
-  var statHtml='<span>'+t('tops_postes',cin.length)+'</span>'
+  var statHtml='<span>'+t('tops_postes',imp.tops)+'</span>'
     +'<span style="opacity:.5"> &nbsp;·&nbsp; </span>'
     +'<span>'+t('films_dans_tops',imp.films)+'</span>';
   document.getElementById('profil-stat').innerHTML=statHtml;
