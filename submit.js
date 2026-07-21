@@ -25,12 +25,6 @@ var currentContributor = null;
 // ── PHOTOS TMDB (cinéastes) ─────────────────────────────────────
 var PHOTOS_TMDB = {};
 var PHOTOS_TMDB_NORM = {};
-tcFetchWithTimeout('photos-tmdb.json').then(function(r){return r.json()}).then(function(data){
-  PHOTOS_TMDB = data || {};
-  PHOTOS_TMDB_NORM = {};
-  Object.keys(PHOTOS_TMDB).forEach(function(k){ PHOTOS_TMDB_NORM[normStr(k)] = PHOTOS_TMDB[k]; });
-  refreshProfilViews();
-}).catch(function(){});
 function cinNomPrenomVariant(raw){
   // Convertit "Prénom NOM" en "NOM, Prénom" pour matcher le format de photos-tmdb.json
   if(raw.indexOf(',') !== -1) return null;
@@ -295,6 +289,14 @@ function loadAllCineastesSubmit(offset, pageSize){
 
 tcWithRetryTimeout(function(){ return loadAllCineastesSubmit(0, 1000); }).then(function(rows){
   cineastesIndex = (rows||[]).map(function(c){ return c&&c.nom; }).filter(function(n){ return typeof n==='string'; });
+  PHOTOS_TMDB = {};
+  PHOTOS_TMDB_NORM = {};
+  (rows||[]).forEach(function(c){
+    if(!c || !c.nom || !c.photo_tmdb) return;
+    PHOTOS_TMDB[c.nom] = c.photo_tmdb;
+    PHOTOS_TMDB_NORM[normStr(c.nom)] = c.photo_tmdb;
+  });
+  refreshProfilViews();
 }).catch(function(){ /* silencieux si hors site */ });
 
 // ── SET PASSWORD ─────────────────────────────────────────────
