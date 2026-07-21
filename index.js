@@ -162,13 +162,10 @@ function loadData(){
     tcWithRetryTimeout(function(){ return loadAllCineastes(0,1000); }),
     tcFetchWithTimeout('muzard.json').then(function(r){return r.json()}).catch(function(){return null;}),
     tcFetchWithTimeout('cnudde.json').then(function(r){return r.json()}).catch(function(){return null;}),
-    tcFetchWithTimeout('photos-tmdb.json').then(function(r){return r.json()}).catch(function(){return null;}),
-  ]).then(function(results){
   var cineastes=results[0]||[];
   var muzard=results[1];
   var cnudde=results[2];
-  PHOTOS_TMDB=results[3]||{};
-
+  
   DATA={cineastes:cineastes};
   _dataReadyResolve();
   if(!muzard||!cnudde){
@@ -665,7 +662,7 @@ function renderList(items){
     var row=document.createElement('div');row.className='cineaste-row'+(nb>=9?' gold-row':'');
     var dates=formatDates(c);
     var datesHtml=dates?'<span class="c-dates">'+dates+'</span>':'';
-    var photoPath=PHOTOS_TMDB[c.nom];
+    var photoPath=c.photo_tmdb;
     var photoHtml=buildPhotoHtml(photoPath,'c-photo',92,c.nom);
     row.innerHTML='<div class="c-bar"></div>'
       +photoHtml
@@ -807,7 +804,7 @@ function openFiche(c){
     });
   }
 
-  var fichePhotoPath=PHOTOS_TMDB[c.nom];
+  var fichePhotoPath=c.photo_tmdb;
   var fichePhotoHtml=buildPhotoHtml(fichePhotoPath,'fiche-photo',185,c.nom);
 
   // Drapeau(x) de nationalité : jusqu'à deux (deux carrières distinctes),
