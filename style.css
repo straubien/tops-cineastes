@@ -636,7 +636,6 @@ a { text-decoration: none; color: inherit; }
 
 /* ── Mise en valeur cinéastes ≥ 9 tops ──────────────────────── */
 .gold-row .c-bar { background: #A8841E; }
-.gold-row .c-name { font-weight: 700; }
 .gold-row .c-badge { background: #A8841E; color: #faf4e6; }
 .gold-row:hover .c-badge { background: #A8841E; color: #faf4e6; }
 .dark .gold-row .c-bar { background: #C49A2E; }
