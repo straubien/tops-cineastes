@@ -667,7 +667,7 @@ function renderList(items){
     var photoHtml=buildPhotoHtml(photoPath,'c-photo',92,c.nom);
     row.innerHTML='<div class="c-bar"></div>'
       +photoHtml
-      +'<div class="c-info"><span class="c-name">'+formatNom(c.nom,nb>=9)+'</span>'+datesHtml+'</div>'
+      +'<div class="c-info"><span class="c-name">'+formatNom(c.nom,false)+'</span>'+datesHtml+'</div>'
       +'<div class="c-badge">'+nb+'</div>';
     wirePortraitFallbacks(row);
     row.onclick=function(){openFiche(c)};list.appendChild(row);
