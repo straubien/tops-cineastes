@@ -131,7 +131,7 @@ var TC_TRANSLATIONS = {
     ranking_mode_films: "Nombre de films",
     ranking_mode_ratio: "Ratio films/tops",
     ratio_in_ranking: "films/top",
-    occurrences_in_ranking: "occurrences",
+    occurrences_in_ranking: "cinéastes",
     // Dynamique – fonctions ou chaînes
     cin_count: function(n){ return n + ' cinéaste' + (n > 1 ? 's' : ''); },
     tops_postes: function(n){ return n + ' top' + (n > 1 ? 's' : '') + ' posté' + (n > 1 ? 's' : ''); },
@@ -538,7 +538,7 @@ var TC_TRANSLATIONS = {
     ranking_mode_films: "Number of films",
     ranking_mode_ratio: "Films/tops ratio",
     ratio_in_ranking: "films/top",
-    occurrences_in_ranking: "occurrences",
+    occurrences_in_ranking: "filmmakers",
     // Dynamique
     cin_count: function(n){ return n + ' filmmaker' + (n > 1 ? 's' : ''); },
     tops_postes: function(n){ return n + ' top' + (n > 1 ? 's' : '') + ' posted'; },
