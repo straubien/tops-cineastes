@@ -37,7 +37,7 @@ var TC_TRANSLATIONS = {
     actu_top_nouveau: function(a){ return a[0] + " a posté un nouveau top pour " + a[1] + "."; },
     actu_top_modifie: function(a){ return a[0] + " a modifié son top pour " + a[1] + "."; },
     actu_commentaire: function(a){ return a[0] + " a commenté le top \"" + a[1] + "\"."; },
-    actu_courant_valide: function(a){ return "Le courant « " + a[2] + " » a été validé pour le cinéaste " + a[1] + "."; },
+    actu_courant_valide: function(a){ return "Le courant « " + a[2] + " » a été validé pour " + a[1] + "."; },
     page_contributeurs_h: "Cinéphiles",
     page_statistiques_h: "Statistiques",
     // Profil
@@ -444,7 +444,7 @@ var TC_TRANSLATIONS = {
     actu_top_nouveau: function(a){ return a[0] + " posted a new top for " + a[1] + "."; },
     actu_top_modifie: function(a){ return a[0] + " updated their top for " + a[1] + "."; },
     actu_commentaire: function(a){ return a[0] + " commented on the top \"" + a[1] + "\"."; },
-    actu_courant_valide: function(a){ return "The movement « " + a[2] + " » was approved for filmmaker " + a[1] + "."; },
+    actu_courant_valide: function(a){ return "The movement « " + a[2] + " » was approved for " + a[1] + "."; },
     page_contributeurs_h: "Cinephiles",
     page_statistiques_h: "Statistics",
     // Profil
