@@ -2223,7 +2223,7 @@ a { text-decoration: none; color: inherit; }
 .actu-item-clickable:hover .actu-text { color: var(--rouge); }
 .actu-text { font-family: var(--font-names); font-size: 20px; color: var(--text); }
 .actu-icon { margin-right: 4px; }
-.actu-courant-name { font-family: 'TWCenCondEB', 'Arial Narrow', sans-serif; font-size: 18px; }
+.actu-courant-name { font-family: 'TWCenCondEB', 'Arial Narrow', sans-serif; font-size: 16px; }
 .actu-avatar {
   display: inline-flex; vertical-align: middle; margin-right: 6px;
   width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
