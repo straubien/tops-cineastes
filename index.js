@@ -387,6 +387,16 @@ function tcMessagePanne(err){
   if(/Failed to fetch|NetworkError|network|timeout|délai/i.test(m)) return 'Connexion au serveur impossible. Les informations affichées peuvent être incomplètes.';
   return 'Une partie des données n\'a pas pu être chargée. Rechargez la page.';
 }
+// Panne du chargement des profils contributeurs. Sans eux, un utilisateur
+// pourtant connecté est traité comme un visiteur anonyme : badge admin absent,
+// avatars retombés sur les initiales, page Cinéphiles vide, favoris perdus,
+// commentaires impossibles. Cf. audit A-06.
+function tcSignalerPanneProfils(err){
+  tcShowDataWarning('Les profils des cinéphiles n\'ont pas pu être chargés. Avatars, favoris et commentaires peuvent être incomplets — rechargez la page.');
+  if(typeof tcReportErrorToSupabase==='function'){
+    tcReportErrorToSupabase('contributors — '+((err&&err.message)||'panne inconnue'), (err&&err.stack)||'');
+  }
+}
 function tcSignalerPanneDonnees(err){
   tcShowDataWarning(tcMessagePanne(err));
   if(typeof tcReportErrorToSupabase==='function'){
@@ -3186,6 +3196,10 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
 
   // Charger les profils contributeurs depuis Supabase
   sbAuth.from('contributors').select('id,json_name,display_name,cineaste_coeur,cineaste_autres,film_coeur,film_autres,presentation,avatar_url,is_admin').then(function(res){
+    // res.error n'était jamais lu : une panne (RLS, réseau, jeton expiré)
+    // sautait tout le bloc en silence — CONTRIB_DATA restait vide et le site
+    // s'affichait comme s'il n'existait aucun contributeur. Cf. audit A-06.
+    if(res && res.error) throw tcSbError(res.error, 'contributors');
     if(res.data && res.data.length){
       CONTRIB_DATA = res.data;
       // Construire FAVORIS à partir de cineaste_coeur
@@ -3350,6 +3364,8 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     }
   }).catch(function(err){
     console.error('Erreur de chargement des contributeurs Supabase :', err);
+    // La console ne suffit pas : ni l'utilisateur ni le mainteneur ne la lisent.
+    tcSignalerPanneProfils(err);
   });
 
   function formatPrenomNav(displayName){
@@ -3664,6 +3680,12 @@ function openFicheThematique(themeNom){
       // pas casser « Mes tops »/notifications pour toute la session, ni laisser
       // un rejet non géré (qui déclencherait la bannière d'erreur globale).
       tcWithRetryTimeout(function(){ return sbMT.from('contributors').select('*').eq('auth_id', mtCurrentUser.id).single(); }).then(function(r){
+        // .single() renvoie une erreur dès qu'il n'y a pas exactement une ligne.
+        // PGRST116 = aucune ligne : cas légitime (compte sans fiche contributeur),
+        // on continue sans rien signaler. Toute AUTRE erreur est une panne, et
+        // sans ce test elle passait inaperçue : « Mes tops » ne se chargeait
+        // jamais, en silence. Cf. audit A-06.
+        if(r && r.error && r.error.code !== 'PGRST116') throw tcSbError(r.error, 'contributors/mes-tops');
         if(r && r.data){
           mtCurrentContributor = r.data;
           // If already on the page, load now
@@ -3672,7 +3694,10 @@ function openFicheThematique(themeNom){
             mtLoadPrevSubmissions();
           }
         }
-      }).catch(function(err){ console.error('mes-tops: chargement du profil contributeur échoué', err); });
+      }).catch(function(err){
+        console.error('mes-tops: chargement du profil contributeur échoué', err);
+        tcSignalerPanneProfils(err);
+      });
     } else if(event === 'SIGNED_OUT'){
       mtCurrentUser = null;
       mtCurrentContributor = null;
