@@ -1,1 +1,13 @@
-assets_version: "20260938"
+# ---------------------------------------------------------------------------
+#  TOPS / CINEASTES - reglages Jekyll
+#
+#  Le numero de version des fichiers (le "?v=..." des balises <script> et
+#  <link>) n'est PLUS ecrit ici. Il est calcule automatiquement par Jekyll a
+#  chaque construction du site, a partir de l'heure de construction.
+#
+#  Concretement : il n'y a plus rien a incrementer avant de publier. Chaque
+#  envoi sur GitHub reconstruit le site et produit un numero neuf, donc les
+#  visiteurs de retour recoivent toujours vos fichiers a jour.
+#
+#  Voir le point A-12 de l'audit.
+# ---------------------------------------------------------------------------
