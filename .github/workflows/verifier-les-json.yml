@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+#  TOPS / CINEASTES - controle automatique de muzard.json et cnudde.json
+#
+#  Se declenche tout seul des que vous publiez l'un de ces deux fichiers.
+#  Le resultat s'affiche dans l'onglet "Commits" du depot :
+#
+#      coche verte   le fichier est bon
+#      croix rouge   il y a un probleme, et GitHub vous envoie un e-mail
+#
+#  Pour lire le detail : cliquez sur la croix, puis sur "Details".
+#
+#  Ce controle NE BLOQUE PAS la mise en ligne : GitHub Pages publie le site
+#  en parallele. Il vous previent, tres vite, que ce que vous venez de
+#  publier est casse - pour que vous puissiez corriger dans la foulee.
+#  Cf. point A-15 de l'audit, vague 2, etape 2.3.
+# ---------------------------------------------------------------------------
+
+name: Verifier les JSON
+
+on:
+  push:
+    paths:
+      - 'muzard.json'
+      - 'cnudde.json'
+      - '_outils/verifier-json.py'
+      - '.github/workflows/verifier-les-json.yml'
+  # Permet aussi de relancer le controle a la main, depuis l'onglet Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    name: Controle des fichiers de tops
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+        with:
+          # Deux commits : le nouveau, et celui d'avant. Le second sert a
+          # comparer (chute du nombre de tops, numero de version oublie).
+          fetch-depth: 2
+
+      - name: Mettre de cote la version precedente des fichiers
+        run: |
+          mkdir -p "$RUNNER_TEMP/avant"
+          # github.event.before est le commit qui precede la publication.
+          # Il vaut 000... lors d'une toute premiere publication : on se
+          # rabat alors sur le commit parent, et s'il n'y en a pas, on se
+          # passe de comparaison.
+          precedent="${{ github.event.before }}"
+          case "$precedent" in
+            ''|0000000000000000000000000000000000000000)
+              precedent="$(git rev-parse --verify --quiet HEAD^ || true)" ;;
+          esac
+          if [ -n "$precedent" ] && git cat-file -e "$precedent" 2>/dev/null; then
+            for f in muzard.json cnudde.json; do
+              git show "$precedent:$f" > "$RUNNER_TEMP/avant/$f" 2>/dev/null || true
+            done
+            echo "Comparaison avec le commit $precedent"
+          else
+            echo "Pas d'etat precedent disponible : comparaison ignoree."
+          fi
+
+      - name: Controler les fichiers
+        run: |
+          python3 _outils/verifier-json.py muzard.json cnudde.json \
+            --avant "$RUNNER_TEMP/avant" | tee "$RUNNER_TEMP/rapport.txt"
+          exit "${PIPESTATUS[0]}"
+
+      - name: Ecrire le resume
+        if: always()
+        run: |
+          {
+            echo '## Controle de muzard.json et cnudde.json'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/rapport.txt" 2>/dev/null || echo '(aucun rapport)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
