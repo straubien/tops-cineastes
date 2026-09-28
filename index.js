@@ -484,6 +484,50 @@ function tcApplyLoadedData(cineastes,courants,muzard,cnudde,isFresh){
   }
 }
 
+// Le fichier est bien arrive, mais son contenu n'est pas du JSON valide
+// (copie interrompue, caractere parasite, encodage). Le visiteur voyait deja
+// la banniere ; le mainteneur, lui, n'en etait jamais informe.
+// Un echec purement reseau n'appelle pas ce signalement : il est frequent,
+// legitime hors connexion, et ne dit rien sur le fichier publie.
+function tcSignalerJsonIllisible(nomFichier, err){
+  console.error(nomFichier + ' : contenu illisible', err);
+  if(typeof tcReportErrorToSupabase === 'function'){
+    tcReportErrorToSupabase(nomFichier + ' illisible — ' + ((err && err.message) || 'JSON invalide'), '');
+  }
+}
+
+// Verifie qu'un JSON de tops est reellement exploitable, et non seulement
+// bien forme. Un fichier peut arriver intact du point de vue du reseau et
+// etre pourtant inutilisable : liste « tops » vide ou absente, entrees sans
+// nom de cineaste, fichier tronque a la copie. Jusqu'ici le site appliquait
+// ce fichier tel quel et faisait simplement disparaitre les tops du
+// contributeur, sans un mot — ni pour le visiteur, ni pour le mainteneur.
+// On traite desormais ce cas exactement comme une panne de chargement.
+// Un JSON absent (null) n'est pas signale ici : l'echec reseau l'a deja ete.
+// Cf. audit A-15, vague 2 etape 2.3.
+function tcJsonTopsUtilisable(data, nomFichier){
+  if(data === null || data === undefined) return false;
+  var motif = '';
+  if(typeof data !== 'object' || Array.isArray(data)){
+    motif = 'le fichier ne contient pas un objet';
+  }else if(!Array.isArray(data.tops)){
+    motif = 'la liste « tops » est absente ou n\'est pas une liste';
+  }else if(!data.tops.length){
+    motif = 'la liste « tops » est vide';
+  }else if(!data.tops.some(function(t){
+    return t && typeof t.cineaste === 'string' && t.cineaste.trim()
+        && Array.isArray(t.films) && t.films.length;
+  })){
+    motif = 'aucune entree exploitable dans « tops »';
+  }
+  if(!motif) return true;
+  console.error(nomFichier + ' : ' + motif);
+  if(typeof tcReportErrorToSupabase === 'function'){
+    tcReportErrorToSupabase(nomFichier + ' inexploitable — ' + motif, '');
+  }
+  return false;
+}
+
 function loadData(){
   var listEl=document.getElementById('cineaste-list');
   var cached=tcReadDataCache();
@@ -496,8 +540,16 @@ function loadData(){
     // La panne des cinéastes est capturée ici pour être TRAITÉE plus bas, et
     // non confondue avec un chargement réussi qui n'aurait rien retourné.
     tcWithRetryTimeout(function(){ return loadAllCineastes(0,1000); }).catch(function(err){ return {tcEchec:err||new Error('cineastes')}; }),
-    tcFetchWithTimeout('muzard.json').then(function(r){return r.json();}).catch(function(){return null;}),
-    tcFetchWithTimeout('cnudde.json').then(function(r){return r.json();}).catch(function(){return null;}),
+    tcFetchWithTimeout('muzard.json').then(function(r){
+      return Promise.resolve(r.json()).catch(function(err){
+        tcSignalerJsonIllisible('muzard.json', err); return null;
+      });
+    }).catch(function(){return null;}),
+    tcFetchWithTimeout('cnudde.json').then(function(r){
+      return Promise.resolve(r.json()).catch(function(err){
+        tcSignalerJsonIllisible('cnudde.json', err); return null;
+      });
+    }).catch(function(){return null;}),
     tcWithRetryTimeout(function(){ return tcLoadCourants(TC_SB); }).catch(function(){return null;}),
   ]).then(function(results){
   // PANNE : on prévient, on journalise, on garde ce qui est affiché — et
@@ -509,6 +561,10 @@ function loadData(){
   var cineastes=results[0]||[];
   var muzard=results[1];
   var cnudde=results[2];
+  // Un JSON bien forme mais inexploitable est traite comme une panne :
+  // banniere affichee, incident journalise, donnees precedentes conservees.
+  muzard = tcJsonTopsUtilisable(muzard, 'muzard.json') ? muzard : null;
+  cnudde = tcJsonTopsUtilisable(cnudde, 'cnudde.json') ? cnudde : null;
   // results[3] vaut null si le fetch des courants a échoué (après retries) :
   // dans ce cas on conserve l'ancien catalogue (DATA courant ou cache local)
   // plutôt que d'écraser DATA.courants/le cache avec un tableau vide (cf.
