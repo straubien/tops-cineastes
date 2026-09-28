@@ -330,6 +330,33 @@ function tcWithRetryTimeout(promiseFactory, opts){
   return attempt(0);
 }
 
+// URL assainie pour la journalisation des erreurs.
+//
+// `location.href` transmettait l'adresse complete, fragment et query string
+// compris. Or le flux d'authentification Supabase de ce site est en mode
+// `implicit` (index.js:101, submit.js:4) : les liens de reinitialisation de
+// mot de passe et d'invitation reviennent sous la forme
+//   submit.html#access_token=...&refresh_token=...&type=recovery
+// Toute erreur JS survenant pendant que l'utilisateur est sur cette adresse
+// ecrivait ces jetons en clair dans `error_logs`. Cf. audit A-09.
+//
+// Regle retenue :
+//   - la query string est toujours retiree : aucune valeur de diagnostic. Les
+//     seules observees a ce jour etaient des `fbclid` de pistage Facebook ;
+//   - le fragment est conserve, car il porte le routage du site
+//     (#/cineaste/...) et donc l'information la plus utile au diagnostic,
+//     SAUF s'il contient un `=`, signature d'un couple cle=valeur, donc d'un
+//     jeton. Sur les 87 lignes deja enregistrees, 71 ont un fragment et
+//     aucune ne contient de `=` : la regle ne perd aucun diagnostic existant.
+function tcSafeUrl(){
+  try{
+    var base = location.origin + location.pathname;
+    var frag = String(location.hash || '');
+    if(frag.indexOf('=') !== -1) frag = '#[fragment-retire]';
+    return (base + frag).slice(0, 500);
+  }catch(e){ return ''; }
+}
+
 // Envoi best-effort des erreurs JS vers la table Supabase `error_logs`.
 // Ne doit jamais lancer d'exception ni bloquer l'UI : échecs ignorés silencieusement.
 function tcReportErrorToSupabase(message, stack){
@@ -349,8 +376,8 @@ function tcReportErrorToSupabase(message, stack){
       body: JSON.stringify({
         message: String(message || '').slice(0, 2000),
         stack: String(stack || '').slice(0, 4000),
-        url: location.href,
-        user_agent: navigator.userAgent
+        url: tcSafeUrl(),
+        user_agent: String(navigator.userAgent || '').slice(0, 400)
       }),
       signal: _ctrl.signal
     }).then(function(){ clearTimeout(_timer); }).catch(function(){ clearTimeout(_timer); });
