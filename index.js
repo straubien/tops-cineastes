@@ -345,6 +345,7 @@ function tcShowDataWarning(msg){
 // tourne en tâche de fond et corrige l'affichage dès qu'elle répond.
 var TC_DATA_CACHE_KEY='tc-data-cache-v1';
 var _tcDataInitialized=false; // vrai dès que init() a été appelé une première fois (cache ou réseau)
+var _tcQuotaSignale=false;    // le dépassement de quota localStorage n'est signalé qu'une fois
 function tcReadDataCache(){
   try{
     var raw=localStorage.getItem(TC_DATA_CACHE_KEY);
@@ -355,7 +356,48 @@ function tcReadDataCache(){
   }catch(e){return null;}
 }
 function tcWriteDataCache(cineastes,courants){
-  try{ localStorage.setItem(TC_DATA_CACHE_KEY, JSON.stringify({cineastes:cineastes,courants:courants})); }catch(e){}
+  // Ne JAMAIS mettre un résultat vide en cache : une panne écraserait alors la
+  // dernière copie valide, et le visiteur perdrait aussi l'affichage instantané
+  // au chargement suivant.
+  if(!cineastes || !cineastes.length) return;
+  try{ localStorage.setItem(TC_DATA_CACHE_KEY, JSON.stringify({cineastes:cineastes,courants:courants})); }
+  catch(e){
+    // Quota dépassé : l'affichage instantané cesse de fonctionner, et rien ne
+    // le disait. On purge la clé (inutilisable) et on le journalise une fois.
+    if(e && (e.name==='QuotaExceededError' || e.code===22)){
+      try{ localStorage.removeItem(TC_DATA_CACHE_KEY); }catch(_e){}
+      if(!_tcQuotaSignale){
+        _tcQuotaSignale=true;
+        if(typeof tcReportErrorToSupabase==='function'){
+          tcReportErrorToSupabase('tcWriteDataCache : quota localStorage dépassé ('+cineastes.length+' cinéastes)','');
+        }
+      }
+    }
+  }
+}
+
+// ── PANNE DE CHARGEMENT (≠ résultat vide) ────────────────────────────────
+// Un échec Supabase doit être DIT : à l'utilisateur, par une bannière ; au
+// mainteneur, par error_logs. Et il ne doit rien détruire de ce qui est
+// affiché ni du cache local.
+function tcMessagePanne(err){
+  var m=(err&&err.message)||'';
+  if(/JWT|session|expired|invalid.*token/i.test(m)) return 'Votre session a expiré. Reconnectez-vous, puis rechargez la page.';
+  if(/permission|RLS|policy|row-level security/i.test(m)) return 'Ces données ne sont pas accessibles pour le moment.';
+  if(/Failed to fetch|NetworkError|network|timeout|délai/i.test(m)) return 'Connexion au serveur impossible. Les informations affichées peuvent être incomplètes.';
+  return 'Une partie des données n\'a pas pu être chargée. Rechargez la page.';
+}
+function tcSignalerPanneDonnees(err){
+  tcShowDataWarning(tcMessagePanne(err));
+  if(typeof tcReportErrorToSupabase==='function'){
+    tcReportErrorToSupabase('loadData — '+((err&&err.message)||'panne inconnue'), (err&&err.stack)||'');
+  }
+  // Si rien n'est encore affiché (pas de cache local), on propose de réessayer
+  // au lieu de laisser croire que l'index est vide.
+  var listEl=document.getElementById('cineaste-list');
+  if(!_tcDataInitialized && listEl){
+    listEl.innerHTML='<div class="empty-msg">Données indisponibles. <button class="btn-secondary" style="font-size:12px;padding:4px 12px;margin-left:8px" data-action="retry-load">Réessayer</button></div>';
+  }
 }
 
 // Construit DATA/les index Muzard-Cnudde/le catalogue des courants à partir
@@ -441,11 +483,19 @@ function loadData(){
     listEl.innerHTML='<div class="empty-msg">Chargement…</div>';
   }
   Promise.all([
-    tcWithRetryTimeout(function(){ return loadAllCineastes(0,1000); }),
+    // La panne des cinéastes est capturée ici pour être TRAITÉE plus bas, et
+    // non confondue avec un chargement réussi qui n'aurait rien retourné.
+    tcWithRetryTimeout(function(){ return loadAllCineastes(0,1000); }).catch(function(err){ return {tcEchec:err||new Error('cineastes')}; }),
     tcFetchWithTimeout('muzard.json').then(function(r){return r.json();}).catch(function(){return null;}),
     tcFetchWithTimeout('cnudde.json').then(function(r){return r.json();}).catch(function(){return null;}),
     tcWithRetryTimeout(function(){ return tcLoadCourants(TC_SB); }).catch(function(){return null;}),
   ]).then(function(results){
+  // PANNE : on prévient, on journalise, on garde ce qui est affiché — et
+  // surtout on ne réécrit pas le cache local. Cf. audit A-02.
+  if(results[0] && results[0].tcEchec){
+    tcSignalerPanneDonnees(results[0].tcEchec);
+    return;
+  }
   var cineastes=results[0]||[];
   var muzard=results[1];
   var cnudde=results[2];

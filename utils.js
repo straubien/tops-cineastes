@@ -119,6 +119,19 @@ function tcNotifyAuthExpired(){
   else alert(msg);
 }
 
+// ── ERREURS SUPABASE : PANNE ≠ RÉSULTAT VIDE ─────────────────────────────
+// supabase-js ne REJETTE JAMAIS ses promesses. Une requête en échec (RLS,
+// réseau, jeton expiré, 5xx) résout normalement, avec { data: null, error }.
+// Un code qui ne lit que `data` confond donc « le serveur est en panne » et
+// « il n'y a rien à afficher » — et affiche le second dans les deux cas.
+// tcSbError transforme l'erreur en exception : impossible de l'ignorer.
+function tcSbError(err, source){
+  var e = new Error('[' + source + '] ' + ((err && err.message) || 'erreur Supabase'));
+  e.tcSource = source;
+  e.tcCode = err && err.code;
+  return e;
+}
+
 // Charge la table "cineastes" en totalité (paginé, db.max_rows plafonne à 1000 lignes/requête)
 // Les colonnes courant/courant2/courant3 contiennent des id référençant la
 // table "courants" (catalogue bilingue) — voir tcLoadCourants/tcCourantLabel.
@@ -129,6 +142,9 @@ function tcLoadAllCineastes(sbClient, offset, pageSize){
     .order('id', { ascending: true })
     .range(offset, offset + pageSize - 1)
     .then(function(res){
+      // Sans ce test, une panne renvoyait [] : l'index s'affichait vide, sans
+      // bannière, sans retry, et le cache local valide était écrasé.
+      if(res && res.error) throw tcSbError(res.error, 'cineastes');
       var rows = res.data || [];
       if(rows.length === pageSize){
         return tcLoadAllCineastes(sbClient, offset + pageSize, pageSize).then(function(more){ return rows.concat(more); });
@@ -145,7 +161,14 @@ var _TC_COURANTS_CACHE = null;
 
 function tcLoadCourants(sbClient){
   return sbClient.from('courants').select('id, nom_fr, nom_en, pays, annee_debut, annee_fin, type').then(function(res){
+    // Le garde-fou de loadData (« results[3] vaut null si le fetch a échoué »)
+    // ne pouvait pas fonctionner : sur res.error on retournait [], qui est
+    // truthy. Le repli sur l'ancien catalogue n'était jamais atteint.
+    if(res && res.error) throw tcSbError(res.error, 'courants');
     var rows = res.data || [];
+    // Catalogue vide = on ne remplace pas celui déjà en mémoire : sinon
+    // libellés et drapeaux de courants disparaissent de tout le site.
+    if(!rows.length) return rows;
     var map = {};
     rows.forEach(function(row){ map[row.id] = row; });
     _TC_COURANTS_CACHE = map;
