@@ -6,8 +6,11 @@ TOPS / CINEASTES - controle des fichiers muzard.json et cnudde.json.
 Deux niveaux, et la distinction est importante :
 
   ERREUR          casse le site pour vos visiteurs. Le controle echoue.
-  AVERTISSEMENT   defaut de donnees, sans consequence pour l'affichage.
-                  Signale, mais le controle reste au vert.
+  AVERTISSEMENT   defaut de donnees reel, que vous voudrez sans doute
+                  corriger. Le controle reste au vert.
+  INFO            constat, pas un defaut. Des choix editoriaux legitimes
+                  (ex aequo, oeuvres etalees sur plusieurs annees) se
+                  presentent ainsi. Rien a faire.
 
 Cette separation est volontaire : un controle qui serait rouge en
 permanence a cause de defauts connus (les rangs en double du point A-13,
@@ -34,18 +37,28 @@ CONTRIBUTEUR_ATTENDU = {
 # tronque a la copie, plutot qu'une suppression volontaire.
 SEUIL_CHUTE = 0.20
 
+# Fichiers dont le champ "version" ne doit PAS etre incremente : ils sont
+# maintenus par le mainteneur du site, et non par la personne dont ils portent
+# le nom. Incrementer "version" y declencherait dans le fil Actualites une
+# annonce a son nom, qui serait inexacte. On ne la reclame donc jamais.
+VERSION_FIGEE = {"cnudde.json"}
+
 
 class Rapport:
     def __init__(self, fichier):
         self.fichier = fichier
         self.erreurs = []
         self.avertissements = []
+        self.infos = []
 
     def erreur(self, message):
         self.erreurs.append(message)
 
     def avertir(self, message):
         self.avertissements.append(message)
+
+    def informer(self, message):
+        self.infos.append(message)
 
 
 def _texte_non_vide(valeur):
@@ -147,13 +160,18 @@ def verifier_qualite(donnees, rapport):
                 annees_texte += 1
 
     if rangs_doubles:
-        rapport.avertir("%d cineaste(s) ont au moins deux films au meme rang "
-                        "(point A-13 de l'audit)" % rangs_doubles)
+        rapport.informer("%d cineaste(s) ont des films au meme rang (ex aequo). "
+                         "Le champ « rang » n'est jamais lu a l'affichage : "
+                         "c'est l'ordre du tableau qui fait foi." % rangs_doubles)
     if annees_texte:
-        rapport.avertir("%d film(s) ont une annee en texte plutot qu'en nombre "
-                        "(point A-14)" % annees_texte)
+        rapport.informer("%d film(s) portent une plage d'annees en texte "
+                         "(ex. « 1989-1999 »). C'est correct pour une oeuvre "
+                         "etalee dans le temps : elle s'affiche telle quelle, "
+                         "et les calculs retiennent la premiere annee."
+                         % annees_texte)
     if annees_absentes:
-        rapport.avertir("%d film(s) n'ont pas d'annee du tout (point A-14)"
+        rapport.avertir("%d film(s) n'ont pas d'annee. Ils s'affichent sans "
+                        "date et echappent aux regroupements par decennie."
                         % annees_absentes)
 
 
@@ -170,6 +188,9 @@ def verifier_evolution(donnees, avant, rapport):
                 "suppression est voulue, relancez ce controle apres avoir "
                 "publie : il s'agit sinon d'un fichier tronque a la copie."
                 % (n_avant, n_apres, 100.0 * (n_avant - n_apres) / n_avant))
+
+    if os.path.basename(rapport.fichier) in VERSION_FIGEE:
+        return
 
     contenu_change = (donnees.get("tops") != avant.get("tops")
                       or donnees.get("contributeur") != avant.get("contributeur"))
@@ -241,6 +262,8 @@ def main():
                   % (len(rapport.erreurs) - 40))
         for message in rapport.avertissements:
             print("  AVERTISSEMENT   %s" % message)
+        for message in rapport.infos:
+            print("  INFO            %s" % message)
 
         if not rapport.erreurs:
             print("  OK  le fichier est utilisable par le site."
