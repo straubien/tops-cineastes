@@ -3739,7 +3739,7 @@ function openFicheThematique(themeNom){
       // Timeout/retry + gestion d'échec : une coupure réseau au login ne doit
       // pas casser « Mes tops »/notifications pour toute la session, ni laisser
       // un rejet non géré (qui déclencherait la bannière d'erreur globale).
-      tcWithRetryTimeout(function(){ return sbMT.from('contributors').select('*').eq('auth_id', mtCurrentUser.id).single(); }).then(function(r){
+      tcWithRetryTimeout(function(){ return sbMT.from('contributors').select(TC_CONTRIB_COLONNES).eq('auth_id', mtCurrentUser.id).single(); }).then(function(r){
         // .single() renvoie une erreur dès qu'il n'y a pas exactement une ligne.
         // PGRST116 = aucune ligne : cas légitime (compte sans fiche contributeur),
         // on continue sans rien signaler. Toute AUTRE erreur est une panne, et

@@ -132,7 +132,7 @@ async function onLogin(user){
   currentUser = user;
   var res;
   try {
-    res = await tcWithRetryTimeout(function(){ return sb.from('contributors').select('*').eq('auth_id', user.id).single(); });
+    res = await tcWithRetryTimeout(function(){ return sb.from('contributors').select(TC_CONTRIB_COLONNES).eq('auth_id', user.id).single(); });
   } catch(err){
     // Échec réseau/timeout pendant le chargement du profil : on ne laisse
     // jamais l'écran bloqué. On réaffiche le login avec un message explicite.

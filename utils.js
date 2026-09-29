@@ -357,6 +357,18 @@ function tcSafeUrl(){
   }catch(e){ return ''; }
 }
 
+// Colonnes de `contributors` lisibles par un compte connecte.
+//
+// La colonne `email` en est volontairement absente : plus aucun role client
+// n'a le droit de la lire (cf. audit A-01). Un `select('*')` echouerait donc
+// desormais avec « permission denied for column email » : on enumere.
+//
+// SI VOUS AJOUTEZ UNE COLONNE a la table et qu'elle doit etre lue par le
+// site, il faut la declarer a DEUX endroits : ici, et dans le GRANT cote
+// base. Dans cet ordre-la, jamais l'inverse : une colonne demandee ici mais
+// non accordee en base fait echouer toute la requete.
+var TC_CONTRIB_COLONNES = 'id,name,display_name,auth_id,created_at,cineaste_coeur,cineaste_autres,film_coeur,film_autres,presentation,avatar_url,json_name,is_admin,can_validate_courants,last_seen_at';
+
 // Envoi best-effort des erreurs JS vers la table Supabase `error_logs`.
 // Ne doit jamais lancer d'exception ni bloquer l'UI : échecs ignorés silencieusement.
 function tcReportErrorToSupabase(message, stack){

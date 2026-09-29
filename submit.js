@@ -226,7 +226,7 @@ async function onLogin(user){
   // Récupérer le contributeur lié
   const { data, error } = await tcWithRetryTimeout(function(){
     return sb.from('contributors')
-      .select('*')
+      .select(TC_CONTRIB_COLONNES)
       .eq('auth_id', user.id)
       .single();
   });
