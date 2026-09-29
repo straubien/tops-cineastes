@@ -585,7 +585,11 @@ function loadData(){
   // accessoire, donc placée APRÈS le rendu des données, pour qu'un incident
   // ici ne puisse jamais empêcher l'affichage du site.
   tcCheckJsonUpdate('muzard',muzard&&muzard.version);
-  tcCheckJsonUpdate('cnudde',cnudde&&cnudde.version);
+  // cnudde.json est maintenu par le mainteneur du site, et non par la
+  // personne dont il porte le nom. L'annonce « ... a mis a jour ses tops »
+  // serait donc inexacte : la detection n'est jamais declenchee pour ce
+  // fichier, quelle que soit la valeur de son champ « version ».
+  // (La ligne deja presente en base porte volontairement announce = false.)
   }).catch(function(){
     if(_tcDataInitialized)return; // une version (cache local) est déjà affichée, on ne casse pas l'UI
     var listEl=document.getElementById('cineaste-list');

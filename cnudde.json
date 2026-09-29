@@ -22,7 +22,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Vivere"
+          "titre": "Vivere",
+          "annee": 2016
         },
         {
           "rang": 2,
@@ -476,7 +477,8 @@
         },
         {
           "rang": 2,
-          "titre": "Irma Vep"
+          "titre": "Irma Vep (série)",
+          "annee": 2022
         },
         {
           "rang": 3,
@@ -1200,7 +1202,8 @@
         },
         {
           "rang": 3,
-          "titre": "Un condamné à mort s'est échappé"
+          "titre": "Un condamné à mort s'est échappé",
+          "annee": 1956
         }
       ]
     },
@@ -2344,11 +2347,13 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Infinity Pool"
+          "titre": "Infinity Pool",
+          "annee": 2023
         },
         {
           "rang": 2,
-          "titre": "Possessor"
+          "titre": "Possessor",
+          "annee": 2020
         }
       ]
     },
@@ -4177,7 +4182,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Le Roi et l'Oiseau"
+          "titre": "Le Roi et l'Oiseau",
+          "annee": 1980
         }
       ]
     },
@@ -4361,7 +4367,9 @@
         },
         {
           "rang": 4,
-          "titre": "Le Redoutable (2017) J'ai détesté ce film que j'ai trouvé lourdingue, d'une rare pénibilité, surfait... Garrel en Godard on a juste envie de lui filer des tartes."
+          "titre": "Le Redoutable",
+          "annee": 2017,
+          "note": "J'ai détesté ce film que j'ai trouvé lourdingue, d'une rare pénibilité, surfait... Garrel en Godard on a juste envie de lui filer des tartes."
         }
       ]
     },
@@ -4630,7 +4638,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "The Taste of tea"
+          "titre": "The Taste of tea",
+          "annee": 2004
         }
       ]
     },
@@ -5484,7 +5493,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "La Planète sauvage (en collaboration avec Roland Topor)"
+          "titre": "La Planète sauvage (en collaboration avec Roland Topor)",
+          "annee": 1973
         }
       ]
     },
@@ -6223,7 +6233,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "The Descent"
+          "titre": "The Descent",
+          "annee": 2005
         }
       ]
     },
@@ -9406,7 +9417,8 @@
         },
         {
           "rang": 4,
-          "titre": "Heidi"
+          "titre": "Heidi (série)",
+          "annee": 1974
         },
         {
           "rang": 5,
@@ -9585,7 +9597,8 @@
       "films": [
         {
           "rang": 1,
-          "titre": "Sybil"
+          "titre": "Sybil",
+          "annee": 2019
         }
       ]
     },
