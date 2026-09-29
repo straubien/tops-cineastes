@@ -3871,9 +3871,16 @@ function openFicheThematique(themeNom){
       list.appendChild(li);
     });
 
+    // Deux avertissements possibles, cumulables : les lignes que l'analyseur
+    // n'a pas su lire (A-15) et les films sans annee. Les afficher ensemble
+    // evite qu'un seul des deux masque l'autre.
+    var messages = [];
+    var ignorees = tcMessageLignesIgnorees(films);
+    if(ignorees) messages.push(ignorees);
     var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+    if(sansAnnee > 0) messages.push(t('mt_sans_annee', sansAnnee));
     var warn = document.getElementById('mt-parse-warning');
-    if(sansAnnee > 0){ warn.textContent = t('mt_sans_annee', sansAnnee); warn.style.display = 'block'; }
+    if(messages.length){ warn.textContent = messages.join(' \u2014 '); warn.style.display = 'block'; }
     else { warn.style.display = 'none'; }
 
     document.getElementById('mt-result-wrap').classList.add('visible');
@@ -4345,9 +4352,13 @@ function openFicheThematique(themeNom){
       filmsList.appendChild(li);
     });
 
+    var messagesTh = [];
+    var ignoreesTh = tcMessageLignesIgnorees(films);
+    if(ignoreesTh) messagesTh.push(ignoreesTh);
     var sansAnnee = films.filter(function(f){ return !f.annee; }).length;
+    if(sansAnnee > 0) messagesTh.push(t('mt_sans_annee', sansAnnee));
     if(warningEl){
-      if(sansAnnee > 0){ warningEl.textContent = t('mt_sans_annee', sansAnnee); warningEl.style.display = 'block'; }
+      if(messagesTh.length){ warningEl.textContent = messagesTh.join(' \u2014 '); warningEl.style.display = 'block'; }
       else { warningEl.style.display = 'none'; }
     }
 

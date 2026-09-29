@@ -466,10 +466,14 @@ document.getElementById('btn-parse').addEventListener('click', function(){
       + '</li>';
   }).join('');
 
+  var messages = [];
+  var ignorees = tcMessageLignesIgnorees(parsedFilms);
+  if(ignorees) messages.push(ignorees);
   var sansAnnee = parsedFilms.filter(function(f){ return !f.annee; }).length;
+  if(sansAnnee > 0) messages.push(t('adm_films_sans_annee', sansAnnee));
   var warn = document.getElementById('import-warning');
-  if(sansAnnee > 0){
-    warn.textContent = t('adm_films_sans_annee', sansAnnee);
+  if(messages.length){
+    warn.textContent = messages.join(' \u2014 ');
     warn.style.display = 'block';
   } else {
     warn.style.display = 'none';

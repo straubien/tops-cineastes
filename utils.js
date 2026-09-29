@@ -217,22 +217,51 @@ function tcCourantType(id){
 function parseTopsBrut(texte){
   var films = [];
   var rang = 0;
+  // Lignes non vides que l'analyseur n'a pas su lire. Elles etaient
+  // abandonnees sans un mot : si 8 lignes sur 10 etaient numerotees, le top
+  // partait ampute de 2 films et personne ne s'en apercevait avant la
+  // moderation. Cf. audit A-15.
+  var ignorees = [];
+  // Une annee doit rester plausible. « (9999) » etait accepte tel quel.
+  var anneeMax = new Date().getFullYear() + 3;
   texte.split('\n').forEach(function(line){
     line = line.trim();
     if(!line) return;
     var m = line.match(/^(\d+)[\.\-\)]\s*(.+)$/);
-    if(!m) return;
+    if(!m){ ignorees.push(line); return; }
     rang++;
     var contenu = m[2].trim();
     var annee = null;
     var anneeM = contenu.match(/\((\d{4})\)\s*$/);
     if(anneeM){
-      annee = parseInt(anneeM[1]);
-      contenu = contenu.slice(0, anneeM.index).trim();
+      var valeur = parseInt(anneeM[1], 10);
+      if(valeur >= 1888 && valeur <= anneeMax){
+        annee = valeur;
+        contenu = contenu.slice(0, anneeM.index).trim();
+      }
+      // Hors bornes : on ne la retire pas du titre. Le film ressort alors
+      // dans l'avertissement « N films sans annee », donc visiblement.
     }
     films.push({ rang: rang, titre: contenu, annee: annee });
   });
+  // Porte sur le tableau plutot que dans un objet enveloppe : aucun appelant
+  // existant n'est casse, et JSON.stringify d'un tableau ignore cette
+  // propriete, donc rien n'est ajoute aux soumissions envoyees en base.
+  films.ignorees = ignorees;
   return films;
+}
+
+// Message d'avertissement pour les lignes non reconnues par parseTopsBrut.
+// Retourne une chaine vide s'il n'y en a aucune. Cf. audit A-15.
+function tcMessageLignesIgnorees(films){
+  var ign = films && films.ignorees;
+  if(!ign || !ign.length) return '';
+  // Les guillemets sont poses par i18n.js : « » en francais, “ ” en anglais.
+  var apercu = ign.slice(0, 3).map(function(l){
+    return l.length > 40 ? l.slice(0, 40) + '\u2026' : l;
+  });
+  if(typeof t === 'function') return t('mt_lignes_ignorees', [ign.length, apercu, ign.length > 3]);
+  return ign.length + ' ligne(s) non reconnue(s) : ' + apercu.join(' / ');
 }
 
 function formatPresentation(text){

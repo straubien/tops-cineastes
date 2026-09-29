@@ -205,6 +205,10 @@ var TC_TRANSLATIONS = {
     mt_no_texte_alert: "Veuillez coller votre liste de films.",
     mt_no_films_alert: "Aucun film détecté. Vérifiez que votre liste commence bien par des numéros (1. / 1- / 1) etc.)",
     mt_sans_annee: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' sans année détectée — vous pourrez les compléter après validation.'; },
+    mt_lignes_ignorees: function(a){
+      var liste = a[1].map(function(l){ return '\u00ab\u00a0' + l + '\u00a0\u00bb'; }).join(' \u00b7 ') + (a[2] ? ' \u2026' : '');
+      return a[0] + (a[0] > 1 ? ' lignes n\'ont pas été reconnues et seront ignorées : ' : ' ligne n\'a pas été reconnue et sera ignorée : ') + liste;
+    },
     mt_envoi: "Envoi…",
     mt_err_submit: "Erreur lors de la soumission : ",
     mt_modifier: "Modifier",
@@ -666,6 +670,10 @@ var TC_TRANSLATIONS = {
     mt_no_texte_alert: "Please paste your film list.",
     mt_no_films_alert: "No films detected. Make sure your list starts with numbers (1. / 1- / 1) etc.)",
     mt_sans_annee: function(n){ return n + ' film' + (n > 1 ? 's' : '') + ' without detected year — you can complete them after review.'; },
+    mt_lignes_ignorees: function(a){
+      var liste = a[1].map(function(l){ return '\u201c' + l + '\u201d'; }).join(' \u00b7 ') + (a[2] ? ' \u2026' : '');
+      return a[0] + (a[0] > 1 ? ' lines were not recognised and will be ignored: ' : ' line was not recognised and will be ignored: ') + liste;
+    },
     mt_envoi: "Sending…",
     mt_err_submit: "Submission error: ",
     mt_modifier: "Edit",
