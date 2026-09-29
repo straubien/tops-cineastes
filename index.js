@@ -760,26 +760,44 @@ function tcIndexNoms(){
   _TC_IDX_NOMS = { parSig: parSig, cles: Object.keys(parSig) };
   return _TC_IDX_NOMS;
 }
-// Duos connus dont le nom en base ("NOM, Prénom & NOM, Prénom") comporte trop
-// de jetons (prénoms) pour être retrouvé par la correspondance générique
-// ci-dessous à partir d'un favori écrit "Straub/Huillet" par ex. (cf. les
-// mêmes paires déjà codées en dur dans buildPortraitSrc/normalizeAutreNom).
-var TC_DUOS_CONNUS = [[/straub/i, /huillet/i], [/reis/i, /cordeiro/i], [/powell/i, /pressburger/i]];
-function tcResoudreCineasteDuo(saisie){
+// Duos connus dont le nom en base ("NOM & NOM") ne porte que les patronymes :
+// la correspondance generique ne peut pas les retrouver a partir d'un favori
+// ecrit "Jean-Marie STRAUB & Daniele HUILLET", qui apporte en plus les prenoms.
+//
+// Ces paires etaient des expressions regulieres appliquees a la chaine brute.
+// C'etait dangereux : /reis/ reconnait aussi REISZ, REISNER, BREISTEIN et
+// STREISAND, tous presents dans votre base. On compare desormais des JETONS
+// entiers, produits par tcJetonsNom (accents et ponctuation deja normalises) :
+// "reisz" n'est plus "reis". Cf. audit A-18.
+var TC_DUOS_CONNUS = [['straub','huillet'], ['reis','cordeiro'], ['powell','pressburger']];
+
+// exigerLesDeux = true  : les deux patronymes doivent figurer dans la saisie.
+// exigerLesDeux = false : un seul suffit. Ce second mode n'est utilise qu'en
+// DERNIER RECOURS, apres l'echec de la resolution generique, pour ne jamais
+// detourner un cineaste solo vers la fiche du duo.
+function tcResoudreCineasteDuo(saisie, exigerLesDeux){
   if(!DATA || !DATA.cineastes) return null;
+  var jetons = tcJetonsNom(saisie);
+  if(!jetons.length) return null;
   for(var d=0; d<TC_DUOS_CONNUS.length; d++){
-    var re1 = TC_DUOS_CONNUS[d][0], re2 = TC_DUOS_CONNUS[d][1];
-    if(re1.test(saisie) && re2.test(saisie)){
-      for(var i=0; i<DATA.cineastes.length; i++){
-        var c = DATA.cineastes[i];
-        if(re1.test(c.nom) && re2.test(c.nom)) return c.nom;
-      }
+    var n1 = TC_DUOS_CONNUS[d][0], n2 = TC_DUOS_CONNUS[d][1];
+    var a = jetons.indexOf(n1) !== -1, b = jetons.indexOf(n2) !== -1;
+    if(exigerLesDeux ? (a && b) : (a || b)){
+      // On ne retient la fiche du duo que si elle est unique. Deux fiches
+      // correspondantes = ambiguite, et on s'abstient, comme partout ailleurs.
+      var trouves = DATA.cineastes.filter(function(c){
+        var jc = tcJetonsNom(c.nom);
+        return jc.indexOf(n1) !== -1 && jc.indexOf(n2) !== -1;
+      });
+      if(trouves.length === 1) return trouves[0].nom;
     }
   }
   return null;
 }
 function tcResoudreCineaste(saisie){
-  var duo = tcResoudreCineasteDuo(saisie);
+  // 1. Le duo cite en entier : prioritaire, car la resolution generique
+  //    echoue sur "Jean-Marie STRAUB & Daniele HUILLET" (prenoms en trop).
+  var duo = tcResoudreCineasteDuo(saisie, true);
   if(duo) return duo;
   var idx = tcIndexNoms();
   if(!idx) return null;
@@ -802,7 +820,12 @@ function tcResoudreCineaste(saisie){
       if(candidats.length > 1) return null;
     }
   }
-  return candidats.length === 1 ? candidats[0] : null;
+  if(candidats.length === 1) return candidats[0];
+  // 3. Dernier recours : un seul membre d'un duo connu. On n'arrive ici que
+  //    si AUCUN cineaste de la base ne correspond a la saisie, donc sans
+  //    risque de detourner un solo. "Jean-Marie Straub" mene desormais a la
+  //    fiche STRAUB & HUILLET au lieu de n'etre pas cliquable. Cf. A-18.
+  return tcResoudreCineasteDuo(saisie, false);
 }
 function tcOuvrirFicheParNom(nom){
   if(!DATA || !nom) return;
