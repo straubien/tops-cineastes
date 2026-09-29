@@ -138,7 +138,12 @@ function tcSbError(err, source){
 function tcLoadAllCineastes(sbClient, offset, pageSize){
   offset = offset || 0;
   pageSize = pageSize || 1000;
-  return sbClient.from('cineastes').select('nom,fbid,url_facebook,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3')
+  // `fbid` a ete retire : telecharge a chaque visite, il n'est lu NULLE PART
+  // dans le code. `url_facebook` aussi : il ne sert qu'a la fiche d'un
+  // cineaste, et est desormais charge a son ouverture (tcChargerLienFacebook).
+  // A eux deux ils representaient un tiers du catalogue transfere a chaque
+  // chargement de page, soit environ 1,3 Go par mois d'egress Supabase.
+  return sbClient.from('cineastes').select('nom,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3')
     .order('id', { ascending: true })
     .range(offset, offset + pageSize - 1)
     .then(function(res){

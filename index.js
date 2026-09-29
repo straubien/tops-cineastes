@@ -1470,10 +1470,38 @@ function updateCurrentUser(){
   }
 }
 
+// Le lien Facebook d'un cineaste ne sert qu'ici. Le transporter pour les
+// 3 288 fiches a chaque visite coutait un tiers de l'egress Supabase du site.
+// On le demande desormais a l'ouverture de la fiche, pour ce seul cineaste, et
+// on le retient sur l'objet pour la duree de la session : environ 200 octets
+// une fois, au lieu de 67 Ko a chaque chargement de page.
+function tcChargerLienFacebook(c, emplacement){
+  if(!emplacement || !c) return;
+  function afficher(url){
+    if(!url || !/^https:/.test(url)) return;
+    var a=document.createElement('a');
+    a.className='fiche-fb-link';
+    a.href=url;
+    a.target='_blank';
+    a.rel='noopener noreferrer';
+    a.textContent='Voir la fiche sur Facebook \u2197';
+    emplacement.appendChild(a);
+  }
+  if(c.url_facebook !== undefined){ afficher(c.url_facebook); return; }
+  Promise.resolve(
+    TC_SB.from('cineastes').select('url_facebook').eq('nom', c.nom).maybeSingle()
+  ).then(function(r){
+    // Echec silencieux assume : l'absence de ce lien ne merite ni banniere ni
+    // journalisation. La fiche reste entierement utilisable sans lui.
+    c.url_facebook = (r && r.data && r.data.url_facebook) || null;
+    afficher(c.url_facebook);
+  }).catch(function(){ c.url_facebook = null; });
+}
+
 function openFiche(c){
   var nb=(c.tops_contributeurs||[]).length;
-  var fbUrlSafe=(c.url_facebook&&/^https:\/\//i.test(c.url_facebook))?c.url_facebook:'';
-  var fbHtml=fbUrlSafe?'<a class="fiche-fb-link" href="'+escapeHtml(fbUrlSafe)+'" target="_blank" rel="noopener noreferrer">Voir la fiche sur Facebook &#8599;</a>':'';
+  // Emplacement vide : le lien Facebook arrive juste apres, une fois recu.
+  var fbHtml='<span id="fiche-fb-slot"></span>';
 
   // Construire la liste des contributeurs avec leurs films si disponibles
   var contribsDiv=document.createElement('div');
@@ -1582,6 +1610,7 @@ function openFiche(c){
     +fbHtml;
 
   wirePortraitFallbacks(document.getElementById('fiche-content'));
+  tcChargerLienFacebook(c, document.getElementById('fiche-fb-slot'));
 
   var inner=document.getElementById('contribs-inner');
   if(nb>0){inner.appendChild(contribsDiv);}else{inner.innerHTML='<div class="empty-msg">'+t('aucun_top_poste_cin')+'</div>';}
