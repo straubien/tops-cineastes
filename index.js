@@ -649,7 +649,17 @@ function tcCheckJsonUpdate(source,version){
     // Le builder Supabase est un « thenable » et n'expose pas .catch() : on
     // l'enveloppe dans une vraie promesse pour absorber l'échec attendu
     // (version déjà connue → violation de la contrainte unique) sans bruit.
-    Promise.resolve(TC_SB.from('json_updates').insert({source:source,version:String(version)})).catch(function(){});
+    // upsert + ignoreDuplicates plutot que insert : traduit en
+    // « ON CONFLICT DO NOTHING » cote PostgreSQL. Le comportement est
+    // identique - l'annonce ne sort qu'une fois - mais la base n'a plus a
+    // LEVER une erreur a chaque chargement de page. Ces erreurs 23505
+    // remplissaient le journal Postgres et noyaient les vraies pannes.
+    Promise.resolve(
+      TC_SB.from('json_updates').upsert(
+        {source:source, version:String(version)},
+        {onConflict:'source,version', ignoreDuplicates:true}
+      )
+    ).catch(function(){});
   }catch(e){}
 }
 
