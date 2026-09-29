@@ -343,7 +343,39 @@ function tcShowDataWarning(msg){
 // localStorage la dernière réponse connue (cineastes+courants) pour l'afficher
 // immédiatement au chargement suivant, pendant qu'une requête réseau à jour
 // tourne en tâche de fond et corrige l'affichage dès qu'elle répond.
-var TC_DATA_CACHE_KEY='tc-data-cache-v1';
+// Le cache est ecrit sous forme COLONNAIRE : une liste de champs, puis une
+// ligne de valeurs par cineaste, au lieu d'un objet complet par cineaste.
+// Les 3 288 fiches repetaient sinon les memes 13 noms de champs, soit 437 Ko
+// de pur remplissage sur 1 062 Ko mesures. La forme colonnaire descend a
+// 625 Ko SANS PERDRE AUCUNE DONNEE. Cf. audit A-22.
+//
+// La liste des champs est deduite des donnees, pas ecrite en dur : si une
+// colonne est ajoutee un jour a la requete, le cache la suit tout seul.
+var TC_DATA_CACHE_KEY='tc-data-cache-v2';
+var TC_DATA_CACHE_ANCIENNES=['tc-data-cache-v1'];
+
+function tcCacheEncoder(cineastes){
+  var champs=[], vus={};
+  cineastes.forEach(function(c){
+    for(var k in c){
+      if(Object.prototype.hasOwnProperty.call(c,k) && !vus[k]){ vus[k]=1; champs.push(k); }
+    }
+  });
+  var lignes=cineastes.map(function(c){
+    return champs.map(function(k){ var v=c[k]; return v===undefined ? null : v; });
+  });
+  return { champs:champs, lignes:lignes };
+}
+
+function tcCacheDecoder(paquet){
+  if(!paquet || !Array.isArray(paquet.champs) || !Array.isArray(paquet.lignes)) return null;
+  var champs=paquet.champs;
+  return paquet.lignes.map(function(vals){
+    var o={};
+    for(var i=0;i<champs.length;i++) o[champs[i]]=vals[i];
+    return o;
+  });
+}
 var _tcDataInitialized=false; // vrai dès que init() a été appelé une première fois (cache ou réseau)
 var _tcQuotaSignale=false;    // le dépassement de quota localStorage n'est signalé qu'une fois
 function tcReadDataCache(){
@@ -351,8 +383,10 @@ function tcReadDataCache(){
     var raw=localStorage.getItem(TC_DATA_CACHE_KEY);
     if(!raw)return null;
     var obj=JSON.parse(raw);
-    if(!obj||!Array.isArray(obj.cineastes)||!obj.cineastes.length)return null;
-    return obj;
+    if(!obj)return null;
+    var cineastes=tcCacheDecoder(obj.cineastes);
+    if(!cineastes||!cineastes.length)return null;
+    return { cineastes:cineastes, courants:obj.courants };
   }catch(e){return null;}
 }
 function tcWriteDataCache(cineastes,courants){
@@ -360,7 +394,12 @@ function tcWriteDataCache(cineastes,courants){
   // dernière copie valide, et le visiteur perdrait aussi l'affichage instantané
   // au chargement suivant.
   if(!cineastes || !cineastes.length) return;
-  try{ localStorage.setItem(TC_DATA_CACHE_KEY, JSON.stringify({cineastes:cineastes,courants:courants})); }
+  // Les anciennes cles occupent le meme quota : on les purge avant d'ecrire,
+  // sans quoi l'allegement ne servirait a rien pour un visiteur de retour.
+  try{
+    for(var _a=0;_a<TC_DATA_CACHE_ANCIENNES.length;_a++) localStorage.removeItem(TC_DATA_CACHE_ANCIENNES[_a]);
+  }catch(_p){}
+  try{ localStorage.setItem(TC_DATA_CACHE_KEY, JSON.stringify({cineastes:tcCacheEncoder(cineastes),courants:courants})); }
   catch(e){
     // Quota dépassé : l'affichage instantané cesse de fonctionner, et rien ne
     // le disait. On purge la clé (inutilisable) et on le journalise une fois.
