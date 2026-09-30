@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------
+#  TOPS / CINEASTES - controle automatique du JavaScript
+#
+#  Se declenche tout seul des que vous publiez un fichier .js ou un test.
+#  Le resultat s'affiche dans l'onglet "Commits" du depot :
+#
+#      coche verte   le code passe le controle
+#      croix rouge   il y a un probleme, et GitHub vous envoie un e-mail
+#
+#  Pour lire le detail : cliquez sur la croix, puis sur "Details".
+#
+#  Ce controle NE BLOQUE PAS la mise en ligne : GitHub Pages publie le site
+#  en parallele, exactement comme pour le controle des JSON. Il vous previent,
+#  tres vite, que ce que vous venez de publier est casse.
+#
+#  Meme principe que verifier-les-json.yml.
+#  Cf. point B-30 de l'audit, vague 2, action A-060.
+# ---------------------------------------------------------------------------
+
+name: Verifier le JavaScript
+
+on:
+  push:
+    paths:
+      - '*.js'
+      - '_tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'eslint.config.mjs'
+      - '.github/workflows/verifier-le-js.yml'
+  # Permet aussi de relancer le controle a la main, depuis l'onglet Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    name: Controle du JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Installer les outils de controle
+        run: npm ci
+
+      - name: Relire le code (linter)
+        run: npm run lint
+
+      - name: Lancer les tests
+        run: npm test
+
+      - name: Ecrire le resume
+        if: always()
+        run: |
+          {
+            echo '## Controle du JavaScript'
+            echo
+            echo 'Linter : regles de correction uniquement (aucune regle de style).'
+            echo 'Tests  : analyseurs de listes, resolution des noms, gestion des erreurs.'
+            echo
+            echo 'En cas de croix rouge, ouvrez les etapes ci-dessus pour voir le detail.'
+          } >> "$GITHUB_STEP_SUMMARY"
