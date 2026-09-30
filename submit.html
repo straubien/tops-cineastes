@@ -52,7 +52,7 @@
 .dark .autocomplete-input { color: var(--text); }
 .dark .tops-textarea { color: var(--text); }
 .dark .fmt-btn { background: var(--bg-card); color: var(--text); border-color: var(--border); }
-.dark .fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+.dark .fmt-btn:hover { border-color: var(--rouge); color: var(--rouge-texte); }
 .dark .textarea-hint { color: var(--text); opacity: 0.7; }
 .dark .prev-edit-zone textarea { background: var(--bg-card); color: var(--text); border-color: var(--border); }
 .dark .prev-edit-zone textarea::placeholder { color: rgba(240,236,227,0.3); }
@@ -78,14 +78,14 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .header-user { font-family: var(--font); font-size: 15px; font-style: italic; color: rgba(240,236,227,0.85); }
 .header-user strong { color: #fff; font-style: normal; }
 .btn-logout { font-family: var(--font); font-size: 14px; color: rgba(240,236,227,0.85); background: none; border: none; cursor: pointer; transition: color 0.15s; }
-.btn-logout:hover { color: var(--rouge); }
+.btn-logout:hover { color: var(--rouge-texte); }
 /* Wrapper pour champs password avec toggle visibilité */
 .pwd-wrap { position: relative; display: flex; align-items: center; }
 .pwd-wrap input { flex: 1; padding-right: 42px; }
 .pwd-toggle { position: absolute; right: 0; top: 0; height: 100%; width: 42px; background: none; border: none; cursor: pointer; color: rgba(0,0,0,0.35); font-size: 17px; display: flex; align-items: center; justify-content: center; transition: color 0.15s; padding: 0; }
-.pwd-toggle:hover { color: var(--rouge); }
+.pwd-toggle:hover { color: var(--rouge-texte); }
 .dark .pwd-toggle { color: rgba(240,236,227,0.35); }
-.dark .pwd-toggle:hover { color: var(--rouge); }
+.dark .pwd-toggle:hover { color: var(--rouge-texte); }
 /* sp-profil-header : band noire avec flèche retour rouge à droite */
 .sp-profil-header { background: linear-gradient(135deg, var(--noir) 0%, #262420 100%); margin: 0 0 2.2rem; padding: 2.2rem 2.2rem 1.9rem; position: relative; overflow: hidden; display: flex; align-items: center; gap: 26px; }
 .sp-profil-header::before { content: ''; position: absolute; top: 0; right: 0; width: 64px; height: 100%; background: var(--rouge); }
@@ -113,7 +113,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .sp-avatar-wrap { text-align: center; }
 .sp-avatar-btn { font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text); background: none; border: none; cursor: pointer; margin-top: 8px; text-decoration: underline; display: block; }
 .sp-btn-modifier { font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--text); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 8px 22px; margin-right: 8px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s; }
-.sp-btn-modifier:hover { color: var(--rouge); border-color: var(--rouge); }
+.sp-btn-modifier:hover { color: var(--rouge-texte); border-color: var(--rouge); }
 .sp-view { font-family: var(--font); font-size: 18px; line-height: 1.8; color: var(--noir); }
 .sp-view-list { display: flex; flex-wrap: wrap; gap: 14px; }
 .sp-view-item { display: inline-flex; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.22); transition: transform 0.15s, box-shadow 0.15s; cursor: default; }
@@ -137,14 +137,14 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .login-form input, .setpwd-form input { font-family: var(--font); font-size: 18px; padding: 10px 16px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); outline: none; transition: border-color 0.2s; }
 .login-form input:focus, .setpwd-form input:focus { border-color: var(--rouge); }
 .login-form input::placeholder, .setpwd-form input::placeholder { color: rgba(0,0,0,0.4); font-style: italic; }
-.login-error { font-size: 15px; font-style: italic; color: var(--rouge); margin-top: 8px; }
+.login-error { font-size: 15px; font-style: italic; color: var(--rouge-texte); margin-top: 8px; }
 
 .page-title { font-size: 38px; font-weight: 400; color: var(--noir); margin-bottom: 4px; }
 .page-sub { font-size: 20px; font-weight: 400; font-style: italic; color: var(--noir); margin-bottom: 2rem; }
 
 .tabs { display: flex; flex-wrap: wrap; border-bottom: 4px solid var(--noir); margin-bottom: 2.2rem; }
 .tab-btn { font-family: var(--font); font-size: 16px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 13px 20px; background: none; border: none; cursor: pointer; color: var(--text); white-space: nowrap; position: relative; transition: color 0.15s, background 0.15s; flex-shrink: 0; border-radius: 4px 4px 0 0; }
-.tab-btn:hover { color: var(--rouge); background: var(--bg-subtle); }
+.tab-btn:hover { color: var(--rouge-texte); background: var(--bg-subtle); }
 .tab-btn.active { color: var(--noir); background: var(--bg-subtle); font-weight: 700; }
 .tab-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--rouge); }
 .tab-panel { display: none; }
@@ -157,7 +157,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .tops-textarea::placeholder { color: rgba(0,0,0,0.45); font-style: italic; }
 .format-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
 .fmt-btn { font-family: var(--font); font-size: 14px; padding: 3px 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--noir); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
-.fmt-btn:hover { border-color: var(--rouge); color: var(--rouge); }
+.fmt-btn:hover { border-color: var(--rouge); color: var(--rouge-texte); }
 .actions { display: flex; gap: 12px; align-items: center; margin-bottom: 2rem; }
 .prev-section { margin-top: 3rem; }
 
@@ -167,9 +167,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .chip::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--rouge); }
 .chip-label { pointer-events: none; padding-right: 6px; }
 .chip-remove { background: none; border: none; border-left: 1px solid rgba(240,236,227,0.15); color: rgba(240,236,227,0.5); cursor: pointer; font-size: 17px; line-height: 1; padding: 0 11px; margin: 0; height: 100%; display: flex; align-items: center; transition: color 0.12s, background 0.12s; }
-.chip-remove:hover { color: var(--rouge); background: rgba(255,255,255,0.07); border-left-color: rgba(240,236,227,0.25); }
+.chip-remove:hover { color: var(--rouge-texte); background: rgba(255,255,255,0.07); border-left-color: rgba(240,236,227,0.25); }
 .chips-hint { font-size: 16px; font-style: italic; color: var(--noir); margin-bottom: 12px; }
-.chips-max-msg { font-size: 14px; font-style: italic; color: var(--rouge); margin-bottom: 8px; display: none; }
+.chips-max-msg { font-size: 14px; font-style: italic; color: var(--rouge-texte); margin-bottom: 8px; display: none; }
 
 .films-list-libre { list-style: none; padding: 0; margin: 0 0 1.5rem; }
 .films-list-libre li { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border-dim); font-size: 17px; }
@@ -177,7 +177,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .films-list-libre .film-titre { flex: 1; font-family: 'Times New Roman', serif; }
 .films-list-libre .film-annee { font-size: 14px; color: var(--text); }
 .films-count { font-size: 15px; font-style: italic; color: var(--text); margin-bottom: 12px; }
-.films-count.warn { color: var(--rouge); }
+.films-count.warn { color: var(--rouge-texte); }
 
 .avatar-wrap { display: flex; align-items: flex-start; gap: 2rem; margin-bottom: 1.5rem; }
 .avatar-preview { width: 110px; height: 110px; flex-shrink: 0; border-radius: 50%; background: var(--rouge); display: flex; align-items: center; justify-content: center; color: #f0ece3; font-family: system-ui, sans-serif; font-size: 32px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,0.2); border: 3px solid var(--noir); }
@@ -252,11 +252,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
     <div class="setpwd-sub" data-i18n="setpwd_sub">Choisissez votre mot de passe</div>
     <div class="setpwd-form">
       <div class="pwd-wrap">
-        <input type="password" id="setpwd-password" placeholder="Nouveau mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_pwd_ph">
+        <input type="password" id="setpwd-password" aria-label="Nouveau mot de passe" data-i18n-aria="setpwd_pwd_ph" placeholder="Nouveau mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_pwd_ph">
         <button type="button" class="pwd-toggle" data-for="setpwd-password" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
       </div>
       <div class="pwd-wrap">
-        <input type="password" id="setpwd-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_confirm_ph">
+        <input type="password" id="setpwd-confirm" aria-label="Confirmer le mot de passe" data-i18n-aria="setpwd_confirm_ph" placeholder="Confirmer le mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_confirm_ph">
         <button type="button" class="pwd-toggle" data-for="setpwd-confirm" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
       </div>
       <button class="btn-primary" id="btn-setpwd" data-i18n="setpwd_btn">Valider</button>
@@ -301,7 +301,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
         <div class="sp-avatar" id="sp-avatar" style="margin:0 auto">
           <span id="avatar-initiales"></span>
         </div>
-        <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <input type="file" id="avatar-input" aria-label="Choisir une photo de profil" data-i18n-aria="aria_avatar" accept="image/jpeg,image/png,image/webp" style="display:none">
         <button class="sp-avatar-btn" id="btn-change-avatar" data-i18n="sp_avatar_btn" style="text-align:center;margin:6px auto 0">Changer la photo</button>
         <button class="btn-primary" id="btn-upload-avatar" data-i18n="sp_avatar_publish" style="display:none;margin-top:6px;font-size:12px;padding:6px 14px">Publier</button>
         <div class="avatar-success" id="avatar-success" data-i18n="sp_photo_maj" style="display:none">✓ Photo mise à jour</div>
@@ -329,7 +329,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
         <div class="chips-list" id="favoris-chips"></div>
         <div class="chips-max-msg" id="favoris-max" data-i18n="sub_favoris_max">Maximum 3 cinéastes favoris atteint.</div>
         <div class="autocomplete-wrap" id="favoris-ac-wrap">
-          <input type="text" class="autocomplete-input" id="favoris-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <input type="text" class="autocomplete-input" id="favoris-input" aria-label="Ajouter un cinéaste favori" data-i18n-aria="aria_fav_ajouter" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
           <div class="autocomplete-dropdown" id="favoris-dropdown"></div>
         </div>
         <div class="sp-edit-actions">
@@ -351,7 +351,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
         <div class="field-label" data-i18n="sub_autres_cin_field">Autres cinéastes — glissez pour réordonner</div>
         <div class="chips-list" id="autres-chips"></div>
         <div class="autocomplete-wrap">
-          <input type="text" class="autocomplete-input" id="autres-input" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
+          <input type="text" class="autocomplete-input" id="autres-input" aria-label="Ajouter un autre cinéaste" data-i18n-aria="aria_autres_ajouter" placeholder="Ajouter un cinéaste…" autocomplete="off" data-i18n-ph="sub_add_cin_ph">
           <div class="autocomplete-dropdown" id="autres-dropdown"></div>
         </div>
         <div class="sp-edit-actions">
@@ -377,7 +377,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
       <div class="sp-edit" id="sp-films-edit" style="display:none">
         <div class="textarea-wrap">
           <div class="field-label" data-i18n="sub_films_field">Films favoris (max 10) — un par ligne</div>
-          <textarea class="tops-textarea" id="films-fav-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+          <textarea class="tops-textarea" id="films-fav-textarea" aria-label="Films favoris" data-i18n-aria="profil_films_coeur" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
         </div>
         <div class="sp-edit-actions">
           <button class="btn-primary" id="btn-save-films-fav" data-i18n="sub_save">Sauvegarder</button>
@@ -397,7 +397,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
       <div class="sp-edit" id="sp-autresfilms-edit" style="display:none">
         <div class="textarea-wrap">
           <div class="field-label" data-i18n="sub_autresfilms_field">Autres films — un par ligne</div>
-          <textarea class="tops-textarea" id="autres-films-textarea" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
+          <textarea class="tops-textarea" id="autres-films-textarea" aria-label="Autres films" data-i18n-aria="profil_films_autres" placeholder="Un film par ligne…" data-i18n-ph="sub_films_ph"></textarea>
         </div>
         <div class="sp-edit-actions">
           <button class="btn-primary" id="btn-save-autres-films" data-i18n="sub_save">Sauvegarder</button>
@@ -427,7 +427,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
             <button type="button" class="fmt-btn" data-fmt="italic" data-i18n-title="tc_cm_italique" title="Italique"><i>I</i></button>
             <button type="button" class="fmt-btn" data-fmt="underline" data-i18n-title="tc_cm_souligne" title="Souligné"><u>S</u></button>
           </div>
-          <textarea class="tops-textarea" id="presentation-textarea" maxlength="3000" placeholder="Décrivez votre rapport au cinéma…" data-i18n-ph="sub_presentation_ph"></textarea>
+          <textarea class="tops-textarea" id="presentation-textarea" aria-label="Présentation" data-i18n-aria="sp_grp_presentation" maxlength="3000" placeholder="Décrivez votre rapport au cinéma…" data-i18n-ph="sub_presentation_ph"></textarea>
           <div id="presentation-charcount" style="font-size:12px;color:var(--brun-pale);text-align:right;margin-top:4px;">0 / 3000</div>
         </div>
         <div class="sp-edit-actions">

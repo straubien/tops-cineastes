@@ -10,7 +10,10 @@
    ========================================================================== */
 
 .dark .header, .dark .header-bar-end { background: #1a1714 !important; }
-.dark .logo, .dark .logo span, .dark .dash-hero-item:first-child, .dark .dash-hero-item:last-child,
+/* La carte de droite a un fond rouge : son texte doit rester clair, sinon
+   on tombe a 3,59:1. Seule la carte de gauche, au fond clair, prend un
+   texte sombre (A-121). */
+.dark .logo, .dark .logo span, .dark .dash-hero-item:first-child,
 .dark .sub-filter.active, .dark .admin-chip, .dark .type-badge.top { color: #1a1714; }
 .dark .submission-status.pending, .dark .prop-status-badge.pending { background: #4d3c0a; color: #f0d878; }
 .dark .submission-status.approved, .dark .prop-status-badge.approved { background: #163a22; color: #7fd8a0; }
@@ -64,7 +67,8 @@ body {
   font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(240,236,227,0.4);
+  /* 0.4 ne donnait que 3,42:1 sur le bandeau noir (A-121). */
+  color: rgba(240,236,227,0.55);
   margin-left: 12px;
 }
 .header-right {
@@ -88,7 +92,7 @@ body {
   cursor: pointer;
   transition: color 0.15s;
 }
-.btn-logout:hover { color: var(--rouge); }
+.btn-logout:hover { color: var(--rouge-texte); }
 
 /* ── MAIN ── */
 .main {
@@ -134,7 +138,7 @@ body {
 .login-error {
   font-size: 15px;
   font-style: italic;
-  color: var(--rouge);
+  color: var(--rouge-texte);
   margin-top: 8px;
 }
 
@@ -181,7 +185,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--rouge);
+  color: var(--rouge-texte);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -219,7 +223,7 @@ body {
 }
 .dash-hero-item:last-child {
   background: var(--rouge);
-  color: #f0ece3;
+  color: #fff;   /* 4,98:1 sur le rouge, contre 4,22:1 avec #f0ece3 */
 }
 .dash-hero-value {
   font-size: 48px;
@@ -304,7 +308,7 @@ body {
 .dash-queue-card:hover { background: var(--bg-subtle); }
 .dash-queue-card.has-pending { border-left-color: var(--rouge); }
 .dash-queue-count { font-size: 34px; font-weight: 700; line-height: 1; color: var(--text); }
-.dash-queue-card.has-pending .dash-queue-count { color: var(--rouge); }
+.dash-queue-card.has-pending .dash-queue-count { color: var(--rouge-texte); }
 .dash-queue-label { font-family: system-ui, sans-serif; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--brun-pale); }
 
 /* ── IMPORT MANUEL ── */
@@ -351,8 +355,14 @@ body {
   font-size: 14px;
   font-style: italic;
   color: var(--brun-pale);
+  /* style.css applique opacity: 0.7 a cette classe. Ici la couleur est
+     deja attenuee : cumuler les deux tombait a 2,85:1 (A-121). */
+  opacity: 1;
   margin-top: 6px;
 }
+
+#btn-create-thematic { color: #fff; }              /* 6,55:1 sur le vert fonce */
+.dark #btn-create-thematic { color: #10240f; }     /* 5,99:1 sur le vert clair */
 
 .actions {
   display: flex;
@@ -578,7 +588,7 @@ body {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.stats-bar-item.is-top .stats-bar-rank { color: var(--rouge); font-weight: 700; }
+.stats-bar-item.is-top .stats-bar-rank { color: var(--rouge-texte); font-weight: 700; }
 .stats-bar-flagcell { display: flex; align-items: center; justify-content: center; }
 .stats-bar-flag { width: 24px; height: 24px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
 .stats-bar-flag-historic { width: auto; height: 24px; }
@@ -723,7 +733,7 @@ body {
 .submission-cineaste-nom {
   font-size: 19px;
   font-weight: 700;
-  color: var(--rouge);
+  color: var(--rouge-texte);
 }
 .submission-meta-line {
   font-size: 15px;
@@ -773,7 +783,7 @@ body {
   font-family: var(--font);
   font-size: 15px;
   font-weight: 700;
-  color: var(--rouge);
+  color: var(--rouge-texte);
 }
 .submission-films li:last-child { border-bottom: none; }
 .submission-raw {

@@ -34,7 +34,7 @@
 .nav-user-avatar { width: 24px; height: 24px; background: var(--rouge,#A33025); display: inline-flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700; color: #f0ece3; overflow: hidden; vertical-align: middle; margin-right: 5px; flex-shrink: 0; border-radius: 0; }
 .nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .nav-logout-tip { display: none; border: none; border-radius: 0; text-align: left; position: absolute; top: 100%; right: 0; margin-top: 0; background: #1a1a1a; color: rgba(240,236,227,0.8); padding: 8px 16px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; z-index: 200; border-top: 2px solid var(--rouge,#A33025); }
-.nav-logout-tip:hover { color: var(--rouge,#A33025); }
+.nav-logout-tip:hover { color: var(--rouge-texte,#A33025); }
 /* Flèche retour dans le carré rouge du profil-header */
 .profil-header-back {
   position: absolute;
@@ -63,7 +63,7 @@
 /* Filtres index */
 .filter-bar { display: flex; gap: 10px; padding: 0.5rem 0 0.75rem; flex-wrap: wrap; }
 .filter-btn { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 16px; border: 1px solid var(--border); background: none; color: var(--text-dim,#7a6350); cursor: pointer; transition: all 0.15s; }
-.filter-btn:hover { border-color: var(--rouge,#A33025); color: var(--rouge,#A33025); }
+.filter-btn:hover { border-color: var(--rouge,#A33025); color: var(--rouge-texte,#A33025); }
 .filter-btn.active { background: var(--rouge,#A33025); border-color: var(--rouge,#A33025); color: #f0ece3; }
 /* Tops importés dans les cartes contributeurs */
 .contrib-card-stat-imported { opacity: 0.7; font-size: 92%; }
@@ -116,10 +116,10 @@
 .contrib-select { width: 100%; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 18px; padding: 10px 40px 10px 14px; border: 1px solid var(--border,#d0c8b8); border-radius: 4px; background-color: var(--bg-card,#faf8f4); color: var(--text,#111008); outline: none; cursor: pointer; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; transition: border-color 0.2s, box-shadow 0.2s; margin-top: 0.4rem; margin-bottom: 1.6rem; }
 .contrib-select:focus { border-color: var(--rouge,#A33025); box-shadow: 0 0 0 3px rgba(163,48,37,0.12); }
 .dark .contrib-select { background-color: var(--bg-card); color: var(--text); border-color: var(--border); background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23bbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
-.result-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rouge,#A33025); display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+.result-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rouge-texte,#A33025); display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
 .result-title::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--rouge,#A33025); }
 .result-cineaste { font-size: 26px; font-weight: 400; margin-bottom: 1rem; color: var(--text,#111008); }
-.result-cineaste strong { font-weight: 600; color: var(--rouge,#A33025); }
+.result-cineaste strong { font-weight: 600; color: var(--rouge-texte,#A33025); }
 .parse-warning { font-size: 15px; font-style: italic; color: var(--text,#111008); background: var(--bg-subtle); border-left: 4px solid var(--rouge,#A33025); border-radius: 0 4px 4px 0; padding: 12px 18px; margin-bottom: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 .film-titre { font-family: 'Times New Roman', serif; font-size: 21px; flex: 1; }
 .film-annee { font-family: system-ui, sans-serif; font-size: 14px; font-weight: 500; color: var(--text,#111008); white-space: nowrap; }
@@ -133,7 +133,7 @@
 /* ── Tabs Mes tops ───────────────────────────────────────────── */
 .mt-tabs { display: flex; flex-wrap: wrap; border-bottom: 4px solid var(--noir,#1a1a1a); margin-bottom: 2.2rem; }
 .mt-tab-btn { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.2; text-transform: uppercase; padding: 14px 10px; background: none; border: none; cursor: pointer; color: var(--text,#111008); position: relative; white-space: pre-line; transition: color 0.15s, background 0.15s; border-radius: 4px 4px 0 0; }
-.mt-tab-btn:hover { color: var(--rouge,#A33025); background: var(--bg-subtle,#f0ece3); }
+.mt-tab-btn:hover { color: var(--rouge-texte,#A33025); background: var(--bg-subtle,#f0ece3); }
 .mt-tab-btn.active { color: var(--text,#111008); background: var(--bg-subtle,#ede8df); }
 .mt-tab-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--rouge,#A33025); }
 @media (max-width: 700px) {
@@ -273,7 +273,7 @@
       <!-- Cinéphiles connectés / vus récemment (rendu par index.js) -->
       <div class="index-presence" id="index-presence" style="display:none"></div>
       <div class="search-bar">
-        <input type="text" placeholder="Rechercher un cinéaste…" id="search-input" data-i18n-ph="search_placeholder">
+        <input type="text" placeholder="Rechercher un cinéaste…" id="search-input" aria-label="Rechercher un cinéaste" data-i18n-aria="search_placeholder" data-i18n-ph="search_placeholder">
       </div>
       <div class="filter-bar" id="filter-bar">
         <button class="filter-btn" id="filter-sans-tops" data-i18n="filter_sans_tops">Cinéastes sans aucun top</button>
@@ -375,14 +375,14 @@
       <div class="compare-selectors">
         <div class="compare-selector">
           <div class="autocomplete-wrap">
-            <input type="text" class="autocomplete-input" id="compare-input-a" placeholder="Choisir un cinéphile…" data-i18n-ph="compare_select_ph" autocomplete="off">
+            <input type="text" class="autocomplete-input" id="compare-input-a" aria-label="Premier cinéphile" data-i18n-aria="aria_comparer_a" placeholder="Choisir un cinéphile…" data-i18n-ph="compare_select_ph" autocomplete="off">
             <div class="autocomplete-dropdown" id="compare-dropdown-a"></div>
           </div>
         </div>
         <button type="button" class="compare-swap-btn" id="compare-swap-btn" title="Inverser" data-i18n-title="compare_swap_title" data-i18n-aria="compare_swap_title" aria-label="Inverser">⇄</button>
         <div class="compare-selector">
           <div class="autocomplete-wrap">
-            <input type="text" class="autocomplete-input" id="compare-input-b" placeholder="Choisir un cinéphile…" data-i18n-ph="compare_select_ph" autocomplete="off">
+            <input type="text" class="autocomplete-input" id="compare-input-b" aria-label="Second cinéphile" data-i18n-aria="aria_comparer_b" placeholder="Choisir un cinéphile…" data-i18n-ph="compare_select_ph" autocomplete="off">
             <div class="autocomplete-dropdown" id="compare-dropdown-b"></div>
           </div>
         </div>
@@ -421,7 +421,7 @@
             </div>
             <div class="cineaste-select-wrap">
               <div class="autocomplete-wrap">
-                <input type="text" class="autocomplete-input" id="mt-cineaste-input" placeholder="Tapez un nom…" autocomplete="off" data-i18n-ph="mt_cin_ph">
+                <input type="text" class="autocomplete-input" id="mt-cineaste-input" aria-label="Cinéaste" data-i18n-aria="mt_cin_label" placeholder="Tapez un nom…" autocomplete="off" data-i18n-ph="mt_cin_ph">
                 <div class="autocomplete-dropdown" id="mt-cineaste-dropdown"></div>
               </div>
             </div>
@@ -431,7 +431,7 @@
               <div class="mt-block-title" data-i18n="mt_top_label">Votre top</div>
             </div>
             <div class="textarea-wrap">
-              <textarea class="tops-textarea" id="mt-tops-textarea" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
+              <textarea class="tops-textarea" id="mt-tops-textarea" aria-label="Votre top" data-i18n-aria="mt_top_label" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
             </div>
             <div class="parse-warning" id="mt-duplicate-msg" style="display:none"></div>
             <div class="actions">
@@ -483,7 +483,7 @@
               <div class="mt-block-title" data-i18n="thematique_theme_label">Thème</div>
             </div>
             <div class="autocomplete-wrap">
-              <input type="text" class="autocomplete-input" id="mt-theme-input" placeholder="Ex : Giallo, Hammer Films, Marvel…" autocomplete="off" data-i18n-ph="thematique_theme_ph">
+              <input type="text" class="autocomplete-input" id="mt-theme-input" aria-label="Thème" data-i18n-aria="thematique_theme_label" placeholder="Ex : Giallo, Hammer Films, Marvel…" autocomplete="off" data-i18n-ph="thematique_theme_ph">
               <div class="autocomplete-dropdown" id="mt-theme-dropdown"></div>
             </div>
 
@@ -492,7 +492,7 @@
               <div class="mt-block-title" data-i18n="mt_top_label">Votre top</div>
             </div>
             <div class="textarea-wrap">
-              <textarea class="tops-textarea" id="mt-theme-textarea" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
+              <textarea class="tops-textarea" id="mt-theme-textarea" aria-label="Votre top" data-i18n-aria="mt_top_label" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
             </div>
             <div class="actions">
               <button class="btn-primary" id="mt-theme-btn-parse" data-i18n="mt_analyser">Analyser ma liste</button>
@@ -534,33 +534,33 @@
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_prenom_label">Prénom *</label>
-              <input type="text" id="prop-prenom" placeholder="Prénom" data-i18n-ph="prop_prenom_ph" autocomplete="off">
+              <input type="text" id="prop-prenom" aria-label="Prénom" data-i18n-aria="prop_prenom_label" placeholder="Prénom" data-i18n-ph="prop_prenom_ph" autocomplete="off">
             </div>
             <div class="prop-form-field">
               <label data-i18n="prop_nom_label">Nom *</label>
-              <input type="text" id="prop-nom" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off" style="text-transform:uppercase">
+              <input type="text" id="prop-nom" aria-label="Nom" data-i18n-aria="prop_nom_label" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off" style="text-transform:uppercase">
             </div>
           </div>
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_pays_label">Nationalité *</label>
-              <select id="prop-pays" class="contrib-select"></select>
+              <select id="prop-pays" aria-label="Nationalité" data-i18n-aria="prop_pays_label" class="contrib-select"></select>
             </div>
           </div>
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_naissance_label">Année de naissance *</label>
-              <input type="number" id="prop-naissance" placeholder="ex. 1940" data-i18n-ph="prop_naissance_ph" min="1800" max="2010">
+              <input type="number" id="prop-naissance" aria-label="Année de naissance" data-i18n-aria="prop_naissance_label" placeholder="ex. 1940" data-i18n-ph="prop_naissance_ph" min="1800" max="2010">
             </div>
             <div class="prop-form-field">
               <label><span data-i18n="prop_deces_label">Année de décès</span> <span style="font-weight:400;text-transform:none;letter-spacing:0" data-i18n="prop_deces_optional">(si applicable)</span></label>
-              <input type="number" id="prop-deces" placeholder="ex. 2010" data-i18n-ph="prop_deces_ph" min="1800" max="2030">
+              <input type="number" id="prop-deces" aria-label="Année de décès" data-i18n-aria="prop_deces_label" placeholder="ex. 2010" data-i18n-ph="prop_deces_ph" min="1800" max="2030">
             </div>
           </div>
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_photo_tmdb_label">Photo TMDB *</label>
-              <input type="text" id="prop-photo-tmdb" placeholder="ex. /abcXYZ123.jpg" data-i18n-ph="prop_photo_tmdb_ph" autocomplete="off">
+              <input type="text" id="prop-photo-tmdb" aria-label="Photo TMDB" data-i18n-aria="prop_photo_tmdb_label" placeholder="ex. /abcXYZ123.jpg" data-i18n-ph="prop_photo_tmdb_ph" autocomplete="off">
               <div class="prop-checkbox-row">
                 <input type="checkbox" id="prop-no-photo">
                 <label for="prop-no-photo" data-i18n="prop_no_photo_label">Aucune photo disponible pour ce cinéaste</label>
@@ -590,7 +590,7 @@
             </div>
             <div class="cineaste-select-wrap">
               <div class="autocomplete-wrap">
-                <input type="text" class="autocomplete-input" id="mt-courant-cineaste-input" placeholder="Tapez un nom…" autocomplete="off" data-i18n-ph="mt_cin_ph">
+                <input type="text" class="autocomplete-input" id="mt-courant-cineaste-input" aria-label="Cinéaste" data-i18n-aria="mt_cin_label" placeholder="Tapez un nom…" autocomplete="off" data-i18n-ph="mt_cin_ph">
                 <div class="autocomplete-dropdown" id="mt-courant-cineaste-dropdown"></div>
               </div>
             </div>
@@ -599,7 +599,7 @@
               <div class="mt-block-step">2</div>
               <div class="mt-block-title" data-i18n="mt_courant_label">Courant</div>
             </div>
-            <select id="mt-courant-select" class="contrib-select">
+            <select id="mt-courant-select" aria-label="Courant" data-i18n-aria="mt_courant_label" class="contrib-select">
               <option value="" data-i18n="mt_courant_select_default">Sélectionner un courant existant…</option>
             </select>
 
@@ -631,7 +631,7 @@
         <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_thematiques_h">Tops thématiques</h2>
       </div>
       <div class="search-bar thematique-search-bar">
-        <input type="text" placeholder="Rechercher un thème…" id="thematique-search-input" data-i18n-ph="thematique_search_ph">
+        <input type="text" placeholder="Rechercher un thème…" id="thematique-search-input" aria-label="Rechercher un thème" data-i18n-aria="thematique_search_ph" data-i18n-ph="thematique_search_ph">
       </div>
       <div class="list-count-bar">
         <div class="list-count" id="thematique-list-count"></div>

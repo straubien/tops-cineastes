@@ -115,7 +115,7 @@
       <div class="import-form">
         <div class="field-wrap">
           <div class="field-label">Contributeur</div>
-          <select class="contrib-select" id="import-contrib">
+          <select class="contrib-select" id="import-contrib" aria-label="Contributeur">
             <option value="">Sélectionner un contributeur…</option>
           </select>
         </div>
@@ -123,7 +123,7 @@
         <div class="field-wrap">
           <div class="field-label">Cinéaste</div>
           <div class="autocomplete-wrap">
-            <input type="text" class="autocomplete-input" id="import-cineaste"
+            <input type="text" class="autocomplete-input" id="import-cineaste" aria-label="Cinéaste"
               placeholder="Tapez un nom…" autocomplete="off">
             <div class="autocomplete-dropdown" id="import-dropdown"></div>
           </div>
@@ -131,7 +131,7 @@
 
         <div class="field-wrap">
           <div class="field-label">Contenu du commentaire</div>
-          <textarea class="tops-textarea" id="import-textarea"
+          <textarea class="tops-textarea" id="import-textarea" aria-label="Contenu du commentaire"
             placeholder="Collez le commentaire FB ici…"></textarea>
           <div class="textarea-hint">Le parseur extrait automatiquement les films numérotés.</div>
         </div>
@@ -140,7 +140,7 @@
           <button class="btn-primary" id="btn-parse">Analyser</button>
           <button class="btn-secondary" id="btn-reset-import">Recommencer</button>
         </div>
-        <div id="import-error" style="display:none;color:var(--rouge);font-size:15px;font-style:italic;margin-top:8px"></div>
+        <div id="import-error" style="display:none;color:var(--rouge-texte);font-size:15px;font-style:italic;margin-top:8px"></div>
 
         <div class="result-wrap" id="import-result">
           <div class="section-title">Résultat de l'analyse</div>
@@ -195,7 +195,7 @@
     <div class="tab-panel" id="panel-flags">
       <div class="section-title">Drapeaux de nationalité</div>
       <div class="field-wrap" style="max-width:420px;margin-bottom:1rem;">
-        <input type="text" class="autocomplete-input" id="flags-search" placeholder="Rechercher un cinéaste…" autocomplete="off">
+        <input type="text" class="autocomplete-input" id="flags-search" aria-label="Rechercher un cinéaste" placeholder="Rechercher un cinéaste…" autocomplete="off">
       </div>
       <div style="margin-bottom:1rem;">
         <button type="button" class="btn-secondary" id="flags-null-btn">Cinéastes sans pays</button>
@@ -217,11 +217,11 @@
       <div class="admin-create-thematic" style="background:var(--bg-card,#1a1a2e);border:1px solid var(--border,#333);border-radius:8px;padding:16px 20px;margin-bottom:1.5rem;">
         <div style="font-weight:600;margin-bottom:10px;font-size:15px;">Créer un nouveau thème</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <input type="text" id="new-thematic-nom" placeholder="Nom du thème (ex. : Giallo, Nouveau Cinéma Argentin…)"
+          <input type="text" id="new-thematic-nom" aria-label="Nom du nouveau thème" placeholder="Nom du thème (ex. : Giallo, Nouveau Cinéma Argentin…)"
             style="flex:1;min-width:200px;padding:8px 12px;border-radius:6px;border:1px solid var(--border,#555);background:var(--bg,#111);color:inherit;font-size:14px;" />
-          <button id="btn-create-thematic" style="padding:8px 18px;border-radius:6px;background:var(--vert,#27ae60);color:#fff;border:none;cursor:pointer;font-size:14px;white-space:nowrap;">Créer</button>
+          <button id="btn-create-thematic" style="padding:8px 18px;border-radius:6px;background:var(--vert,#27ae60);border:none;cursor:pointer;font-size:14px;white-space:nowrap;">Créer</button>
         </div>
-        <div id="thematiques-create-error" style="display:none;color:var(--rouge,#e74c3c);font-size:13px;margin-top:8px;"></div>
+        <div id="thematiques-create-error" style="display:none;color:var(--rouge-texte,#e74c3c);font-size:13px;margin-top:8px;"></div>
       </div>
 
       <div class="sub-filters" id="thematiques-filters">
@@ -259,7 +259,7 @@
       <div class="field-wrap" style="max-width:420px;">
         <div class="field-label">Cinéaste</div>
         <div class="autocomplete-wrap">
-          <input type="text" class="autocomplete-input" id="courant-fiche-cineaste-input" placeholder="Tapez un nom…" autocomplete="off">
+          <input type="text" class="autocomplete-input" id="courant-fiche-cineaste-input" aria-label="Cinéaste" placeholder="Tapez un nom…" autocomplete="off">
           <div class="autocomplete-dropdown" id="courant-fiche-cineaste-dropdown"></div>
         </div>
       </div>
@@ -276,30 +276,30 @@
         <div class="courant-gestion-fields">
           <div class="field-wrap">
             <div class="field-label">Type</div>
-            <select class="contrib-select" id="courant-gestion-type">
+            <select class="contrib-select" id="courant-gestion-type" aria-label="Type">
               <option value="courant">Courant cinématographique</option>
               <option value="categorie">Catégorie</option>
             </select>
           </div>
           <div class="field-wrap">
             <div class="field-label">Nom (français)</div>
-            <input type="text" class="autocomplete-input" id="courant-gestion-fr" placeholder="ex. Nouvelle Vague">
+            <input type="text" class="autocomplete-input" id="courant-gestion-fr" aria-label="Nom français" placeholder="ex. Nouvelle Vague">
           </div>
           <div class="field-wrap">
             <div class="field-label">Nom (anglais)</div>
-            <input type="text" class="autocomplete-input" id="courant-gestion-en" placeholder="ex. French New Wave">
+            <input type="text" class="autocomplete-input" id="courant-gestion-en" aria-label="Nom anglais" placeholder="ex. French New Wave">
           </div>
           <div class="field-wrap">
             <div class="field-label">Drapeau</div>
-            <select class="contrib-select" id="courant-gestion-pays"></select>
+            <select class="contrib-select" id="courant-gestion-pays" aria-label="Drapeau"></select>
           </div>
           <div class="field-wrap">
             <div class="field-label">Année début</div>
-            <input type="number" class="autocomplete-input" id="courant-gestion-debut" placeholder="ex. 1958">
+            <input type="number" class="autocomplete-input" id="courant-gestion-debut" aria-label="Année de début" placeholder="ex. 1958">
           </div>
           <div class="field-wrap">
             <div class="field-label">Année fin</div>
-            <input type="number" class="autocomplete-input" id="courant-gestion-fin" placeholder="facultatif">
+            <input type="number" class="autocomplete-input" id="courant-gestion-fin" aria-label="Année de fin" placeholder="facultatif">
           </div>
         </div>
         <button class="btn-primary" id="courant-gestion-btn-add">Ajouter au catalogue</button>
@@ -336,7 +336,7 @@
 
       <div class="field-wrap" style="max-width:520px;">
         <div class="field-label">Méthode de calcul</div>
-        <select class="contrib-select" id="reglages-affinite-formule">
+        <select class="contrib-select" id="reglages-affinite-formule" aria-label="Méthode de calcul">
           <option value="min">Plus petit profil — rapporté au moins fourni des deux</option>
           <option value="max">Plus grand profil — rapporté au plus fourni des deux</option>
           <option value="avg">Moyenne des deux profils (par défaut)</option>
@@ -355,15 +355,15 @@
       </div>
       <div class="field-wrap" style="max-width:320px;">
         <div class="field-label">Favori ↔ Favori commun (★★)</div>
-        <input type="number" class="autocomplete-input" id="reglages-affinite-w-favfav" min="0" step="0.5">
+        <input type="number" class="autocomplete-input" id="reglages-affinite-w-favfav" aria-label="Poids : favori commun aux deux" min="0" step="0.5">
       </div>
       <div class="field-wrap" style="max-width:320px;">
         <div class="field-label">Autre ↔ Autre commun (•)</div>
-        <input type="number" class="autocomplete-input" id="reglages-affinite-w-otherother" min="0" step="0.5">
+        <input type="number" class="autocomplete-input" id="reglages-affinite-w-otherother" aria-label="Poids : autre cinéaste commun aux deux" min="0" step="0.5">
       </div>
       <div class="field-wrap" style="max-width:320px;">
         <div class="field-label">Favori ↔ Autre commun, un seul côté (★)</div>
-        <input type="number" class="autocomplete-input" id="reglages-affinite-w-favother" min="0" step="0.5">
+        <input type="number" class="autocomplete-input" id="reglages-affinite-w-favother" aria-label="Poids : favori d'un côté, autre de l'autre" min="0" step="0.5">
       </div>
       <button class="btn-primary" id="reglages-affinite-poids-btn-save">Enregistrer</button>
       <div id="reglages-poids-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin:1rem 0;font-size:15px;max-width:520px;"></div>

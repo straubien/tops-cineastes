@@ -23,6 +23,28 @@ function showAdminNotice(msg, ok){
   _adminNoticeTimer = setTimeout(function(){ tcHideBanner('tc-admin-notice'); }, ok ? 4000 : 7000);
 }
 
+// ── ERREURS DU BACK-OFFICE ──────────────────────────
+// Un message brut de la base ne dit rien d'utile :
+//   « new row violates row-level security policy for table "tops" »
+// Le detail technique part dans la console du navigateur, ou il reste
+// consultable pour le diagnostic ; l'ecran ne recoit qu'une phrase claire,
+// produite par friendlyError (action A-101).
+//
+// « cible » vaut soit un element de la page, soit rien : dans ce cas le
+// message passe par le bandeau d'alerte du back-office.
+function admErreur(cible, err, contexte){
+  var brut = (err && err.message) ? err.message : String(err == null ? '' : err);
+  console.error('[admin] ' + (contexte || 'erreur') + ' : ' + brut, err);
+  var phrase = friendlyError(err);
+  if(cible && cible.style){
+    cible.textContent = phrase;
+    cible.style.display = 'block';
+  } else {
+    showAdminNotice(phrase, false);
+  }
+  return phrase;
+}
+
 // ── MESSAGERIE CINÉPHILE ──────────────────────────────────────
 // Crée une notification pour un cinéphile lorsqu'une de ses propositions
 // (cinéaste, courant) ou un de ses tops soumis est validé côté back-office.
@@ -1809,13 +1831,13 @@ async function loadThematicTops(){
         .order('submitted_at', { ascending: false });
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     listEl.innerHTML = '';
     return;
   }
 
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error);
     listEl.innerHTML = '';
     return;
   }
@@ -1913,8 +1935,8 @@ async function approveThematic(id, apprBtn, rejBtn){
     res = await tcWithRetryTimeout(function(){
       return sb.from('thematic_tops').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', id).select('id');
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
+  if(res.error){ admErreur(null, res.error); reenable(); return; }
   // Vérification anti-échec silencieux (blocage RLS renvoyant data vide sans erreur).
   if(!res.data || !res.data.length){ showAdminNotice('La validation n\'a pas abouti — vérifiez les droits de la table thematic_tops.', false); reenable(); return; }
   showAdminNotice('Top thématique validé.', true);
@@ -1930,8 +1952,8 @@ async function rejectThematic(id, apprBtn, rejBtn){
     res = await tcWithRetryTimeout(function(){
       return sb.from('thematic_tops').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', id).select('id');
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
+  if(res.error){ admErreur(null, res.error); reenable(); return; }
   if(!res.data || !res.data.length){ showAdminNotice('Le rejet n\'a pas abouti — vérifiez les droits de la table thematic_tops.', false); reenable(); return; }
   showAdminNotice('Top thématique rejeté.', true);
   loadThematicTops();
@@ -1969,13 +1991,13 @@ async function createThematic(){
       }).select('id');
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err);
     btn.disabled = false;
     return;
   }
   btn.disabled = false;
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error);
     return;
   }
   // Vérification anti-échec silencieux (blocage RLS renvoyant data vide sans erreur).
@@ -2021,13 +2043,13 @@ async function loadCourantProposals(){
         .order('submitted_at', { ascending: true });
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     listEl.innerHTML = '';
     return;
   }
 
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error);
     listEl.innerHTML = '';
     return;
   }
@@ -2091,7 +2113,7 @@ function buildCourantCard(row){
         + '<button class="btn-approve" data-id="' + row.id + '" disabled title="Validation non autorisée pour le moment">Valider</button>'
         + '<button class="btn-reject" data-id="' + row.id + '" disabled title="Validation non autorisée pour le moment">Rejeter</button>'
         + '</div>'
-        + '<div class="courant-validation-locked" style="margin-top:8px;font-size:13px;color:var(--rouge, #b3261e);">'
+        + '<div class="courant-validation-locked" style="margin-top:8px;font-size:13px;color:var(--rouge-texte, #b3261e);">'
         + 'Validation des courants non autorisée pour votre compte pour le moment.'
         + '</div>';
     }
@@ -2139,7 +2161,7 @@ async function approveCourant(row, apprBtn, rejBtn){
     courantRes = await tcWithRetryTimeout(function(){
       return sb.from('courants').select('id').ilike('nom_fr', row.courant).limit(1);
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
   if(courantRes.error || !courantRes.data || !courantRes.data.length){
     showAdminNotice('Ce courant n\'existe pas dans le catalogue « Gestion des courants » — ajoutez-le d\'abord.', false);
     reenable();
@@ -2152,7 +2174,7 @@ async function approveCourant(row, apprBtn, rejBtn){
     cineasteRes = await tcWithRetryTimeout(function(){
       return sb.from('cineastes').select('nom, courant, courant2, courant3').eq('nom', row.cineaste_nom).single();
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
   if(cineasteRes.error || !cineasteRes.data){ showAdminNotice('Cinéaste introuvable — validation annulée.', false); reenable(); return; }
 
   var slots = ['courant', 'courant2', 'courant3'];
@@ -2175,8 +2197,8 @@ async function approveCourant(row, apprBtn, rejBtn){
       updRes = await tcWithRetryTimeout(function(){
         return sb.from('cineastes').update(maj).eq('nom', row.cineaste_nom).select('nom');
       });
-    } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
-    if(updRes.error){ showAdminNotice('Erreur : ' + updRes.error.message, false); reenable(); return; }
+    } catch(err){ admErreur(null, err); reenable(); return; }
+    if(updRes.error){ admErreur(null, updRes.error); reenable(); return; }
     if(!updRes.data || !updRes.data.length){ showAdminNotice('La mise à jour du cinéaste n\'a pas abouti — vérifiez les droits de la table cineastes.', false); reenable(); return; }
   }
 
@@ -2185,8 +2207,8 @@ async function approveCourant(row, apprBtn, rejBtn){
     res = await tcWithRetryTimeout(function(){
       return sb.from('courant_proposals').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', row.id).select('id');
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
+  if(res.error){ admErreur(null, res.error); reenable(); return; }
   if(!res.data || !res.data.length){ showAdminNotice('La validation n\'a pas abouti — vérifiez les droits de la table courant_proposals.', false); reenable(); return; }
 
   // Notifier le cinéphile que sa proposition de courant a été validée.
@@ -2213,8 +2235,8 @@ async function rejectCourant(id, apprBtn, rejBtn){
     res = await tcWithRetryTimeout(function(){
       return sb.from('courant_proposals').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', id).select('id');
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); reenable(); return; }
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); reenable(); return; }
+  } catch(err){ admErreur(null, err); reenable(); return; }
+  if(res.error){ admErreur(null, res.error); reenable(); return; }
   if(!res.data || !res.data.length){ showAdminNotice('Le rejet n\'a pas abouti — vérifiez les droits de la table courant_proposals.', false); reenable(); return; }
   showAdminNotice('Proposition de courant rejetée.', true);
   loadCourantProposals();
@@ -2255,12 +2277,12 @@ async function loadCourantCatalogue(){
       return sb.from('courants').select('id, nom_fr, nom_en, pays, annee_debut, annee_fin, type').order('nom_fr', { ascending: true });
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     listEl.innerHTML = '';
     return;
   }
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error, 'chargement');
     listEl.innerHTML = '';
     return;
   }
@@ -2418,12 +2440,12 @@ async function saveCourantEdits(id, edits, btn){
         annee_fin: edits.anneeFin
       }).eq('id', id).select('id');
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); if(btn) btn.disabled = false; return; }
+  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
   if(res.error){
-    var msg = /duplicate|unique/i.test(res.error.message || '')
+    console.error('[admin] enregistrement du courant : ' + (res.error.message || ''), res.error);
+    showAdminNotice(/duplicate|unique/i.test(res.error.message || '')
       ? 'Un autre courant porte déjà ce nom français.'
-      : res.error.message;
-    showAdminNotice('Erreur : ' + msg, false);
+      : friendlyError(res.error), false);
     if(btn) btn.disabled = false;
     return;
   }
@@ -2449,8 +2471,8 @@ async function deleteCourantFromCatalogue(id, nomFr, btn){
       return sb.from('cineastes').select('nom', { count: 'exact', head: true })
         .or('courant.eq.' + id + ',courant2.eq.' + id + ',courant3.eq.' + id);
     });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); if(btn) btn.disabled = false; return; }
-  if(usageRes.error){ showAdminNotice('Erreur : ' + usageRes.error.message, false); if(btn) btn.disabled = false; return; }
+  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
+  if(usageRes.error){ admErreur(null, usageRes.error); if(btn) btn.disabled = false; return; }
   if(usageRes.count){
     showAdminNotice('Impossible : « ' + nomFr + ' » est encore affecté à ' + usageRes.count + ' fiche(s) cinéaste. Retirez-le de ces fiches avant de le supprimer du catalogue.', false);
     if(btn) btn.disabled = false;
@@ -2462,8 +2484,8 @@ async function deleteCourantFromCatalogue(id, nomFr, btn){
     res = await tcWithRetryTimeout(function(){
       return sb.from('courants').delete().eq('id', id).select('id');
     }, { retries: 0 });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); if(btn) btn.disabled = false; return; }
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); if(btn) btn.disabled = false; return; }
+  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
+  if(res.error){ admErreur(null, res.error); if(btn) btn.disabled = false; return; }
   if(!res.data || !res.data.length){ showAdminNotice('La suppression n\'a pas abouti — vérifiez les droits de la table courants.', false); if(btn) btn.disabled = false; return; }
 
   showAdminNotice('Courant « ' + nomFr + ' » supprimé du catalogue.', true);
@@ -2499,13 +2521,14 @@ async function addCourantToCatalogue(){
       return sb.from('courants').insert({ type: type, nom_fr: nomFr, nom_en: nomEn, pays: pays, annee_debut: anneeDebut, annee_fin: anneeFin }).select('id');
     }, { retries: 0 });
   } catch(err){
-    showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false);
+    admErreur(null, err);
     btn.disabled = false;
     return;
   }
   btn.disabled = false;
   if(res.error){
-    var msg = /duplicate|unique/i.test(res.error.message || '') ? 'Ce courant existe déjà dans le catalogue.' : res.error.message;
+    console.error('[admin] ajout au catalogue : ' + (res.error.message || ''), res.error);
+    var msg = /duplicate|unique/i.test(res.error.message || '') ? 'Ce courant existe déjà dans le catalogue.' : friendlyError(res.error);
     showAdminNotice('Erreur : ' + msg, false);
     return;
   }
@@ -2717,14 +2740,16 @@ async function applyCourantFicheSlots(c, slots, btn){
         p_courant3: slots[2]
       });
     }, { retries: 0 });
-  } catch(err){ showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false); if(btn) btn.disabled = false; return; }
+  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
   if(btn) btn.disabled = false;
   if(res.error){
-    var msg = res.error.message || '';
-    if(/tc_admin_set_courants/.test(msg) || /schema cache/i.test(msg)){
-      msg = 'La fonction SQL « tc_admin_set_courants » est introuvable — exécutez d\'abord tc-courants-cascade.sql dans l\'éditeur SQL Supabase.';
-    }
-    showAdminNotice('Erreur : ' + msg, false);
+    var brut = res.error.message || '';
+    console.error('[admin] emplacements de courants : ' + brut, res.error);
+    // Ce cas-la merite son message exact : il vous dit quoi faire.
+    var msg = (/tc_admin_set_courants/.test(brut) || /schema cache/i.test(brut))
+      ? 'La fonction SQL « tc_admin_set_courants » est introuvable — exécutez d\'abord tc-courants-cascade.sql dans l\'éditeur SQL Supabase.'
+      : friendlyError(res.error);
+    showAdminNotice(msg, false);
     return;
   }
 
@@ -2772,7 +2797,7 @@ async function renderStats(){
     cineastesRes = await tcWithRetryTimeout(function(){ return loadAllCineastesAdmin(0, 1000); });
     courantsRows = await tcWithRetryTimeout(function(){ return tcLoadCourants(sb); });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     return;
   }
 
@@ -3041,11 +3066,11 @@ async function loadReglagesAffiniteFormule(){
       return sb.from('app_settings').select('value').eq('key', 'compare_affinity_formula').maybeSingle();
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     return;
   }
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error, 'chargement');
     return;
   }
   sel.value = (res.data && res.data.value) || 'avg';
@@ -3063,12 +3088,12 @@ async function saveReglagesAffiniteFormule(){
       return sb.from('app_settings').upsert({ key: 'compare_affinity_formula', value: sel.value, updated_at: new Date().toISOString() }, { onConflict: 'key' }).select('key');
     }, { retries: 0 });
   } catch(err){
-    showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false);
+    admErreur(null, err);
     btn.disabled = false;
     return;
   }
   btn.disabled = false;
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); return; }
+  if(res.error){ admErreur(null, res.error); return; }
   if(!res.data || !res.data.length){ showAdminNotice('L\'enregistrement n\'a pas abouti — vérifiez les droits de la table app_settings.', false); return; }
   showAdminNotice('Méthode de calcul enregistrée.', true);
 }
@@ -3099,11 +3124,11 @@ async function loadReglagesAffinitePoids(){
       return sb.from('app_settings').select('key,value').in('key', REGLAGES_AFFINITE_POIDS_FIELDS.map(function(f){ return f.key; }));
     });
   } catch(err){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + (err && err.message ? err.message : err); errEl.style.display = 'block'; }
+    admErreur(errEl, err, 'chargement');
     return;
   }
   if(res.error){
-    if(errEl){ errEl.textContent = 'Erreur de chargement : ' + res.error.message; errEl.style.display = 'block'; }
+    admErreur(errEl, res.error, 'chargement');
     return;
   }
   var byKey = {};
@@ -3139,12 +3164,12 @@ async function saveReglagesAffinitePoids(){
       return sb.from('app_settings').upsert(rows, { onConflict: 'key' }).select('key');
     }, { retries: 0 });
   } catch(err){
-    showAdminNotice('Erreur : ' + (err && err.message ? err.message : err), false);
+    admErreur(null, err);
     if(btn) btn.disabled = false;
     return;
   }
   if(btn) btn.disabled = false;
-  if(res.error){ showAdminNotice('Erreur : ' + res.error.message, false); return; }
+  if(res.error){ admErreur(null, res.error); return; }
   if(!res.data || res.data.length < rows.length){ showAdminNotice('L\'enregistrement n\'a pas abouti — vérifiez les droits de la table app_settings.', false); return; }
   showAdminNotice('Poids enregistrés.', true);
 }

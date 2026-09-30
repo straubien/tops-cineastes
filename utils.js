@@ -348,7 +348,11 @@ function friendlyError(err){
   if(/JWT|session|expired|invalid.*token/i.test(msg)) return tcTexte('err_session','Votre session a expiré. Merci de vous reconnecter.');
   if(/duplicate key|unique constraint/i.test(msg)) return tcTexte('err_doublon','Cette entrée existe déjà.');
   if(/Failed to fetch|NetworkError|network|fetch|timeout|délai/i.test(msg)) return tcTexte('err_reseau','Problème de connexion. Vérifiez votre réseau et réessayez.');
-  if(/permission|RLS|policy|row-level security/i.test(msg)) return tcTexte('err_non_autorise','Action non autorisée.');
+  // 42501 = « insufficient_privilege » cote Postgres. C'est l'erreur la plus
+  // frequente d'un back-office Supabase, et son message ne contient pas
+  // toujours les mots ci-dessous : on teste donc aussi le code (A-103).
+  if(err.code === '42501' || /permission|RLS|policy|row-level security/i.test(msg))
+    return tcTexte('err_non_autorise','Vos droits ne permettent pas cette action.');
   return tcTexte('err_generique_detail', 'Une erreur est survenue : ' + msg, msg);
 }
 

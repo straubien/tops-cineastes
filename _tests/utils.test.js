@@ -173,7 +173,22 @@ test('friendlyError : traduit les quatre cas connus', () => {
   assert.match(u.friendlyError({ message: 'JWT expired' }), /session a expiré/);
   assert.match(u.friendlyError({ message: 'duplicate key value' }), /existe déjà/);
   assert.match(u.friendlyError({ message: 'Failed to fetch' }), /connexion/);
-  assert.match(u.friendlyError({ message: 'row-level security policy' }), /non autorisée/);
+  assert.match(u.friendlyError({ message: 'row-level security policy' }), /droits ne permettent pas/);
+});
+
+// 42501 = refus de droits cote Postgres. C'est l'erreur la plus frequente
+// d'un back-office Supabase, et son message ne contient pas toujours les
+// mots « permission » ou « policy » : le code doit suffire (A-103).
+test('friendlyError : le code 42501 suffit, sans mot-cle dans le message', () => {
+  assert.match(u.friendlyError({ code: '42501', message: 'new row violates' }), /droits ne permettent pas/);
+  assert.match(u.friendlyError({ code: '42501', message: '' }), /droits ne permettent pas/);
+});
+
+// Un message brut de la base ne doit jamais ressortir tel quel quand il
+// correspond a un cas connu.
+test('friendlyError : ne laisse pas fuir le jargon de la base', () => {
+  const sortie = u.friendlyError({ code: '42501', message: 'new row violates row-level security policy for table "tops"' });
+  assert.ok(!/row-level security|violates|table "/.test(sortie), sortie);
 });
 
 test('friendlyError : sans erreur, message generique', () => {

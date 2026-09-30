@@ -36,6 +36,12 @@ var TC_TRANSLATIONS = {
     search_placeholder: "Rechercher un cinéaste…",
     // Libelle annonce par les lecteurs d'ecran sur les lettres de la barre
     // alphabetique, desormais activables au clavier (audit B-01).
+    // Etiquettes des champs de saisie, lues par les lecteurs d'ecran (A-117/A-120)
+    aria_comparer_a: "Premier cinéphile",
+    aria_comparer_b: "Second cinéphile",
+    aria_avatar: "Choisir une photo de profil",
+    aria_fav_ajouter: "Ajouter un cinéaste favori",
+    aria_autres_ajouter: "Ajouter un autre cinéaste",
     // ── Messages ajoutes par les actions A-082 a A-098 ──────────────────
     // Bannieres globales (shared.js)
     tc_err_globale: "Une erreur est survenue, rechargez la page si le problème persiste.",
@@ -436,6 +442,11 @@ var TC_TRANSLATIONS = {
     // Index
     search_placeholder: "Search for a filmmaker…",
     date_liaison: " at ",
+    aria_comparer_a: "First film lover",
+    aria_comparer_b: "Second film lover",
+    aria_avatar: "Choose a profile picture",
+    aria_fav_ajouter: "Add a favourite filmmaker",
+    aria_autres_ajouter: "Add another filmmaker",
     // ── Added by actions A-082 to A-098 ─────────────────────────────────
     tc_err_globale: "Something went wrong. Reload the page if the problem persists.",
     tc_hors_ligne: "You are offline.",

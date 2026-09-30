@@ -4035,7 +4035,7 @@ function openFicheThematique(themeNom){
         var editLink = document.createElement('button');
         editLink.type = 'button';
         editLink.textContent = t('mt_dup_edit_pending');
-        editLink.style.cssText = 'background:none;border:none;padding:0;margin-left:4px;color:var(--rouge,#A33025);text-decoration:underline;cursor:pointer;font:inherit;';
+        editLink.style.cssText = 'background:none;border:none;padding:0;margin-left:4px;color:var(--rouge-texte,#A33025);text-decoration:underline;cursor:pointer;font:inherit;';
         editLink.addEventListener('click', function(){ if(window.mtGoEditTop) window.mtGoEditTop(cineaste); });
         dupMsg.appendChild(editLink);
         dupMsg.style.display = 'block';
