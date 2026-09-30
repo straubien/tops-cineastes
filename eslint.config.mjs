@@ -22,6 +22,7 @@ const globauxDuProjet = {
   TC_AUTOCOMPLETE_MAX: 'readonly', TC_AVATAR_MAX_SIZE: 'readonly',
   // i18n.js
   TC_TRANSLATIONS: 'readonly', t: 'readonly', applyLang: 'readonly', toggleLang: 'readonly',
+  tcLocale: 'readonly', tcDate: 'readonly', tcDateCourte: 'readonly', tcDateHeure: 'readonly',
   // shared.js
   toggleDark: 'readonly', tcShowBanner: 'readonly', tcHideBanner: 'readonly',
   tcHandleGlobalError: 'readonly', tcUpdateOnlineBanner: 'readonly',

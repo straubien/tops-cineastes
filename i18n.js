@@ -36,6 +36,8 @@ var TC_TRANSLATIONS = {
     search_placeholder: "Rechercher un cinéaste…",
     // Libelle annonce par les lecteurs d'ecran sur les lettres de la barre
     // alphabetique, desormais activables au clavier (audit B-01).
+    // Liaison entre la date et l'heure : « 30 sept. 2026 a 14:05 »
+    date_liaison: " \u00e0 ",
     alpha_lettre: function(l){ return "Lettre " + l; },
     alpha_barre: "Filtrer par lettre — utilisez les flèches",
     filter_sans_tops: "Cinéastes sans aucun top",
@@ -421,6 +423,7 @@ var TC_TRANSLATIONS = {
     notif_generic: "You have a new notification.",
     // Index
     search_placeholder: "Search for a filmmaker…",
+    date_liaison: " at ",
     alpha_lettre: function(l){ return "Letter " + l; },
     alpha_barre: "Filter by letter — use the arrow keys",
     filter_sans_tops: "Filmmakers with no tops",
@@ -770,6 +773,53 @@ var TC_TRANSLATIONS = {
     adm_flags_historic: "Historical countries / entities",
   }
 };
+
+// ── DATES ───────────────────────────────────────────────────────────────
+// Les dates du site public suivaient toujours le format francais, meme en
+// anglais. Ces trois fonctions lisent la langue choisie et laissent le
+// navigateur ecrire la date comme il convient (actions A-076 a A-080).
+//
+// L'anglais utilise en-GB : jour d'abord et horloge 24 h, comme le francais.
+// Seuls les noms de mois changent (« 30 sept. 2026 » -> « 30 Sept 2026 »).
+// Les dates purement numeriques restent donc 30/09/2026 dans les deux
+// langues : c'est voulu, et cela evite toute ambiguite avec le format
+// americain 09/30/2026.
+function tcLocale(){
+  try{ return (localStorage.getItem('tc-lang') === 'en') ? 'en-GB' : 'fr-FR'; }
+  catch(e){ return 'fr-FR'; }
+}
+
+function tcDate(iso, opts){
+  if(!iso) return '';   // null, undefined ou chaine vide : pas de 01/01/1970
+  try{
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(tcLocale(), opts);
+  }catch(e){ return ''; }
+}
+
+// Date compacte (fil d'actualites, liste des soumissions).
+// En francais : 30/09/2026. En anglais le mois est ecrit, car le format
+// tout en chiffres est ambigu d'un pays a l'autre : « 03/01/2026 » se lit
+// 3 janvier ici et January 3rd aux Etats-Unis. « 3 Jan 2026 » ne trompe
+// personne (action A-080).
+function tcDateCourte(iso){
+  return (tcLocale() === 'fr-FR')
+    ? tcDate(iso, { day:'2-digit', month:'2-digit', year:'numeric' })
+    : tcDate(iso, { day:'numeric',  month:'short',  year:'numeric' });
+}
+
+function tcDateHeure(iso){
+  if(!iso) return '';   // null, undefined ou chaine vide : pas de 01/01/1970
+  try{
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    var loc = tcLocale();
+    return d.toLocaleDateString(loc, { day:'numeric', month:'short', year:'numeric' })
+         + t('date_liaison')
+         + d.toLocaleTimeString(loc, { hour:'2-digit', minute:'2-digit' });
+  }catch(e){ return ''; }
+}
 
 function t(key, arg){
   var lang='fr';

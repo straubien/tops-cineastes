@@ -1738,10 +1738,8 @@ function tcActuAvatarHtml(id,fallbackName){
   return '<span class="actu-avatar">'+escapeHtml(initials)+'</span>';
 }
 function tcFormatDate(iso){
-  try{
-    var d=new Date(iso);
-    return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){return '';}
+  // Format et liaison « a »/« at » suivent la langue choisie (A-077).
+  return tcDateHeure(iso);
 }
 function tcRenderCommentBody(raw){
   return formatPresentation(raw);
@@ -2250,9 +2248,7 @@ var _lastFocused=null;
 // ── ACTUALITÉS ──────────────────────────────────────────────
 function tcActuFormatDate(iso){
   if(!iso)return'';
-  var d=new Date(iso);
-  if(isNaN(d.getTime()))return'';
-  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return tcDateCourte(iso);  // A-078
 }
 
 function tcActuTopKey(contributorId,cineaste){return contributorId+'|'+cineaste;}
@@ -4210,7 +4206,7 @@ function openFicheThematique(themeNom){
       var cineaste = s.parsed_json && s.parsed_json.cineaste ? s.parsed_json.cineaste : '—';
       var films = (s.parsed_json && s.parsed_json.films) || [];
       var nbFilms = films.length;
-      var date = new Date(s.submitted_at).toLocaleDateString('fr-FR');
+      var date = tcDateCourte(s.submitted_at);  // A-079
       var statusLabel = {pending: t('mt_status_pending'), approved: t('mt_status_approved'), rejected: t('mt_status_rejected')}[s.status] || s.status;
 
       var item = document.createElement('div'); item.className = 'prev-item'; item.setAttribute('data-sub-id', s.id);
