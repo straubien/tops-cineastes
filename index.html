@@ -33,7 +33,7 @@
 /* Mini-avatar connecté dans la nav */
 .nav-user-avatar { width: 24px; height: 24px; background: var(--rouge,#A33025); display: inline-flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700; color: #f0ece3; overflow: hidden; vertical-align: middle; margin-right: 5px; flex-shrink: 0; border-radius: 0; }
 .nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.nav-logout-tip { display: none; position: absolute; top: 100%; right: 0; margin-top: 0; background: #1a1a1a; color: rgba(240,236,227,0.8); padding: 8px 16px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; z-index: 200; border-top: 2px solid var(--rouge,#A33025); }
+.nav-logout-tip { display: none; border: none; border-radius: 0; text-align: left; position: absolute; top: 100%; right: 0; margin-top: 0; background: #1a1a1a; color: rgba(240,236,227,0.8); padding: 8px 16px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; cursor: pointer; z-index: 200; border-top: 2px solid var(--rouge,#A33025); }
 .nav-logout-tip:hover { color: var(--rouge,#A33025); }
 /* Flèche retour dans le carré rouge du profil-header */
 .profil-header-back {
@@ -200,6 +200,11 @@
 </head>
 <body>
 
+<!-- Region d'annonce pour les lecteurs d'ecran (audit B-07, action A-030).
+     Invisible a l'ecran. Tout texte depose ici par tcAnnoncer() est lu a
+     voix haute : nombre de resultats de recherche, bannieres d'erreur. -->
+<div id="tc-annonces" class="sr-only" aria-live="polite" role="status"></div>
+
 <!-- ── SPLASH ─────────────────────────────────────────────────── -->
 <div class="splash" id="splash">
   <!-- Composition géométrique suprématiste -->
@@ -231,20 +236,20 @@
     </div>
     <!-- Logo + nav -->
     <div class="header-inner">
-      <div class="logo" id="logo-home">
+      <h1 class="logo" id="logo-home">
         TOPS<span class="slash-sq">/</span>CINÉASTES
-      </div>
+      </h1>
       <nav class="nav">
-        <a id="nav-index" class="active" data-i18n="nav_index">Index</a>
-        <a id="nav-actualites" data-i18n="nav_actualites">Actualités</a>
-        <a id="nav-contributeurs" data-i18n="nav_contributeurs">Cinéphiles</a>
-        <a id="nav-statistiques" data-i18n="nav_statistiques">Statistiques</a>
-        <a id="nav-thematiques" data-i18n="nav_thematiques">Tops thématiques</a>
-        <a id="nav-mes-tops" style="display:none" data-i18n="nav_mes_tops">Mes tops</a>
+        <a href="#index" id="nav-index" class="active" data-i18n="nav_index">Index</a>
+        <a href="#actualites" id="nav-actualites" data-i18n="nav_actualites">Actualités</a>
+        <a href="#contributeurs" id="nav-contributeurs" data-i18n="nav_contributeurs">Cinéphiles</a>
+        <a href="#statistiques" id="nav-statistiques" data-i18n="nav_statistiques">Statistiques</a>
+        <a href="#thematiques" id="nav-thematiques" data-i18n="nav_thematiques">Tops thématiques</a>
+        <a href="#mes-tops" id="nav-mes-tops" style="display:none" data-i18n="nav_mes_tops">Mes tops</a>
         <a href="submit.html?v=2" id="nav-soumettre" style="display:none" data-i18n="nav_mon_profil">Mon profil</a>
         <span id="nav-user-wrap">
           <a href="submit.html?v=2" id="nav-submit" data-i18n="nav_se_connecter">Se connecter</a>
-          <span class="nav-logout-tip" id="nav-logout-tip" data-i18n="nav_se_deconnecter">Se déconnecter</span>
+          <button type="button" class="nav-logout-tip" id="nav-logout-tip" data-i18n="nav_se_deconnecter">Se déconnecter</button>
         </span>
         <a id="nav-notif" class="nav-notif" style="display:none" role="button" tabindex="0" aria-label="Notifications" data-i18n-title="notif_aria" title="Notifications"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/></svg><span class="nav-notif-badge" id="nav-notif-badge" style="display:none">0</span></a>
         <a id="nav-dark" data-i18n-title="nav_dark_title" title="Mode sombre" role="button" tabindex="0" aria-label="Activer/désactiver le mode sombre" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></a>
@@ -262,7 +267,7 @@
     <div class="tc-notif-list" id="tc-notif-list"></div>
   </div>
 
-  <div class="content">
+  <main class="content">
     <!-- PAGE INDEX -->
     <div class="page visible" id="page-index">
       <!-- Cinéphiles connectés / vus récemment (rendu par index.js) -->
@@ -275,7 +280,7 @@
         <button class="filter-btn" id="filter-non-couvert" style="display:none" data-i18n="filter_non_couvert">Cinéastes sans top importé</button>
       </div>
       <div id="data-load-warning" style="display:none;color:#fff;background:#A33025;padding:10px 16px;margin-bottom:1rem;font-size:14px;border-radius:4px;"></div>
-      <div class="alpha-bar" id="alpha-bar"></div>
+      <div class="alpha-bar" id="alpha-bar" role="group" data-i18n-aria="alpha_barre" aria-label="Filtrer par lettre — utilisez les flèches"></div>
       <div class="list-count-bar">
         <div class="list-count" id="list-count"></div>
       </div>
@@ -285,7 +290,7 @@
     <!-- PAGE ACTUALITÉS -->
     <div class="page" id="page-actualites">
       <div class="list-header" style="margin-bottom:1.5rem">
-        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_actualites_h">Actualités</div>
+        <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_actualites_h">Actualités</h2>
       </div>
       <div class="actu-tabs" id="actu-tabs">
         <button type="button" class="actu-tab-btn active" data-action="actu-tab-select" data-actu-tab="fil" data-i18n="actu_tab_fil">Fil</button>
@@ -304,7 +309,7 @@
     <!-- PAGE CONTRIBUTEURS -->
     <div class="page" id="page-contributeurs">
       <div class="list-header" style="margin-bottom:1.5rem">
-        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_contributeurs_h">Cinéphiles</div>
+        <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_contributeurs_h">Cinéphiles</h2>
         <button type="button" class="btn-secondary" id="contrib-compare-btn" data-i18n="contrib_compare_btn">Comparer</button>
       </div>
       <div class="contrib-list" id="contrib-list"></div>
@@ -364,7 +369,7 @@
     <!-- PAGE COMPARAISON DE CINÉPHILES -->
     <div class="page" id="page-comparaison">
       <div class="list-header" style="margin-bottom:1.5rem">
-        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_comparaison_h">Affinités entre cinéphiles</div>
+        <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_comparaison_h">Affinités entre cinéphiles</h2>
       </div>
       <div class="compare-hint" data-i18n="compare_hint">Comparez deux cinéphiles à partir de leurs cinéastes et films favoris/appréciés (indépendamment de leurs tops).</div>
       <div class="compare-selectors">
@@ -623,7 +628,7 @@
     <!-- PAGE TOPS THÉMATIQUES -->
     <div class="page" id="page-thematiques">
       <div class="list-header" style="margin-bottom:1.5rem">
-        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_thematiques_h">Tops thématiques</div>
+        <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_thematiques_h">Tops thématiques</h2>
       </div>
       <div class="search-bar thematique-search-bar">
         <input type="text" placeholder="Rechercher un thème…" id="thematique-search-input" data-i18n-ph="thematique_search_ph">
@@ -637,7 +642,7 @@
     <!-- PAGE STATISTIQUES -->
     <div class="page" id="page-statistiques">
       <div class="list-header" style="margin-bottom:1.5rem">
-        <div class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_statistiques_h">Statistiques</div>
+        <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_statistiques_h">Statistiques</h2>
       </div>
       <div class="stats-hero" id="stats-hero"></div>
       <div class="stats-secondary" id="stats-secondary"></div>
@@ -664,7 +669,7 @@
         <div id="ranking-categories"></div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- FICHE OVERLAY -->
   <div class="fiche-overlay" id="fiche-overlay" role="dialog" aria-modal="true">

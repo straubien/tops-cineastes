@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Liste des pages du site, a l'intention des moteurs de recherche.
+     Le site n'ayant qu'une seule adresse publique (tout le contenu est
+     rendu en JavaScript derriere des ancres), ce plan se limite pour
+     l'instant a la page d'accueil. L'action A-144 le remplacera par un
+     plan complet, avec une page par cineaste. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://straubien.github.io/tops-cineastes/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

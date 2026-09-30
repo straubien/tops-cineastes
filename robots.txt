@@ -1,0 +1,7 @@
+# TOPS / CINEASTES
+# Les deux espaces prives n'ont rien a faire dans un moteur de recherche.
+User-agent: *
+Disallow: /admin.html
+Disallow: /submit.html
+
+Sitemap: https://straubien.github.io/tops-cineastes/sitemap.xml

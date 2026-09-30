@@ -135,26 +135,65 @@ function tcSbError(err, source){
 // Charge la table "cineastes" en totalité (paginé, db.max_rows plafonne à 1000 lignes/requête)
 // Les colonnes courant/courant2/courant3 contiennent des id référençant la
 // table "courants" (catalogue bilingue) — voir tcLoadCourants/tcCourantLabel.
-function tcLoadAllCineastes(sbClient, offset, pageSize){
-  offset = offset || 0;
-  pageSize = pageSize || 1000;
-  // `fbid` a ete retire : telecharge a chaque visite, il n'est lu NULLE PART
-  // dans le code. `url_facebook` aussi : il ne sert qu'a la fiche d'un
-  // cineaste, et est desormais charge a son ouverture (tcChargerLienFacebook).
-  // A eux deux ils representaient un tiers du catalogue transfere a chaque
-  // chargement de page, soit environ 1,3 Go par mois d'egress Supabase.
-  return sbClient.from('cineastes').select('nom,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3')
+// `fbid` a ete retire : telecharge a chaque visite, il n'est lu NULLE PART
+// dans le code. `url_facebook` aussi : il ne sert qu'a la fiche d'un
+// cineaste, et est desormais charge a son ouverture (tcChargerLienFacebook).
+// A eux deux ils representaient un tiers du catalogue transfere a chaque
+// chargement de page, soit environ 1,3 Go par mois d'egress Supabase.
+var TC_CINEASTES_COLONNES = 'nom,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3';
+
+// Une page de la table `cineastes`. Utilisee par les deux strategies ci-dessous.
+function tcChargerPageCineastes(sbClient, debut, pageSize){
+  return sbClient.from('cineastes').select(TC_CINEASTES_COLONNES)
     .order('id', { ascending: true })
-    .range(offset, offset + pageSize - 1)
+    .range(debut, debut + pageSize - 1)
     .then(function(res){
       // Sans ce test, une panne renvoyait [] : l'index s'affichait vide, sans
       // bannière, sans retry, et le cache local valide était écrasé.
       if(res && res.error) throw tcSbError(res.error, 'cineastes');
-      var rows = res.data || [];
-      if(rows.length === pageSize){
-        return tcLoadAllCineastes(sbClient, offset + pageSize, pageSize).then(function(more){ return rows.concat(more); });
+      return res.data || [];
+    });
+}
+
+// Repli : l'ancienne pagination, une page apres l'autre. N'est utilisee que si
+// le comptage prealable echoue (droits, panne) ; elle reste correcte, juste
+// plus lente. Cf. audit B-29, action A-038.
+function tcLoadAllCineastesSequentiel(sbClient, offset, pageSize){
+  return tcChargerPageCineastes(sbClient, offset, pageSize).then(function(rows){
+    if(rows.length === pageSize){
+      return tcLoadAllCineastesSequentiel(sbClient, offset + pageSize, pageSize)
+        .then(function(more){ return rows.concat(more); });
+    }
+    return rows;
+  });
+}
+
+// PostgREST plafonne chaque reponse a 1000 lignes : il faut donc plusieurs
+// requetes pour les ~3300 cineastes. Elles etaient enchainees (chacune
+// attendait la precedente), soit ~2,3 s d'attente pure. On demande desormais
+// d'abord le NOMBRE de lignes (head:true = aucune donnee rapportee), puis on
+// lance toutes les pages EN PARALLELE. Promise.all preserve l'ordre du
+// tableau, donc l'ordre par id est conserve.
+function tcLoadAllCineastes(sbClient, offset, pageSize){
+  offset = offset || 0;
+  pageSize = pageSize || 1000;
+  return sbClient.from('cineastes').select('id', { count: 'exact', head: true })
+    .then(function(r){
+      return (r && !r.error && typeof r.count === 'number') ? r.count : null;
+    }, function(){ return null; })
+    .then(function(total){
+      // Comptage indisponible : on retombe sur l'enchainement classique.
+      if(total === null) return tcLoadAllCineastesSequentiel(sbClient, offset, pageSize);
+      var pages = [];
+      for(var debut = offset; debut < total; debut += pageSize){
+        pages.push(tcChargerPageCineastes(sbClient, debut, pageSize));
       }
-      return rows;
+      if(!pages.length) return [];
+      return Promise.all(pages).then(function(morceaux){
+        var out = [];
+        for(var i = 0; i < morceaux.length; i++) out = out.concat(morceaux[i]);
+        return out;
+      });
     });
 }
 
@@ -509,4 +548,101 @@ function createAutocomplete(config){
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',setup);}else{setup();}
   return {select:select,render:render};
+}
+
+// ── ACCESSIBILITE ────────────────────────────────────────────────────────
+// Rend activable au clavier un element qui n'est ni <button> ni <a href>.
+// Sans cela, la tabulation ne s'y arrete pas et Entree n'y fait rien : les
+// lignes de l'index, les lettres de l'alphabet et les cartes de cinephiles
+// etaient donc inaccessibles a qui n'utilise pas de souris.
+//   el      : l'element a rendre activable
+//   action  : fonction executee au clic ou a l'appui sur Entree/Espace
+//   libelle : ce que le lecteur d'ecran annonce (facultatif)
+// Cf. audit B-01, action A-001.
+function tcRendreActivable(el, action, libelle){
+  if(!el || typeof action !== 'function') return;
+  el.setAttribute('role', 'button');
+  el.setAttribute('tabindex', '0');
+  if(libelle) el.setAttribute('aria-label', libelle);
+  el.addEventListener('click', action);
+  el.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault(); // empeche Espace de faire defiler la page
+      action();
+    }
+  });
+}
+
+// Annonce un message aux lecteurs d'ecran, sans rien afficher a l'ecran.
+// Le texte est depose dans la region #tc-annonces (aria-live="polite"), que
+// les lecteurs d'ecran relisent des qu'elle change. Sans cela, un changement
+// de liste ou une banniere d'erreur passaient totalement inapercus.
+// Cf. audit B-07, action A-031.
+function tcAnnoncer(msg){
+  var el = document.getElementById('tc-annonces');
+  if(!el || !msg) return;
+  // Re-deposer un texte identique ne declenche aucune annonce : on vide
+  // d'abord, puis on ecrit au tick suivant.
+  el.textContent = '';
+  setTimeout(function(){ el.textContent = msg; }, 50);
+}
+
+// Met en sommeil l'arriere-plan pendant qu'une fiche est ouverte.
+// ATTENTION : #fiche-overlay est lui-meme A L'INTERIEUR de #main-wrapper.
+// Poser `inert` sur main-wrapper rendrait donc la fiche elle-meme
+// inutilisable au clavier. On neutralise uniquement les FRERES de la fiche.
+function tcFondInerte(actif){
+  var mw = document.getElementById('main-wrapper');
+  var ov = document.getElementById('fiche-overlay');
+  if(!mw) return;
+  var enfants = mw.children;
+  for(var i = 0; i < enfants.length; i++){
+    if(enfants[i] === ov) continue;
+    if(actif){
+      enfants[i].setAttribute('inert', '');
+      enfants[i].setAttribute('aria-hidden', 'true');
+    } else {
+      enfants[i].removeAttribute('inert');
+      enfants[i].removeAttribute('aria-hidden');
+    }
+  }
+}
+
+// ── BARRE DE BOUTONS PARCOURUE AUX FLECHES ───────────────────────────────
+// Rendre les 26 lettres de l'alphabet focalisables une par une obligerait a
+// appuyer 26 fois sur Tab pour atteindre la liste. Le motif standard est
+// le « tabindex glissant » : la barre entiere ne compte que pour UN arret
+// de tabulation, et on circule a l'interieur avec les fleches.
+function tcBarreRovingMaj(bar, actif){
+  if(!bar) return;
+  var items = bar.querySelectorAll('[role="button"]');
+  if(!items.length) return;
+  if(!actif) actif = items[0];
+  for(var i = 0; i < items.length; i++){
+    items[i].setAttribute('tabindex', items[i] === actif ? '0' : '-1');
+  }
+}
+
+// Le role et le libelle de la barre sont poses dans le HTML (data-i18n-aria),
+// pour qu'ils suivent le changement de langue : cette fonction ne s'occupe
+// que du deplacement au clavier.
+function tcBarreRoving(bar){
+  if(!bar) return;
+  if(bar._tcRoving) return;   // un seul ecouteur, meme si la barre est reconstruite
+  bar._tcRoving = true;
+  bar.addEventListener('keydown', function(e){
+    var pas = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+    var estPas = Object.prototype.hasOwnProperty.call(pas, e.key);
+    if(!estPas && e.key !== 'Home' && e.key !== 'End') return;
+    var items = [].slice.call(bar.querySelectorAll('[role="button"]'));
+    var i = items.indexOf(document.activeElement);
+    if(i === -1) return;
+    e.preventDefault();
+    var j;
+    if(e.key === 'Home') j = 0;
+    else if(e.key === 'End') j = items.length - 1;
+    else j = (i + pas[e.key] + items.length) % items.length;
+    tcBarreRovingMaj(bar, items[j]);
+    items[j].focus();
+  });
 }

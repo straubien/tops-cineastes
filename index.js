@@ -1249,7 +1249,7 @@ function showImportedPanel(name){
     +'<button class="imp-panel-back" data-action="close-fiche" title="Retour">&#8592;</button>'
     +'<div class="fiche-name"><b>'+formatContribName(name)+'</b></div>'
     +'</div>'
-    +'<div class="alpha-bar" id="imp-panel-alpha"></div>'
+    +'<div class="alpha-bar" id="imp-panel-alpha" role="group" data-i18n-aria="alpha_barre" aria-label="'+escapeHtml(t('alpha_barre'))+'"></div>'
     +'<div class="imp-panel-content">'
     +'<div class="imp-panel-controls">'
     +'<span class="imp-panel-meta"></span>'
@@ -1258,10 +1258,7 @@ function showImportedPanel(name){
     +'<div id="imp-panel-body"></div>'
     +'</div>';
   document.getElementById('fiche-content').innerHTML=html;
-  _lastFocused=document.activeElement;
-  var overlay=document.getElementById('fiche-overlay');
-  overlay.classList.add('visible');
-  document.body.style.overflow='hidden';
+  tcOuvrirOverlay(formatContribNamePlain(name));
   _renderImpPanel();
   var _tcLang='fr';
   try{ _tcLang=localStorage.getItem('tc-lang')||'fr'; }catch(e){}
@@ -1278,9 +1275,14 @@ function _buildImpAlpha(){
     var col=document.createElement('div');
     col.className='alpha-col has-data'+(l===_impPanelLetter?' active':'');
     col.innerHTML='<div class="alpha-char">'+l+'</div>';
-    col.onclick=function(){_impPanelLetter=(_impPanelLetter===l?null:l);_renderImpPanel();};
+    tcRendreActivable(col, function(){
+      _impPanelLetter=(_impPanelLetter===l?null:l);
+      _renderImpPanel();
+    }, t('alpha_lettre', l));
     bar.appendChild(col);
   });
+  tcBarreRoving(bar);
+  tcBarreRovingMaj(bar, bar.querySelector('.alpha-col.active'));
 }
 function _renderImpPanel(){
   _buildImpAlpha();
@@ -1375,9 +1377,13 @@ function buildAlpha(){
     var col=document.createElement('div');
     col.className='alpha-col has-data'+(l===currentLetter?' active':'');
     col.innerHTML='<div class="alpha-char">'+l+'</div>';
-    col.onclick=function(){selectLetter(l)};
+    tcRendreActivable(col, function(){ selectLetter(l); }, t('alpha_lettre', l));
     bar.appendChild(col);
   });
+  // La barre ne compte que pour UN arret de tabulation ; on circule entre
+  // les lettres avec les fleches (motif standard des barres de boutons).
+  tcBarreRoving(bar);
+  tcBarreRovingMaj(bar, bar.querySelector('.alpha-col.active'));
 }
 
 function selectLetter(l){
@@ -1387,6 +1393,8 @@ function selectLetter(l){
     var char=col.querySelector('.alpha-char');
     col.classList.toggle('active',char&&char.textContent===l);
   });
+  var _bar=document.getElementById('alpha-bar');
+  if(_bar) tcBarreRovingMaj(_bar, _bar.querySelector('.alpha-col.active'));
   var items=getLetterData(l);items.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr')});
   if(activeFilter==='non-couvert'){var covered=getCoveredCineastes();items=items.filter(function(c){return!covered.has(c.nom);});}
   renderList(items);
@@ -1395,8 +1403,16 @@ function selectLetter(l){
 function renderList(items){
   var list=document.getElementById('cineaste-list'),count=document.getElementById('list-count');
   list.innerHTML='';
-  if(!items.length){list.innerHTML='<div class="empty-msg">'+t('aucun_resultat')+'</div>';count.textContent='';return}
+  if(!items.length){
+    list.innerHTML='<div class="empty-msg">'+t('aucun_resultat')+'</div>';
+    count.textContent='';
+    tcAnnoncer(t('aucun_resultat'));
+    return;
+  }
   count.textContent=t('cin_count',items.length);
+  // Sans cette annonce, un lecteur d'ecran ne signalait RIEN quand la liste
+  // changeait : on tapait dans la recherche sans savoir si elle avait abouti.
+  tcAnnoncer(count.textContent);
   var maxTops=1;items.forEach(function(c){var n=(c.tops_contributeurs||[]).length;if(n>maxTops)maxTops=n});
   items.forEach(function(c){
     var nb=(c.tops_contributeurs||[]).length;
@@ -1410,7 +1426,10 @@ function renderList(items){
       +'<div class="c-info"><span class="c-name">'+formatNom(c.nom,false)+'</span>'+datesHtml+'</div>'
       +'<div class="c-badge">'+nb+'</div>';
     wirePortraitFallbacks(row);
-    row.onclick=function(){openFiche(c)};list.appendChild(row);
+    // Clavier : sans role/tabindex/keydown, aucune de ces lignes n'etait
+    // atteignable autrement qu'a la souris. Cf. audit B-01, action A-002.
+    tcRendreActivable(row, function(){ openFiche(c); }, c.nom);
+    list.appendChild(row);
   });
 }
 
@@ -1624,11 +1643,7 @@ function openFiche(c){
 
   var inner=document.getElementById('contribs-inner');
   if(nb>0){inner.appendChild(contribsDiv);}else{inner.innerHTML='<div class="empty-msg">'+t('aucun_top_poste_cin')+'</div>';}
-  _lastFocused=document.activeElement;
-  var overlay=document.getElementById('fiche-overlay');
-  overlay.classList.add('visible');
-  document.body.style.overflow='hidden';
-  setTimeout(function(){var f=overlay.querySelector('[tabindex="0"],button,a');if(f)f.focus();},50);
+  tcOuvrirOverlay(c.nom);
 }
 
 function toggleAccordeon(id){
@@ -1637,7 +1652,58 @@ function toggleAccordeon(id){
   block.classList.toggle('open');
 }
 
-function closeFiche(){document.getElementById('fiche-overlay').classList.remove('visible');document.body.style.overflow='';if(_lastFocused&&_lastFocused.focus){try{_lastFocused.focus();}catch(e){}}}
+// ── OUVERTURE / FERMETURE ACCESSIBLES DE LA FICHE ──────────────────────
+// Trois manques corriges ici (cf. audit B-05, actions A-014 a A-021) :
+//  1. la fiche se declarait role="dialog" sans nom : un lecteur d'ecran
+//     annoncait « dialogue » sans dire de quoi il s'agissait ;
+//  2. rien ne retenait le focus : des la premiere tabulation on repartait
+//     dans le menu et la liste situes DERRIERE la fiche, invisibles ;
+//  3. l'arriere-plan restait lisible par les lecteurs d'ecran.
+
+// Retient le focus a l'interieur de la fiche : arrive au dernier element,
+// Tab revient au premier ; Maj+Tab fait l'inverse.
+function tcPiegerFocus(e){
+  if(e.key !== 'Tab') return;
+  var ov = document.getElementById('fiche-overlay');
+  if(!ov) return;
+  var f = ov.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!f.length) return;
+  var premier = f[0], dernier = f[f.length - 1];
+  if(e.shiftKey && document.activeElement === premier){ e.preventDefault(); dernier.focus(); }
+  else if(!e.shiftKey && document.activeElement === dernier){ e.preventDefault(); premier.focus(); }
+}
+
+// Ouvre la fiche. Remplace les 5 blocs qui faisaient ces memes gestes a la
+// main, en y ajoutant le nom accessible, le piege de focus et la mise en
+// sommeil de l'arriere-plan.
+function tcOuvrirOverlay(titre){
+  var ov = document.getElementById('fiche-overlay');
+  if(!ov) return;
+  _lastFocused = document.activeElement;
+  ov.setAttribute('aria-label', titre || 'Fiche');
+  ov.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+  // Met l'arriere-plan en sommeil : ni cliquable, ni tabulable, ni lu par
+  // les lecteurs d'ecran — sauf la fiche elle-meme, qui est un frere.
+  tcFondInerte(true);
+  ov.addEventListener('keydown', tcPiegerFocus);
+  setTimeout(function(){
+    var f = ov.querySelector('[tabindex="0"],button,a');
+    if(f) f.focus();
+  }, 50);
+}
+
+function closeFiche(){
+  var ov = document.getElementById('fiche-overlay');
+  if(ov){
+    ov.classList.remove('visible');
+    ov.removeEventListener('keydown', tcPiegerFocus);
+    ov.removeAttribute('aria-label');
+  }
+  document.body.style.overflow = '';
+  tcFondInerte(false);
+  if(_lastFocused && _lastFocused.focus){ try{ _lastFocused.focus(); }catch(e){} }
+}
 
 // ── COMMENTAIRES SOUS LES TOPS ─────────────────────────────────
 var TC_COMMENTS={}; // uid → { ownerId, cineasteNom, loaded, rows, replyTo:{id,author,snippet}|null, editingId }
@@ -2242,7 +2308,7 @@ function renderActualites(){
   feed.innerHTML='<div class="empty-msg">'+t('actu_chargement')+'</div>';
   Promise.all([
     tcWithRetryTimeout(function(){ return TC_SB.from('cineaste_proposals').select('*').in('status',['pending','approved']).order('submitted_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
-    tcLoadAllApprovedSubmissions('*, contributors(display_name)').then(function(r){return r.data||[];}).catch(function(){return[];}),
+    tcLoadAllApprovedSubmissions('id,contributor_id,status,submitted_at,reviewed_at,parsed_json,contributors(display_name)').then(function(r){return r.data||[];}).catch(function(){return[];}),
     tcWithRetryTimeout(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
     tcActuLoadLegacyTopsKeys(0,1000).catch(function(){return[];}),
     tcWithRetryTimeout(function(){ return TC_SB.from('courant_proposals').select('*, contributors(display_name)').eq('status','approved').order('reviewed_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
@@ -2514,7 +2580,9 @@ function renderContributeurs(){
       +avatarHtml
       +'</div>';
 
-    div.onclick=function(){navigateProfil(this.getAttribute('data-name'));};
+    tcRendreActivable(div, function(){
+      navigateProfil(div.getAttribute('data-name'));
+    }, formatContribNamePlain(c.name));
     list.appendChild(div);
     // Charger la photo depuis Supabase si disponible
     if(AVATAR_URLS[c.name]){
@@ -2555,12 +2623,12 @@ function openContribDetail(name){
     row.innerHTML='<div class="c-bar"></div>'
       +'<div class="c-info"><span class="c-name">'+formatNom(c.nom)+'</span>'+dh+'</div>';
     row.setAttribute('data-nom',c.nom);
-    row.onclick=function(){
-      var nom=this.getAttribute('data-nom');
+    tcRendreActivable(row, function(){
+      var nom=row.getAttribute('data-nom');
       closeFiche();
       var found=DATA.cineastes.find(function(x){return x.nom===nom;});
       if(found)openFiche(found);
-    };
+    }, c.nom);
     listDiv.appendChild(row);
   });
     var sqW=Math.max(20,Math.min(80,Math.round(20+(cin.length/24)*60)))+'px';
@@ -2575,11 +2643,7 @@ function openContribDetail(name){
     +'<div id="contrib-detail-list"></div>';
 
   document.getElementById('contrib-detail-list').appendChild(listDiv);
-  _lastFocused=document.activeElement;
-  var overlay2=document.getElementById('fiche-overlay');
-  overlay2.classList.add('visible');
-  document.body.style.overflow='hidden';
-  setTimeout(function(){var f=overlay2.querySelector('[tabindex="0"],button,a');if(f)f.focus();},50);
+  tcOuvrirOverlay(formatContribNamePlain(name));
 }
 
 // Année de naissance utilisée pour le tri « plus vieux → plus jeune » de la
@@ -2631,12 +2695,12 @@ function renderCourantDetailList(){
     row.innerHTML='<div class="c-bar"></div>'
       +'<div class="c-info"><span class="c-name">'+formatNom(c.nom)+'</span>'+dh+'</div>';
     row.setAttribute('data-nom',c.nom);
-    row.onclick=function(){
-      var nom=this.getAttribute('data-nom');
+    tcRendreActivable(row, function(){
+      var nom=row.getAttribute('data-nom');
       closeFiche();
       var found=DATA.cineastes.find(function(x){return x.nom===nom;});
       if(found)openFiche(found);
-    };
+    }, c.nom);
     listDiv.appendChild(row);
   });
   container.innerHTML='';
@@ -2669,11 +2733,7 @@ function openCourantDetail(courantId){
     +'<div id="contrib-detail-list"></div>';
 
   renderCourantDetailList();
-  _lastFocused=document.activeElement;
-  var overlay3=document.getElementById('fiche-overlay');
-  overlay3.classList.add('visible');
-  document.body.style.overflow='hidden';
-  setTimeout(function(){var f=overlay3.querySelector('[tabindex="0"],button,a');if(f)f.focus();},50);
+  tcOuvrirOverlay(courant);
 }
 
 // Frise chronologique partagée par les classements "Courants" et "Catégories" :
@@ -2904,12 +2964,12 @@ window.tcAfterLangChange = function(){
 // ── Wiring événements statiques — zéro onclick inline ────────
 document.getElementById('btn-splash-enter').addEventListener('click',function(){enterSite();});
 document.getElementById('logo-home').addEventListener('click',function(){navigate('index');});
-document.getElementById('nav-index').addEventListener('click',function(){navigate('index');});
-document.getElementById('nav-actualites').addEventListener('click',function(){navigate('actualites');});
-document.getElementById('nav-contributeurs').addEventListener('click',function(){navigate('contributeurs');});
-document.getElementById('nav-statistiques').addEventListener('click',function(){navigate('statistiques');});
-document.getElementById('nav-mes-tops').addEventListener('click',function(){navigate('mes-tops');});
-document.getElementById('nav-thematiques').addEventListener('click',function(){navigate('thematiques');});
+document.getElementById('nav-index').addEventListener('click',function(e){e.preventDefault();navigate('index');});
+document.getElementById('nav-actualites').addEventListener('click',function(e){e.preventDefault();navigate('actualites');});
+document.getElementById('nav-contributeurs').addEventListener('click',function(e){e.preventDefault();navigate('contributeurs');});
+document.getElementById('nav-statistiques').addEventListener('click',function(e){e.preventDefault();navigate('statistiques');});
+document.getElementById('nav-mes-tops').addEventListener('click',function(e){e.preventDefault();navigate('mes-tops');});
+document.getElementById('nav-thematiques').addEventListener('click',function(e){e.preventDefault();navigate('thematiques');});
 document.getElementById('contrib-compare-btn').addEventListener('click',function(){navigate('comparaison');});
 document.getElementById('index-presence').addEventListener('click',function(e){
   var btn=e.target.closest('[data-presence-name]');
@@ -3406,11 +3466,15 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       tcReloadLastSeen();
       // Charger les tops approuvés maintenant que CONTRIB_DATA est disponible
       var idToName={};
+      // Index nom de cineaste -> cineaste, construit paresseusement a la
+      // premiere ligne traitee (DATA.cineastes peut ne pas etre encore pret
+      // au moment ou l'on arrive ici). Cf. audit B-29, action A-035.
+      var _subCinParNom = null;
       res.data.forEach(function(c){if(c.id){
         if(c.json_name) idToName[c.id]=c.json_name;
         else if(c.display_name) idToName[c.id]=c.display_name.toUpperCase();
       }});
-      tcLoadAllApprovedSubmissions('*, contributors(display_name)').then(function(res2){
+      tcLoadAllApprovedSubmissions('id,contributor_id,status,submitted_at,reviewed_at,parsed_json,contributors(display_name)').then(function(res2){
         // Attendre que DATA.cineastes soit chargé avant de fusionner les tops soumis
         // via l'interface : la pagination Supabase peut être plus lente que cette requête,
         // et sans cette attente la fusion ci-dessous serait silencieusement ignorée.
@@ -3428,7 +3492,15 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
           IMPORTED_COUNTS[jsonName].tops++;
           IMPORTED_COUNTS[jsonName].films+=films.length;
           if(DATA){
-            var cin=DATA.cineastes.find(function(c){return c.nom===cinNom;});
+            // Index construit une fois plutot qu'un parcours complet par ligne.
+            // Cf. audit B-29, action A-035.
+            if(!_subCinParNom){
+              _subCinParNom = {};
+              for(var _j=0; _j<DATA.cineastes.length; _j++){
+                _subCinParNom[DATA.cineastes[_j].nom] = DATA.cineastes[_j];
+              }
+            }
+            var cin=_subCinParNom[cinNom];
             if(cin){
               if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
               if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
@@ -3442,43 +3514,89 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
         // Charger aussi les tops importés manuellement (table tops, submission_id = NULL)
         // Note : Supabase/PostgREST plafonne le nombre de lignes renvoyées par requête
         // (db.max_rows, souvent 1000) quel que soit le .limit() demandé côté client.
-        // On pagine donc avec .range() jusqu'à récupérer toutes les lignes.
-        function loadAllTops(offset, pageSize){
-          // Enveloppé dans tcWithRetryTimeout (comme les autres chargements) :
-          // un échec réseau n'est plus silencieux, il est propagé au .catch()
-          // qui affiche un avertissement visible à l'utilisateur.
+        // On pagine donc avec .range().
+        //
+        // Ces pages etaient enchainees : chacune attendait la precedente, soit
+        // 13 allers-retours en file d'attente et ~7 s d'attente pure. Elles sont
+        // desormais lancees EN PARALLELE, apres un comptage prealable.
+        // Cf. audit B-02, actions A-034 a A-037.
+        //
+        // Les lignes ne sont traitees QU'APRES reception de toutes les pages,
+        // et dans l'ordre des pages : le dedoublonnage ci-dessous (« ne pas
+        // ecraser un top deja charge ») garde donc exactement le meme resultat
+        // qu'avec l'ancien enchainement.
+
+        // Index nom -> cineaste, construit UNE fois. Auparavant, chacune des
+        // 12 000 lignes declenchait un parcours complet des 3 300 cineastes,
+        // soit ~20 millions de comparaisons de texte. Cf. audit B-29, A-034.
+        var _cinParNom = {};
+        if(DATA && DATA.cineastes){
+          for(var _i=0; _i<DATA.cineastes.length; _i++){
+            _cinParNom[DATA.cineastes[_i].nom] = DATA.cineastes[_i];
+          }
+        }
+
+        function traiterLignesTops(rows){
+          rows.forEach(function(top){
+            var jsonName=idToName[top.contributor_id];
+            if(!jsonName)return;
+            var cinNom=top.cineaste_nom;
+            var films=top.films||[];
+            if(!cinNom)return;
+            // Ne pas écraser un top déjà chargé via submissions
+            if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
+            if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
+            SUPABASE_TOPS[jsonName][cinNom]=films;
+            if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
+            IMPORTED_COUNTS[jsonName].tops++;
+            IMPORTED_COUNTS[jsonName].films+=films.length;
+            var cin=_cinParNom[cinNom];   // acces direct, au lieu d'un .find()
+            if(cin){
+              if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
+              if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
+            }
+          });
+        }
+
+        // Une page de la table `tops`. Enveloppee dans tcWithRetryTimeout
+        // (comme les autres chargements) : un echec reseau n'est pas
+        // silencieux, il est propage au .catch() qui affiche un avertissement.
+        function chargerPageTops(debut, taille){
           return tcWithRetryTimeout(function(){
             return TC_SB.from('tops').select('contributor_id, cineaste_nom, films')
               .order('id', { ascending: true })
-              .range(offset, offset + pageSize - 1);
-          })
-            .then(function(res3){
-              if(res3 && res3.error) throw res3.error;
-              var rows = res3.data || [];
-              rows.forEach(function(top){
-                var jsonName=idToName[top.contributor_id];
-                if(!jsonName)return;
-                var cinNom=top.cineaste_nom;
-                var films=top.films||[];
-                if(!cinNom)return;
-                // Ne pas écraser un top déjà chargé via submissions
-                if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
-                if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
-                SUPABASE_TOPS[jsonName][cinNom]=films;
-                if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
-                IMPORTED_COUNTS[jsonName].tops++;
-                IMPORTED_COUNTS[jsonName].films+=films.length;
-                if(DATA){
-                  var cin=DATA.cineastes.find(function(c){return c.nom===cinNom;});
-                  if(cin){
-                    if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
-                    if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
-                  }
-                }
-              });
-              if(rows.length===pageSize){
-                return loadAllTops(offset+pageSize, pageSize);
+              .range(debut, debut + taille - 1);
+          }).then(function(res3){
+            if(res3 && res3.error) throw res3.error;
+            return res3.data || [];
+          });
+        }
+
+        // Repli sequentiel, si le comptage prealable echoue (droits, panne).
+        function chargerToutSequentiel(debut, taille){
+          return chargerPageTops(debut, taille).then(function(rows){
+            traiterLignesTops(rows);
+            if(rows.length === taille) return chargerToutSequentiel(debut + taille, taille);
+          });
+        }
+
+        function loadAllTops(offset, pageSize){
+          return tcWithRetryTimeout(function(){
+            return TC_SB.from('tops').select('id', { count: 'exact', head: true });
+          }).then(function(r){
+            return (r && !r.error && typeof r.count === 'number') ? r.count : null;
+          }, function(){ return null; })
+            .then(function(total){
+              if(total === null) return chargerToutSequentiel(offset, pageSize);
+              var pages = [];
+              for(var debut = offset; debut < total; debut += pageSize){
+                pages.push(chargerPageTops(debut, pageSize));
               }
+              if(!pages.length) return;
+              return Promise.all(pages).then(function(morceaux){
+                // dans l'ordre des pages, donc dans l'ordre des id
+                for(var i=0; i<morceaux.length; i++) traiterLignesTops(morceaux[i]);
+              });
             });
         }
         loadAllTops(0, 1000).then(function(){
@@ -3620,6 +3738,10 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
     wrap.addEventListener('mouseleave', hideTip);
     tip.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); });
     tip.addEventListener('mouseleave', hideTip);
+    // Clavier : l'infobulle n'apparaissait qu'au survol de la souris, donc
+    // se deconnecter etait impossible sans souris. Cf. audit B-01, A-012.
+    wrap.addEventListener('focusin', showTip);
+    wrap.addEventListener('focusout', hideTip);
   })();
 })();
 
@@ -3706,7 +3828,7 @@ async function renderThematiques(){
     row.appendChild(info);
     row.appendChild(badge);
 
-    row.addEventListener('click', function(){ openFicheThematique(nom); });
+    tcRendreActivable(row, function(){ openFicheThematique(nom); }, nom);
     listEl.appendChild(row);
   });
 }
@@ -3804,10 +3926,7 @@ function openFicheThematique(themeNom){
   var inner = document.getElementById('contribs-inner');
   if(nb>0){ inner.appendChild(contribsDiv); } else { inner.innerHTML = '<div class="empty-msg">'+t('thematique_vide')+'</div>'; }
 
-  _lastFocused = document.activeElement;
-  overlay.classList.add('visible');
-  document.body.style.overflow = 'hidden';
-  setTimeout(function(){ var f = overlay.querySelector('[tabindex="0"],button,a'); if(f) f.focus(); }, 50);
+  tcOuvrirOverlay(themeNom);
 }
 
 // ── MES TOPS ─────────────────────────────────────────────────

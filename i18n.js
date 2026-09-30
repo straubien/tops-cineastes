@@ -34,6 +34,10 @@ var TC_TRANSLATIONS = {
     notif_generic: "Vous avez une nouvelle notification.",
     // Index
     search_placeholder: "Rechercher un cinéaste…",
+    // Libelle annonce par les lecteurs d'ecran sur les lettres de la barre
+    // alphabetique, desormais activables au clavier (audit B-01).
+    alpha_lettre: function(l){ return "Lettre " + l; },
+    alpha_barre: "Filtrer par lettre — utilisez les flèches",
     filter_sans_tops: "Cinéastes sans aucun top",
     filter_non_couvert: "Cinéastes sans top importé",
     page_actualites_h: "Actualités",
@@ -499,6 +503,8 @@ var TC_TRANSLATIONS = {
     notif_generic: "You have a new notification.",
     // Index
     search_placeholder: "Search for a filmmaker…",
+    alpha_lettre: function(l){ return "Letter " + l; },
+    alpha_barre: "Filter by letter — use the arrow keys",
     filter_sans_tops: "Filmmakers with no tops",
     filter_non_couvert: "Filmmakers without imported top",
     page_actualites_h: "News",

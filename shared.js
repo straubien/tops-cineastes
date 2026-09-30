@@ -30,6 +30,10 @@ function tcShowBanner(id,text,bg){
   el.style.background=bg;
   el.textContent=text;
   el.style.display='block';
+  // Une banniere d'erreur ou de perte de reseau n'etait vue que par les
+  // voyants : rien ne l'annoncait. tcAnnoncer() vient de utils.js, charge
+  // apres ce fichier — d'ou le test de presence. Cf. audit B-07, A-033.
+  if(typeof tcAnnoncer === 'function') tcAnnoncer(text);
 }
 function tcHideBanner(id){
   var el=document.getElementById(id);
