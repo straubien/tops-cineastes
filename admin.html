@@ -19,7 +19,10 @@
 <script defer src="utils.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="flagsdata.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="auth-shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
-<script defer src="i18n.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<!-- i18n.js n'est plus charge ici : le back-office est en francais, et l'etait
+     deja de fait (2 attributs data-i18n sur ~88 textes). Ce fichier coutait
+     12 Ko compresses a chaque visite pour ne rien traduire.
+     Cf. audit B-14, actions A-062 a A-067. -->
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <link rel="stylesheet" href="style.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
 <style>
@@ -70,7 +73,6 @@
 .dark .btn-logout { color: rgba(240,236,227,0.4); }
 .dark .header-user { color: rgba(240,236,227,0.55); }
 
-.btn-lang-img:hover { opacity: 1; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1100,7 +1102,6 @@ body {
       </div>
       <button class="btn-logout" id="btn-logout" style="display:none">Déconnexion</button>
       <button id="btn-dark" title="Mode sombre" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
-      <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block;opacity:0.7"></button>
     </div>
   </div>
 </div>
@@ -1108,8 +1109,8 @@ body {
 <!-- ── CHARGEMENT ── -->
 <!-- CORRECTIF BUG A : display:none initial, JS affiche après 500ms si auth lente -->
 <div id="section-loading" style="display:none;text-align:center;padding:4rem 2rem;font-family:'Cormorant Garamond',Georgia,serif;">
-  <div style="font-size:20px;color:var(--text,#111008);" id="loading-auth-msg" data-i18n="loading_auth">Vérification de la session...</div>
-  <div style="font-size:15px;color:var(--brun-pale,#7a6350);margin-top:8px;font-style:italic;" data-i18n="loading_auth_patience">Merci de patienter quelques instants</div>
+  <div style="font-size:20px;color:var(--text,#111008);" id="loading-auth-msg">Vérification de la session...</div>
+  <div style="font-size:15px;color:var(--brun-pale,#7a6350);margin-top:8px;font-style:italic;">Merci de patienter quelques instants</div>
 </div>
 
 <!-- ── LOGIN ── -->

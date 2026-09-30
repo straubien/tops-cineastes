@@ -108,7 +108,6 @@ tcWithRetryTimeout(function(){ return tcLoadCourants(sb); }).catch(function(){ r
 document.getElementById('btn-login').addEventListener('click', login);
 document.getElementById('btn-logout').addEventListener('click', function(){ sb.auth.signOut(); });
 document.getElementById('btn-dark').addEventListener('click', toggleDark);
-document.getElementById('btn-lang').addEventListener('click', toggleLang);
 
 ['login-email','login-password'].forEach(function(id){
   document.getElementById(id).addEventListener('keydown', function(e){
@@ -121,10 +120,10 @@ document.getElementById('btn-lang').addEventListener('click', toggleLang);
 // duplication avec submit.html.
 function login(){
   return tcLogin(sb, {
-    noFields: t('adm_no_fields'),
-    connecting: t('adm_connecting'),
-    loginBtn: t('adm_login_btn'),
-    loginError: t('adm_login_err')
+    noFields: 'Veuillez remplir les deux champs.',
+    connecting: 'Connexion…',
+    loginBtn: 'Se connecter',
+    loginError: 'Email ou mot de passe incorrect.'
   });
 }
 
@@ -152,12 +151,12 @@ async function onLogin(user){
       showError('Le profil n\'a pas pu être chargé (problème réseau). Rechargez la page et réessayez.');
       return;
     }
-    showError(t('adm_no_profil'));
+    showError('Compte non lié à un profil contributeur.');
     await sb.auth.signOut();
     return;
   }
   if(!res.data.is_admin){
-    showError(t('adm_no_admin'));
+    showError('Accès refusé : droits d\'administration requis.');
     await sb.auth.signOut();
     return;
   }
@@ -247,10 +246,10 @@ document.querySelectorAll('.tab').forEach(function(tab){
 // ═══════════════════════════════════════════════════════════════
 // ── Files d'attente de modération affichées sur le tableau de bord ──
 var DASH_QUEUES = [
-  { table: 'submissions',        labelKey: 'adm_dash_q_submissions',  tab: 'submissions' },
-  { table: 'cineaste_proposals', labelKey: 'adm_dash_q_propositions', tab: 'propositions' },
-  { table: 'thematic_tops',      labelKey: 'adm_dash_q_thematiques',  tab: 'thematiques' },
-  { table: 'courant_proposals',  labelKey: 'adm_dash_q_courants',     tab: 'courants' }
+  { table: 'submissions',        label: 'Soumissions de tops',  tab: 'submissions' },
+  { table: 'cineaste_proposals', label: 'Propositions de cinéastes', tab: 'propositions' },
+  { table: 'thematic_tops',      label: 'Tops thématiques',  tab: 'thematiques' },
+  { table: 'courant_proposals',  label: 'Propositions de courants',     tab: 'courants' }
 ];
 
 var DASH_CACHE_TTL = 25000;
@@ -376,7 +375,7 @@ async function renderDashboard(force){
     var card = document.createElement('button');
     card.type = 'button';
     card.className = 'dash-queue-card' + (n > 0 ? ' has-pending' : '');
-    card.innerHTML = '<span class="dash-queue-count">' + n + '</span><span class="dash-queue-label">' + t(q.labelKey) + '</span>';
+    card.innerHTML = '<span class="dash-queue-count">' + n + '</span><span class="dash-queue-label">' + q.label + '</span>';
     card.addEventListener('click', function(){
       var tabBtn = document.querySelector('.tab[data-tab="' + q.tab + '"]');
       if(tabBtn) tabBtn.click();
@@ -385,7 +384,7 @@ async function renderDashboard(force){
   });
 
   var warnMsgs = [];
-  if(jsonWarnings.length) warnMsgs.push(t('adm_json_warning', jsonWarnings.join(', ')));
+  if(jsonWarnings.length) warnMsgs.push('⚠ Fichier(s) JSON inaccessible(s) : ' + jsonWarnings.join(', ') + ' — comptages partiels.');
   // Échec silencieux corrigé : si une requête Supabase de comptage a échoué,
   // on le signale au lieu d'afficher des totaux faussement complets.
   if(dashCountError) warnMsgs.push('⚠ Une requête Supabase a échoué : les totaux peuvent être partiels. Rechargez la page.');
@@ -440,14 +439,14 @@ document.getElementById('btn-parse').addEventListener('click', function(){
   var cineaste = selectedCineaste || document.getElementById('import-cineaste').value.trim();
   var texte = document.getElementById('import-textarea').value.trim();
 
-  if(!contrib){ showImportError(t('adm_select_contrib')); return; }
-  if(!cineaste){ showImportError(t('adm_select_cin')); return; }
-  if(!texte){ showImportError(t('adm_paste_text')); return; }
+  if(!contrib){ showImportError('Sélectionnez un contributeur.'); return; }
+  if(!cineaste){ showImportError('Sélectionnez un cinéaste.'); return; }
+  if(!texte){ showImportError('Collez le commentaire.'); return; }
   showImportError('');
 
   parsedFilms = parseTopsBrut(texte);
   if(!parsedFilms.length){
-    showImportError(t('adm_no_film_detected'));
+    showImportError('Aucun film détecté. Vérifiez le format (lignes numérotées).');
     return;
   }
 
@@ -470,7 +469,7 @@ document.getElementById('btn-parse').addEventListener('click', function(){
   var ignorees = tcMessageLignesIgnorees(parsedFilms);
   if(ignorees) messages.push(ignorees);
   var sansAnnee = parsedFilms.filter(function(f){ return !f.annee; }).length;
-  if(sansAnnee > 0) messages.push(t('adm_films_sans_annee', sansAnnee));
+  if(sansAnnee > 0) messages.push(sansAnnee + ' film' + (sansAnnee > 1 ? 's' : '') + ' sans année.');
   var warn = document.getElementById('import-warning');
   if(messages.length){
     warn.textContent = messages.join(' \u2014 ');
@@ -492,7 +491,7 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
   var btn = document.getElementById('btn-submit-import');
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>' + t('adm_saving');
+  btn.innerHTML = '<span class="spinner"></span>' + 'Enregistrement…';
   showImportError('');
 
   try{
@@ -508,8 +507,8 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
 
     if(!contribId){
       btn.disabled = false;
-      btn.textContent = t('adm_save_btn');
-      showImportError(t('adm_contrib_not_found', contrib));
+      btn.textContent = 'Enregistrer dans Supabase';
+      showImportError('Contributeur "' + contrib + '" introuvable dans la table contributors.');
       return;
     }
 
@@ -533,8 +532,8 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
         });
         if(dejaApprouve){
           btn.disabled = false;
-          btn.textContent = t('adm_save_btn');
-          showImportError(t('adm_dup_import', cineaste));
+          btn.textContent = 'Enregistrer dans Supabase';
+          showImportError('Un top approuvé existe déjà pour ' + cineaste + ' chez ce contributeur — import bloqué pour éviter un doublon.');
           return;
         }
       }
@@ -556,14 +555,14 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
     }, { retries: 0, timeoutMs: 15000 });
 
     btn.disabled = false;
-    btn.textContent = t('adm_save_btn');
+    btn.textContent = 'Enregistrer dans Supabase';
 
     if(res.error){
-      showImportError(t('adm_err_prefix') + friendlyError(res.error));
+      showImportError('Erreur : ' + friendlyError(res.error));
       return;
     }
     if(!res.data || !res.data.length){
-      showImportError(t('adm_save_rights'));
+      showImportError('L\'enregistrement n\'a pas abouti — vérifiez les droits de la table submissions.');
       return;
     }
 
@@ -578,8 +577,8 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
   }catch(err){
     console.error('Erreur lors de l\'enregistrement:', err);
     btn.disabled = false;
-    btn.textContent = t('adm_save_btn');
-    showImportError(t('adm_err_unexpected') + friendlyError(err));
+    btn.textContent = 'Enregistrer dans Supabase';
+    showImportError('Erreur inattendue : ' + friendlyError(err));
   }
 });
 
@@ -609,10 +608,10 @@ function showConfirmModal(message, onConfirm){
   actions.className = 'confirm-actions';
   var noBtn = document.createElement('button');
   noBtn.className = 'confirm-btn-no';
-  noBtn.textContent = t('adm_cancel');
+  noBtn.textContent = 'Annuler';
   var yesBtn = document.createElement('button');
   yesBtn.className = 'confirm-btn-yes';
-  yesBtn.textContent = t('adm_confirm');
+  yesBtn.textContent = 'Confirmer';
   function close(){ if(overlay.parentNode) document.body.removeChild(overlay); }
   noBtn.addEventListener('click', close);
   overlay.addEventListener('click', function(e){ if(e.target === overlay) close(); });
@@ -632,10 +631,10 @@ function showConfirmModal(message, onConfirm){
 // ce qui garantit que les libellés reflètent la langue active au moment du rendu.
 function getTypeLabel(type){
   var labels = {
-    top: t('adm_type_top'), favoris: t('adm_type_favoris'),
-    autres_cineastes: t('adm_type_autres_cin'),
-    films_favoris: t('adm_type_films_favoris'), autres_films: t('adm_type_autres_films'),
-    presentation: t('adm_type_presentation')
+    top: 'Top', favoris: 'Cinéastes ❤',
+    autres_cineastes: 'Autres cinéastes',
+    films_favoris: 'Films ❤', autres_films: 'Autres films',
+    presentation: 'Présentation'
   };
   return labels[type] || type;
 }
@@ -730,7 +729,7 @@ function renderSubmissions(){
   });
   container.innerHTML = '';
   if(!filtered.length){
-    container.innerHTML = '<div class="empty-state">' + t('adm_no_submission') + '</div>';
+    container.innerHTML = '<div class="empty-state">' + 'Aucune soumission' + '</div>';
     return;
   }
   filtered.forEach(function(s){ buildSubmissionCard(s, container); });
@@ -741,7 +740,7 @@ function buildSubmissionCard(s, container){
   var typeLabel = getTypeLabel(type); // CORRECTIF BUG 3 : appel dynamique
   var contribName = s.contributor_name || '—';
   var date = new Date(s.submitted_at).toLocaleDateString('fr-FR');
-  var statusLabel = {pending: t('adm_status_pending'), approved: t('adm_status_approved'), rejected: t('adm_status_rejected')}[s.status] || s.status;
+  var statusLabel = {pending: 'En attente', approved: 'Validé', rejected: 'Refusé'}[s.status] || s.status;
   var cardId = 'sub-' + s.id;
 
   // Sous-titre selon le type
@@ -795,7 +794,7 @@ function buildSubmissionCard(s, container){
     var modifBadge = document.createElement('span');
     var isModif = isTopModification(s);
     modifBadge.className = 'modif-badge ' + (isModif ? 'modification' : 'nouveau');
-    modifBadge.textContent = isModif ? t('adm_badge_modif') : t('adm_badge_new');
+    modifBadge.textContent = isModif ? 'Modification' : 'Nouveau';
     namesDiv.appendChild(modifBadge);
   }
   var cineasteDiv = document.createElement('div');
@@ -866,7 +865,7 @@ function buildSubmissionCard(s, container){
     // Bouton editer
     var editBtn = document.createElement('button');
     editBtn.className = 'btn-edit';
-    editBtn.textContent = t('adm_edit_before');
+    editBtn.textContent = 'Modifier avant validation';
     var editZone = document.createElement('div');
     editZone.className = 'edit-zone';
 
@@ -893,7 +892,7 @@ function buildSubmissionCard(s, container){
 
     editBtn.addEventListener('click', function(){
       editZone.classList.toggle('visible');
-      editBtn.textContent = editZone.classList.contains('visible') ? t('adm_close_editor') : t('adm_edit_before');
+      editBtn.textContent = editZone.classList.contains('visible') ? 'Fermer l\'éditeur' : 'Modifier avant validation';
     });
 
     editZone.appendChild(editTextarea);
@@ -906,16 +905,16 @@ function buildSubmissionCard(s, container){
 
     var approveBtn = document.createElement('button');
     approveBtn.className = 'btn-approve';
-    approveBtn.textContent = t('adm_approve');
+    approveBtn.textContent = 'Valider';
     approveBtn.addEventListener('click', function(e){
       e.stopPropagation();
       var cineasteTxt = s.parsed_json && s.parsed_json.cineaste;
       var confirmMsg = (type === 'top' && cineasteTxt)
-        ? t('adm_confirm_top', [contribName, cineasteTxt])
-        : t('adm_confirm_other', contribName);
+        ? 'Confirmer la validation du top de ' + contribName + ' pour ' + cineasteTxt + ' ?'
+        : 'Confirmer la validation de cette soumission de ' + contribName + ' ?';
       showConfirmModal(confirmMsg, async function(){
         approveBtn.disabled = true;
-        approveBtn.textContent = t('adm_approving');
+        approveBtn.textContent = 'Validation…';
         try{
           // Si editeur ouvert, sauvegarder
           var ok = editZone.classList.contains('visible')
@@ -923,24 +922,24 @@ function buildSubmissionCard(s, container){
             : await updateSubmission(s.id, 'approved', s);
           if(!ok){
             approveBtn.disabled = false;
-            approveBtn.textContent = t('adm_approve');
+            approveBtn.textContent = 'Valider';
           }
         }catch(err){
           console.error('Erreur lors de la validation:', err);
-          showSubmissionsError(t('adm_approve_unexpected') + friendlyError(err));
+          showSubmissionsError('Erreur inattendue lors de la validation : ' + friendlyError(err));
           approveBtn.disabled = false;
-          approveBtn.textContent = t('adm_approve');
+          approveBtn.textContent = 'Valider';
         }
       });
     });
 
     var rejectBtn = document.createElement('button');
     rejectBtn.className = 'btn-reject';
-    rejectBtn.textContent = t('adm_reject');
+    rejectBtn.textContent = 'Rejeter';
     // CORRECTIF BUG 2 : confirmation avant rejet (comme pour la validation)
     rejectBtn.addEventListener('click', function(e){
       e.stopPropagation();
-      showConfirmModal(t('adm_confirm_reject', contribName), async function(){
+      showConfirmModal('Confirmer le rejet de cette soumission de ' + contribName + ' ?', async function(){
         approveBtn.disabled = true;
         rejectBtn.disabled = true;
         rejectBtn.textContent = 'Rejet…';
@@ -949,14 +948,14 @@ function buildSubmissionCard(s, container){
           if(!ok){
             approveBtn.disabled = false;
             rejectBtn.disabled = false;
-            rejectBtn.textContent = t('adm_reject');
+            rejectBtn.textContent = 'Rejeter';
           }
         }catch(err){
           console.error('Erreur lors du rejet:', err);
-          showSubmissionsError(t('adm_update_err') + friendlyError(err));
+          showSubmissionsError('Erreur lors de la mise à jour : ' + friendlyError(err));
           approveBtn.disabled = false;
           rejectBtn.disabled = false;
-          rejectBtn.textContent = t('adm_reject');
+          rejectBtn.textContent = 'Rejeter';
         }
       });
     });
@@ -1043,7 +1042,7 @@ async function loadSubmissions(){
   var allRows = pendingRows.concat((res && res.data) || []);
   if(!allRows.length){
     allSubmissions = [];
-    container.innerHTML = '<div class="empty-state">' + t('adm_no_submission') + '</div>';
+    container.innerHTML = '<div class="empty-state">' + 'Aucune soumission' + '</div>';
     if(truncWarn) truncWarn.style.display = 'none';
     return;
   }
@@ -1099,8 +1098,8 @@ async function updateSubmissionWithEdit(id, s, type, editedText){
       .eq('id', id)
       .select('id');
   });
-  if(res.error){ console.error('Erreur approbation:', res.error.message); showSubmissionsError(t('adm_approve_err') + friendlyError(res.error)); return false; }
-  if(!res.data || !res.data.length){ showSubmissionsError(t('adm_approve_rights')); return false; }
+  if(res.error){ console.error('Erreur approbation:', res.error.message); showSubmissionsError('Erreur lors de la validation : ' + friendlyError(res.error)); return false; }
+  if(!res.data || !res.data.length){ showSubmissionsError('La validation n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   await applySubmissionToContributor(s, newParsedJson);
   await removeLegacyTopDuplicate(s, newParsedJson);
   showAdminNotice('✓ Soumission validée (avec modifications) et prise en compte.', true);
@@ -1130,10 +1129,10 @@ async function removeLegacyTopDuplicate(submission, parsedJson){
   var res = await tcWithRetryTimeout(function(){ return sb.from('tops').delete().eq('contributor_id', contributorId).eq('cineaste_nom', cineaste).select('id'); });
   if(res.error){
     console.error('Erreur suppression doublon table tops:', res.error.message);
-    showSubmissionsError(t('adm_dup_err', friendlyError(res.error)));
+    showSubmissionsError('Le top a été validé, mais la suppression de l\'ancien doublon dans la table "tops" a échoué : ' + friendlyError(res.error));
   } else if(!res.data || !res.data.length){
     console.error('Suppression doublon table tops : 0 ligne supprimée malgré une ligne existante (droits insuffisants ?)');
-    showSubmissionsError(t('adm_dup_rights'));
+    showSubmissionsError('Le top a été validé, mais l\'ancien doublon dans la table "tops" n\'a pas pu être supprimé — vérifiez les droits sur cette table.');
   }
 }
 
@@ -1192,8 +1191,8 @@ async function applySubmissionToContributor(submission, parsedJson){
   if(Object.keys(update).length === 0) return;
   // UPDATE idempotent (valeurs fixes) : timeout/retry sûr.
   var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update(update).eq('id', contributorId).select('id'); });
-  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); showSubmissionsError(t('adm_profile_err') + friendlyError(res.error)); }
-  else if(!res.data || !res.data.length){ console.error('Mise à jour profil contributeur : 0 lignes affectées'); showSubmissionsError(t('adm_profile_rights')); }
+  if(res.error){ console.error('Erreur mise à jour profil contributeur:', res.error.message); showSubmissionsError('Erreur mise à jour profil : ' + friendlyError(res.error)); }
+  else if(!res.data || !res.data.length){ console.error('Mise à jour profil contributeur : 0 lignes affectées'); showSubmissionsError('La mise à jour du profil contributeur n\'a pas abouti — vérifiez les droits de la table contributors.'); }
 }
 
 async function updateSubmission(id, status, submission){
@@ -1209,8 +1208,8 @@ async function updateSubmission(id, status, submission){
   }
   // UPDATE idempotent (valeurs fixes calculées avant l'appel) : timeout/retry sûr.
   var res = await tcWithRetryTimeout(function(){ return sb.from('submissions').update(update).eq('id', id).select('id'); });
-  if(res.error){ console.error('Erreur mise à jour statut:', res.error.message); showSubmissionsError(t('adm_update_err') + friendlyError(res.error)); return false; }
-  if(!res.data || !res.data.length){ showSubmissionsError(t('adm_update_rights')); return false; }
+  if(res.error){ console.error('Erreur mise à jour statut:', res.error.message); showSubmissionsError('Erreur lors de la mise à jour : ' + friendlyError(res.error)); return false; }
+  if(!res.data || !res.data.length){ showSubmissionsError('La mise à jour n\'a pas abouti — vérifiez les droits de la table submissions.'); return false; }
   if(status === 'approved' && submission){
     await applySubmissionToContributor(submission, submission.parsed_json);
     await removeLegacyTopDuplicate(submission, submission.parsed_json);
@@ -1254,7 +1253,7 @@ document.querySelectorAll('[data-prop-filter]').forEach(function(btn){
 
 async function loadProposals(){
   var container = document.getElementById('propositions-list');
-  container.innerHTML = '<div class="empty-state">' + t('adm_loading') + '</div>';
+  container.innerHTML = '<div class="empty-state">' + 'Chargement…' + '</div>';
 
   var res;
   try {
@@ -1265,11 +1264,11 @@ async function loadProposals(){
         .limit(500);
     });
   } catch(err){
-    container.innerHTML = '<div class="empty-state">' + t('adm_err_prefix') + escapeHtml(friendlyError(err)) + '</div>'; return;
+    container.innerHTML = '<div class="empty-state">' + 'Erreur : ' + escapeHtml(friendlyError(err)) + '</div>'; return;
   }
 
-  if(res.error){ container.innerHTML = '<div class="empty-state">' + t('adm_err_prefix') + escapeHtml(friendlyError(res.error)) + '</div>'; return; }
-  if(!res.data || !res.data.length){ allProposals = []; container.innerHTML = '<div class="empty-state">' + t('adm_no_proposal') + '</div>'; return; }
+  if(res.error){ container.innerHTML = '<div class="empty-state">' + 'Erreur : ' + escapeHtml(friendlyError(res.error)) + '</div>'; return; }
+  if(!res.data || !res.data.length){ allProposals = []; container.innerHTML = '<div class="empty-state">' + 'Aucune proposition.' + '</div>'; return; }
 
   allProposals = res.data;
   renderProposals();
@@ -1280,7 +1279,7 @@ function renderProposals(){
   var filtered = allProposals.filter(function(p){ return p.status === currentPropFilter; });
   container.innerHTML = '';
   if(!filtered.length){
-    container.innerHTML = '<div class="empty-state">' + t('adm_no_proposal') + '</div>';
+    container.innerHTML = '<div class="empty-state">' + 'Aucune proposition.' + '</div>';
     return;
   }
   filtered.forEach(function(p){ buildProposalCard(p, container); });
@@ -1289,8 +1288,8 @@ function renderProposals(){
 function buildProposalCard(p, container){
     var nomComplet = (p.prenom ? p.prenom + ' ' : '') + p.nom;
     var annees = [];
-    if(p.annee_naissance) annees.push(t('adm_born_in', p.annee_naissance));
-    if(p.annee_deces) annees.push(t('adm_died_in', p.annee_deces));
+    if(p.annee_naissance) annees.push('né(e) en ' + p.annee_naissance);
+    if(p.annee_deces) annees.push('décédé en ' + p.annee_deces);
     if(p.pays && typeof tcCountryLabel === 'function'){ var _pl = tcCountryLabel(p.pays); if(_pl) annees.push(_pl); }
 
     var card = document.createElement('div'); card.className = 'prop-card';
@@ -1319,7 +1318,7 @@ function buildProposalCard(p, container){
       }
     }
 
-    var metaEl = document.createElement('div'); metaEl.className = 'prop-card-meta'; metaEl.textContent = annees.length ? annees.join(', ') : t('adm_years_unknown');
+    var metaEl = document.createElement('div'); metaEl.className = 'prop-card-meta'; metaEl.textContent = annees.length ? annees.join(', ') : 'Années non renseignées';
     infoEl.appendChild(metaEl);
 
     headerEl.appendChild(infoEl);
@@ -1334,37 +1333,37 @@ function buildProposalCard(p, container){
     if(p.status === 'pending'){
       // Zone d'édition : mêmes informations que la proposition, modifiables
       // avant validation (comme pour les soumissions de tops).
-      var editBtn = document.createElement('button'); editBtn.className = 'btn-edit'; editBtn.textContent = t('adm_edit_before');
+      var editBtn = document.createElement('button'); editBtn.className = 'btn-edit'; editBtn.textContent = 'Modifier avant validation';
       var editZone = document.createElement('div'); editZone.className = 'edit-zone';
 
       var prenomInput = document.createElement('input');
       prenomInput.type = 'text'; prenomInput.className = 'autocomplete-input';
-      prenomInput.value = p.prenom || ''; prenomInput.placeholder = t('prop_prenom_label');
+      prenomInput.value = p.prenom || ''; prenomInput.placeholder = 'Prénom *';
 
       var nomInput = document.createElement('input');
       nomInput.type = 'text'; nomInput.className = 'autocomplete-input'; nomInput.style.textTransform = 'uppercase';
-      nomInput.value = p.nom || ''; nomInput.placeholder = t('prop_nom_label');
+      nomInput.value = p.nom || ''; nomInput.placeholder = 'Nom *';
 
       var paysSelect = document.createElement('select'); paysSelect.className = 'contrib-select';
       var paysGroups = typeof tcCountrySelectOptions === 'function' ? tcCountrySelectOptions() : { iso: [], historic: [] };
-      var paysHtml = '<option value="">' + t('prop_pays_default') + '</option><optgroup label="' + t('adm_flags_countries') + '">';
+      var paysHtml = '<option value="">' + '—' + '</option><optgroup label="' + 'Pays actuels (ISO)' + '">';
       paysGroups.iso.forEach(function(o){ paysHtml += '<option value="' + o.code + '"' + (o.code === p.pays ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>'; });
-      paysHtml += '</optgroup><optgroup label="' + t('adm_flags_historic') + '">';
+      paysHtml += '</optgroup><optgroup label="' + 'Pays / entités historiques' + '">';
       paysGroups.historic.forEach(function(o){ paysHtml += '<option value="' + o.code + '"' + (o.code === p.pays ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>'; });
       paysHtml += '</optgroup>';
       paysSelect.innerHTML = paysHtml;
 
       var naissanceInput = document.createElement('input');
       naissanceInput.type = 'number'; naissanceInput.className = 'autocomplete-input';
-      naissanceInput.value = p.annee_naissance || ''; naissanceInput.placeholder = t('prop_naissance_label');
+      naissanceInput.value = p.annee_naissance || ''; naissanceInput.placeholder = 'Année de naissance *';
 
       var decesInput = document.createElement('input');
       decesInput.type = 'number'; decesInput.className = 'autocomplete-input';
-      decesInput.value = p.annee_deces || ''; decesInput.placeholder = t('prop_deces_label');
+      decesInput.value = p.annee_deces || ''; decesInput.placeholder = 'Année de décès';
 
       var photoInput = document.createElement('input');
       photoInput.type = 'text'; photoInput.className = 'autocomplete-input';
-      photoInput.value = p.photo_tmdb || ''; photoInput.placeholder = t('prop_photo_tmdb_ph');
+      photoInput.value = p.photo_tmdb || ''; photoInput.placeholder = '/abcXYZ123.jpg';
 
       var editRow1 = document.createElement('div'); editRow1.className = 'prop-edit-row';
       editRow1.appendChild(prenomInput); editRow1.appendChild(nomInput);
@@ -1377,11 +1376,11 @@ function buildProposalCard(p, container){
 
       editBtn.addEventListener('click', function(){
         editZone.classList.toggle('visible');
-        editBtn.textContent = editZone.classList.contains('visible') ? t('adm_close_editor') : t('adm_edit_before');
+        editBtn.textContent = editZone.classList.contains('visible') ? 'Fermer l\'éditeur' : 'Modifier avant validation';
       });
 
-      var approveBtn = document.createElement('button'); approveBtn.className = 'prop-btn-approve'; approveBtn.textContent = t('adm_prop_approve');
-      var rejectBtn = document.createElement('button'); rejectBtn.className = 'prop-btn-reject'; rejectBtn.textContent = t('adm_prop_reject');
+      var approveBtn = document.createElement('button'); approveBtn.className = 'prop-btn-approve'; approveBtn.textContent = 'Approuver';
+      var rejectBtn = document.createElement('button'); rejectBtn.className = 'prop-btn-reject'; rejectBtn.textContent = 'Rejeter';
       // CORRECTIF BUG D : confirmation avant approbation/rejet d'une proposition
       approveBtn.addEventListener('click', function(){
         var editFields = null;
@@ -1399,12 +1398,12 @@ function buildProposalCard(p, container){
           };
           confirmName = (editFields.prenom ? editFields.prenom + ' ' : '') + editFields.nom;
         }
-        showConfirmModal(t('adm_confirm_prop_approve', confirmName), function(){
+        showConfirmModal('Confirmer l\'approbation de la proposition « ' + confirmName + ' » ?', function(){
           updateProposal(p, 'approved', approveBtn, rejectBtn, editFields);
         });
       });
       rejectBtn.addEventListener('click', function(){
-        showConfirmModal(t('adm_confirm_prop_reject', nomComplet), function(){
+        showConfirmModal('Confirmer le rejet de la proposition « ' + nomComplet + ' » ?', function(){
           updateProposal(p, 'rejected', approveBtn, rejectBtn);
         });
       });
@@ -1420,7 +1419,7 @@ function buildProposalCard(p, container){
     } else {
       var badge = document.createElement('span');
       badge.className = 'prop-status-badge ' + p.status;
-      badge.textContent = p.status === 'approved' ? t('adm_prop_approved') : t('adm_prop_rejected');
+      badge.textContent = p.status === 'approved' ? 'Approuvé' : 'Rejeté';
       actionsEl.appendChild(badge);
     }
 
@@ -1475,11 +1474,11 @@ async function updateProposal(p, status, approveBtn, rejectBtn, editFields){
     // UPDATE idempotent (statut fixe) : timeout/retry sûr.
     res = await tcWithRetryTimeout(function(){ return sb.from('cineaste_proposals').update(updatePayload).eq('id', id).select('id'); });
   } catch(err){
-    showAdminNotice(t('adm_err_unexpected') + friendlyError(err), false);
+    showAdminNotice('Erreur inattendue : ' + friendlyError(err), false);
     approveBtn.disabled = false; rejectBtn.disabled = false; return;
   }
-  if(res.error){ showAdminNotice(t('adm_err_prefix') + friendlyError(res.error), false); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
-  if(!res.data || !res.data.length){ showAdminNotice(t('adm_prop_rights'), false); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
+  if(res.error){ showAdminNotice('Erreur : ' + friendlyError(res.error), false); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
+  if(!res.data || !res.data.length){ showAdminNotice('La mise à jour n\'a pas abouti — vérifiez les droits de la table cineaste_proposals.', false); approveBtn.disabled = false; rejectBtn.disabled = false; return; }
 
   // Les champs corrigés par l'admin remplacent ceux de la proposition d'origine
   // pour la suite du traitement (notification, création du cinéaste).
@@ -1534,13 +1533,13 @@ async function loadCommentsAdmin(force){
   var container = document.getElementById('comments-list');
   var errEl = document.getElementById('comments-error');
   errEl.style.display = 'none';
-  container.innerHTML = '<div class="empty-state">' + t('adm_loading') + '</div>';
+  container.innerHTML = '<div class="empty-state">' + 'Chargement…' + '</div>';
 
   try {
     var contribRes = await tcWithRetryTimeout(function(){ return sb.from('contributors').select('id, json_name, display_name'); });
     var nameById = {};
     if(contribRes.error){
-      var errMsg = t('adm_contrib_load_err') + friendlyError(contribRes.error);
+      var errMsg = 'Erreur de chargement des contributeurs : ' + friendlyError(contribRes.error);
       errEl.textContent = errMsg;
       errEl.style.display = 'block';
       // CORRECTIF BUG B : affichage de l'erreur dans le container également
@@ -1551,7 +1550,7 @@ async function loadCommentsAdmin(force){
 
     var res = await tcWithRetryTimeout(function(){ return sb.from('comments').select('*').order('created_at', { ascending: false }).limit(200); });
     if(res.error){
-      var errMsg2 = t('adm_cm_load_err') + friendlyError(res.error);
+      var errMsg2 = 'Erreur de chargement : ' + friendlyError(res.error);
       errEl.textContent = errMsg2;
       errEl.style.display = 'block';
       // CORRECTIF BUG B : affichage de l'erreur dans le container également
@@ -1561,7 +1560,7 @@ async function loadCommentsAdmin(force){
     commentsAdminLoaded = true;
     renderCommentsAdmin(res.data || [], nameById);
   } catch(err) {
-    var errMsg3 = t('adm_err_load') + friendlyError(err);
+    var errMsg3 = 'Erreur de chargement : ' + friendlyError(err);
     errEl.textContent = errMsg3;
     errEl.style.display = 'block';
     // CORRECTIF BUG B : affichage de l'erreur dans le container également
@@ -1572,7 +1571,7 @@ async function loadCommentsAdmin(force){
 function renderCommentsAdmin(rows, nameById){
   var container = document.getElementById('comments-list');
   container.innerHTML = '';
-  if(!rows.length){ container.innerHTML = '<p>' + t('adm_no_comment') + '</p>'; return; }
+  if(!rows.length){ container.innerHTML = '<p>' + 'Aucun commentaire.' + '</p>'; return; }
   rows.forEach(function(cm){
     var card = document.createElement('div'); card.className = 'cm-card';
     var meta = document.createElement('div'); meta.className = 'cm-card-meta';
@@ -1582,7 +1581,7 @@ function renderCommentsAdmin(rows, nameById){
       + ' — ' + new Date(cm.created_at).toLocaleString('fr-FR');
     var body = document.createElement('div'); body.className = 'cm-card-body'; body.textContent = cm.body;
     var footer = document.createElement('div'); footer.className = 'cm-card-footer';
-    var delBtn = document.createElement('button'); delBtn.className = 'cm-btn-delete'; delBtn.textContent = t('adm_cm_delete');
+    var delBtn = document.createElement('button'); delBtn.className = 'cm-btn-delete'; delBtn.textContent = 'Supprimer';
     delBtn.addEventListener('click', function(){ deleteCommentAdmin(cm.id, delBtn); });
     footer.appendChild(delBtn);
     card.appendChild(meta); card.appendChild(body); card.appendChild(footer);
@@ -1592,18 +1591,18 @@ function renderCommentsAdmin(rows, nameById){
 
 function deleteCommentAdmin(id, delBtn){
   // Confirmation via la modale cohérente du site (au lieu de confirm() natif).
-  showConfirmModal(t('adm_cm_confirm'), async function(){
+  showConfirmModal('Supprimer ce commentaire (et ses éventuelles réponses) ?', async function(){
     delBtn.disabled = true;
     var res;
     try {
       // DELETE idempotent (par id) : timeout/retry sûr.
       res = await tcWithRetryTimeout(function(){ return sb.from('comments').delete().eq('id', id).select('id'); });
     } catch(err){
-      showAdminNotice(t('adm_err_unexpected') + friendlyError(err), false);
+      showAdminNotice('Erreur inattendue : ' + friendlyError(err), false);
       delBtn.disabled = false; return;
     }
-    if(res.error){ showAdminNotice(t('adm_err_prefix') + friendlyError(res.error), false); delBtn.disabled = false; return; }
-    if(!res.data || !res.data.length){ showAdminNotice(t('adm_cm_err_rights'), false); delBtn.disabled = false; return; }
+    if(res.error){ showAdminNotice('Erreur : ' + friendlyError(res.error), false); delBtn.disabled = false; return; }
+    if(!res.data || !res.data.length){ showAdminNotice('Erreur : droits insuffisants.', false); delBtn.disabled = false; return; }
     showAdminNotice('✓ Commentaire supprimé.', true);
     commentsAdminLoaded = false; // CORRECTIF BUG 5 : réinitialise le guard pour forcer le rechargement
     loadCommentsAdmin(true);
@@ -1621,11 +1620,11 @@ var flagsNullMode = false;
 function flagsCountrySelectHtml(currentCode){
   var groups = tcCountrySelectOptions();
   var html = '<option value=""' + (!currentCode ? ' selected' : '') + '>—</option>';
-  html += '<optgroup label="' + t('adm_flags_countries') + '">';
+  html += '<optgroup label="' + 'Pays actuels (ISO)' + '">';
   groups.iso.forEach(function(o){
     html += '<option value="' + o.code + '"' + (currentCode === o.code ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>';
   });
-  html += '</optgroup><optgroup label="' + t('adm_flags_historic') + '">';
+  html += '</optgroup><optgroup label="' + 'Pays / entités historiques' + '">';
   groups.historic.forEach(function(o){
     html += '<option value="' + o.code + '"' + (currentCode === o.code ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>';
   });
@@ -1637,7 +1636,7 @@ function renderFlagsAdmin(){
   var tbody = document.getElementById('flags-tbody');
   var errEl = document.getElementById('flags-error');
   errEl.style.display = 'none';
-  if(!DATA || !DATA.cineastes){ tbody.innerHTML = '<tr><td colspan="3">' + t('adm_loading') + '</td></tr>'; return; }
+  if(!DATA || !DATA.cineastes){ tbody.innerHTML = '<tr><td colspan="3">' + 'Chargement…' + '</td></tr>'; return; }
 
   var countEl = document.getElementById('flags-null-count');
   var rows;
@@ -1654,12 +1653,12 @@ function renderFlagsAdmin(){
     var term = normStr(flagsSearchTerm.trim());
     // Seule la barre de recherche pilote l'affichage : sans terme saisi, aucun
     // cinéaste n'est listé (évite aussi le gel du navigateur sur 2000+ lignes).
-    if(!term){ tbody.innerHTML = '<tr><td colspan="3">' + t('adm_flags_prompt') + '</td></tr>'; return; }
+    if(!term){ tbody.innerHTML = '<tr><td colspan="3">' + 'Recherchez un cinéaste pour l\'afficher.' + '</td></tr>'; return; }
     rows = DATA.cineastes
       .filter(function(c){ return normStr(c.nom).indexOf(term) !== -1; })
       .sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
     tbody.innerHTML = '';
-    if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">' + t('adm_flags_no_result') + '</td></tr>'; return; }
+    if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">' + 'Aucun résultat.' + '</td></tr>'; return; }
   }
 
   rows.forEach(function(c){
@@ -1680,7 +1679,7 @@ function renderFlagsAdmin(){
     var tdAction = document.createElement('td');
     var saveBtn = document.createElement('button');
     saveBtn.className = 'btn-secondary';
-    saveBtn.textContent = t('adm_flags_save');
+    saveBtn.textContent = 'Enregistrer';
     saveBtn.addEventListener('click', function(){ saveCineasteFlag(c, select.value, select2.value, saveBtn); });
 
     tdFlag.appendChild(select);
@@ -1695,7 +1694,7 @@ async function saveCineasteFlag(c, code, code2, saveBtn){
   var errEl = document.getElementById('flags-error');
   errEl.style.display = 'none';
   saveBtn.disabled = true;
-  saveBtn.textContent = t('adm_flags_saving');
+  saveBtn.textContent = 'Enregistrement…';
   var newVal = code || null;
   var newVal2 = code2 || null;
   // Filet de sécurité : si la Promise ne se résout jamais (ex: token JWT expiré
@@ -1708,7 +1707,7 @@ async function saveCineasteFlag(c, code, code2, saveBtn){
     errEl.textContent = 'La connexion a expiré pour "' + c.nom + '". Rechargez la page et réessayez.';
     errEl.style.display = 'block';
     saveBtn.disabled = false;
-    saveBtn.textContent = t('adm_flags_save');
+    saveBtn.textContent = 'Enregistrer';
   }, 20000);
   try {
     var res = await tcWithRetryTimeout(function(){
@@ -1718,32 +1717,32 @@ async function saveCineasteFlag(c, code, code2, saveBtn){
     _done = true;
     clearTimeout(_safety);
     if(res.error){
-      errEl.textContent = t('adm_flags_save_err', [c.nom, friendlyError(res.error)]);
+      errEl.textContent = 'Erreur d\'enregistrement pour "' + c.nom + '" : ' + friendlyError(res.error);
       errEl.style.display = 'block';
-      saveBtn.textContent = t('adm_flags_err_mark');
-      setTimeout(function(){ saveBtn.textContent = t('adm_flags_save'); }, 2500);
+      saveBtn.textContent = 'Erreur ✗';
+      setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
       return;
     }
     if(!res.data || !res.data.length){
-      errEl.textContent = t('adm_flags_update_err', c.nom);
+      errEl.textContent = 'Erreur : la mise à jour n\'a pas abouti pour "' + c.nom + '" (droits insuffisants ?).';
       errEl.style.display = 'block';
-      saveBtn.textContent = t('adm_flags_err_mark');
-      setTimeout(function(){ saveBtn.textContent = t('adm_flags_save'); }, 2500);
+      saveBtn.textContent = 'Erreur ✗';
+      setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
       return;
     }
     c.pays = newVal;
     c.pays2 = newVal2;
-    saveBtn.textContent = t('adm_flags_saved');
+    saveBtn.textContent = 'Enregistré ✓';
     showAdminNotice('✓ Pays enregistré pour « ' + c.nom + ' ».', true);
-    setTimeout(function(){ saveBtn.textContent = t('adm_flags_save'); }, 1500);
+    setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 1500);
   } catch(err) {
     if(_done) return;
     _done = true;
     clearTimeout(_safety);
-    errEl.textContent = t('adm_err_unexpected') + friendlyError(err);
+    errEl.textContent = 'Erreur inattendue : ' + friendlyError(err);
     errEl.style.display = 'block';
-    saveBtn.textContent = t('adm_flags_err_mark');
-    setTimeout(function(){ saveBtn.textContent = t('adm_flags_save'); }, 2500);
+    saveBtn.textContent = 'Erreur ✗';
+    setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
   } finally {
     saveBtn.disabled = false;
   }
