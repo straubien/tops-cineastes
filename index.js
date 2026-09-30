@@ -421,17 +421,17 @@ function tcWriteDataCache(cineastes,courants){
 // affiché ni du cache local.
 function tcMessagePanne(err){
   var m=(err&&err.message)||'';
-  if(/JWT|session|expired|invalid.*token/i.test(m)) return 'Votre session a expiré. Reconnectez-vous, puis rechargez la page.';
-  if(/permission|RLS|policy|row-level security/i.test(m)) return 'Ces données ne sont pas accessibles pour le moment.';
-  if(/Failed to fetch|NetworkError|network|timeout|délai/i.test(m)) return 'Connexion au serveur impossible. Les informations affichées peuvent être incomplètes.';
-  return 'Une partie des données n\'a pas pu être chargée. Rechargez la page.';
+  if(/JWT|session|expired|invalid.*token/i.test(m)) return tcTexte('data_session_expiree','Votre session a expiré. Reconnectez-vous, puis rechargez la page.');
+  if(/permission|RLS|policy|row-level security/i.test(m)) return tcTexte('data_non_accessibles','Ces données ne sont pas accessibles pour le moment.');
+  if(/Failed to fetch|NetworkError|network|timeout|délai/i.test(m)) return tcTexte('data_serveur_injoignable','Connexion au serveur impossible. Les informations affichées peuvent être incomplètes.');
+  return tcTexte('data_partielle','Une partie des données n\'a pas pu être chargée. Rechargez la page.');
 }
 // Panne du chargement des profils contributeurs. Sans eux, un utilisateur
 // pourtant connecté est traité comme un visiteur anonyme : badge admin absent,
 // avatars retombés sur les initiales, page Cinéphiles vide, favoris perdus,
 // commentaires impossibles. Cf. audit A-06.
 function tcSignalerPanneProfils(err){
-  tcShowDataWarning('Les profils des cinéphiles n\'ont pas pu être chargés. Avatars, favoris et commentaires peuvent être incomplets — rechargez la page.');
+  tcShowDataWarning(tcTexte('data_profils_ko','Les profils des cinéphiles n\'ont pas pu être chargés. Avatars, favoris et commentaires peuvent être incomplets — rechargez la page.'));
   if(typeof tcReportErrorToSupabase==='function'){
     tcReportErrorToSupabase('contributors — '+((err&&err.message)||'panne inconnue'), (err&&err.stack)||'');
   }
@@ -445,7 +445,7 @@ function tcSignalerPanneDonnees(err){
   // au lieu de laisser croire que l'index est vide.
   var listEl=document.getElementById('cineaste-list');
   if(!_tcDataInitialized && listEl){
-    listEl.innerHTML='<div class="empty-msg">Données indisponibles. <button class="btn-secondary" style="font-size:12px;padding:4px 12px;margin-left:8px" data-action="retry-load">Réessayer</button></div>';
+    listEl.innerHTML='<div class="empty-msg">'+escapeHtml(tcTexte('data_indispo','Données indisponibles.'))+' <button class="btn-secondary" style="font-size:12px;padding:4px 12px;margin-left:8px" data-action="retry-load">'+escapeHtml(tcTexte('btn_reessayer','Réessayer'))+'</button></div>';
   }
 }
 
@@ -573,7 +573,7 @@ function loadData(){
   if(cached){
     tcApplyLoadedData(cached.cineastes,cached.courants,null,null);
   } else if(listEl){
-    listEl.innerHTML='<div class="empty-msg">Chargement…</div>';
+    listEl.innerHTML='<div class="empty-msg">'+escapeHtml(tcTexte('chargement','Chargement…'))+'</div>';
   }
   Promise.all([
     // La panne des cinéastes est capturée ici pour être TRAITÉE plus bas, et
@@ -613,7 +613,9 @@ function loadData(){
   if(!muzard||!cnudde){
     var warnEl=document.getElementById('data-load-warning');
     if(warnEl){
-      warnEl.textContent='Certains tops n\'ont pas pu être chargés (' + (!muzard?'muzard.json':'') + (!muzard&&!cnudde?', ':'') + (!cnudde?'cnudde.json':'') + '). Rechargez la page.';
+      var _fichiersKo = (!muzard?'muzard.json':'') + (!muzard&&!cnudde?', ':'') + (!cnudde?'cnudde.json':'');
+      warnEl.textContent = tcTexte('data_tops_ko',
+        'Certains tops n\'ont pas pu être chargés (' + _fichiersKo + '). Rechargez la page.', _fichiersKo);
       warnEl.style.display='block';
     }
   }
@@ -632,7 +634,7 @@ function loadData(){
   }).catch(function(){
     if(_tcDataInitialized)return; // une version (cache local) est déjà affichée, on ne casse pas l'UI
     var listEl=document.getElementById('cineaste-list');
-    if(listEl)listEl.innerHTML='<div class="empty-msg">Erreur de chargement. <button class="btn-secondary" style="font-size:12px;padding:4px 12px;margin-left:8px" data-action="retry-load">Réessayer</button></div>';
+    if(listEl)listEl.innerHTML='<div class="empty-msg">'+escapeHtml(tcTexte('err_chargement','Erreur de chargement.'))+' <button class="btn-secondary" style="font-size:12px;padding:4px 12px;margin-left:8px" data-action="retry-load">'+escapeHtml(tcTexte('btn_reessayer','Réessayer'))+'</button></div>';
   });
 }
 loadData();
@@ -884,7 +886,7 @@ function tcOuvrirFicheParNom(nom){
 
 function renderProfilFavs(favs){
   var grid=document.getElementById('profil-favs-grid');grid.innerHTML='';
-  if(!favs.length){grid.innerHTML='<div class="empty-msg">Aucun cinéaste favori renseigné</div>';return}
+  if(!favs.length){grid.innerHTML='<div class="empty-msg">'+escapeHtml(tcTexte('profil_aucun_fav','Aucun cinéaste favori renseigné'))+'</div>';return}
   favs.forEach(function(f,fi){
     var p=buildPortraitSrc(f);
     var isFirst=fi===0;
@@ -1246,7 +1248,7 @@ function showImportedPanel(name){
   _impPanelOwnerName=name;
   _impPanelLetter=null;
   var html='<div class="fiche-header">'
-    +'<button class="imp-panel-back" data-action="close-fiche" title="Retour">&#8592;</button>'
+    +'<button class="imp-panel-back" data-action="close-fiche" title="'+escapeHtml(tcTexte('retour_titre','Retour'))+'">&#8592;</button>'
     +'<div class="fiche-name"><b>'+formatContribName(name)+'</b></div>'
     +'</div>'
     +'<div class="alpha-bar" id="imp-panel-alpha" role="group" data-i18n-aria="alpha_barre" aria-label="'+escapeHtml(t('alpha_barre'))+'"></div>'
@@ -1513,7 +1515,7 @@ function tcChargerLienFacebook(c, emplacement){
     a.href=url;
     a.target='_blank';
     a.rel='noopener noreferrer';
-    a.textContent='Voir la fiche sur Facebook \u2197';
+    a.textContent=tcTexte('fb_voir_fiche','Voir la fiche sur Facebook \u2197');
     emplacement.appendChild(a);
   }
   if(c.url_facebook !== undefined){ afficher(c.url_facebook); return; }
@@ -2629,7 +2631,7 @@ function openContribDetail(name){
   });
     var sqW=Math.max(20,Math.min(80,Math.round(20+(cin.length/24)*60)))+'px';
   document.getElementById('fiche-content').innerHTML=
-    '<div class="fiche-back" data-action="close-fiche">\u2190 Retour</div>'
+    '<div class="fiche-back" data-action="close-fiche">'+escapeHtml(tcTexte('retour_fleche','\u2190 Retour'))+'</div>'
     +'<div class="fiche-header" style="--sq:'+sqW+'">' 
       +'<div class="fiche-name" style="font-size:30px">'+formatContribNamePlain(name)+'</div>'
       +'<div class="fiche-dates">'+t('tops_postes',cin.length)+'</div>'
@@ -2715,7 +2717,7 @@ function openCourantDetail(courantId){
   var courYearsHtml=courYears?'<div class="fiche-dates">'+courYears+'</div>':'';
   document.getElementById('fiche-content').innerHTML=
     '<div class="fiche-header courant-fiche-header">'
-      +'<button class="profil-header-back" data-action="close-fiche">&#8592;</button>'
+      +'<button class="profil-header-back" data-action="close-fiche" title="'+escapeHtml(tcTexte('retour_titre','Retour'))+'">&#8592;</button>'
       +'<div class="fiche-name" style="font-size:30px">'+escapeHtml(courant)+'</div>'
       +courFlagsHtml
       +courYearsHtml
@@ -4160,7 +4162,7 @@ function openFicheThematique(themeNom){
     }
 
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('mt_err_submit') + friendlyError(res.error)); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
-    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
+    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + tcTexte('droits_insuffisants','Droits insuffisants.')); btn.disabled = false; btn.textContent = t('mt_soumettre'); return; }
 
     // Message de succès : distinct si l'on a mis à jour un top déjà existant.
     var mtOkH3 = document.querySelector('#mt-success-msg h3');
@@ -4253,7 +4255,7 @@ function openFicheThematique(themeNom){
           r = await tcWithRetryTimeout(function(){ return sbMT.from('submissions').update({ parsed_json: newParsedJson, status: 'pending', seen_at: null, submitted_at: new Date().toISOString() }).eq('id', s.id).select('id'); });
         } catch(err){ alert(t('mt_err_submit') + friendlyError(err)); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
         if(r.error){ alert(t('mt_err_submit') + friendlyError(r.error)); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
-        if(!r.data || !r.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
+        if(!r.data || !r.data.length){ alert(t('mt_err_submit') + tcTexte('droits_insuffisants','Droits insuffisants.')); saveBtn.disabled = false; saveBtn.textContent = t('mt_sauvegarder'); return; }
         mtLoadPrevSubmissions();
       });
       delBtn.addEventListener('click', async function(){
@@ -4505,7 +4507,7 @@ function openFicheThematique(themeNom){
     btn.disabled = false; btn.textContent = t('prop_btn_submit');
 
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('prop_err_err') + friendlyError(res.error)); return; }
-    if(!res.data || !res.data.length){ alert(t('prop_err_err') + 'Droits insuffisants.'); return; }
+    if(!res.data || !res.data.length){ alert(t('prop_err_err') + tcTexte('droits_insuffisants','Droits insuffisants.')); return; }
 
     document.getElementById('prop-prenom').value = '';
     document.getElementById('prop-nom').value = '';
@@ -4610,7 +4612,7 @@ function openFicheThematique(themeNom){
 
     btn.disabled = false; btn.textContent = t('thematique_btn_submit');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('mt_err_submit') + friendlyError(res.error)); return; }
-    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); return; }
+    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + tcTexte('droits_insuffisants','Droits insuffisants.')); return; }
 
     document.getElementById('mt-theme-input').value = '';
     document.getElementById('mt-theme-textarea').value = '';
@@ -4753,7 +4755,7 @@ function openFicheThematique(themeNom){
 
     btn.disabled = false; btn.textContent = t('mt_courant_btn_submit');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('mt_err_submit') + friendlyError(res.error)); return; }
-    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + 'Droits insuffisants.'); return; }
+    if(!res.data || !res.data.length){ alert(t('mt_err_submit') + tcTexte('droits_insuffisants','Droits insuffisants.')); return; }
 
     document.getElementById('mt-courant-cineaste-input').value = '';
     document.getElementById('mt-courant-select').value = '';

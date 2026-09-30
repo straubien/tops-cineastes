@@ -5,7 +5,8 @@
   "scripts": {
     "lint": "eslint *.js",
     "test": "node --test \"_tests/**/*.test.js\"",
-    "verifier": "npm run lint && npm test"
+    "i18n": "node _outils/verifier-i18n.js",
+    "verifier": "npm run lint && npm test && npm run i18n"
   },
   "devDependencies": {
     "eslint": "^10"

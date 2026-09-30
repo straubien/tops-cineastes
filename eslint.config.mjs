@@ -25,6 +25,7 @@ const globauxDuProjet = {
   tcLocale: 'readonly', tcDate: 'readonly', tcDateCourte: 'readonly', tcDateHeure: 'readonly',
   // shared.js
   toggleDark: 'readonly', tcShowBanner: 'readonly', tcHideBanner: 'readonly',
+  tcTexte: 'readonly',
   tcHandleGlobalError: 'readonly', tcUpdateOnlineBanner: 'readonly',
   // flagsdata.js
   TC_FLAGS: 'readonly', TC_FLAGS_HISTORIQUES: 'readonly', tcFlagHtml: 'readonly',

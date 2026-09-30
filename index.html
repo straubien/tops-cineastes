@@ -251,15 +251,15 @@
           <a href="submit.html?v=2" id="nav-submit" data-i18n="nav_se_connecter">Se connecter</a>
           <button type="button" class="nav-logout-tip" id="nav-logout-tip" data-i18n="nav_se_deconnecter">Se déconnecter</button>
         </span>
-        <a id="nav-notif" class="nav-notif" style="display:none" role="button" tabindex="0" aria-label="Notifications" data-i18n-title="notif_aria" title="Notifications"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/></svg><span class="nav-notif-badge" id="nav-notif-badge" style="display:none">0</span></a>
-        <a id="nav-dark" data-i18n-title="nav_dark_title" title="Mode sombre" role="button" tabindex="0" aria-label="Activer/désactiver le mode sombre" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></a>
+        <a id="nav-notif" class="nav-notif" style="display:none" role="button" tabindex="0" data-i18n-aria="notif_aria" aria-label="Notifications" data-i18n-title="notif_aria" title="Notifications"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/></svg><span class="nav-notif-badge" id="nav-notif-badge" style="display:none">0</span></a>
+        <a id="nav-dark" data-i18n-title="nav_dark_title" title="Mode sombre" role="button" tabindex="0" data-i18n-aria="aria_mode_sombre" aria-label="Activer/désactiver le mode sombre" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></a>
         <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0 2px;line-height:1;vertical-align:middle;"><img src="english.gif" alt="EN" style="display:block"></button>
       </nav>
     </div>
   </header>
 
   <!-- Panneau des notifications (messagerie cinéphile) -->
-  <div id="tc-notif-panel" class="tc-notif-panel" style="display:none" role="dialog" aria-label="Notifications">
+  <div id="tc-notif-panel" class="tc-notif-panel" style="display:none" role="dialog" data-i18n-aria="notif_aria" aria-label="Notifications">
     <div class="tc-notif-head">
       <span class="tc-notif-title" data-i18n="notif_title">Notifications</span>
       <button type="button" class="tc-notif-markall" id="tc-notif-markall" data-i18n="notif_mark_all">Tout marquer comme lu</button>
@@ -321,11 +321,11 @@
         <div class="profil-header-inner">
           <div class="profil-avatar-wrap">
             <div class="profil-avatar" id="profil-avatar"></div>
-            <span class="online-dot" id="profil-online-dot" style="display:none" title="En ligne"></span>
+            <span class="online-dot" id="profil-online-dot" style="display:none" data-i18n-title="index_presence_online" title="En ligne"></span>
           </div>
           <div class="profil-header-text">
             <div class="profil-name" id="profil-name"></div>
-            <span class="profil-admin-badge" id="profil-admin-badge" style="display:none">Admin</span>
+            <span class="profil-admin-badge" id="profil-admin-badge" data-i18n="nav_admin" style="display:none">Admin</span>
             <div class="profil-stat" id="profil-stat"></div>
             <div class="profil-liste-tops-wrap" id="profil-liste-tops-wrap" style="display:none"></div>
           </div>
@@ -379,7 +379,7 @@
             <div class="autocomplete-dropdown" id="compare-dropdown-a"></div>
           </div>
         </div>
-        <button type="button" class="compare-swap-btn" id="compare-swap-btn" title="Inverser" data-i18n-title="compare_swap_title" aria-label="Inverser">⇄</button>
+        <button type="button" class="compare-swap-btn" id="compare-swap-btn" title="Inverser" data-i18n-title="compare_swap_title" data-i18n-aria="compare_swap_title" aria-label="Inverser">⇄</button>
         <div class="compare-selector">
           <div class="autocomplete-wrap">
             <input type="text" class="autocomplete-input" id="compare-input-b" placeholder="Choisir un cinéphile…" data-i18n-ph="compare_select_ph" autocomplete="off">
@@ -396,8 +396,8 @@
 
         <!-- En-tête de page -->
         <div class="mt-page-header">
-          <div class="mt-page-title">Mes tops</div>
-          <button class="mt-page-back" id="mt-page-back" title="Retour" aria-label="Retour à l'accueil">&#8592;</button>
+          <div class="mt-page-title" data-i18n="nav_mes_tops">Mes tops</div>
+          <button class="mt-page-back" id="mt-page-back" data-i18n-title="retour_titre" title="Retour" data-i18n-aria="aria_retour_accueil" aria-label="Retour à l'accueil">&#8592;</button>
         </div>
 
         <!-- Onglets -->
@@ -678,9 +678,9 @@
 
   <!-- SCROLL TO TOP -->
   <div class="bottom-nav" id="bottom-nav" style="display:none">
-    <button class="bottom-back" id="btn-back-contrib" title="Retour aux cinéphiles">&#8592; Contributeurs</button>
+    <button class="bottom-back" id="btn-back-contrib" data-i18n="retour_contributeurs_txt" data-i18n-title="retour_contributeurs_title" title="Retour aux cinéphiles">&#8592; Contributeurs</button>
   </div>
-  <button class="scroll-top" id="scroll-top" title="Remonter en haut" aria-label="Remonter en haut">&#8593;</button>
+  <button class="scroll-top" id="scroll-top" data-i18n-title="titre_remonter" title="Remonter en haut" data-i18n-aria="titre_remonter" aria-label="Remonter en haut">&#8593;</button>
 
 </div>
 

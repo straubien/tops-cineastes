@@ -44,7 +44,9 @@ function tcHideBanner(id){
 var _tcErrorBannerTimer=null;
 function tcHandleGlobalError(message,stack){
   console.error(message,stack||'');
-  tcShowBanner('tc-error-banner','Une erreur est survenue, rechargez la page si le problème persiste.','#b3261e');
+  var _msgErr = 'Une erreur est survenue, rechargez la page si le problème persiste.';
+  tcShowBanner('tc-error-banner',
+    (typeof tcTexte === 'function') ? tcTexte('tc_err_globale', _msgErr) : _msgErr, '#b3261e');
   clearTimeout(_tcErrorBannerTimer);
   _tcErrorBannerTimer=setTimeout(function(){ tcHideBanner('tc-error-banner'); },8000);
   if(typeof tcReportErrorToSupabase==='function') tcReportErrorToSupabase(message,stack);
@@ -61,7 +63,8 @@ window.addEventListener('unhandledrejection',function(e){
 // ── DÉTECTION HORS-LIGNE / EN LIGNE ──────────────────────────────
 function tcUpdateOnlineBanner(){
   if(navigator.onLine===false){
-    tcShowBanner('tc-offline-banner','Vous êtes hors ligne.','#5a5a5a');
+    var _msgOff = 'Vous êtes hors ligne.';
+    tcShowBanner('tc-offline-banner',(typeof tcTexte === 'function') ? tcTexte('tc_hors_ligne', _msgOff) : _msgOff,'#5a5a5a');
   }else{
     tcHideBanner('tc-offline-banner');
   }

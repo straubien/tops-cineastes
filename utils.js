@@ -317,14 +317,39 @@ function formatPresentation(text){
   return s;
 }
 
+// ── TEXTES TRADUITS, RESOLUS AU DERNIER MOMENT ────────────
+// utils.js et shared.js sont charges AVANT i18n.js : la fonction t() n'existe
+// pas encore quand ces fichiers s'executent. tcTexte ne va donc chercher la
+// traduction qu'au moment de l'affichage.
+//
+// Le second argument est le texte francais. Il s'affiche si i18n.js est
+// absent (c'est le cas du back-office depuis A-066) ou si la cle manque.
+// Un message en francais vaut toujours mieux qu'un nom de cle (A-081).
+//
+// Cette fonction vit ici, et non dans shared.js, parce que l'ordre des
+// balises <script> n'est pas le meme d'une page a l'autre : utils.js est
+// charge avant shared.js sur submit.html et admin.html. utils.js reste ainsi
+// utilisable seul, sans rien supposer de l'ordre de chargement.
+//
+// Attention : t() renvoie le NOM de la cle quand la traduction manque. Ce
+// nom est une chaine, donc indiscernable d'un vrai texte par un simple test
+// de type. C'est pourquoi la comparaison porte sur la cle elle-meme.
+function tcTexte(cle, repli, arg){
+  if(typeof t === 'function'){
+    var v = t(cle, arg);
+    if(v && v !== cle) return v;
+  }
+  return repli;
+}
+
 function friendlyError(err){
-  if(!err) return 'Une erreur est survenue.';
+  if(!err) return tcTexte('err_generique','Une erreur est survenue.');
   var msg = err.message || String(err);
-  if(/JWT|session|expired|invalid.*token/i.test(msg)) return 'Votre session a expiré. Merci de vous reconnecter.';
-  if(/duplicate key|unique constraint/i.test(msg)) return 'Cette entrée existe déjà.';
-  if(/Failed to fetch|NetworkError|network|fetch|timeout|délai/i.test(msg)) return 'Problème de connexion. Vérifiez votre réseau et réessayez.';
-  if(/permission|RLS|policy|row-level security/i.test(msg)) return 'Action non autorisée.';
-  return 'Une erreur est survenue : ' + msg;
+  if(/JWT|session|expired|invalid.*token/i.test(msg)) return tcTexte('err_session','Votre session a expiré. Merci de vous reconnecter.');
+  if(/duplicate key|unique constraint/i.test(msg)) return tcTexte('err_doublon','Cette entrée existe déjà.');
+  if(/Failed to fetch|NetworkError|network|fetch|timeout|délai/i.test(msg)) return tcTexte('err_reseau','Problème de connexion. Vérifiez votre réseau et réessayez.');
+  if(/permission|RLS|policy|row-level security/i.test(msg)) return tcTexte('err_non_autorise','Action non autorisée.');
+  return tcTexte('err_generique_detail', 'Une erreur est survenue : ' + msg, msg);
 }
 
 // Détecte si une erreur est de nature réseau/timeout (donc rejouable),

@@ -237,7 +237,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
       <div class="header-user" id="header-user" style="display:none">
         <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
       </div>
-      <a id="btn-admin" href="admin.html" style="display:none;font-family:var(--font);font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,236,227,0.4);text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='var(--rouge)'" onmouseout="this.style.color='rgba(240,236,227,0.4)'">Admin</a>
+      <a id="btn-admin" data-i18n="nav_admin" href="admin.html" style="display:none;font-family:var(--font);font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,236,227,0.4);text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='var(--rouge)'" onmouseout="this.style.color='rgba(240,236,227,0.4)'">Admin</a>
       <button class="btn-logout" id="btn-logout" style="display:none" data-i18n="btn_logout">Déconnexion</button>
       <button id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
       <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block;opacity:0.7"></button>
@@ -253,11 +253,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
     <div class="setpwd-form">
       <div class="pwd-wrap">
         <input type="password" id="setpwd-password" placeholder="Nouveau mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_pwd_ph">
-        <button type="button" class="pwd-toggle" data-for="setpwd-password" title="Voir/masquer">&#128065;</button>
+        <button type="button" class="pwd-toggle" data-for="setpwd-password" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
       </div>
       <div class="pwd-wrap">
         <input type="password" id="setpwd-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password" data-i18n-ph="setpwd_confirm_ph">
-        <button type="button" class="pwd-toggle" data-for="setpwd-confirm" title="Voir/masquer">&#128065;</button>
+        <button type="button" class="pwd-toggle" data-for="setpwd-confirm" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
       </div>
       <button class="btn-primary" id="btn-setpwd" data-i18n="setpwd_btn">Valider</button>
       <div class="login-error" id="setpwd-error" style="display:none"></div>
@@ -281,7 +281,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
       <input type="email" id="login-email" placeholder="Votre adresse email" aria-label="Votre adresse email" autocomplete="email" data-i18n-ph="login_email_ph" data-i18n-aria="login_email_ph">
       <div class="pwd-wrap">
         <input type="password" id="login-password" placeholder="Mot de passe" aria-label="Mot de passe" autocomplete="current-password" data-i18n-ph="login_pwd_ph" data-i18n-aria="login_pwd_ph">
-        <button type="button" class="pwd-toggle" data-for="login-password" title="Voir/masquer">&#128065;</button>
+        <button type="button" class="pwd-toggle" data-for="login-password" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
       </div>
       <button class="btn-primary" id="btn-login" data-i18n="login_btn">Se connecter</button>
       <div class="login-error" id="login-error" style="display:none"></div>
@@ -303,19 +303,19 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
         </div>
         <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none">
         <button class="sp-avatar-btn" id="btn-change-avatar" data-i18n="sp_avatar_btn" style="text-align:center;margin:6px auto 0">Changer la photo</button>
-        <button class="btn-primary" id="btn-upload-avatar" style="display:none;margin-top:6px;font-size:12px;padding:6px 14px">Publier</button>
-        <div class="avatar-success" id="avatar-success" style="display:none">✓ Photo mise à jour</div>
+        <button class="btn-primary" id="btn-upload-avatar" data-i18n="sp_avatar_publish" style="display:none;margin-top:6px;font-size:12px;padding:6px 14px">Publier</button>
+        <div class="avatar-success" id="avatar-success" data-i18n="sp_photo_maj" style="display:none">✓ Photo mise à jour</div>
       </div>
       <div class="sp-profil-header-text">
-        <div class="sp-profil-header-title" id="submit-title">Mon profil</div>
+        <div class="sp-profil-header-title" id="submit-title" data-i18n="nav_mon_profil">Mon profil</div>
         <div class="sp-profil-header-sub" data-i18n="sub_header_sub">Gérez vos cinéastes favoris, films et présentation.</div>
       </div>
-      <a class="sp-profil-back" id="sp-profil-back" href="index.html" title="Retour au site">&#8592;</a>
+      <a class="sp-profil-back" id="sp-profil-back" href="index.html" data-i18n-title="titre_retour_site" title="Retour au site">&#8592;</a>
     </div>
 
     <!-- GROUPE : Cinéastes -->
     <div class="sp-group">
-    <div class="sp-group-label">Cinéastes</div>
+    <div class="sp-group-label" data-i18n="sp_grp_cineastes">Cinéastes</div>
 
     <!-- SECTION: Cinéastes favoris -->
     <div class="sp-section">
@@ -365,7 +365,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 
     <!-- GROUPE : Films -->
     <div class="sp-group">
-    <div class="sp-group-label">Films</div>
+    <div class="sp-group-label" data-i18n="sp_grp_films">Films</div>
 
     <!-- SECTION: Films favoris -->
     <div class="sp-section">
@@ -410,7 +410,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 
     <!-- GROUPE : Présentation -->
     <div class="sp-group">
-    <div class="sp-group-label">Présentation</div>
+    <div class="sp-group-label" data-i18n="sp_grp_presentation">Présentation</div>
 
     <!-- SECTION: Présentation -->
     <div class="sp-section">
@@ -423,9 +423,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
         <div class="textarea-wrap">
           <div class="field-label" data-i18n="sub_presentation_field">Présentation</div>
           <div class="format-toolbar">
-            <button type="button" class="fmt-btn" data-fmt="bold" title="Gras"><b>G</b></button>
-            <button type="button" class="fmt-btn" data-fmt="italic" title="Italique"><i>I</i></button>
-            <button type="button" class="fmt-btn" data-fmt="underline" title="Souligné"><u>S</u></button>
+            <button type="button" class="fmt-btn" data-fmt="bold" data-i18n-title="tc_cm_gras" title="Gras"><b>G</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" data-i18n-title="tc_cm_italique" title="Italique"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="underline" data-i18n-title="tc_cm_souligne" title="Souligné"><u>S</u></button>
           </div>
           <textarea class="tops-textarea" id="presentation-textarea" maxlength="3000" placeholder="Décrivez votre rapport au cinéma…" data-i18n-ph="sub_presentation_ph"></textarea>
           <div id="presentation-charcount" style="font-size:12px;color:var(--brun-pale);text-align:right;margin-top:4px;">0 / 3000</div>
