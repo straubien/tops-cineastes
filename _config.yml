@@ -11,3 +11,36 @@
 #
 #  Voir le point A-12 de l'audit.
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+#  FICHIERS A NE PAS PUBLIER
+#
+#  Jekyll publie TOUT ce qui ne commence pas par un tiret bas ou un point.
+#  Sans cette liste, les fichiers d'outillage (package.json, la configuration
+#  du linter, le mode d'emploi) se retrouvaient servis sur le site public :
+#  ils n'ont rien de secret, mais ils n'ont rien a y faire non plus.
+#
+#  Les dossiers _outils/ et _tests/ sont deja ignores : ils commencent par un
+#  tiret bas. Idem pour .gitignore et .github/, qui commencent par un point.
+#
+#  ATTENTION : declarer « exclude » REMPLACE la liste par defaut de Jekyll.
+#  Les entrees ci-dessous reprennent donc cette liste par defaut, puis y
+#  ajoutent les notres. Si vous ajoutez une ligne, ne supprimez pas les autres.
+# ---------------------------------------------------------------------------
+exclude:
+  # --- reprise de la liste par defaut de Jekyll ---
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  # --- outillage des controles automatiques (audit B, vague 2) ---
+  - package.json
+  - package-lock.json
+  - eslint.config.mjs
+  - README.md
