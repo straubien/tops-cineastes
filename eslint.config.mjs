@@ -48,6 +48,7 @@ const globauxDuProjet = {
   tcWithRetryTimeout: 'readonly', tcSafeUrl: 'readonly', TC_CONTRIB_COLONNES: 'readonly',
   tcReportErrorToSupabase: 'readonly', createAutocomplete: 'readonly',
   tcRendreActivable: 'readonly', tcAnnoncer: 'readonly', tcFondInerte: 'readonly',
+  IntersectionObserver: 'readonly', DocumentFragment: 'readonly',
   tcBarreRoving: 'readonly', tcBarreRovingMaj: 'readonly',
   // bibliotheque externe (jsDelivr)
   supabase: 'readonly'

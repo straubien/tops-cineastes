@@ -1343,6 +1343,9 @@ function navigate(page,skipHash){
   document.querySelectorAll('.nav a').forEach(function(a){a.classList.remove('active')});
   var navEl=document.getElementById('nav-'+page);
   if(navEl)navEl.classList.add('active');
+  // Si les tops sont arrives pendant l'ecran d'accueil, c'est ici qu'on
+  // redessine la liste avec les bons comptes.
+  if(page==='index') tcRafraichirIndexSiBesoin();
   if(page==='actualites'){renderActualites();applyActuTabSelection();}
   if(page==='contributeurs')renderContributeurs();
   if(page==='statistiques')renderStatistiques();
@@ -1402,8 +1405,83 @@ function selectLetter(l){
   renderList(items);
 }
 
+// ── AFFICHAGE DE LA LISTE, PAR TRANCHES ─────────────────
+// Taper une lettre dans la recherche pouvait fabriquer 2 600 lignes d'un
+// seul coup : une demi-seconde de page figee sur un telephone modeste.
+//
+// Deux changements (actions A-110 et A-111) :
+//   1. les lignes sont assemblees hors de la page, puis inserees en une fois ;
+//   2. on ne pose que les 60 premieres. Les suivantes arrivent quand le
+//      visiteur approche du bas de la liste.
+//
+// Le compteur affiche toujours le total reel : seul l'affichage est etale.
+var TC_TRANCHE = 60;
+var _tcListeReste = [];        // les cineastes pas encore poses
+var _tcListeObs = null;        // surveille la sentinelle de fin de liste
+
+function tcConstruireLigne(c){
+  var nb=(c.tops_contributeurs||[]).length;
+  var row=document.createElement('div');row.className='cineaste-row'+(nb>=9?' gold-row':'');
+  var dates=formatDates(c);
+  var datesHtml=dates?'<span class="c-dates">'+dates+'</span>':'';
+  var photoHtml=buildPhotoHtml(c.photo_tmdb,'c-photo',92,c.nom);
+  row.innerHTML='<div class="c-bar"></div>'
+    +photoHtml
+    +'<div class="c-info"><span class="c-name">'+formatNom(c.nom,false)+'</span>'+datesHtml+'</div>'
+    +'<div class="c-badge">'+nb+'</div>';
+  wirePortraitFallbacks(row);
+  // Clavier : sans role/tabindex/keydown, aucune de ces lignes n'etait
+  // atteignable autrement qu'a la souris. Cf. audit B-01, action A-002.
+  tcRendreActivable(row, function(){ openFiche(c); }, c.nom);
+  return row;
+}
+
+function tcArreterObservation(){
+  if(_tcListeObs){ _tcListeObs.disconnect(); _tcListeObs=null; }
+  var s=document.getElementById('tc-liste-sentinelle');
+  if(s && s.parentNode) s.parentNode.removeChild(s);
+}
+
+function tcPoserTranche(){
+  var list=document.getElementById('cineaste-list');
+  if(!list) return;
+  var n=Math.min(TC_TRANCHE, _tcListeReste.length);
+  if(!n){ tcArreterObservation(); return; }
+  // Un fragment n'appartient pas encore a la page : le navigateur ne
+  // recalcule la mise en page qu'une seule fois, a l'insertion (A-110).
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<n;i++) frag.appendChild(tcConstruireLigne(_tcListeReste[i]));
+  _tcListeReste=_tcListeReste.slice(n);
+  var s=document.getElementById('tc-liste-sentinelle');
+  if(s) list.insertBefore(frag, s); else list.appendChild(frag);
+  if(!_tcListeReste.length) tcArreterObservation();
+}
+
+// Les pastilles de comptage dependent des tops, qui arrivent APRES le premier
+// affichage de la liste. Un rafraichissement existait deja, mais il ne se
+// declenchait que si le visiteur avait DEJA passe l'ecran d'accueil au moment
+// ou les donnees arrivaient. Sinon la liste restait figee avec des comptes
+// faux — souvent zero — jusqu'a ce qu'on change de lettre.
+//
+// On marque donc la liste comme perimee des que les tops changent, et on la
+// redessine a la premiere occasion.
+var _tcListePerimee = false;
+
+function tcMarquerListePerimee(){ _tcListePerimee = true; }
+
+function tcRafraichirIndexSiBesoin(){
+  if(!_tcListePerimee || !DATA) return;
+  _tcListePerimee = false;
+  var si = document.getElementById('search-input');
+  if(si && si.value.trim()) filterList();
+  else if(activeFilter) applyFilter();
+  else selectLetter(currentLetter);
+}
+
 function renderList(items){
   var list=document.getElementById('cineaste-list'),count=document.getElementById('list-count');
+  tcArreterObservation();
+  _tcListeReste=[];
   list.innerHTML='';
   if(!items.length){
     list.innerHTML='<div class="empty-msg">'+t('aucun_resultat')+'</div>';
@@ -1415,24 +1493,32 @@ function renderList(items){
   // Sans cette annonce, un lecteur d'ecran ne signalait RIEN quand la liste
   // changeait : on tapait dans la recherche sans savoir si elle avait abouti.
   tcAnnoncer(count.textContent);
-  var maxTops=1;items.forEach(function(c){var n=(c.tops_contributeurs||[]).length;if(n>maxTops)maxTops=n});
-  items.forEach(function(c){
-    var nb=(c.tops_contributeurs||[]).length;
-    var row=document.createElement('div');row.className='cineaste-row'+(nb>=9?' gold-row':'');
-    var dates=formatDates(c);
-    var datesHtml=dates?'<span class="c-dates">'+dates+'</span>':'';
-    var photoPath=c.photo_tmdb;
-    var photoHtml=buildPhotoHtml(photoPath,'c-photo',92,c.nom);
-    row.innerHTML='<div class="c-bar"></div>'
-      +photoHtml
-      +'<div class="c-info"><span class="c-name">'+formatNom(c.nom,false)+'</span>'+datesHtml+'</div>'
-      +'<div class="c-badge">'+nb+'</div>';
-    wirePortraitFallbacks(row);
-    // Clavier : sans role/tabindex/keydown, aucune de ces lignes n'etait
-    // atteignable autrement qu'a la souris. Cf. audit B-01, action A-002.
-    tcRendreActivable(row, function(){ openFiche(c); }, c.nom);
-    list.appendChild(row);
-  });
+  _tcListeReste=items.slice();
+
+  // Sans IntersectionObserver (navigateur ancien), on pose tout d'un coup :
+  // c'est l'ancien comportement, jamais une liste tronquee.
+  if(typeof IntersectionObserver !== 'function'){
+    var frag=document.createDocumentFragment();
+    for(var i=0;i<_tcListeReste.length;i++) frag.appendChild(tcConstruireLigne(_tcListeReste[i]));
+    _tcListeReste=[];
+    list.appendChild(frag);
+    return;
+  }
+
+  if(items.length > TC_TRANCHE){
+    var s=document.createElement('div');
+    s.id='tc-liste-sentinelle';
+    s.setAttribute('aria-hidden','true');
+    s.style.cssText='height:1px;flex:0 0 1px';
+    list.appendChild(s);
+    // 600 px d'avance : la tranche suivante est posee avant que le visiteur
+    // n'atteigne le bas, il ne voit donc jamais la liste s'arreter.
+    _tcListeObs=new IntersectionObserver(function(entrees){
+      for(var j=0;j<entrees.length;j++) if(entrees[j].isIntersecting){ tcPoserTranche(); break; }
+    }, { rootMargin: '600px 0px' });
+    _tcListeObs.observe(s);
+  }
+  tcPoserTranche();
 }
 
 function filterList(){
@@ -3505,8 +3591,9 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
             }
           }
         });
+        tcMarquerListePerimee();
         var _cp2=sessionStorage.getItem('tc-page');
-        if(_cp2==='index'){var _si2=document.getElementById('search-input');if(_si2&&_si2.value.trim()){filterList();}else{selectLetter(currentLetter);}}
+        if(_cp2==='index'){tcRafraichirIndexSiBesoin();}
         else if(_cp2==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
         else if(_cp2==='statistiques'){renderStatistiques();}
         // Charger aussi les tops importés manuellement (table tops, submission_id = NULL)
@@ -3598,8 +3685,9 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
             });
         }
         loadAllTops(0, 1000).then(function(){
+          tcMarquerListePerimee();
           var _cp3=sessionStorage.getItem('tc-page');
-          if(_cp3==='index'){var _si3=document.getElementById('search-input');if(_si3&&_si3.value.trim()){filterList();}else{selectLetter(currentLetter);}}
+          if(_cp3==='index'){tcRafraichirIndexSiBesoin();}
           else if(_cp3==='contributeurs'&&document.getElementById('page-contributeurs').classList.contains('visible')){renderContributeurs();}
           else if(_cp3==='statistiques'){renderStatistiques();}
         }).catch(function(err){
