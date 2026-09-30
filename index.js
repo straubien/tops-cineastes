@@ -727,14 +727,14 @@ function parseFilmStr(s){
   // Cas sans virgule avant année avec plage: TITRE (REAL AAAA-AA)
   var m3=s.match(/^(.*?)\s*\(([^()]+?)\s+(\d{4})[\-\u2013](\d{2,4})\)\s*$/);
   if(m3){
-    var debut=m3[3];var fin=m3[4];
+    debut=m3[3];fin=m3[4];
     if(fin.length===2)fin=debut.slice(0,2)+fin;
     return{titre:m3[1].trim(),realisateur:m3[2].trim(),annee:debut+'\u2013'+fin};
   }
   // Cas avec parenthèses dans le titre : HISTOIRE(S) DU CINEMA (GODARD, 1988-98)
   var m5=s.match(/^(.*\))\s*\(([^,()]+),\s*(\d{4})[\-\u2013](\d{2,4})\)\s*$/);
   if(m5){
-    var debut=m5[3];var fin=m5[4];
+    debut=m5[3];fin=m5[4];
     if(fin.length===2)fin=debut.slice(0,2)+fin;
     return{titre:m5[1].trim(),realisateur:m5[2].trim(),annee:debut+'\u2013'+fin};
   }
@@ -3712,7 +3712,7 @@ if(sessionStorage.getItem('tc-entered')){ enterSite(); }
       return;
     }
     if(event === 'SIGNED_IN' && session){
-      var displayName=null;
+      displayName=null;
       try{ displayName = localStorage.getItem('tc-display-name'); }catch(e){}
       setNavConnecte(displayName);
     } else if(event === 'SIGNED_OUT'){

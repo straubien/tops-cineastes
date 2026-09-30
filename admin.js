@@ -755,7 +755,7 @@ function buildSubmissionCard(s, container){
     var nb = s.parsed_json && s.parsed_json.cineastes ? s.parsed_json.cineastes.length : 0;
     subtitle = nb + ' cinéaste' + (nb > 1 ? 's' : '');
   } else if(type === 'films_favoris' || type === 'autres_films'){
-    var nb = s.parsed_json && s.parsed_json.films ? s.parsed_json.films.length : 0;
+    nb = s.parsed_json && s.parsed_json.films ? s.parsed_json.films.length : 0;
     subtitle = nb + ' film' + (nb > 1 ? 's' : '');
   } else if(type === 'presentation'){
     var txt = s.parsed_json && s.parsed_json.texte ? s.parsed_json.texte : '';
@@ -842,7 +842,7 @@ function buildSubmissionCard(s, container){
     });
     contentEl.appendChild(chipsDiv);
   } else if(type === 'films_favoris' || type === 'autres_films'){
-    var films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
+    films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
     var ul = document.createElement('ul');
     ul.className = 'submission-films';
     films.forEach(function(f){
@@ -875,15 +875,15 @@ function buildSubmissionCard(s, container){
     editTextarea.className = 'edit-textarea';
 
     if(type === 'top'){
-      var films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
+      films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
       editTextarea.value = films.map(function(f,i){
         return (i+1)+'. '+f.titre+(f.annee?' ('+f.annee+')':'');
       }).join('\n');
     } else if(type === 'favoris' || type === 'autres_cineastes'){
-      var cineastes = s.parsed_json && s.parsed_json.cineastes ? s.parsed_json.cineastes : [];
+      cineastes = s.parsed_json && s.parsed_json.cineastes ? s.parsed_json.cineastes : [];
       editTextarea.value = cineastes.join('\n');
     } else if(type === 'films_favoris' || type === 'autres_films'){
-      var films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
+      films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
       editTextarea.value = films.map(function(f){
         return f.titre+(f.annee?' ('+f.annee+')':'');
       }).join('\n');
@@ -1074,8 +1074,8 @@ async function updateSubmissionWithEdit(id, s, type, editedText){
   } else if(type === 'favoris' || type === 'autres_cineastes'){
     newParsedJson.cineastes = editedText.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
   } else if(type === 'films_favoris' || type === 'autres_films'){
-    var lines = editedText.split('\n').filter(function(l){ return l.trim(); });
-    var films = lines.map(function(line){
+    lines = editedText.split('\n').filter(function(l){ return l.trim(); });
+    films = lines.map(function(line){
       var am = line.match(/\((\d{4})\)\s*$/);
       var annee = am ? parseInt(am[1]) : null;
       var titre = line.replace(/\(\d{4}\)\s*$/, '').trim();

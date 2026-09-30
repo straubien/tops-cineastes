@@ -1,0 +1,13 @@
+{
+  "name": "tops-cineastes",
+  "private": true,
+  "description": "Index collaboratif de tops cineastes. Site statique servi par GitHub Pages : ce fichier ne sert QU'AUX CONTROLES, jamais a la publication.",
+  "scripts": {
+    "lint": "eslint *.js",
+    "test": "node --test \"_tests/**/*.test.js\"",
+    "verifier": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "eslint": "^10"
+  }
+}

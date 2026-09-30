@@ -163,17 +163,17 @@ function makeLocalAvatar(n, fallbackToTmdb){
       isInvite = false;
     } else if(event === 'SIGNED_IN' && session && !isInvite){
       hideLoading();
-      var u = session.user;
+      u = session.user;
       setTimeout(function(){ onLogin(u); }, 0);
     } else if(event === 'USER_UPDATED' && session){
       // Mot de passe défini avec succès
       document.getElementById('section-setpwd').style.display = 'none';
-      var u = session.user;
+      u = session.user;
       setTimeout(function(){ onLogin(u); }, 0);
     } else if(event === 'TOKEN_REFRESHED' && session){
       hideLoading();
       if(!currentUser){
-        var u = session.user;
+        u = session.user;
         setTimeout(function(){ onLogin(u); }, 0);
       }
     } else if(event === 'SIGNED_OUT'){
@@ -733,12 +733,19 @@ document.getElementById('btn-save-films-fav').addEventListener('click', async fu
   var btn = this;
   btn.disabled = true; btn.textContent = t('sp_enregistrement');
   try {
+    // L'identifiant est fige AVANT l'attente reseau : si le cinephile se
+    // deconnecte pendant l'enregistrement, currentContributor passe a null
+    // (onLogout) et une relance lirait `null.id`. Cf. audit B-30, A-057.
+    var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       film_coeur: films
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.film_coeur = films;
     document.getElementById('success-films-fav').classList.add('visible');
     refreshProfilViews();
@@ -754,12 +761,19 @@ document.getElementById('btn-save-autres-films').addEventListener('click', async
   var btn = this;
   btn.disabled = true; btn.textContent = t('sp_enregistrement');
   try {
+    // L'identifiant est fige AVANT l'attente reseau : si le cinephile se
+    // deconnecte pendant l'enregistrement, currentContributor passe a null
+    // (onLogout) et une relance lirait `null.id`. Cf. audit B-30, A-057.
+    var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       film_autres: films
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.film_autres = films;
     document.getElementById('success-autres-films').classList.add('visible');
     refreshProfilViews();
@@ -775,12 +789,19 @@ document.getElementById('btn-submit-favoris').addEventListener('click', async fu
   var btn = this;
   btn.disabled = true; btn.textContent = t('sp_enregistrement');
   try {
+    // L'identifiant est fige AVANT l'attente reseau : si le cinephile se
+    // deconnecte pendant l'enregistrement, currentContributor passe a null
+    // (onLogout) et une relance lirait `null.id`. Cf. audit B-30, A-057.
+    var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       cineaste_coeur: cineastes
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.cineaste_coeur = cineastes;
     document.getElementById('success-favoris').classList.add('visible');
     refreshProfilViews();
@@ -796,12 +817,19 @@ document.getElementById('btn-submit-autres').addEventListener('click', async fun
   var btn = this;
   btn.disabled = true; btn.textContent = t('sp_enregistrement');
   try {
+    // L'identifiant est fige AVANT l'attente reseau : si le cinephile se
+    // deconnecte pendant l'enregistrement, currentContributor passe a null
+    // (onLogout) et une relance lirait `null.id`. Cf. audit B-30, A-057.
+    var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       cineaste_autres: cineastes
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.cineaste_autres = cineastes;
     document.getElementById('success-autres').classList.add('visible');
     refreshProfilViews();
@@ -816,12 +844,19 @@ document.getElementById('btn-submit-presentation').addEventListener('click', asy
   var btn = this;
   btn.disabled = true; btn.textContent = t('sp_enregistrement');
   try {
+    // L'identifiant est fige AVANT l'attente reseau : si le cinephile se
+    // deconnecte pendant l'enregistrement, currentContributor passe a null
+    // (onLogout) et une relance lirait `null.id`. Cf. audit B-30, A-057.
+    var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       presentation: texte || null
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.presentation = texte || null;
     document.getElementById('success-presentation').classList.add('visible');
     refreshProfilViews();
@@ -877,7 +912,10 @@ document.getElementById('btn-upload-avatar').addEventListener('click', async fun
     // (deux cinéphiles homonymes ne se superposent plus l'avatar) et évite les
     // collisions. Cf. audit 2.1. L'avatar_url stocké reste une URL absolue,
     // donc les avatars déjà en place ne sont pas affectés.
-    var filename = currentContributor.id + '-' + getAvatarFilename(currentContributor.display_name);
+    // Cas le plus expose des six : l'envoi du fichier peut durer 40 s.
+    // Cf. audit B-30, action A-057.
+    var contribId = currentContributor.id;
+    var filename = contribId + '-' + getAvatarFilename(currentContributor.display_name);
     var ext = file.name.split('.').pop().toLowerCase();
     if(ext !== 'jpg' && ext !== 'jpeg') filename = filename.replace('.jpg', '.'+ext);
     // Timeout porté à 40s : un avatar de 2 Mo sur mobile/3G peut dépasser les 15s
@@ -890,9 +928,12 @@ document.getElementById('btn-upload-avatar').addEventListener('click', async fun
     var publicUrl = sb.storage.from('avatars').getPublicUrl(filename).data.publicUrl;
     var upd = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       avatar_url: publicUrl
-    }).eq('id', currentContributor.id).select(); });
+    }).eq('id', contribId).select(); });
     if(upd.error){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert('Erreur enregistrement URL : '+friendlyError(upd.error)); return; }
     if(!upd.data || !upd.data.length){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert('La mise à jour de la photo de profil n\'a pas abouti — vérifiez les droits de la table contributors.'); return; }
+    // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en
+    // base, mais il n'y a plus de profil en memoire a mettre a jour.
+    if(!currentContributor) return;
     currentContributor.avatar_url = publicUrl;
     btn.disabled = false; btn.textContent = t('sp_avatar_publish');
     document.getElementById('avatar-success').style.display = 'block';
