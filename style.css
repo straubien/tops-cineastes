@@ -28,8 +28,6 @@
 
   /* Rouges / accents Malevich */
   --rouge:       #A33025;
-  --rouge-sombre:#3B2314;
-  --rouge-dim:   #962d22;
   --rouge-glow:  rgba(163, 48, 37, 0.12);
 
   /* Noirs Malevich */
@@ -44,6 +42,10 @@
 
   --border:      #d0c8b8;
   --border-dim:  #ddd6c8;
+  /* Vert et ambre : utilises par le back-office (statistiques, validations)
+     et par submit.html (messages de succes). Definis ici une seule fois. */
+  --vert:        #1a6b3a;
+  --ambre:       #9c6b1f;
   --border-dark: #e8e2d8;
 
   --tag-bg:      #ede8df;
@@ -64,8 +66,6 @@
   --bg-subtle:   #201d1a;
   --bg-card:     #161310;
   --rouge:       #B4523F;
-  --rouge-sombre:#c8a878;
-  --rouge-dim:   #a84838;
   --rouge-glow:  rgba(180, 82, 63, 0.14);
   --noir:        #f0ece3;
   --noir-doux:   #d0c8b8;
@@ -75,6 +75,8 @@
   --text-dim:    #9a9080;
   --border:      #332d28;
   --border-dim:  #262018;
+  --vert:        #4caf70;
+  --ambre:       #d9a34a;
   --border-dark: #201c18;
   --tag-bg:      #201d18;
   --tag-border:  #332d20;

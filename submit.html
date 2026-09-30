@@ -22,37 +22,7 @@
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <style>
 .btn-lang-img:hover { opacity: 1; }
-:root {
-  --rouge: #A33025;
-  --noir: #1a1a1a;
-  --beige: #f7f3ec;
-  --beige2: #ede8df;
-  --bg-card: #faf8f4;
-  --bg-subtle: #ede8df;
-  --brun: #7a6350;
-  --brun-pale: #7a6350;
-  --border: #d0c8b8;
-  --border-dim: #e5dfd0;
-  --text: #111008;
-  --vert: #1a6b3a;
-  --font: 'Cormorant Garamond', Georgia, serif;
-}
-.dark {
-  color-scheme: dark;
-  --rouge: #B4523F;
-  --noir: #f0ece3;
-  --beige: #1a1714;
-  --beige2: #252019;
-  --bg-card: #211e19;
-  --bg-subtle: #252019;
-  --brun: #a89880;
-  --border: #3a352c;
-  --border-dim: #2e2a23;
-  --text: #f0ece3;
-  --vert: #4caf70;
-  --brun-pale: #7a6a58;
-}
-.dark body { background: var(--beige); color: var(--text); }
+.dark body { background: var(--bg); color: var(--text); }
 .dark .autocomplete-input, .dark .tops-textarea, .dark .login-form input, .dark .setpwd-form input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
 .dark .header,
 .dark .sp-profil-header { background: #1a1714 !important; }
@@ -64,7 +34,7 @@
 .dark .btn-primary { background: #3a352c; color: #f0ece3; }
 .dark .btn-primary:hover { background: var(--rouge); }
 .dark .tabs { border-bottom-color: var(--border); }
-.dark .tab-btn.active { background: var(--beige2); color: var(--text); }
+.dark .tab-btn.active { background: var(--bg-subtle); color: var(--text); }
 .dark .sp-view,
 .dark .sp-top-name,
 .dark .sp-presentation-text,
@@ -92,10 +62,10 @@
 .dark .prev-section { border-top-color: var(--border); }
 .dark .btn-secondary:hover { border-color: var(--border); color: var(--text); }
 .dark .autocomplete-dropdown { background: var(--bg-card); border-color: var(--border); }
-.dark .autocomplete-item:hover, .dark .autocomplete-item.selected { background: var(--beige2); }
+.dark .autocomplete-item:hover, .dark .autocomplete-item.selected { background: var(--bg-subtle); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--beige); color: var(--text); font-family: var(--font); min-height: 100vh; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
 
 .header { background: var(--noir); position: sticky; top: 0; z-index: 100; }
 .header-bar { height: 4px; display: flex; }
@@ -175,7 +145,7 @@ body { background: var(--beige); color: var(--text); font-family: var(--font); m
 .tabs { display: flex; flex-wrap: wrap; border-bottom: 4px solid var(--noir); margin-bottom: 2.2rem; }
 .tab-btn { font-family: var(--font); font-size: 16px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 13px 20px; background: none; border: none; cursor: pointer; color: var(--text); white-space: nowrap; position: relative; transition: color 0.15s, background 0.15s; flex-shrink: 0; border-radius: 4px 4px 0 0; }
 .tab-btn:hover { color: var(--rouge); background: var(--bg-subtle); }
-.tab-btn.active { color: var(--noir); background: var(--beige2); font-weight: 700; }
+.tab-btn.active { color: var(--noir); background: var(--bg-subtle); font-weight: 700; }
 .tab-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--rouge); }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
