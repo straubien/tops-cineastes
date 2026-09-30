@@ -23,7 +23,9 @@ on:
   push:
     paths:
       - '*.js'
+      - '*.html'
       - '_tests/**'
+      - '_outils/**'
       - 'package.json'
       - 'package-lock.json'
       - 'eslint.config.mjs'
@@ -57,6 +59,9 @@ jobs:
       - name: Lancer les tests
         run: npm test
 
+      - name: Controler le dictionnaire de traduction
+        run: npm run i18n
+
       - name: Ecrire le resume
         if: always()
         run: |
@@ -65,6 +70,7 @@ jobs:
             echo
             echo 'Linter : regles de correction uniquement (aucune regle de style).'
             echo 'Tests  : analyseurs de listes, resolution des noms, gestion des erreurs.'
+            echo 'Langues: aucune cle manquante, les deux dictionnaires a egalite.'
             echo
             echo 'En cas de croix rouge, ouvrez les etapes ci-dessus pour voir le detail.'
           } >> "$GITHUB_STEP_SUMMARY"
