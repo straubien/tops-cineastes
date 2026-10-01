@@ -343,9 +343,14 @@ async function renderDashboard(force){
     if(res && res.error){ dashCountError = true; return; }
     var rows = res.data || [];
     rows.forEach(function(s){
-      var name = (s.contributor_name ? s.contributor_name.toUpperCase() : null)
-        || (s.contributors && s.contributors.display_name ? s.contributors.display_name.toUpperCase() : null)
-        || (s.contributor_id && contribIdToName[s.contributor_id]) || null;
+      // contribIdToName d'abord : il privilégie `json_name`, la seule clé
+      // commune avec le chargement de la table `tops` ci-dessous. Passer par
+      // `display_name` en majuscules dédoublait le décompte des cinéphiles dont
+      // le nom porte un accent (« GRÉGORY LESCARD » d'un côté, « GREGORY
+      // LESCARD » de l'autre). Cf. la même correction dans index.js.
+      var name = (s.contributor_id && contribIdToName[s.contributor_id])
+        || (s.contributor_name ? s.contributor_name.toUpperCase() : null)
+        || (s.contributors && s.contributors.display_name ? s.contributors.display_name.toUpperCase() : null) || null;
       var cinNom = s.parsed_json && s.parsed_json.cineaste;
       if(!name || !cinNom || name === 'MATHIEU MUZARD' || name === 'KARINE CNUDDE') return;
       if(!importedCineastes[name]) importedCineastes[name] = {};

@@ -3821,7 +3821,18 @@ if(sessionStorage.getItem('tc-entered') || tcPageDeLAdresse()){ enterSite(); }
         return DATA_READY.then(function(){
         if(!res2.data||!res2.data.length)return;
         res2.data.forEach(function(s){
-          var jsonName=(s.contributor_name?s.contributor_name.toUpperCase():null)||(s.contributors&&s.contributors.display_name?s.contributors.display_name.toUpperCase():null)||(s.contributor_id&&idToName[s.contributor_id]?idToName[s.contributor_id]:null);
+          // La clé doit être le `json_name` du cinéphile : c'est lui que lisent
+          // IMPORTED_COUNTS et SUPABASE_TOPS partout ailleurs (page contributeurs,
+          // profil, fiches), et c'est lui qu'emploie le chargement de la table
+          // `tops` ci-dessous, via idToName. `display_name` mis en majuscules n'y
+          // est PAS équivalent : un seul accent suffit à le désolidariser
+          // (« Grégory LESCARD » → « GRÉGORY LESCARD », quand json_name vaut
+          // « GREGORY LESCARD »). Les tops soumis via l'interface atterrissaient
+          // alors dans un compteur parallèle que rien n'affiche, et le profil
+          // annonçait 678 tops au lieu de 706. On interroge donc idToName EN
+          // PREMIER : il privilégie json_name et ne retombe sur display_name que
+          // faute de mieux.
+          var jsonName=(s.contributor_id&&idToName[s.contributor_id]?idToName[s.contributor_id]:null)||(s.contributor_name?s.contributor_name.toUpperCase():null)||(s.contributors&&s.contributors.display_name?s.contributors.display_name.toUpperCase():null);
           if(!jsonName||!s.parsed_json)return;
           var cinNom=s.parsed_json.cineaste;
           var films=s.parsed_json.films||[];
