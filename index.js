@@ -156,9 +156,11 @@ function tcChargerConsentements(){
   if(typeof TC_SB === 'undefined' || !TC_SB) return;
   TC_SB.from('contributors').select('id,presence_publique').then(function(res){
     if(res && res.error){
-      console.warn('[consentement] colonne presence_publique absente de la base : '
-        + 'la presence s\'affiche comme avant. Executez la commande SQL pour '
-        + 'activer le consentement.');
+      // On affiche le message exact de la base : « colonne absente » et « droit
+      // de lecture manquant » ne se corrigent pas de la meme facon, et ce
+      // message est la seule facon de les distinguer.
+      console.warn('[consentement] reglage inactif, la presence s\'affiche comme '
+        + 'avant. Reponse de la base : ' + (res.error.message || res.error));
       return;
     }
     ((res && res.data) || []).forEach(function(r){

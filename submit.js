@@ -858,7 +858,8 @@ function tcChargerMonConsentement(){
   sb.from('contributors').select('presence_publique').eq('id', monId).single().then(function(res){
     if(res && res.error){
       indisponible();
-      console.warn('[consentement] colonne presence_publique absente de la base.');
+      console.warn('[consentement] reglage indisponible. Reponse de la base : '
+        + (res.error.message || res.error));
       return;
     }
     // Seul un refus explicite decoche la case (version allegee).
