@@ -32,6 +32,133 @@ var FAVORIS={};
 var AVATAR_URLS={};
 var SUPABASE_TOPS={}; // json_name → { cineaste_nom → [{titre,annee}] }
 var IMPORTED_COUNTS={}; // json_name → {tops:N, films:N}
+
+// ── LES FILMS ARRIVENT A LA DEMANDE (actions A-142 / A-143) ──────
+//
+// Avant : chaque visiteur telechargeait les 12 000 lignes de la table
+// `tops` AVEC leurs listes de films — 1 495 ko compresses, mesures sur la
+// vraie base. Or la page d'accueil, la page des cinephiles et les
+// statistiques n'ont besoin que de DEUX choses : qui a fait un top sur qui,
+// et combien de films il contient.
+//
+// Maintenant : au demarrage on ne lit plus que la vue `tops_couverture`,
+// environ 200 ko. Les listes de films sont demandees quand on en a vraiment
+// besoin : 2 ko pour une fiche de cineaste, 62 ko pour le plus gros profil.
+//
+// SUPABASE_TOPS[nom][cineaste] vaut alors l'un des trois :
+//   • un tableau de films   -> charge, utilisable ;
+//   • TC_FILMS_ABSENTS      -> le top existe, ses films ne sont pas encore la ;
+//   • undefined             -> il n'y a pas de top.
+// Le marqueur est un tableau vide PARTAGE : il reste « vrai » pour tous les
+// tests d'existence du site (« ce cinephile a-t-il deja un top ? »), qui
+// continuent donc de fonctionner sans modification.
+var TC_FILMS_ABSENTS=[];
+var TC_NB_FILMS={};   // json_name → { cineaste_nom → nombre de films }
+// La vue existe-t-elle ? Mise a false si la base la refuse : le site
+// retombe alors sur l'ancienne lecture complete.
+var _tcVueCouverture=true;
+
+function tcFilmsCharges(films){ return !!films && films!==TC_FILMS_ABSENTS; }
+
+// Toutes les listes de films d'un cinephile sont-elles la ?
+function tcFilmsCinephileCharges(jsonName){
+  var tops=SUPABASE_TOPS[jsonName];
+  if(!tops)return true;                 // rien a charger
+  return Object.keys(tops).every(function(k){ return tcFilmsCharges(tops[k]); });
+}
+
+// Nombre de films d'un top, qu'il soit charge ou non.
+function tcNbFilms(jsonName,cinNom){
+  var f=SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom];
+  if(tcFilmsCharges(f))return f.length;
+  return (TC_NB_FILMS[jsonName]&&TC_NB_FILMS[jsonName][cinNom])||0;
+}
+
+// Correspondance identifiant ↔ json_name. Meme regle qu'au chargement :
+// json_name d'abord, display_name en majuscules seulement faute de mieux.
+// Un seul accent suffit a desolidariser les deux (cf. le commentaire du
+// chargement des soumissions).
+var _tcMapsCinephiles=null;
+function tcMapsCinephiles(){
+  if(_tcMapsCinephiles&&_tcMapsCinephiles.n===CONTRIB_DATA.length)return _tcMapsCinephiles;
+  var parId={},parNom={};
+  CONTRIB_DATA.forEach(function(c){
+    if(!c.id)return;
+    var nom=c.json_name||(c.display_name?c.display_name.toUpperCase():null);
+    if(!nom)return;
+    parId[c.id]=nom;
+    parNom[nom]=c.id;
+  });
+  _tcMapsCinephiles={parId:parId,parNom:parNom,n:CONTRIB_DATA.length};
+  return _tcMapsCinephiles;
+}
+
+// Une promesse par lot deja demande : on ne telecharge jamais deux fois la
+// meme chose, et deux clics rapides ne declenchent qu'une requete.
+var _tcLotsFilms={};
+
+function _tcRangerFilms(jsonName,cinNom,films){
+  if(!jsonName||!cinNom)return;
+  if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
+  // Ne jamais ecraser un top deja complet (venu des soumissions) par celui
+  // de la table `tops` : c'est la regle qu'appliquait deja le chargement.
+  if(tcFilmsCharges(SUPABASE_TOPS[jsonName][cinNom]))return;
+  SUPABASE_TOPS[jsonName][cinNom]=films||[];
+}
+
+// La base ne renvoie JAMAIS plus de 1000 lignes d'un coup, quelle que soit
+// la question posee, et sans prevenir : la reponse est simplement tronquee.
+// Un cinephile peut avoir plus de 1500 tops ; il faut donc redemander page
+// par page jusqu'a en recevoir une incomplete.
+var TC_PAGE_TOPS=1000;
+function _tcChargerParPages(construire, traiter, debut){
+  debut=debut||0;
+  return tcWithRetryTimeout(function(){
+    return construire().range(debut, debut+TC_PAGE_TOPS-1);
+  }).then(function(res){
+    if(res&&res.error)throw res.error;
+    var lignes=res.data||[];
+    lignes.forEach(traiter);
+    if(lignes.length===TC_PAGE_TOPS)return _tcChargerParPages(construire, traiter, debut+TC_PAGE_TOPS);
+  });
+}
+
+// Tous les films d'UN cinephile (profil, panneau des tops importes).
+function tcChargerFilmsDuCinephile(jsonName){
+  if(!jsonName||typeof TC_SB==='undefined'||!TC_SB)return Promise.resolve();
+  var cle='cinephile:'+jsonName;
+  if(_tcLotsFilms[cle])return _tcLotsFilms[cle];
+  var id=tcMapsCinephiles().parNom[jsonName];
+  if(!id)return Promise.resolve();
+  _tcLotsFilms[cle]=_tcChargerParPages(function(){
+    return TC_SB.from('tops').select('cineaste_nom, films').eq('contributor_id',id).order('id',{ascending:true});
+  }, function(r){
+    _tcRangerFilms(jsonName,r.cineaste_nom,r.films);
+  }).catch(function(err){
+    // On oublie la promesse ratee : une prochaine ouverture reessaiera,
+    // au lieu de rester bloquee sur un echec passager.
+    delete _tcLotsFilms[cle];
+    throw err;
+  });
+  return _tcLotsFilms[cle];
+}
+
+// Tous les films d'UN cineaste, tous cinephiles confondus (fiche cineaste).
+function tcChargerFilmsDuCineaste(cinNom){
+  if(!cinNom||typeof TC_SB==='undefined'||!TC_SB)return Promise.resolve();
+  var cle='cineaste:'+cinNom;
+  if(_tcLotsFilms[cle])return _tcLotsFilms[cle];
+  var parId=tcMapsCinephiles().parId;
+  _tcLotsFilms[cle]=_tcChargerParPages(function(){
+    return TC_SB.from('tops').select('contributor_id, films').eq('cineaste_nom',cinNom).order('id',{ascending:true});
+  }, function(r){
+    _tcRangerFilms(parId[r.contributor_id],cinNom,r.films);
+  }).catch(function(err){
+    delete _tcLotsFilms[cle];
+    throw err;
+  });
+  return _tcLotsFilms[cle];
+}
 var activeFilter=null; // null | 'sans-tops' | 'non-couvert'
 var currentUserJsonName=null;
 var currentUserContribId=null; // id (contributors.id) du cinéphile connecté
@@ -42,6 +169,7 @@ function themePhotoPath(nom){
 }
 var THEMATIC_DATA = []; // tops thematiques approuves
 var _thematiquesRenderToken = 0; // garde anti-réentrance pour renderThematiques (navigation/recherche rapide)
+var _tcPortraitToken = 0; // meme garde, pour le portrait statistique du profil
 
 var DATA=null,currentLetter='A';
 var _dataReadyResolve;
@@ -1143,7 +1271,21 @@ function renderProfil(name){
     document.getElementById('profil-presentation-text').innerHTML=formatPresentation(_currentContribData.presentation);
   } else {presBlock.style.display='none';}
 
-  renderProfilPortrait(name,cin);
+  // Le portrait statistique depouille les films un par un : il attend donc
+  // que les listes soient arrivees. Tout le reste du profil est deja affiche.
+  if(tcFilmsCinephileCharges(name)){
+    renderProfilPortrait(name,cin);
+  } else {
+    var _blocPortrait=document.getElementById('profil-portrait-block');
+    if(_blocPortrait)_blocPortrait.style.display='none';
+    var _jetonPortrait=++_tcPortraitToken;
+    tcChargerFilmsDuCinephile(name).then(function(){
+      // Un autre profil a pu etre ouvert entre-temps : ne rien ecraser.
+      if(_jetonPortrait===_tcPortraitToken)renderProfilPortrait(name,cin);
+    }).catch(function(){
+      if(_jetonPortrait===_tcPortraitToken)renderProfilPortrait(name,cin);
+    });
+  }
 
   tcRefreshOnlineBadges();
 }
@@ -1312,9 +1454,11 @@ function showImportedPanel(name){
   if(rawTops){
     items=rawTops.map(function(top){return{cineaste:top.cineaste,count:top.films?top.films.length:0,films:top.films||[]};});
   } else if(SUPABASE_TOPS[name]){
+    // Le nombre de films est connu meme quand la liste ne l'est pas : le
+    // panneau s'ouvre donc complet, et les listes se posent juste apres.
     items=Object.keys(SUPABASE_TOPS[name]).map(function(cinNom){
       var films=SUPABASE_TOPS[name][cinNom]||[];
-      return{cineaste:cinNom,count:films.length,films:films};
+      return{cineaste:cinNom,count:tcNbFilmsDuTop(name,cinNom),films:tcFilmsCharges(films)?films:[]};
     });
   }
   if(!items.length)return;
@@ -1337,6 +1481,18 @@ function showImportedPanel(name){
   document.getElementById('fiche-content').innerHTML=html;
   tcOuvrirOverlay(formatContribNamePlain(name), null, {t:'tops', c:name});
   _renderImpPanel();
+  // Les listes de films arrivent ensuite : on remplace les tableaux vides et
+  // on redessine, sans toucher au tri ni a la lettre choisie.
+  if(!tcFilmsCinephileCharges(name)){
+    tcChargerFilmsDuCinephile(name).then(function(){
+      if(_impPanelOwnerName!==name)return;   // un autre panneau a ete ouvert
+      _impPanelItems.forEach(function(it){
+        var f=SUPABASE_TOPS[name]&&SUPABASE_TOPS[name][it.cineaste];
+        if(tcFilmsCharges(f)){ it.films=f; it.count=f.length; }
+      });
+      _renderImpPanel();
+    }).catch(function(){ /* les noms et les nombres restent affiches */ });
+  }
   var _tcLang='fr';
   try{ _tcLang=localStorage.getItem('tc-lang')||'fr'; }catch(e){}
   applyLang(_tcLang);
@@ -1730,71 +1886,102 @@ function tcChargerLienFacebook(c, emplacement){
   }).catch(function(){ c.url_facebook = null; });
 }
 
+// ── BLOCS DES CONTRIBUTEURS D'UNE FICHE CINEASTE ───────────────
+// Films d'un top, quelle que soit sa provenance. Peut renvoyer le marqueur
+// TC_FILMS_ABSENTS : le top existe, sa liste n'est pas encore chargee.
+function tcFilmsDuTop(nomCinephile,cinNom){
+  if(MUZARD_DATA&&nomCinephile==='MATHIEU MUZARD')return MUZARD_DATA[cinNom]||null;
+  if(CNUDDE_DATA&&nomCinephile==='KARINE CNUDDE')return CNUDDE_DATA[cinNom]||null;
+  if(SUPABASE_TOPS[nomCinephile])return SUPABASE_TOPS[nomCinephile][cinNom]||null;
+  return null;
+}
+
+// Nombre de films du top, connu meme quand la liste ne l'est pas : c'est lui
+// qui permet d'afficher la fiche immediatement, sans attendre la base.
+function tcNbFilmsDuTop(nomCinephile,cinNom){
+  var f=tcFilmsDuTop(nomCinephile,cinNom);
+  if(tcFilmsCharges(f))return f.length;
+  return tcNbFilms(nomCinephile,cinNom);
+}
+
+// Les listes de films de tous les contributeurs de ce cineaste sont-elles
+// deja la ? (Les tops des JSON statiques le sont toujours.)
+function tcTousFilmsCharges(c){
+  return (c.tops_contributeurs||[]).every(function(t){
+    return tcFilmsCharges(tcFilmsDuTop(t,c.nom));
+  });
+}
+
+function tcRemplirBlocsContributeurs(c,contribsDiv){
+  // Quels blocs etaient deplies ? Une reconstruction ne doit pas les refermer.
+  var ouverts={};
+  contribsDiv.querySelectorAll('.fiche-contrib-block.open').forEach(function(b){ ouverts[b.id]=true; });
+  contribsDiv.innerHTML='';
+  (c.tops_contributeurs||[]).slice().sort(function(a,b){
+    return tcNbFilmsDuTop(b,c.nom)-tcNbFilmsDuTop(a,c.nom);
+  }).forEach(function(t){
+    var films=tcFilmsDuTop(t,c.nom);
+    var contribNom=formatContribNamePlain(t);
+    var nbF=tcNbFilmsDuTop(t,c.nom);
+    var hasFilms=nbF>0;
+    var blockId='cb-'+t.replace(/[^a-zA-Z0-9]/g,'');
+    var block=document.createElement('div');
+    block.className='fiche-contrib-block'+(hasFilms?' has-films':'')+(ouverts[blockId]?' open':'');
+    block.id=blockId;
+    var header=document.createElement('div');
+    header.className='fiche-contrib-header';
+    var nameEl=document.createElement('div');
+    nameEl.className='fiche-contrib-name';
+    nameEl.innerHTML=contribNom+(hasFilms?' <span class="fiche-contrib-count">('+nbF+')</span>':'');
+    header.appendChild(nameEl);
+    if(hasFilms){
+      var tog=document.createElement('span');
+      tog.className='fiche-contrib-toggle';
+      tog.innerHTML='&#9660;';
+      header.appendChild(tog);
+      block.setAttribute('data-block-id',blockId);
+      header.onclick=function(e){e.stopPropagation();toggleAccordeon(this.parentElement.getAttribute('data-block-id'));};
+    } else {
+      block.setAttribute('data-contrib-name',t);
+      header.onclick=function(e){e.stopPropagation();openContribDetail(this.parentElement.getAttribute('data-contrib-name'));};
+    }
+    block.appendChild(header);
+    // La liste n'est posee que si les films sont la. Sinon le bloc reste
+    // replie avec son nombre, et se remplira des l'arrivee des donnees.
+    if(hasFilms&&tcFilmsCharges(films)){
+      var ol=document.createElement('ol');
+      ol.className='fiche-contrib-films';
+      films.forEach(function(f){
+        var li=document.createElement('li');
+        var s1=document.createElement('span');s1.className='fiche-muzard-film';s1.textContent=f.titre;
+        if(f.note){var sn=document.createElement('span');sn.className='film-note';sn.textContent='('+f.note+')';li.appendChild(s1);li.appendChild(sn);}else{li.appendChild(s1);}
+        var s2=document.createElement('span');s2.className='fiche-muzard-annee';s2.textContent=f.annee||'';
+        li.appendChild(s2);ol.appendChild(li);
+      });
+      block.appendChild(ol);
+    }
+    var ownerId=tcContribIdByName(t);
+    if(ownerId&&hasFilms){
+      var cmWrap=document.createElement('div');
+      cmWrap.className='tc-comments-wrap';
+      cmWrap.innerHTML=tcCommentsToggleHtml(blockId+'-cm',ownerId,c.nom);
+      block.appendChild(cmWrap);
+    }
+    contribsDiv.appendChild(block);
+  });
+}
+
 function openFiche(c){
   var nb=(c.tops_contributeurs||[]).length;
   // Emplacement vide : le lien Facebook arrive juste apres, une fois recu.
   var fbHtml='<span id="fiche-fb-slot"></span>';
 
-  // Construire la liste des contributeurs avec leurs films si disponibles
+  // Les blocs des contributeurs sont construits a part : ils doivent pouvoir
+  // etre reconstruits sans rouvrir la fiche, quand les listes de films
+  // arrivent de la base (A-143).
   var contribsDiv=document.createElement('div');
-  if(nb>0){
-    c.tops_contributeurs.slice().sort(function(a,b){
-      var fa=(MUZARD_DATA&&a==='MATHIEU MUZARD'?MUZARD_DATA[c.nom]:CNUDDE_DATA&&a==='KARINE CNUDDE'?
-    CNUDDE_DATA[c.nom]:SUPABASE_TOPS[a]?SUPABASE_TOPS[a][c.nom]:null)||[];
-      var fb=(MUZARD_DATA&&b==='MATHIEU MUZARD'?MUZARD_DATA[c.nom]:CNUDDE_DATA&&b==='KARINE CNUDDE'?
-    CNUDDE_DATA[c.nom]:SUPABASE_TOPS[b]?SUPABASE_TOPS[b][c.nom]:null)||[];
-      return fb.length-fa.length;
-    }).forEach(function(t){
-      var films=null;
-      if(MUZARD_DATA&&t==='MATHIEU MUZARD')films=MUZARD_DATA[c.nom]||null;
-      else if(CNUDDE_DATA&&t==='KARINE CNUDDE')films=CNUDDE_DATA[c.nom]||null;
-      else if(SUPABASE_TOPS[t])films=(SUPABASE_TOPS[t][c.nom])||null;
-      var contribNom=formatContribNamePlain(t);
-      var hasFilms=films&&films.length>0;
-      var blockId='cb-'+t.replace(/[^a-zA-Z0-9]/g,'');
-      var block=document.createElement('div');
-      block.className='fiche-contrib-block'+(hasFilms?' has-films':'');
-      block.id=blockId;
-      var header=document.createElement('div');
-      header.className='fiche-contrib-header';
-      var nameEl=document.createElement('div');
-      nameEl.className='fiche-contrib-name';
-      nameEl.innerHTML=contribNom+(hasFilms?' <span class="fiche-contrib-count">('+films.length+')</span>':'');
-      header.appendChild(nameEl);
-      if(hasFilms){
-        var tog=document.createElement('span');
-        tog.className='fiche-contrib-toggle';
-        tog.innerHTML='&#9660;';
-        header.appendChild(tog);
-        block.setAttribute('data-block-id',blockId);
-        header.onclick=function(e){e.stopPropagation();toggleAccordeon(this.parentElement.getAttribute('data-block-id'));};
-      } else {
-        block.setAttribute('data-contrib-name',t);
-        header.onclick=function(e){e.stopPropagation();openContribDetail(this.parentElement.getAttribute('data-contrib-name'));};
-      }
-      block.appendChild(header);
-      if(hasFilms){
-        var ol=document.createElement('ol');
-        ol.className='fiche-contrib-films';
-        films.forEach(function(f){
-          var li=document.createElement('li');
-          var s1=document.createElement('span');s1.className='fiche-muzard-film';s1.textContent=f.titre;
-          if(f.note){var sn=document.createElement('span');sn.className='film-note';sn.textContent='('+f.note+')';li.appendChild(s1);li.appendChild(sn);}else{li.appendChild(s1);}
-          var s2=document.createElement('span');s2.className='fiche-muzard-annee';s2.textContent=f.annee||'';
-          li.appendChild(s2);ol.appendChild(li);
-        });
-        block.appendChild(ol);
-      }
-      var ownerId=tcContribIdByName(t);
-      if(ownerId&&hasFilms){
-        var cmWrap=document.createElement('div');
-        cmWrap.className='tc-comments-wrap';
-        cmWrap.innerHTML=tcCommentsToggleHtml(blockId+'-cm',ownerId,c.nom);
-        block.appendChild(cmWrap);
-      }
-      contribsDiv.appendChild(block);
-    });
-  }
+  contribsDiv.id='fiche-contribs-blocs';
+  if(nb>0) tcRemplirBlocsContributeurs(c, contribsDiv);
 
   var fichePhotoPath=c.photo_tmdb;
   var fichePhotoHtml=buildPhotoHtml(fichePhotoPath,'fiche-photo',185,c.nom);
@@ -1845,7 +2032,25 @@ function openFiche(c){
   tcChargerLienFacebook(c, document.getElementById('fiche-fb-slot'));
 
   var inner=document.getElementById('contribs-inner');
-  if(nb>0){inner.appendChild(contribsDiv);}else{inner.innerHTML='<div class="empty-msg">'+t('aucun_top_poste_cin')+'</div>';}
+  if(nb>0){
+    inner.appendChild(contribsDiv);
+    // La fiche s'ouvre immediatement : les noms et le nombre de films de
+    // chacun sont deja connus. Les listes elles-memes, qui sont repliees,
+    // arrivent juste apres et le bloc se reconstruit alors tout seul.
+    if(!tcTousFilmsCharges(c)){
+      tcChargerFilmsDuCineaste(c.nom).then(function(){
+        // La fiche a pu etre fermee ou remplacee entre-temps : on ne touche
+        // qu'au bloc que l'on a soi-meme pose.
+        if(document.getElementById('fiche-contribs-blocs')===contribsDiv){
+          tcRemplirBlocsContributeurs(c, contribsDiv);
+        }
+      }).catch(function(){
+        // Echec assume : la fiche reste lisible, avec les noms et les nombres.
+      });
+    }
+  } else {
+    inner.innerHTML='<div class="empty-msg">'+t('aucun_top_poste_cin')+'</div>';
+  }
   tcOuvrirOverlay(c.nom, '#cineaste/' + encodeURIComponent(c.nom), {t:'cin', c:c.nom});
 }
 
@@ -3888,31 +4093,57 @@ if(sessionStorage.getItem('tc-entered') || tcPageDeLAdresse()){ enterSite(); }
           }
         }
 
+        // Coeur commun aux deux lectures possibles : la vue allegee (films
+        // absents, nombre connu) et l'ancienne lecture complete.
+        function enregistrerTop(jsonName,cinNom,films,nbFilms){
+          if(!jsonName||!cinNom)return;
+          // Ne pas ecraser un top deja charge via submissions
+          if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
+          if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
+          SUPABASE_TOPS[jsonName][cinNom]=films;
+          if(!TC_NB_FILMS[jsonName])TC_NB_FILMS[jsonName]={};
+          TC_NB_FILMS[jsonName][cinNom]=nbFilms;
+          if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
+          IMPORTED_COUNTS[jsonName].tops++;
+          IMPORTED_COUNTS[jsonName].films+=nbFilms;
+          var cin=_cinParNom[cinNom];   // acces direct, au lieu d'un .find()
+          if(cin){
+            if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
+            if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
+          }
+        }
+
+        // Lecture allegee : la vue ne renvoie que le nombre de films.
+        function traiterLignesCouverture(rows){
+          rows.forEach(function(r){
+            enregistrerTop(idToName[r.contributor_id],r.cineaste_nom,TC_FILMS_ABSENTS,r.nb_films||0);
+          });
+        }
+
+        // Ancienne lecture, conservee comme repli tant que la vue n'existe pas.
         function traiterLignesTops(rows){
           rows.forEach(function(top){
-            var jsonName=idToName[top.contributor_id];
-            if(!jsonName)return;
-            var cinNom=top.cineaste_nom;
             var films=top.films||[];
-            if(!cinNom)return;
-            // Ne pas écraser un top déjà chargé via submissions
-            if(SUPABASE_TOPS[jsonName]&&SUPABASE_TOPS[jsonName][cinNom])return;
-            if(!SUPABASE_TOPS[jsonName])SUPABASE_TOPS[jsonName]={};
-            SUPABASE_TOPS[jsonName][cinNom]=films;
-            if(!IMPORTED_COUNTS[jsonName])IMPORTED_COUNTS[jsonName]={tops:0,films:0};
-            IMPORTED_COUNTS[jsonName].tops++;
-            IMPORTED_COUNTS[jsonName].films+=films.length;
-            var cin=_cinParNom[cinNom];   // acces direct, au lieu d'un .find()
-            if(cin){
-              if(!cin.tops_contributeurs)cin.tops_contributeurs=[];
-              if(cin.tops_contributeurs.indexOf(jsonName)===-1)cin.tops_contributeurs.push(jsonName);
-            }
+            enregistrerTop(idToName[top.contributor_id],top.cineaste_nom,films,films.length);
           });
         }
 
         // Une page de la table `tops`. Enveloppee dans tcWithRetryTimeout
         // (comme les autres chargements) : un echec reseau n'est pas
         // silencieux, il est propage au .catch() qui affiche un avertissement.
+        // Une page de la vue allegee : les cles et le nombre de films.
+        function chargerPageCouverture(debut, taille){
+          return tcWithRetryTimeout(function(){
+            return TC_SB.from('tops_couverture').select('contributor_id, cineaste_nom, nb_films')
+              .order('id', { ascending: true })
+              .range(debut, debut + taille - 1);
+          }).then(function(res3){
+            if(res3 && res3.error) throw res3.error;
+            return res3.data || [];
+          });
+        }
+
+        // Une page de l'ancienne lecture, films compris.
         function chargerPageTops(debut, taille){
           return tcWithRetryTimeout(function(){
             return TC_SB.from('tops').select('contributor_id, cineaste_nom, films')
@@ -3925,31 +4156,51 @@ if(sessionStorage.getItem('tc-entered') || tcPageDeLAdresse()){ enterSite(); }
         }
 
         // Repli sequentiel, si le comptage prealable echoue (droits, panne).
-        function chargerToutSequentiel(debut, taille){
-          return chargerPageTops(debut, taille).then(function(rows){
-            traiterLignesTops(rows);
-            if(rows.length === taille) return chargerToutSequentiel(debut + taille, taille);
+        function chargerToutSequentiel(debut, taille, charger, traiter){
+          return charger(debut, taille).then(function(rows){
+            traiter(rows);
+            if(rows.length === taille) return chargerToutSequentiel(debut + taille, taille, charger, traiter);
           });
         }
 
-        function loadAllTops(offset, pageSize){
+        // Pages demandees en parallele quand on connait le total.
+        function chargerTout(offset, pageSize, charger, traiter){
           return tcWithRetryTimeout(function(){
-            return TC_SB.from('tops').select('id', { count: 'exact', head: true });
+            return TC_SB.from(_tcVueCouverture ? 'tops_couverture' : 'tops')
+              .select('contributor_id', { count: 'exact', head: true });
           }).then(function(r){
             return (r && !r.error && typeof r.count === 'number') ? r.count : null;
           }, function(){ return null; })
             .then(function(total){
-              if(total === null) return chargerToutSequentiel(offset, pageSize);
+              if(total === null) return chargerToutSequentiel(offset, pageSize, charger, traiter);
               var pages = [];
               for(var debut = offset; debut < total; debut += pageSize){
-                pages.push(chargerPageTops(debut, pageSize));
+                pages.push(charger(debut, pageSize));
               }
               if(!pages.length) return;
               return Promise.all(pages).then(function(morceaux){
                 // dans l'ordre des pages, donc dans l'ordre des id
-                for(var i=0; i<morceaux.length; i++) traiterLignesTops(morceaux[i]);
+                for(var i=0; i<morceaux.length; i++) traiter(morceaux[i]);
               });
             });
+        }
+
+        function loadAllTops(offset, pageSize){
+          // On tente d'abord la vue allegee. Tant que la commande SQL n'a pas
+          // ete passee, elle n'existe pas : on retombe alors sur l'ancienne
+          // lecture complete, et le site se comporte exactement comme avant —
+          // simplement en telechargeant 4,9 Mo au lieu de 390 ko. Rien ne
+          // depend de l'ordre dans lequel vous faites les choses.
+          return chargerPageCouverture(offset, pageSize).then(function(premiere){
+            traiterLignesCouverture(premiere);
+            if(premiere.length < pageSize) return;   // tout tenait dans une page
+            return chargerTout(offset + pageSize, pageSize, chargerPageCouverture, traiterLignesCouverture);
+          }, function(err){
+            _tcVueCouverture = false;
+            console.warn('[tops] vue tops_couverture indisponible : lecture complete, '
+              + 'comme avant. Reponse de la base : ' + ((err && err.message) || err));
+            return chargerTout(offset, pageSize, chargerPageTops, traiterLignesTops);
+          });
         }
         loadAllTops(0, 1000).then(function(){
           tcMarquerListePerimee();
@@ -4670,11 +4921,36 @@ function openFicheThematique(themeNom){
     mtSelectedCineaste = cineaste;
     var inp = document.getElementById('mt-cineaste-input');
     if(inp) inp.value = cineaste;
-    var films = (mtCurrentContributor && SUPABASE_TOPS[mtCurrentContributor.json_name] && SUPABASE_TOPS[mtCurrentContributor.json_name][cineaste]) || [];
-    var raw = films.map(function(f, i){ return (i + 1) + '. ' + f.titre + (f.annee ? ' (' + f.annee + ')' : ''); }).join('\n');
     var ta = document.getElementById('mt-tops-textarea');
-    if(ta) ta.value = raw;
-    mtUpdateStepper(2);
+    var nomCinephile = mtCurrentContributor && mtCurrentContributor.json_name;
+
+    function poserLeTexte(){
+      var films = (nomCinephile && SUPABASE_TOPS[nomCinephile] && SUPABASE_TOPS[nomCinephile][cineaste]) || [];
+      if(!tcFilmsCharges(films)) films = [];
+      var raw = films.map(function(f, i){ return (i + 1) + '. ' + f.titre + (f.annee ? ' (' + f.annee + ')' : ''); }).join('\n');
+      if(ta) ta.value = raw;
+      mtUpdateStepper(2);
+    }
+
+    // Ici, pas question d'afficher un formulaire vide : on presenterait a la
+    // personne un top efface, qu'un envoi suffirait a valider. Si la liste
+    // n'est pas encore chargee, on l'attend.
+    var dejaLa = tcFilmsCharges(nomCinephile && SUPABASE_TOPS[nomCinephile] && SUPABASE_TOPS[nomCinephile][cineaste]);
+    if(dejaLa){
+      poserLeTexte();
+    } else {
+      if(ta){ ta.value = ''; ta.disabled = true; }
+      tcChargerFilmsDuCinephile(nomCinephile).then(function(){
+        if(ta) ta.disabled = false;
+        poserLeTexte();
+      }).catch(function(){
+        if(ta) ta.disabled = false;
+        alert(tcTexte('mt_films_indispo',
+          'La liste de ce top n\u2019a pas pu \u00eatre charg\u00e9e. Rechargez la page avant de le modifier, '
+          + 'pour ne pas risquer de l\u2019\u00e9craser par une liste vide.'));
+        mtUpdateStepper(2);
+      });
+    }
   };
 
   document.getElementById('mt-btn-parse').addEventListener('click', mtParseTops);
