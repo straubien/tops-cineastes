@@ -19,8 +19,12 @@ if('serviceWorker' in navigator){
     if(_swMatch)_swVer='?v='+_swMatch[1];
   }catch(e){}
   navigator.serviceWorker.register('sw.js'+_swVer, { updateViaCache: 'none' }).then(function(reg){
-    if(reg && reg.update){ reg.update(); }
-  }).catch(function(){});
+    // « return » indispensable : sans lui, l'echec de update() devient un rejet
+    // non gere, et la banniere d'erreur rouge s'affiche au visiteur. Or ce
+    // rejet est ici NORMAL : sw.js se desinstalle, donc l'enregistrement
+    // disparait pendant que update() travaille dessus.
+    if(reg && reg.update){ return reg.update(); }
+  }).catch(function(){ /* desinstallation en cours : rien a signaler */ });
 }
 
 var CONTRIB_DATA=[];
@@ -131,10 +135,15 @@ function tcInitPresence(){
     if(status==='SUBSCRIBED'&&currentUserContribId)tcPresenceTrackSelf();
   });
 }
-// ── CONSENTEMENT A L'AFFICHAGE DE LA PRESENCE (RGPD) ───────────
-// Montrer qui est en ligne, c'est publier une donnee personnelle. Le RGPD
-// demande que la personne ait dit oui, pas qu'elle n'ait pas dit non : la
-// colonne `presence_publique` vaut donc `false` par defaut (action A-125).
+// ── REFUS DE L'AFFICHAGE DE LA PRESENCE (RGPD) ───────────────
+// Montrer qui est en ligne publie une donnee personnelle. Pour un index
+// public ou chacun s'inscrit en sachant que son nom et ses tops seront
+// visibles, cet affichage releve de l'interet legitime : il reste donc actif
+// par defaut, et chacun peut le refuser d'une case a cocher dans son profil
+// (action A-125, version allegee).
+//
+// La colonne vaut `true` par defaut. Seul un `false` explicite masque la
+// personne — partout : « En ligne », « Vus recemment » et pastille verte.
 //
 // Cette lecture est VOLONTAIREMENT isolee des autres requetes. Si la commande
 // SQL n'a pas encore ete executee, la colonne n'existe pas et PostgREST
@@ -153,7 +162,7 @@ function tcChargerConsentements(){
       return;
     }
     ((res && res.data) || []).forEach(function(r){
-      TC_CONSENT_PRESENCE[String(r.id)] = (r.presence_publique === true);
+      TC_CONSENT_PRESENCE[String(r.id)] = r.presence_publique;
     });
     TC_CONSENTEMENT_ACTIF = true;
     // Quelqu'un qui a refuse ne doit pas rester annonce : on se retire.
@@ -162,11 +171,11 @@ function tcChargerConsentements(){
   }).catch(function(){ /* panne reseau : on garde le comportement actuel */ });
 }
 
-// Avant l'execution du SQL, le site se comporte comme aujourd'hui. Apres,
-// seules les personnes ayant explicitement accepte sont montrees.
+// Seul un refus explicite masque quelqu'un. Avant l'execution du SQL, la
+// colonne n'existe pas et le site se comporte exactement de meme.
 function tcPresenceAutorisee(id){
   if(!TC_CONSENTEMENT_ACTIF) return true;
-  return TC_CONSENT_PRESENCE[String(id)] === true;
+  return TC_CONSENT_PRESENCE[String(id)] !== false;
 }
 
 function tcPresenceTrackSelf(){

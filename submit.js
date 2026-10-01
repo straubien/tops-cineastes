@@ -846,16 +846,24 @@ function tcChargerMonConsentement(){
   var cb = document.getElementById('presence-publique');
   if(!cb || !currentContributor) return;
   var monId = currentContributor.id;
+  // Reglage indisponible : la presence s'affiche bel et bien, donc la case doit
+  // rester cochee. Une case decochee ferait croire a la personne qu'elle est
+  // masquee alors que c'est le contraire.
+  function indisponible(){
+    cb.checked = true;
+    cb.disabled = true;
+    var ind = document.getElementById('presence-indispo');
+    if(ind) ind.style.display = '';
+  }
   sb.from('contributors').select('presence_publique').eq('id', monId).single().then(function(res){
     if(res && res.error){
-      cb.disabled = true;
-      var ind = document.getElementById('presence-indispo');
-      if(ind) ind.style.display = '';
+      indisponible();
       console.warn('[consentement] colonne presence_publique absente de la base.');
       return;
     }
-    cb.checked = (res && res.data && res.data.presence_publique === true);
-  }).catch(function(){ cb.disabled = true; });
+    // Seul un refus explicite decoche la case (version allegee).
+    cb.checked = !(res && res.data && res.data.presence_publique === false);
+  }).catch(function(){ indisponible(); });
 }
 
 function tcEnregistrerMonConsentement(){
