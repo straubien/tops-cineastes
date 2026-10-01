@@ -521,6 +521,9 @@ function tcApplyLoadedData(cineastes,courants,muzard,cnudde,isFresh){
     _tcDataInitialized=true;
     init();
   }
+  // Les donnees viennent d'arriver : si l'adresse designait une fiche, c'est
+  // le moment de l'ouvrir. La fonction ne fait rien si ce n'est pas le cas.
+  tcRestaurerFicheDepuisAdresse();
 }
 
 // Le fichier est bien arrive, mais son contenu n'est pas du JSON valide
@@ -668,10 +671,24 @@ function tcCheckJsonUpdate(source,version){
 function enterSite(){
   document.getElementById('splash').classList.add('hidden');
   document.getElementById('main-wrapper').classList.add('visible');
-  history.replaceState({entered:true},'');
   sessionStorage.setItem('tc-entered','1');
-  var savedPage=sessionStorage.getItem('tc-page');
-  setTimeout(function(){navigate(savedPage||'index');},50);
+  // L'adresse prime sur la derniere page visitee : ouvrir un lien
+  // « #statistiques » dans un onglet neuf doit mener aux Statistiques (A-107).
+  var depuisAdresse = tcPageDeLAdresse();
+  if(depuisAdresse === 'profil'){
+    var _h = (location.hash||'').replace(/^#/,'');
+    if(_h.indexOf('profil/') === 0) sessionStorage.setItem('tc-profil', decodeURIComponent(_h.slice(7)));
+  }
+  if(!depuisAdresse) history.replaceState({entered:true},'');
+  var cible = depuisAdresse || sessionStorage.getItem('tc-page') || 'index';
+  setTimeout(function(){
+    navigate(cible, !!depuisAdresse);
+    if(depuisAdresse === 'profil' && DATA){
+      var n = sessionStorage.getItem('tc-profil');
+      if(n) renderProfil(n);
+    }
+    tcRestaurerFicheDepuisAdresse();
+  },50);
 }
 
 function init(){
@@ -1260,7 +1277,7 @@ function showImportedPanel(name){
     +'<div id="imp-panel-body"></div>'
     +'</div>';
   document.getElementById('fiche-content').innerHTML=html;
-  tcOuvrirOverlay(formatContribNamePlain(name));
+  tcOuvrirOverlay(formatContribNamePlain(name), null, {t:'tops', c:name});
   _renderImpPanel();
   var _tcLang='fr';
   try{ _tcLang=localStorage.getItem('tc-lang')||'fr'; }catch(e){}
@@ -1345,7 +1362,10 @@ function navigate(page,skipHash){
   if(navEl)navEl.classList.add('active');
   // Si les tops sont arrives pendant l'ecran d'accueil, c'est ici qu'on
   // redessine la liste avec les bons comptes.
-  if(page==='index') tcRafraichirIndexSiBesoin();
+  if(page==='index'){ tcRafraichirIndexSiBesoin(); tcRestaurerFicheDepuisAdresse(); }
+  // Le titre de l'onglet suit la page : utile quand plusieurs onglets du
+  // site sont ouverts, et c'est lui qui sert de nom au favori (A-109).
+  tcTitre(tcLibellePage(page));
   if(page==='actualites'){renderActualites();applyActuTabSelection();}
   if(page==='contributeurs')renderContributeurs();
   if(page==='statistiques')renderStatistiques();
@@ -1359,12 +1379,30 @@ function navigate(page,skipHash){
 }
 
 window.addEventListener('popstate',function(e){
+  // L'etape sur laquelle on vient d'atterrir retenait-elle une fiche ?
+  // Si oui on la rouvre : c'est ce qui ramene de la fiche Cineaste a la
+  // fiche Courant d'ou elle avait ete ouverte.
+  var _d = e && e.state && e.state.fiche;
+  if(_d && typeof _d === 'object'){
+    _tcRetourInterne = false;
+    if(tcRestituerFiche(_d)) return;
+  }
+  // Ce retour, c'est nous qui venons de le demander dans closeFiche : la
+  // fiche est deja fermee et la page n'a pas change, il n'y a rien a refaire.
+  if(_tcRetourInterne){ _tcRetourInterne=false; if(tcFicheOuverte()) tcFermerOverlay(); return; }
+  // Une fiche est ouverte : le Retour la referme, sans quitter la page (A-105).
+  if(tcFicheOuverte()){ _tcFicheEtape=false; tcFermerOverlay(); return; }
   var hash=location.hash;
   if(hash.startsWith('#profil/')){
     var name=decodeURIComponent(hash.slice(8));
     sessionStorage.setItem('tc-profil',name);
     navigate('profil',true);
     if(DATA)renderProfil(name);
+  } else if(hash.indexOf('#cineaste/')===0){
+    // Retour ou Suivant sur une adresse de fiche : on la rouvre.
+    navigate('index',true);
+    _tcFicheAdresseFaite=false;
+    tcRestaurerFicheDepuisAdresse();
   } else if(hash==='#actualites'||hash==='#contributeurs'||hash==='#statistiques'||hash==='#mes-tops'||hash==='#thematiques'||hash==='#comparaison'){
     navigate(hash.slice(1),true);
   } else {
@@ -1468,6 +1506,25 @@ function tcPoserTranche(){
 var _tcListePerimee = false;
 
 function tcMarquerListePerimee(){ _tcListePerimee = true; }
+
+// Un lien « #cineaste/NOM » doit rouvrir la fiche correspondante. Les donnees
+// arrivent apres coup : on reessaie a chaque occasion jusqu'a les avoir.
+var _tcFicheAdresseFaite = false;
+function tcRestaurerFicheDepuisAdresse(){
+  if(_tcFicheAdresseFaite) return;
+  var h = location.hash || '';
+  if(h.indexOf('#cineaste/') !== 0){ _tcFicheAdresseFaite = true; return; }
+  if(!DATA || !DATA.cineastes || !DATA.cineastes.length) return;  // pas encore pretes
+  _tcFicheAdresseFaite = true;
+  var nom = '';
+  try{ nom = decodeURIComponent(h.slice(10)); }catch(e){ return; }
+  for(var i=0;i<DATA.cineastes.length;i++){
+    if(DATA.cineastes[i].nom === nom){ openFiche(DATA.cineastes[i]); return; }
+  }
+  // Nom inconnu (cineaste renomme ou supprime) : on reste sur l'Index plutot
+  // que de laisser une adresse qui ne mene nulle part.
+  try{ history.replaceState({page:'index'}, '', '#index'); }catch(e){}
+}
 
 function tcRafraichirIndexSiBesoin(){
   if(!_tcListePerimee || !DATA) return;
@@ -1731,7 +1788,7 @@ function openFiche(c){
 
   var inner=document.getElementById('contribs-inner');
   if(nb>0){inner.appendChild(contribsDiv);}else{inner.innerHTML='<div class="empty-msg">'+t('aucun_top_poste_cin')+'</div>';}
-  tcOuvrirOverlay(c.nom);
+  tcOuvrirOverlay(c.nom, '#cineaste/' + encodeURIComponent(c.nom), {t:'cin', c:c.nom});
 }
 
 function toggleAccordeon(id){
@@ -1764,12 +1821,124 @@ function tcPiegerFocus(e){
 // Ouvre la fiche. Remplace les 5 blocs qui faisaient ces memes gestes a la
 // main, en y ajoutant le nom accessible, le piege de focus et la mise en
 // sommeil de l'arriere-plan.
-function tcOuvrirOverlay(titre){
+// ── ADRESSES ET BOUTON RETOUR ───────────────────────
+// Une fiche ouverte ne laissait aucune trace : le bouton Retour du navigateur
+// quittait le site au lieu de refermer la fiche. Chaque ouverture ajoute donc
+// une etape d'historique, que la fermeture consomme (actions A-104 a A-106).
+var TC_TITRE_BASE = 'TOPS / CIN\u00c9ASTES';
+var _tcFicheEtape = false;     // une etape d'historique nous appartient-elle ?
+var _tcRetourInterne = false;  // ce retour en arriere, est-ce nous qui l'avons demande ?
+var _tcRestitution = false;    // sommes-nous en train de rouvrir une fiche ?
+
+// Chaque etape d'historique retient CE QUI etait ouvert. C'est ce qui permet
+// au bouton Retour de rouvrir la fiche precedente au lieu de tout fermer :
+// depuis les Statistiques, une fiche Courant puis une fiche Cineaste font
+// deux etapes, et le Retour redescend d'une marche a la fois.
+function tcRestituerFiche(d){
+  if(!d || !d.t) return false;
+  _tcRestitution = true;
+  try{
+    if(d.t === 'cin'){
+      var c = null;
+      if(DATA && DATA.cineastes){
+        for(var i=0;i<DATA.cineastes.length;i++){
+          if(DATA.cineastes[i].nom === d.c){ c = DATA.cineastes[i]; break; }
+        }
+      }
+      if(!c) return false;
+      openFiche(c);
+    }
+    else if(d.t === 'tops')  showImportedPanel(d.c);
+    else if(d.t === 'phile') openContribDetail(d.c);
+    else if(d.t === 'cour')  openCourantDetail(d.c);
+    else if(d.t === 'theme') openFicheThematique(d.c);
+    else return false;
+  } catch(err){
+    // Une fiche qu'on ne sait plus rouvrir (donnees parties, element disparu)
+    // ne doit pas bloquer la navigation : on referme et on laisse la page.
+    console.error('[retour] fiche non restituable', d, err);
+    tcFermerOverlay();
+    return false;
+  } finally { _tcRestitution = false; }
+  return true;
+}
+
+// Les pages du site, et rien d'autre : une adresse inconnue retombe sur
+// l'Index plutot que d'essayer d'afficher n'importe quoi (A-107).
+var TC_PAGES_VALIDES = ['index','actualites','contributeurs','statistiques',
+                        'mes-tops','thematiques','comparaison','profil'];
+
+function tcTitre(sujet){
+  document.title = sujet ? (sujet + ' \u2014 ' + TC_TITRE_BASE) : TC_TITRE_BASE;
+}
+
+function tcLibellePage(page){
+  if(page === 'profil'){
+    var n = sessionStorage.getItem('tc-profil');
+    return n ? formatContribNamePlain(n) : t('nav_mon_profil');
+  }
+  var cles = { 'index':'nav_index', 'actualites':'nav_actualites',
+    'contributeurs':'nav_contributeurs', 'statistiques':'nav_statistiques',
+    'mes-tops':'nav_mes_tops', 'thematiques':'nav_thematiques',
+    'comparaison':'page_comparaison_h' };
+  return cles[page] ? t(cles[page]) : '';
+}
+
+// Deux adresses designent-elles la meme chose ? On compare les versions
+// decodees : le navigateur laisse « , » tel quel dans la barre d'adresse la
+// ou encodeURIComponent ecrit « %2C ». Sans cela, un lien partage puis
+// recopie a la main empilerait une etape d'historique en trop.
+function tcMemeAdresse(a, b){
+  try{
+    return decodeURIComponent(String(a||'').replace(/^#/,''))
+        === decodeURIComponent(String(b||'').replace(/^#/,''));
+  }catch(e){ return a === b; }
+}
+
+function tcFicheOuverte(){
+  var ov = document.getElementById('fiche-overlay');
+  return !!(ov && ov.classList.contains('visible'));
+}
+
+// Quelle page l'adresse designe-t-elle ? null si elle n'en designe aucune.
+function tcPageDeLAdresse(){
+  var h = (location.hash || '').replace(/^#/, '');
+  if(h.indexOf('profil/') === 0) return 'profil';
+  if(h.indexOf('cineaste/') === 0) return 'index';
+  return TC_PAGES_VALIDES.indexOf(h) !== -1 ? h : null;
+}
+
+// Le deuxieme argument est l'adresse a inscrire dans la barre du navigateur.
+// Seules les fiches cineaste en ont une : ce sont les seules que le site sait
+// rouvrir a partir de l'adresse. Les autres fiches ajoutent bien une etape
+// d'historique (le bouton Retour les referme) mais gardent l'adresse en cours,
+// pour ne pas promettre un lien qui ne marcherait pas.
+function tcOuvrirOverlay(titre, adresse, etat){
   var ov = document.getElementById('fiche-overlay');
   if(!ov) return;
   _lastFocused = document.activeElement;
   ov.setAttribute('aria-label', titre || 'Fiche');
   ov.classList.add('visible');
+  if(titre) tcTitre(titre);
+  if(_tcRestitution){
+    // On rouvre cette fiche parce que le visiteur est revenu sur son etape :
+    // l'etape existe deja, il ne faut surtout pas en empiler une autre.
+    _tcFicheEtape = true;
+  } else {
+    var cible = adresse || location.hash || location.pathname;
+    // Lien partage : l'adresse est deja la bonne, et aucune etape ne nous
+    // appartient — il n'y aura donc rien a rendre a la fermeture.
+    var lienDirect = !!adresse && tcMemeAdresse(location.hash, adresse);
+    try{
+      if(lienDirect){
+        history.replaceState({fiche:etat||true}, '', cible);
+        _tcFicheEtape = false;
+      } else {
+        history.pushState({fiche:etat||true}, '', cible);
+        _tcFicheEtape = true;
+      }
+    }catch(e){ _tcFicheEtape = false; }
+  }
   document.body.style.overflow = 'hidden';
   // Met l'arriere-plan en sommeil : ni cliquable, ni tabulable, ni lu par
   // les lecteurs d'ecran — sauf la fiche elle-meme, qui est un frere.
@@ -1781,7 +1950,8 @@ function tcOuvrirOverlay(titre){
   }, 50);
 }
 
-function closeFiche(){
+// Referme la fiche sans toucher a l'historique.
+function tcFermerOverlay(){
   var ov = document.getElementById('fiche-overlay');
   if(ov){
     ov.classList.remove('visible');
@@ -1790,7 +1960,33 @@ function closeFiche(){
   }
   document.body.style.overflow = '';
   tcFondInerte(false);
+  tcTitre(tcLibellePage(sessionStorage.getItem('tc-page') || 'index'));
   if(_lastFocused && _lastFocused.focus){ try{ _lastFocused.focus(); }catch(e){} }
+}
+
+// enchainement = true : on ferme pour ouvrir autre chose dans la foulee.
+// On ne rend PAS l'etape d'historique : history.back() est asynchrone, il
+// arriverait apres l'ouverture suivante et annulerait son adresse.
+function closeFiche(enchainement){
+  var ouverte = tcFicheOuverte();
+  tcFermerOverlay();
+  if(!ouverte) return;
+  // On ferme pour ouvrir autre chose : l'etape de CETTE fiche reste en
+  // place, et la suivante empilera la sienne. Le Retour rouvrira donc
+  // celle-ci. On ne touche pas a l'historique ici : history.back() est
+  // asynchrone et arriverait apres l'ouverture suivante.
+  if(enchainement) return;
+  if(_tcFicheEtape){
+    // On consomme l'etape ajoutee a l'ouverture, pour qu'un Retour ulterieur
+    // ramene bien a la page precedente et non a la fiche (A-106).
+    _tcFicheEtape = false;
+    _tcRetourInterne = true;
+    history.back();
+  } else if((location.hash || '').indexOf('#cineaste/') === 0){
+    // Arrive par un lien partage : rien a consommer, on remet l'adresse de
+    // l'Index pour que la barre d'adresse reste coherente.
+    try{ history.replaceState({page:'index'}, '', '#index'); }catch(e){}
+  }
 }
 
 // ── COMMENTAIRES SOUS LES TOPS ─────────────────────────────────
@@ -2298,7 +2494,7 @@ function tcResetNotifications(){
 }
 
 function _tcGoToMesTops(cineaste,cb){
-  closeFiche();
+  closeFiche(true);
   navigate('mes-tops');
   var tabBtn=document.querySelector('.mt-tab-btn[data-mt-tab="tops"]');
   if(tabBtn&&!tabBtn.classList.contains('active'))tabBtn.click();
@@ -2709,7 +2905,7 @@ function openContribDetail(name){
     row.setAttribute('data-nom',c.nom);
     tcRendreActivable(row, function(){
       var nom=row.getAttribute('data-nom');
-      closeFiche();
+      closeFiche(true);
       var found=DATA.cineastes.find(function(x){return x.nom===nom;});
       if(found)openFiche(found);
     }, c.nom);
@@ -2727,7 +2923,7 @@ function openContribDetail(name){
     +'<div id="contrib-detail-list"></div>';
 
   document.getElementById('contrib-detail-list').appendChild(listDiv);
-  tcOuvrirOverlay(formatContribNamePlain(name));
+  tcOuvrirOverlay(formatContribNamePlain(name), null, {t:'phile', c:name});
 }
 
 // Année de naissance utilisée pour le tri « plus vieux → plus jeune » de la
@@ -2781,7 +2977,7 @@ function renderCourantDetailList(){
     row.setAttribute('data-nom',c.nom);
     tcRendreActivable(row, function(){
       var nom=row.getAttribute('data-nom');
-      closeFiche();
+      closeFiche(true);
       var found=DATA.cineastes.find(function(x){return x.nom===nom;});
       if(found)openFiche(found);
     }, c.nom);
@@ -2817,7 +3013,7 @@ function openCourantDetail(courantId){
     +'<div id="contrib-detail-list"></div>';
 
   renderCourantDetailList();
-  tcOuvrirOverlay(courant);
+  tcOuvrirOverlay(courant, null, {t:'cour', c:courantId});
 }
 
 // Frise chronologique partagée par les classements "Courants" et "Catégories" :
@@ -3493,7 +3689,9 @@ document.addEventListener('click',function(e){
 });
 
 // ── Auto-enter si l'utilisateur a déjà passé le splash ───────
-if(sessionStorage.getItem('tc-entered')){ enterSite(); }
+// On saute l'ecran d'accueil quand le visiteur arrive par un lien precis :
+// le faire cliquer pour atteindre ce qu'il a deja demande n'a pas de sens (A-108).
+if(sessionStorage.getItem('tc-entered') || tcPageDeLAdresse()){ enterSite(); }
 
 // ── AUTH SUPABASE — indicateur de session ─────────────────────
 (function(){
@@ -4012,7 +4210,7 @@ function openFicheThematique(themeNom){
   var inner = document.getElementById('contribs-inner');
   if(nb>0){ inner.appendChild(contribsDiv); } else { inner.innerHTML = '<div class="empty-msg">'+t('thematique_vide')+'</div>'; }
 
-  tcOuvrirOverlay(themeNom);
+  tcOuvrirOverlay(themeNom, null, {t:'theme', c:themeNom});
 }
 
 // ── MES TOPS ─────────────────────────────────────────────────
