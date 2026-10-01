@@ -13,6 +13,28 @@
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+#  ADRESSE DE CONTACT DES PAGES LEGALES
+#
+#  C'est le SEUL endroit a modifier pour changer d'adresse. Les deux pages
+#  legales et contact.js la reprennent d'ici, automatiquement.
+#
+#  Elle est coupee en trois morceaux : le code des pages ne contient donc
+#  jamais d'adresse complete, et les robots a spam, qui cherchent le signe
+#  arobase dans le code source, passent a cote. contact.js la recompose au
+#  moment de l'affichage.
+#
+#  Pour « prenom.nom@gmail.com » :   compte: prenom.nom
+#                                    domaine: gmail
+#                                    ext: com
+#
+#  ATTENTION : pas de guillemets, pas d'espace avant les deux-points, un
+#  seul espace apres. Ne changez QUE ce qui suit les deux-points.
+# ---------------------------------------------------------------------------
+courriel_compte: muzard.mathieu
+courriel_domaine: orange
+courriel_ext: fr
+
+# ---------------------------------------------------------------------------
 #  FICHIERS A NE PAS PUBLIER
 #
 #  Jekyll publie TOUT ce qui ne commence pas par un tiret bas ou un point.
