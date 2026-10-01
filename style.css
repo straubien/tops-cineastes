@@ -65,6 +65,26 @@
   --font-baskerville: 'Libre Baskerville', Georgia, serif;
 }
 
+/* Pied de page legal : discret, mais toujours atteignable (A-133).
+   Cibles de 44 px de haut, comme le reste de la navigation tactile. */
+.tc-pied {
+  margin: 3rem auto 1.5rem;
+  padding: 0 1.5rem;
+  text-align: center;
+  font-size: 14px;
+  color: var(--brun-pale);
+}
+.tc-pied a {
+  color: var(--brun-pale);
+  text-decoration: none;
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  padding: 0 10px;
+}
+.tc-pied a:hover, .tc-pied a:focus-visible { color: var(--rouge-texte); text-decoration: underline; }
+.tc-pied-sep { opacity: 0.5; }
+
 /* ── PALETTE SOMBRE — via data-dark ou prefers-color-scheme ─── */
 .dark {
   color-scheme: dark;

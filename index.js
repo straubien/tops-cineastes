@@ -3,6 +3,10 @@
   if(btnLang) btnLang.addEventListener('click', toggleLang);
 })();
 
+// L'enregistrement est CONSERVE a dessein : c'est lui qui fait telecharger
+// la nouvelle version de sw.js, celle qui se desinstalle. Sans lui, les
+// anciens service workers resteraient actifs sur les appareils pour
+// toujours. A retirer dans quelques mois (voir sw.js).
 if('serviceWorker' in navigator){
   // Jekyll ne traite pas les fichiers .js : impossible d'y écrire
   // {{ site.assets_version }}. On réutilise donc automatiquement la version
@@ -127,8 +131,48 @@ function tcInitPresence(){
     if(status==='SUBSCRIBED'&&currentUserContribId)tcPresenceTrackSelf();
   });
 }
+// ── CONSENTEMENT A L'AFFICHAGE DE LA PRESENCE (RGPD) ───────────
+// Montrer qui est en ligne, c'est publier une donnee personnelle. Le RGPD
+// demande que la personne ait dit oui, pas qu'elle n'ait pas dit non : la
+// colonne `presence_publique` vaut donc `false` par defaut (action A-125).
+//
+// Cette lecture est VOLONTAIREMENT isolee des autres requetes. Si la commande
+// SQL n'a pas encore ete executee, la colonne n'existe pas et PostgREST
+// refuse la requete : seule CELLE-CI echoue, et le site continue exactement
+// comme avant. Rien ne depend de l'ordre dans lequel vous faites les choses.
+var TC_CONSENTEMENT_ACTIF = false;   // la colonne existe-t-elle dans la base ?
+var TC_CONSENT_PRESENCE = {};        // identifiant du cinephile -> true / false
+
+function tcChargerConsentements(){
+  if(typeof TC_SB === 'undefined' || !TC_SB) return;
+  TC_SB.from('contributors').select('id,presence_publique').then(function(res){
+    if(res && res.error){
+      console.warn('[consentement] colonne presence_publique absente de la base : '
+        + 'la presence s\'affiche comme avant. Executez la commande SQL pour '
+        + 'activer le consentement.');
+      return;
+    }
+    ((res && res.data) || []).forEach(function(r){
+      TC_CONSENT_PRESENCE[String(r.id)] = (r.presence_publique === true);
+    });
+    TC_CONSENTEMENT_ACTIF = true;
+    // Quelqu'un qui a refuse ne doit pas rester annonce : on se retire.
+    if(currentUserContribId && !tcPresenceAutorisee(currentUserContribId)) tcPresenceUntrackSelf();
+    tcRefreshOnlineBadges();
+  }).catch(function(){ /* panne reseau : on garde le comportement actuel */ });
+}
+
+// Avant l'execution du SQL, le site se comporte comme aujourd'hui. Apres,
+// seules les personnes ayant explicitement accepte sont montrees.
+function tcPresenceAutorisee(id){
+  if(!TC_CONSENTEMENT_ACTIF) return true;
+  return TC_CONSENT_PRESENCE[String(id)] === true;
+}
+
 function tcPresenceTrackSelf(){
   if(!tcPresenceChannel||!currentUserContribId)return;
+  // Refus explicite : on ne s'annonce pas du tout (A-129).
+  if(!tcPresenceAutorisee(currentUserContribId))return;
   tcPresenceChannel.track({contributor_id:currentUserContribId});
 }
 function tcPresenceUntrackSelf(){
@@ -139,13 +183,14 @@ function tcRefreshOnlineBadges(){
     var nm=div.getAttribute('data-name');
     var c=CONTRIB_DATA.find(function(x){return x.display_name===nm;});
     var dot=div.querySelector('.online-dot');
-    if(dot)dot.style.display=(c&&TC_ONLINE_IDS.has(String(c.id)))?'':'none';
+    if(dot)dot.style.display=(c&&TC_ONLINE_IDS.has(String(c.id))&&tcPresenceAutorisee(c.id))?'':'none';
   });
   var profilDot=document.getElementById('profil-online-dot');
-  if(profilDot)profilDot.style.display=(_currentContribData&&_currentContribData.id&&TC_ONLINE_IDS.has(String(_currentContribData.id)))?'':'none';
+  if(profilDot)profilDot.style.display=(_currentContribData&&_currentContribData.id&&TC_ONLINE_IDS.has(String(_currentContribData.id))&&tcPresenceAutorisee(_currentContribData.id))?'':'none';
   tcRenderIndexPresence();
 }
 tcInitPresence();
+tcChargerConsentements();
 
 // ── DERNIÈRE CONNEXION (« vus récemment ») ──────────────────────
 // La présence Realtime ci-dessus est volatile : elle disparaît dès que
@@ -257,6 +302,8 @@ function tcRenderIndexPresence(){
   var online=[],recent=[];
   CONTRIB_DATA.forEach(function(c){
     if(!c.id||!c.json_name)return;
+    // Sans accord, la personne n'apparait ni en ligne ni vue recemment (A-130).
+    if(!tcPresenceAutorisee(c.id))return;
     if(TC_ONLINE_IDS.has(String(c.id))){online.push(c);return;}
     var ts=tcLastSeenMs(c);
     if(ts&&now-ts<TC_RECENT_WINDOW_MS)recent.push({c:c,ts:ts});

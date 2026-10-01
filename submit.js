@@ -838,6 +838,63 @@ document.getElementById('btn-submit-autres').addEventListener('click', async fun
 });
 
 // ── PRÉSENTATION ──────────────────────────────────────────────
+// ── CONSENTEMENT A L'AFFICHAGE DE LA PRESENCE (A-128) ──────────
+// Lecture et ecriture isolees des autres requetes : si la commande SQL n'a
+// pas encore ete executee, la colonne n'existe pas et seule cette partie
+// est indisponible. Le reste de la page de profil fonctionne normalement.
+function tcChargerMonConsentement(){
+  var cb = document.getElementById('presence-publique');
+  if(!cb || !currentContributor) return;
+  var monId = currentContributor.id;
+  sb.from('contributors').select('presence_publique').eq('id', monId).single().then(function(res){
+    if(res && res.error){
+      cb.disabled = true;
+      var ind = document.getElementById('presence-indispo');
+      if(ind) ind.style.display = '';
+      console.warn('[consentement] colonne presence_publique absente de la base.');
+      return;
+    }
+    cb.checked = (res && res.data && res.data.presence_publique === true);
+  }).catch(function(){ cb.disabled = true; });
+}
+
+function tcEnregistrerMonConsentement(){
+  var cb = document.getElementById('presence-publique');
+  if(!cb || !currentContributor) return;
+  var monId = currentContributor.id;       // lu AVANT l'attente
+  var valeur = cb.checked;
+  cb.disabled = true;
+  tcWithRetryTimeout(function(){
+    return sb.from('contributors').update({ presence_publique: valeur }).eq('id', monId).select('id');
+  }).then(function(res){
+    cb.disabled = false;
+    if(res && res.error){
+      cb.checked = !valeur;                // on remet la case dans son etat reel
+      if(typeof tcIsAuthError === 'function' && tcIsAuthError(res.error)) tcNotifyAuthExpired();
+      alert(tcTexte('sp_presence_err', 'Le choix n\'a pas pu être enregistré : ') + friendlyError(res.error));
+      return;
+    }
+    if(!res || !res.data || !res.data.length){
+      cb.checked = !valeur;
+      alert(tcTexte('sp_presence_err', 'Le choix n\'a pas pu être enregistré : ')
+            + tcTexte('droits_insuffisants', 'Droits insuffisants.'));
+      return;
+    }
+    if(currentContributor) currentContributor.presence_publique = valeur;
+    var ok = document.getElementById('presence-saved');
+    if(ok){ ok.style.display = ''; setTimeout(function(){ ok.style.display = 'none'; }, 2500); }
+  }).catch(function(err){
+    cb.disabled = false;
+    cb.checked = !valeur;
+    alert(tcTexte('sp_presence_err', 'Le choix n\'a pas pu être enregistré : ') + friendlyError(err));
+  });
+}
+
+(function(){
+  var cb = document.getElementById('presence-publique');
+  if(cb) cb.addEventListener('change', tcEnregistrerMonConsentement);
+})();
+
 document.getElementById('btn-submit-presentation').addEventListener('click', async function(){
   if(!currentContributor) return;
   var texte = document.getElementById('presentation-textarea').value.trim();
@@ -1004,6 +1061,8 @@ function initProfil(){
     presTa.value = currentContributor.presentation;
     presTa.dispatchEvent(new Event('input'));
   }
+
+  tcChargerMonConsentement();
 
   // Rendre les vues lecture
   refreshProfilViews();

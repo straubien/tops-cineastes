@@ -42,6 +42,16 @@ var TC_TRANSLATIONS = {
     aria_avatar: "Choisir une photo de profil",
     aria_fav_ajouter: "Ajouter un cinéaste favori",
     aria_autres_ajouter: "Ajouter un autre cinéaste",
+    // Consentement et pages legales (actions A-127 a A-133)
+    sp_grp_confidentialite: "Confidentialité",
+    sp_presence_titre: "Présence en ligne",
+    sp_presence_label: "Afficher ma présence sur la page d'accueil",
+    sp_presence_note: "Décochée, vous n'apparaissez nulle part : ni « en ligne », ni « vu récemment », ni pastille verte. Ce choix ne change rien à vos tops, qui restent publics.",
+    sp_presence_ok: "✓ Choix enregistré",
+    sp_presence_indispo: "Réglage indisponible pour le moment.",
+    sp_presence_err: "Le choix n'a pas pu être enregistré : ",
+    footer_confidentialite: "Confidentialité",
+    footer_mentions: "Mentions légales",
     // ── Messages ajoutes par les actions A-082 a A-098 ──────────────────
     // Bannieres globales (shared.js)
     tc_err_globale: "Une erreur est survenue, rechargez la page si le problème persiste.",
@@ -447,6 +457,15 @@ var TC_TRANSLATIONS = {
     aria_avatar: "Choose a profile picture",
     aria_fav_ajouter: "Add a favourite filmmaker",
     aria_autres_ajouter: "Add another filmmaker",
+    sp_grp_confidentialite: "Privacy",
+    sp_presence_titre: "Online presence",
+    sp_presence_label: "Show my presence on the home page",
+    sp_presence_note: "Unticked, you appear nowhere: not as « online », not as « seen recently », no green dot. This does not affect your tops, which stay public.",
+    sp_presence_ok: "✓ Choice saved",
+    sp_presence_indispo: "This setting is unavailable at the moment.",
+    sp_presence_err: "Your choice could not be saved: ",
+    footer_confidentialite: "Privacy",
+    footer_mentions: "Legal notice",
     // ── Added by actions A-082 to A-098 ─────────────────────────────────
     tc_err_globale: "Something went wrong. Reload the page if the problem persists.",
     tc_hors_ligne: "You are offline.",

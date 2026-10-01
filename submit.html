@@ -22,6 +22,11 @@
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <style>
 .btn-lang-img:hover { opacity: 1; }
+/* Case de consentement : zone cliquable large (44 px de haut), pour le doigt */
+.sp-consentement-bloc { display: block; }
+.sp-consentement { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; font-size: 17px; }
+.sp-consentement input { width: 20px; height: 20px; flex: 0 0 20px; cursor: pointer; accent-color: var(--rouge); }
+.sp-consentement-note { font-size: 14px; font-style: italic; color: var(--brun-pale); margin-top: 6px; line-height: 1.5; }
 .dark body { background: var(--bg); color: var(--text); }
 .dark .autocomplete-input, .dark .tops-textarea, .dark .login-form input, .dark .setpwd-form input { background: var(--bg-card); color: var(--text); border-color: var(--border); }
 .dark .header,
@@ -439,8 +444,35 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
     </div>
     </div>
 
+    <!-- GROUPE : Confidentialite (action A-127) -->
+    <div class="sp-group">
+    <div class="sp-group-label" data-i18n="sp_grp_confidentialite">Confidentialité</div>
+
+    <div class="sp-section">
+      <div class="sp-section-header">
+        <div class="sp-section-title" data-i18n="sp_presence_titre">Présence en ligne</div>
+      </div>
+      <div class="sp-view sp-consentement-bloc">
+        <label class="sp-consentement" for="presence-publique">
+          <input type="checkbox" id="presence-publique">
+          <span data-i18n="sp_presence_label">Afficher ma présence sur la page d'accueil</span>
+        </label>
+        <div class="sp-consentement-note" data-i18n="sp_presence_note">Décochée, vous n'apparaissez nulle part : ni « en ligne », ni « vu récemment », ni pastille verte. Ce choix ne change rien à vos tops, qui restent publics.</div>
+        <div class="avatar-success" id="presence-saved" style="display:none" data-i18n="sp_presence_ok">✓ Choix enregistré</div>
+        <div class="sp-consentement-note" id="presence-indispo" style="display:none" data-i18n="sp_presence_indispo">Réglage indisponible pour le moment.</div>
+      </div>
+    </div>
+    </div>
+
   </div>
 </div>
+
+  <!-- Pied de page : obligations legales (action A-133) -->
+  <footer class="tc-pied">
+    <a href="confidentialite.html" data-i18n="footer_confidentialite">Confidentialité</a>
+    <span class="tc-pied-sep" aria-hidden="true">&middot;</span>
+    <a href="mentions-legales.html" data-i18n="footer_mentions">Mentions légales</a>
+  </footer>
 
 <script defer src="submit.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 </body>
