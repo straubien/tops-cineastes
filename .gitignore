@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+#  TOPS / CINEASTES - fichiers que Git ne doit pas suivre
+#
+#  Ce fichier ne concerne QUE votre copie de travail et le depot. Rien de ce
+#  qui est liste ici ne part sur GitHub, donc rien n'est publie.
+#
+#  ATTENTION : ce fichier commence par un point. L'envoi par glisser-deposer
+#  ("Add files via upload") ne sait pas le prendre. Pour le creer ou le
+#  modifier, passez toujours par "Add file" puis "Create new file" (ou par
+#  le crayon, pour une modification) et tapez son nom a la main.
+# ---------------------------------------------------------------------------
+
+# Les outils des controles automatiques, installes par "npm install".
+# Des milliers de fichiers, reinstallables a tout moment par la meme
+# commande : ils n'ont rien a faire dans le depot.
+node_modules/
+
+# Journaux laisses par npm quand une installation echoue.
+npm-debug.log*
+.npm/
+
+# Construction locale de Jekyll, si un jour vous lancez le site sur votre
+# machine. GitHub Pages reconstruit tout de son cote.
+_site/
+.jekyll-cache/
+.sass-cache/
+.jekyll-metadata
+vendor/
+
+# Fichiers que Windows et macOS deposent tout seuls dans les dossiers.
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Reglages personnels d'editeurs de texte.
+.vscode/
+.idea/
+*.swp
