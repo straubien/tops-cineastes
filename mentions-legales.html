@@ -5,95 +5,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'self';">
+<!-- Regle de securite. « style-src » n'autorise plus 'unsafe-inline' : la
+     mise en forme de cette page vit entierement dans style.css, et plus
+     aucun style n'est ecrit en dur dans le HTML. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'self';">
 <meta name="robots" content="index,follow">
+<meta name="description" content="Éditeur, hébergeur et conditions d'utilisation du site TOPS / CINÉASTES.">
 <title>Mentions légales — TOPS / CINÉASTES</title>
+<!-- Doit s'executer avant le premier affichage : c'est ce fichier qui pose le
+     mode sombre. Sans lui, cette page restait blanche pour quelqu'un qui lit
+     le site en sombre. -->
+<script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
-<style>
-/* Pages de texte : une colonne lisible, rien de plus. */
-.doc { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-.doc h1 { font-size: 34px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.3rem; }
-.doc .doc-date { font-size: 14px; font-style: italic; color: var(--brun-pale); margin-bottom: 2.5rem; }
-.doc h2 { font-size: 22px; font-weight: 700; margin: 2.2rem 0 0.7rem; color: var(--rouge-texte); }
-.doc p, .doc li { font-size: 17px; line-height: 1.65; margin-bottom: 0.8rem; }
-.doc ul { padding-left: 1.4rem; margin-bottom: 1rem; }
-.doc a { color: var(--rouge-texte); }
-.doc table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.4rem; font-size: 16px; }
-.doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border-dim); vertical-align: top; }
-.doc th { font-weight: 700; }
-.doc-retour { display: inline-block; min-height: 44px; line-height: 44px; font-size: 16px; }
-.doc-encadre { border-left: 3px solid var(--rouge); background: var(--bg-subtle); padding: 12px 16px; margin: 1.2rem 0; }
-</style>
 </head>
 <body>
-<div class="doc">
+<main class="doc">
+
 <a class="doc-retour" href="index.html">&#8592; Retour au site</a>
 
 <h1>Mentions légales</h1>
-<div class="doc-date">Dernière mise à jour : {{ site.time | date: "%d/%m/%Y" }}</div>
+<div class="doc-date">Dernière révision : {{ site.maj_mentions_legales }}</div>
 
-<h2>Éditeur du site</h2>
+<p class="doc-chapo">
+  Qui édite ce site, qui l'héberge, d'où viennent les contenus, et comment me
+  joindre.
+</p>
+
+<h2 id="editeur">Éditeur et directeur de la publication</h2>
 <p>
   <b>Mathieu Muzard</b>, administrateur du site.<br>
-  Courriel : <span data-courriel>{{ site.courriel_compte }} (arobase) {{ site.courriel_domaine }}.{{ site.courriel_ext }}</span>
-</p>
-
-<h2>Directeur de la publication</h2>
-<p>Mathieu Muzard.</p>
-
-<h2>Nature du site</h2>
-<p>
-  TOPS / CINÉASTES est un index collaboratif de tops de cinéastes, tenu à titre
-  personnel. <b>Le site n'a aucune activité commerciale et ne diffuse aucune
-  publicité.</b> Il ne vend rien, ne collecte aucun paiement et ne pratique
-  aucun démarchage.
+  Courriel :
+  <span data-courriel>{{ site.courriel_compte }} (arobase) {{ site.courriel_domaine }}.{{ site.courriel_ext }}</span>
 </p>
 <div class="doc-encadre">
-  L'article 6 III-2 de la loi pour la confiance dans l'économie numérique
-  autorise un éditeur non professionnel à ne pas publier son adresse postale,
-  à condition d'avoir communiqué ses coordonnées à son hébergeur. Seuls le nom
-  et un moyen de contact figurent donc ici.
+  <p>
+    L'article 6 III-2 de la loi pour la confiance dans l'économie numérique
+    autorise un éditeur non professionnel à ne pas publier son adresse
+    postale, à condition d'avoir communiqué ses coordonnées à son hébergeur.
+    Seuls le nom et un moyen de contact figurent donc ici.
+  </p>
 </div>
 
-<h2>Hébergement du site</h2>
+<h2 id="nature">Nature du site</h2>
 <p>
-  Les pages sont hébergées par <b>GitHub, Inc.</b> (service GitHub Pages),<br>
-  88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.<br>
-  <a href="https://github.com" rel="noopener">github.com</a>
+  TOPS / CINÉASTES est un index collaboratif de tops de cinéastes, tenu à
+  titre personnel. <b>Le site n'a aucune activité commerciale et ne diffuse
+  aucune publicité.</b> Il ne vend rien, ne collecte aucun paiement et ne
+  pratique aucun démarchage.
 </p>
 
-<h2>Hébergement des données</h2>
-<p>
-  Les comptes des cinéphiles, leurs tops et leurs commentaires sont conservés
-  chez <b>Supabase, Inc.</b>, 970 Toa Payoh North, Singapour.
-</p>
+<h2 id="hebergement">Hébergement</h2>
+<table class="doc-empile">
+  <thead>
+    <tr><th scope="col">Hébergeur</th><th scope="col">Ce qu'il héberge</th><th scope="col">Où</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GitHub, Inc. <span class="doc-precision">(GitHub Pages)</span></td>
+      <td data-intitule="Ce qu'il héberge">les pages du site</td>
+      <td data-intitule="Où">88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis</td>
+    </tr>
+    <tr>
+      <td>Supabase, Inc.</td>
+      <td data-intitule="Ce qu'il héberge">les comptes des cinéphiles, leurs tops et leurs commentaires</td>
+      <td data-intitule="Où">970 Toa Payoh North, Singapour</td>
+    </tr>
+  </tbody>
+</table>
 
-<h2>Contenus</h2>
+<h2 id="contenus">Contenus</h2>
 <p>
   Les tops, présentations et commentaires sont rédigés par les cinéphiles
-  inscrits et restent leur propriété. Les affiches et photographies de
-  cinéastes proviennent de <b>The Movie Database (TMDB)</b> et demeurent la
-  propriété de leurs ayants droit ; elles sont affichées à titre illustratif.
-  Ce site n'est ni approuvé ni certifié par TMDB.
+  inscrits et restent leur propriété.
 </p>
 <p>
-  Pour toute demande concernant un contenu, écrivez à
+  Les affiches et photographies de cinéastes proviennent de <b>The Movie
+  Database (TMDB)</b> et demeurent la propriété de leurs ayants droit ; elles
+  sont affichées à titre illustratif. Ce site n'est ni approuvé ni certifié
+  par TMDB.
+</p>
+<p>
+  Pour toute demande concernant un contenu — correction, retrait, droit de
+  réponse — écrivez-moi à
   <span data-courriel>{{ site.courriel_compte }} (arobase) {{ site.courriel_domaine }}.{{ site.courriel_ext }}</span>.
 </p>
 
-<h2>Données personnelles</h2>
+<h2 id="donnees">Données personnelles</h2>
 <p>
-  Le détail de ce que le site enregistre, pourquoi, pendant combien de temps et
-  comment exercer vos droits se trouve sur la page
+  Le détail de ce que le site enregistre, pourquoi, pendant combien de temps
+  et comment exercer vos droits se trouve sur la page
   <a href="confidentialite.html">Confidentialité</a>.
 </p>
 
-<p style="margin-top:2.5rem"><a class="doc-retour" href="index.html">&#8592; Retour au site</a></p>
-</div>
+</main>
+
+<footer class="doc-pied">
+  <a href="confidentialite.html">Confidentialité</a>
+  <span class="doc-pied-sep" aria-hidden="true">&middot;</span>
+  <a href="index.html">Retour au site</a>
+</footer>
 <script defer src="contact.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 </body>
 </html>

@@ -2977,3 +2977,170 @@ a { text-decoration: none; color: inherit; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGES DE TEXTE — Confidentialite, Mentions legales
+   ═══════════════════════════════════════════════════════════════
+   Ces regles vivaient dans un bloc <style> recopie a l'identique
+   dans chacune des deux pages. Les avoir ici evite de corriger la
+   meme chose a deux endroits, et surtout permet a ces pages
+   d'interdire tout style ecrit en dur dans le HTML (voir la regle
+   de securite en haut de chacune).
+   ═══════════════════════════════════════════════════════════════ */
+
+.doc {
+  /* 660 px : environ 72 caracteres par ligne. Au-dela, l'oeil peine a
+     retrouver le debut de la ligne suivante. On etait a 89. */
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+}
+
+/* Lien de retour, en haut de page */
+.doc-retour {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  font-size: 15px;
+  color: var(--brun-pale);
+  text-decoration: none;
+}
+.doc-retour:hover, .doc-retour:focus-visible { color: var(--rouge-texte); text-decoration: underline; }
+
+.doc h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0.6rem 0 0.3rem;
+  line-height: 1.15;
+}
+.doc-date { font-size: 14px; font-style: italic; color: var(--brun-pale); margin-bottom: 2rem; }
+
+/* Paragraphe d'ouverture : legerement plus grand, il annonce la couleur. */
+.doc-chapo {
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--noir-doux);
+  margin: 0 0 2.2rem;
+}
+
+/* Sommaire : sur une page de neuf sections, on doit pouvoir sauter. */
+.doc-sommaire { margin: 0 0 2.5rem; }
+.doc-sommaire-titre {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  margin-bottom: 0.4rem;
+}
+.doc-sommaire ol { margin: 0; padding-left: 1.3rem; }
+.doc-sommaire li { font-size: 16px; margin-bottom: 0; line-height: 1.5; }
+/* 34 px de haut : au-dessus du minimum exigible (24 px), en dessous des
+   44 px de la navigation du site. Huit lignes a 44 px repousseraient le
+   texte lui-meme hors du premier ecran, pour un sommaire qu'on ne touche
+   qu'une fois. */
+.doc-sommaire a {
+  color: var(--text);
+  text-decoration: none;
+  display: inline-block;
+  min-height: 34px;
+  line-height: 34px;
+}
+.doc-sommaire a:hover, .doc-sommaire a:focus-visible { color: var(--rouge-texte); text-decoration: underline; }
+
+.doc h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 2.4rem 0 0.7rem;
+  color: var(--rouge-texte);
+  line-height: 1.25;
+  /* la cible d'un lien du sommaire ne doit pas coller au haut de l'ecran */
+  scroll-margin-top: 1.5rem;
+}
+.doc p, .doc li { font-size: 17px; line-height: 1.65; margin-bottom: 0.8rem; }
+.doc ul, .doc ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+.doc li { margin-bottom: 0.45rem; }
+.doc a { color: var(--rouge-texte); }
+/* Un lien au milieu d'un paragraphe doit se voir autrement que par sa
+   couleur : quelqu'un qui distingue mal le rouge du brun ne le verrait
+   pas. Les liens isoles (retour, sommaire, pied de page) n'en ont pas
+   besoin, leur position suffit a les designer. */
+.doc p a, .doc li a, .doc td a { text-decoration: underline; text-underline-offset: 0.18em; }
+
+/* Tableaux */
+.doc table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.4rem; font-size: 16px; }
+.doc th, .doc td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border-dim); vertical-align: top; }
+.doc thead th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  border-bottom-color: var(--border);
+  padding-bottom: 6px;
+}
+.doc tbody tr:last-child th, .doc tbody tr:last-child td { border-bottom: 0; }
+
+/* Precision entre parentheses dans un tableau : presente, mais en retrait */
+.doc-precision { color: var(--brun-pale); }
+
+/* Encadres : ce qu'il ne faut pas rater */
+.doc-encadre {
+  border-left: 3px solid var(--rouge);
+  background: var(--bg-subtle);
+  padding: 14px 18px;
+  margin: 1.4rem 0;
+}
+.doc-encadre p:last-child, .doc-encadre ul:last-child { margin-bottom: 0; }
+
+/* Pied de page des deux documents */
+.doc-pied {
+  max-width: 660px;
+  margin: 3rem auto 1.5rem;
+  padding: 1.2rem 1.5rem 0;
+  border-top: 1px solid var(--border-dim);
+  text-align: center;
+  font-size: 14px;
+  color: var(--brun-pale);
+}
+.doc-pied a {
+  color: var(--brun-pale);
+  text-decoration: none;
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  padding: 0 10px;
+}
+.doc-pied a:hover, .doc-pied a:focus-visible { color: var(--rouge-texte); text-decoration: underline; }
+.doc-pied-sep { opacity: 0.5; }
+
+/* ── Telephone ────────────────────────────────────────────────
+   Un tableau de trois colonnes dans 390 px donne des cellules de
+   trois lignes chacune. En dessous de 560 px, chaque ligne devient
+   donc un petit bloc, avec l'intitule de la colonne devant la
+   valeur. Le tableau reste un tableau pour les lecteurs d'ecran. */
+@media (max-width: 560px) {
+  .doc h1 { font-size: 28px; }
+  .doc-chapo { font-size: 18px; }
+
+  .doc-empile thead {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .doc-empile, .doc-empile tbody, .doc-empile tr, .doc-empile td { display: block; }
+  .doc-empile tr {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .doc-empile tr:last-child { border-bottom: 0; }
+  .doc-empile td { border: 0; padding: 1px 0; }
+  .doc-empile td:first-child { font-weight: 700; padding-bottom: 4px; }
+  .doc-empile td[data-intitule]::before {
+    content: attr(data-intitule) " : ";
+    color: var(--brun-pale);
+  }
+}

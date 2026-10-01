@@ -35,6 +35,22 @@ courriel_domaine: gmail
 courriel_ext: com
 
 # ---------------------------------------------------------------------------
+#  DATE DE DERNIERE REVISION DES PAGES LEGALES
+#
+#  A changer A LA MAIN, et seulement quand vous modifiez vraiment le texte de
+#  la page concernee.
+#
+#  Avant, ces pages affichaient la date de construction du site : elles
+#  annoncaient donc une mise a jour a chaque envoi sur GitHub, meme quand le
+#  texte n'avait pas bouge d'une virgule. Sur une page qui engage, c'est une
+#  information fausse.
+#
+#  Format : JJ/MM/AAAA, tel qu'il s'affichera a l'ecran.
+# ---------------------------------------------------------------------------
+maj_confidentialite: 01/10/2026
+maj_mentions_legales: 01/10/2026
+
+# ---------------------------------------------------------------------------
 #  FICHIERS A NE PAS PUBLIER
 #
 #  Jekyll publie TOUT ce qui ne commence pas par un tiret bas ou un point.
