@@ -30,9 +30,9 @@
 #  ATTENTION : pas de guillemets, pas d'espace avant les deux-points, un
 #  seul espace apres. Ne changez QUE ce qui suit les deux-points.
 # ---------------------------------------------------------------------------
-courriel_compte: muzard.mathieu
-courriel_domaine: orange
-courriel_ext: fr
+courriel_compte: matmuzard
+courriel_domaine: gmail
+courriel_ext: com
 
 # ---------------------------------------------------------------------------
 #  FICHIERS A NE PAS PUBLIER
