@@ -3629,3 +3629,89 @@ a { text-decoration: none; color: inherit; }
     color: var(--brun-pale);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   CIBLES TACTILES DE LA NAVIGATION  (action A-153)
+   ═══════════════════════════════════════════════════════════════
+   Sur telephone, les entrees du menu mesuraient entre 22 et 32 px
+   de haut, collees les unes aux autres (ecart 0 px, parfois -1).
+   Un doigt fait environ 9 mm, soit une quarantaine de pixels : on
+   visait « Cinephiles » et on tombait sur « Statistiques ».
+
+   Ce bloc est place en FIN de fichier a dessein : il doit passer
+   apres les cinq reglages responsives qui reduisent peu a peu la
+   taille des entrees (760, 600, 480, 400 et 320 px). Il ne touche
+   ni a la taille du texte ni aux couleurs — seulement a la surface
+   que le doigt peut atteindre.
+
+   La regle s'applique aux petits ecrans ET a tout appareil tactile,
+   quelle que soit sa largeur : « pointer: coarse » designe un doigt
+   plutot qu'une souris. Une tablette en paysage ou un portable a
+   ecran tactile en beneficient donc aussi. Sur un ecran pilote a la
+   souris, rien ne bouge : un clic vise au pixel pres.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 760px), (pointer: coarse) {
+  .nav {
+    /* de l'air entre deux entrees voisines, en largeur comme en hauteur */
+    column-gap: 3px;
+    row-gap: 2px;
+    align-items: center;
+    /* Indispensable : le retour a la ligne n'etait prevu que sous 760 px.
+       Sur une tablette tactile de 768 px, les entrees agrandies ne tenaient
+       plus sur une ligne et debordaient de l'ecran vers la droite — ce
+       controle l'a montre. */
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* L'en-tete reste colle en haut de l'ecran pendant toute la lecture.
+     Agrandir les cibles le fait forcement grandir ; on recupere donc une
+     partie de la hauteur sur son propre rembourrage, qui ne sert a rien
+     sur un telephone. */
+  .header-inner { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+
+  /* Les traits de separation verticaux n'ont plus de sens une fois
+     les entrees espacees et reparties sur plusieurs lignes. */
+  .nav a { border-left: none; }
+
+  /* Volontairement « #btn-lang » et non « .nav button » : l'infobulle
+     « Se deconnecter » est, elle aussi, un bouton de cette barre. Elle est
+     masquee par « display: none » et ne reapparait qu'au survol ; une regle
+     plus large l'aurait affichee en permanence — ce que ce controle a
+     effectivement montre avant correction. */
+  .nav a,
+  .nav #btn-lang {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* le rembourrage vertical est remplace par la hauteur minimale :
+       le texte garde sa taille, c'est la zone sensible qui grandit */
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Les trois icones (cloche, mode sombre, langue) : une cible carree
+     d'au moins 44 px, et un ecart franc entre elles. */
+  .nav a.nav-notif,
+  #nav-dark,
+  #btn-lang {
+    min-width: 44px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  #nav-dark { margin-left: 4px; }
+  #btn-lang { margin-left: 6px; }
+
+  /* Les pages « Mon profil » et « Admin » ont leur propre en-tete, avec les
+     memes icones mais ecrites autrement : leur taille est fixee directement
+     dans le HTML (width: 22px). Inutile de modifier ces pages — « min-width »
+     et « min-height » l'emportent sur « width » et « height », c'est la regle
+     du calcul des tailles en CSS. */
+  #btn-dark,
+  .btn-lang {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
