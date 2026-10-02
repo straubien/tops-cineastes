@@ -8,7 +8,7 @@
 <!-- Regle de securite. « style-src » n'autorise plus 'unsafe-inline' : la
      mise en forme de cette page vit entierement dans style.css, et plus
      aucun style n'est ecrit en dur dans le HTML. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'self';">
 <meta name="robots" content="index,follow">
 <meta name="description" content="Éditeur, hébergeur et conditions d'utilisation du site TOPS / CINÉASTES.">
 <title>Mentions légales — TOPS / CINÉASTES</title>
@@ -16,9 +16,6 @@
      mode sombre. Sans lui, cette page restait blanche pour quelqu'un qui lit
      le site en sombre. -->
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
 </head>

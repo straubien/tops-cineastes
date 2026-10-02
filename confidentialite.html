@@ -8,7 +8,7 @@
 <!-- Regle de securite. « style-src » n'autorise plus 'unsafe-inline' : la
      mise en forme de cette page vit entierement dans style.css, et plus
      aucun style n'est ecrit en dur dans le HTML. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'self';">
 <meta name="robots" content="index,follow">
 <meta name="description" content="Ce que le site TOPS / CINÉASTES enregistre, pourquoi, combien de temps, et comment exercer vos droits.">
 <title>Confidentialité — TOPS / CINÉASTES</title>
@@ -16,9 +16,6 @@
      mode sombre. Sans lui, cette page restait blanche pour quelqu'un qui lit
      le site en sombre. -->
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
 </head>
@@ -147,7 +144,6 @@
     <tr><td>The Movie Database</td><td data-intitule="Rôle">photographies des cinéastes</td><td data-intitule="Pays">États-Unis</td></tr>
     <tr><td>flagsapi.com</td><td data-intitule="Rôle">drapeaux des nationalités</td><td data-intitule="Pays">États-Unis</td></tr>
     <tr><td>jsDelivr</td><td data-intitule="Rôle">bibliothèque technique de connexion</td><td data-intitule="Pays">réseau mondial</td></tr>
-    <tr><td>Google Fonts</td><td data-intitule="Rôle">polices de caractères</td><td data-intitule="Pays">États-Unis</td></tr>
   </tbody>
 </table>
 <p>
