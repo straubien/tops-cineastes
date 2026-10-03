@@ -480,13 +480,13 @@ function jpOuvrirStudio(id){
     d.setHours(21, 0, 0, 0);
     if(d.getTime() <= jpMaintenant()) d.setDate(d.getDate() + 1);
     jpEl('jp-f-debut').value = jpVersChamp(d.toISOString());
-    jpEl('jp-f-fin').value   = jpVersChamp(new Date(d.getTime() + 15 * 60000).toISOString());
+    jpEl('jp-f-fin').value   = jpVersChamp(new Date(d.getTime() + 30 * 60000).toISOString());
     jpEl('jp-f-essais').value    = '5';
     jpEl('jp-f-tolerance').value = '2';
-    jpEl('jp-f-preroll').value   = '15';
-    jpEl('jp-f-base').value      = '100';
-    jpEl('jp-f-bonus').value     = '100';
-    jpEl('jp-f-live').checked    = true;
+    jpEl('jp-f-preroll').value   = '0';
+    jpEl('jp-f-base').value      = '1';
+    jpEl('jp-f-bonus').value     = '0';
+    jpEl('jp-f-live').checked    = false;
     jpEl('jp-studio-etat').textContent = '';
     jpEl('jp-f-titre').focus();
     return;
