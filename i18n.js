@@ -382,7 +382,7 @@ var TC_TRANSLATIONS = {
     adm_flags_countries: "Pays actuels (ISO)",
     adm_flags_historic: "Pays / entités historiques",
     // Nav — thématiques
-    nav_thematiques: "Tops thématiques",
+    nav_thematiques: "Thèmes",
     // Nav — comparaison de cinéphiles
     page_comparaison_h: "Affinités entre cinéphiles",
     compare_hint: "Comparez deux cinéphiles à partir de leurs cinéastes et films favoris/appréciés (indépendamment de leurs tops).",
