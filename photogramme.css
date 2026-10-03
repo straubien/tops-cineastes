@@ -137,7 +137,10 @@
 .jp-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 1.6rem 0; }
 
 /* ── Onglets d'etat ─────────────────────────────────────────────────────── */
-.jp-onglets { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.8rem; }
+/* `flex-wrap` n'est pas decoratif : a quatre onglets, la barre mesure 458 px
+   et deborde d'un telephone de 390. Sans lui, toute la page se decalait
+   lateralement — y compris le jeu. */
+.jp-onglets { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 1.8rem; }
 .jp-onglet {
   font-family: var(--font);
   font-size: 14px;
