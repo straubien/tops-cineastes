@@ -27,7 +27,8 @@ const RACINE = path.join(__dirname, '..');
 // son texte est ecrit en francais directement, il n'a rien a verifier ici.
 const PAGES = {
   'index.html':  ['index.html', 'index.js', 'shared.js', 'utils.js', 'i18n.js'],
-  'submit.html': ['submit.html', 'submit.js', 'shared.js', 'utils.js', 'i18n.js', 'auth-shared.js']
+  'submit.html': ['submit.html', 'submit.js', 'shared.js', 'utils.js', 'i18n.js', 'auth-shared.js'],
+  'photogramme.html': ['photogramme.html', 'photogramme.js', 'shared.js', 'utils.js', 'i18n.js', 'auth-shared.js']
 };
 
 function lire(f){ return fs.readFileSync(path.join(RACINE, f), 'utf8'); }
