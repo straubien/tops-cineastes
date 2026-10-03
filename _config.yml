@@ -82,3 +82,9 @@ exclude:
   - package-lock.json
   - eslint.config.mjs
   - README.md
+  # --- Jeu du Photogramme : installation, pas publication ---
+  # Ces deux fichiers servent a mettre le jeu en place, une fois. Ils n'ont
+  # rien de secret (la securite tient aux regles RLS, pas a leur discretion),
+  # mais ils n'ont rien a faire sur le site public non plus.
+  - photogramme.sql
+  - INSTALLATION-photogramme.md

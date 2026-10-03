@@ -74,7 +74,11 @@ export default [
         caches: 'readonly', self: 'readonly', URL: 'readonly', Blob: 'readonly',
         Intl: 'readonly', alert: 'readonly', confirm: 'readonly', prompt: 'readonly',
         getComputedStyle: 'readonly', requestAnimationFrame: 'readonly',
-        Event: 'readonly', CustomEvent: 'readonly', FormData: 'readonly'
+        Event: 'readonly', CustomEvent: 'readonly', FormData: 'readonly',
+        // photogramme.js tire de `crypto` le nom de fichier d'un
+        // photogramme : c'est lui qui rend l'adresse de l'image
+        // indevinable avant le depart de la partie.
+        crypto: 'readonly'
       }, globauxDuProjet)
     },
     rules: {

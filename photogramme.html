@@ -1,0 +1,327 @@
+---
+---
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://afbdrqrslgduomimkmyt.supabase.co; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co; base-uri 'self'; form-action 'self';">
+<script src="anti-cadre.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<title>TOPS/CINÉASTES — Jeu du Photogramme</title>
+<meta name="description" content="Le Jeu du Photogramme : reconnaître des films à une seule image, entre cinéphiles, en temps limité.">
+<meta property="og:title" content="Le Jeu du Photogramme — TOPS / CINÉASTES">
+<meta property="og:description" content="Dix images, dix films à reconnaître. Le plus vite possible.">
+<meta property="og:image" content="https://straubien.github.io/tops-cineastes/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://straubien.github.io/tops-cineastes/photogramme.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://afbdrqrslgduomimkmyt.supabase.co">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="config.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<script defer src="utils.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<script defer src="auth-shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<script defer src="i18n.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<link rel="stylesheet" href="style.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+<link rel="stylesheet" href="photogramme.css?v={{ site.time | date: '%Y%m%d%H%M%S' }}">
+<!-- shared.js SANS defer : il applique le mode sombre avant le premier
+     affichage. Ne pas ajouter defer ici (cf. README). -->
+<script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-bar">
+    <div class="header-bar-main"></div>
+    <div class="header-bar-end"></div>
+  </div>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:20px">
+      <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="header-user" id="header-user" style="display:none">
+        <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
+      </div>
+      <button class="btn-logout" id="btn-logout" style="display:none" data-i18n="btn_logout">Déconnexion</button>
+      <button id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" data-i18n-aria="aria_mode_sombre" aria-label="Activer/désactiver le mode sombre" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
+      <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block;opacity:0.7"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Zone d'annonce pour les lecteurs d'écran : le chrono, les verdicts et
+     les changements de classement y sont écrits en clair. Sans elle, tout
+     le jeu serait muet pour qui ne voit pas l'écran. -->
+<div id="jp-annonce" role="status" aria-live="polite" aria-atomic="true"
+     style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></div>
+
+<div class="jp-main">
+
+  <!-- ══ CHARGEMENT ══════════════════════════════════════════════════ -->
+  <div id="jp-chargement" class="jp-attente" data-i18n="jp_chargement">Chargement…</div>
+
+  <!-- ══ LISTE DES PARTIES ═══════════════════════════════════════════ -->
+  <section id="jp-vue-parties" class="jp-vue" aria-labelledby="jp-titre-parties">
+    <h1 class="jp-titre-page" id="jp-titre-parties" data-i18n="jp_titre">Le Jeu du Photogramme</h1>
+    <p class="jp-sous-titre" data-i18n="jp_accroche">Une image, un film. Reconnaissez-le, écrivez son titre — et faites-le avant les autres.</p>
+
+    <div class="jp-actions">
+      <button class="jp-btn jp-btn-fort" id="jp-btn-creer" data-i18n="jp_creer_partie">Créer une partie</button>
+      <span class="jp-aide" id="jp-invite-connexion" style="display:none" data-i18n="jp_invite_connexion">Connectez-vous pour jouer ou créer une partie.</span>
+    </div>
+
+    <div class="jp-onglets" role="tablist" data-i18n-aria="jp_onglets_aria" aria-label="Filtrer les parties">
+      <button class="jp-onglet" role="tab" id="jp-onglet-en_cours" data-filtre="en_cours" aria-selected="true"><span data-i18n="jp_f_en_cours">En cours</span><span class="jp-onglet-compte" id="jp-compte-en_cours"></span></button>
+      <button class="jp-onglet" role="tab" id="jp-onglet-a_venir"  data-filtre="a_venir"  aria-selected="false"><span data-i18n="jp_f_a_venir">À venir</span><span class="jp-onglet-compte" id="jp-compte-a_venir"></span></button>
+      <button class="jp-onglet" role="tab" id="jp-onglet-terminee" data-filtre="terminee" aria-selected="false"><span data-i18n="jp_f_terminee">Terminées</span><span class="jp-onglet-compte" id="jp-compte-terminee"></span></button>
+      <button class="jp-onglet" role="tab" id="jp-onglet-miennes"  data-filtre="miennes"  aria-selected="false" style="display:none"><span data-i18n="jp_f_miennes">Les miennes</span><span class="jp-onglet-compte" id="jp-compte-miennes"></span></button>
+    </div>
+
+    <div class="jp-grille" id="jp-liste"></div>
+    <p class="jp-vide" id="jp-liste-vide" style="display:none" data-i18n="jp_aucune_partie">Aucune partie ici pour le moment.</p>
+  </section>
+
+  <!-- ══ CONNEXION ═══════════════════════════════════════════════════ -->
+  <section id="jp-vue-connexion" class="jp-vue" aria-labelledby="jp-titre-connexion">
+    <button class="jp-fil" id="jp-retour-connexion" data-i18n="jp_retour_liste">← Toutes les parties</button>
+    <div class="login-wrap">
+      <div class="login-title" id="jp-titre-connexion" data-i18n="login_title">Connexion</div>
+      <div class="login-sub" data-i18n="jp_connexion_sub">Le jeu est réservé aux cinéphiles inscrits</div>
+      <div class="login-form">
+        <input type="email" id="login-email" placeholder="Votre adresse email" aria-label="Votre adresse email" autocomplete="email" data-i18n-ph="login_email_ph" data-i18n-aria="login_email_ph">
+        <div class="pwd-wrap">
+          <input type="password" id="login-password" placeholder="Mot de passe" aria-label="Mot de passe" autocomplete="current-password" data-i18n-ph="login_pwd_ph" data-i18n-aria="login_pwd_ph">
+          <button type="button" class="pwd-toggle" data-for="login-password" data-i18n-title="titre_voir_masquer" title="Voir/masquer">&#128065;</button>
+        </div>
+        <button class="btn-primary" id="btn-login" data-i18n="login_btn">Se connecter</button>
+        <div class="login-error" id="login-error" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ STUDIO (création / préparation) ═════════════════════════════ -->
+  <section id="jp-vue-studio" class="jp-vue" aria-labelledby="jp-titre-studio">
+    <button class="jp-fil" id="jp-retour-studio" data-i18n="jp_retour_liste">← Toutes les parties</button>
+    <h1 class="jp-titre-page" id="jp-titre-studio" data-i18n="jp_studio_titre">Préparer une partie</h1>
+    <p class="jp-sous-titre" data-i18n="jp_studio_sous">Réglez le jeu, ajoutez vos photogrammes, puis publiez. Rien n'est visible des autres avant la publication.</p>
+
+    <div class="jp-alerte jp-alerte-cache" id="jp-studio-msg"></div>
+
+    <div class="jp-studio">
+
+      <h2 class="jp-section-titre" data-i18n="jp_studio_s1">1 — Le jeu</h2>
+
+      <div class="jp-champ">
+        <label class="jp-label" for="jp-f-titre" data-i18n="jp_l_titre">Titre de la partie</label>
+        <input type="text" class="jp-saisie-simple" id="jp-f-titre" maxlength="120" data-i18n-ph="jp_ph_titre" placeholder="Soirée Tarkovski, spécial années 70…">
+      </div>
+
+      <div class="jp-champ">
+        <label class="jp-label" for="jp-f-desc" data-i18n="jp_l_desc">Présentation (facultatif)</label>
+        <textarea class="jp-zone" id="jp-f-desc" maxlength="2000" data-i18n-ph="jp_ph_desc" placeholder="Une phrase pour situer : la règle du jour, le thème, l'ambiance…"></textarea>
+      </div>
+
+      <div class="jp-duo">
+        <div class="jp-champ">
+          <label class="jp-label" for="jp-f-debut" data-i18n="jp_l_debut">Début</label>
+          <input type="datetime-local" class="jp-saisie-simple" id="jp-f-debut">
+        </div>
+        <div class="jp-champ">
+          <label class="jp-label" for="jp-f-fin" data-i18n="jp_l_fin">Fin</label>
+          <input type="datetime-local" class="jp-saisie-simple" id="jp-f-fin">
+        </div>
+      </div>
+      <p class="jp-aide" data-i18n="jp_aide_horaires">Les horaires sont ceux de votre appareil. La partie s'ouvre et se ferme toute seule, à la seconde près, pour tout le monde en même temps.</p>
+
+      <h2 class="jp-section-titre" data-i18n="jp_studio_regles">Les règles</h2>
+      <div class="jp-reglage-grille">
+        <div>
+          <label class="jp-label" for="jp-f-essais" data-i18n="jp_l_essais">Essais par photogramme</label>
+          <input type="number" class="jp-saisie-simple jp-nombre" id="jp-f-essais" min="0" max="50" value="5">
+          <p class="jp-aide" data-i18n="jp_aide_essais">0 = illimité.</p>
+        </div>
+        <div>
+          <label class="jp-label" for="jp-f-tolerance" data-i18n="jp_l_tolerance">Fautes de frappe pardonnées</label>
+          <input type="number" class="jp-saisie-simple jp-nombre" id="jp-f-tolerance" min="0" max="4" value="2">
+          <p class="jp-aide" data-i18n="jp_aide_tolerance">Les accents, la ponctuation et l'article initial sont toujours ignorés.</p>
+        </div>
+        <div>
+          <label class="jp-label" for="jp-f-preroll" data-i18n="jp_l_preroll">Préchargement (secondes)</label>
+          <input type="number" class="jp-saisie-simple jp-nombre" id="jp-f-preroll" min="0" max="300" value="15">
+          <p class="jp-aide" data-i18n="jp_aide_preroll">Les images arrivent dans les navigateurs juste avant le départ, pour s'afficher sans attente. Mettez 0 pour la rigueur absolue.</p>
+        </div>
+        <div>
+          <label class="jp-label" for="jp-f-base" data-i18n="jp_l_base">Points par bonne réponse</label>
+          <input type="number" class="jp-saisie-simple jp-nombre" id="jp-f-base" min="1" max="1000" value="100">
+        </div>
+        <div>
+          <label class="jp-label" for="jp-f-bonus" data-i18n="jp_l_bonus">Bonus de vitesse maximum</label>
+          <input type="number" class="jp-saisie-simple jp-nombre" id="jp-f-bonus" min="0" max="1000" value="100">
+          <p class="jp-aide" data-i18n="jp_aide_bonus">Entier au premier instant, nul à la fin du temps imparti.</p>
+        </div>
+      </div>
+      <label class="jp-reglage" style="margin-top:14px">
+        <input type="checkbox" id="jp-f-live" checked>
+        <span data-i18n="jp_l_live">Classement visible pendant la partie</span>
+      </label>
+
+      <div class="jp-actions">
+        <button class="jp-btn jp-btn-fort" id="jp-btn-enregistrer" data-i18n="jp_enregistrer">Enregistrer</button>
+        <span class="jp-aide" id="jp-studio-etat"></span>
+      </div>
+
+      <!-- ── Les photogrammes ─────────────────────────────────────── -->
+      <div id="jp-studio-photos" style="display:none">
+        <h2 class="jp-section-titre"><span data-i18n="jp_studio_s2">2 — Les photogrammes</span></h2>
+
+        <div class="jp-depot" id="jp-depot" role="button" tabindex="0" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
+          <div class="jp-depot-gros" data-i18n="jp_depot_gros">Déposez vos images ici</div>
+          <div class="jp-depot-petit" data-i18n="jp_depot_petit">ou cliquez pour les choisir — JPEG, PNG ou WebP, 30 au maximum</div>
+        </div>
+        <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
+
+        <div id="jp-envois"></div>
+        <div id="jp-fiches" style="margin-top:1.6rem"></div>
+
+        <h2 class="jp-section-titre"><span data-i18n="jp_studio_s3">3 — Publier</span></h2>
+        <p class="jp-aide" data-i18n="jp_aide_publier">Une fois publiée, la partie apparaît pour tous les cinéphiles. Vous pourrez encore corriger un titre attendu jusqu'à la fin, mais plus changer les images ni les horaires.</p>
+        <div class="jp-actions">
+          <button class="jp-btn jp-btn-fort" id="jp-btn-publier" data-i18n="jp_publier">Publier la partie</button>
+          <button class="jp-btn" id="jp-btn-supprimer" data-i18n="jp_supprimer">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ LE JEU ══════════════════════════════════════════════════════ -->
+  <section id="jp-vue-jeu" class="jp-vue" aria-labelledby="jp-jeu-titre">
+
+    <!-- Avant le départ -->
+    <div id="jp-avant" style="display:none">
+      <button class="jp-fil" id="jp-retour-avant" data-i18n="jp_retour_liste">← Toutes les parties</button>
+      <div class="jp-avant">
+        <h1 class="jp-titre-page" style="justify-content:center" id="jp-avant-titre"></h1>
+        <p class="jp-avant-etiq" data-i18n="jp_depart_dans">Départ dans</p>
+        <p class="jp-avant-chrono" id="jp-avant-chrono">—</p>
+        <p class="jp-avant-note" id="jp-avant-note"></p>
+      </div>
+    </div>
+
+    <!-- Pendant la partie -->
+    <div id="jp-pendant" style="display:none">
+      <div class="jp-bandeau">
+        <div class="jp-bandeau-bloc">
+          <span class="jp-bandeau-etiq" data-i18n="jp_restant">Restant</span>
+          <span class="jp-chrono" id="jp-chrono">—</span>
+        </div>
+        <div class="jp-bandeau-bloc">
+          <span class="jp-bandeau-etiq" data-i18n="jp_trouves">Trouvés</span>
+          <span class="jp-bandeau-score" id="jp-score-trouves">0/0</span>
+        </div>
+        <div class="jp-bandeau-bloc">
+          <span class="jp-bandeau-etiq" data-i18n="jp_points">Points</span>
+          <span class="jp-bandeau-score" id="jp-score-points">0</span>
+        </div>
+        <div class="jp-bandeau-pousse">
+          <button class="jp-btn jp-btn-petit" id="jp-btn-quitter" data-i18n="jp_quitter">Quitter</button>
+        </div>
+      </div>
+
+      <h1 class="jp-titre-page" id="jp-jeu-titre" style="font-size:clamp(22px,4vw,32px);margin-top:1.4rem"></h1>
+
+      <div class="jp-jeu jp-jeu-decale">
+        <div class="jp-scene-col">
+          <div class="jp-scene" id="jp-scene">
+            <span class="jp-scene-num" id="jp-scene-num">1</span>
+            <button class="jp-scene-fleche jp-scene-fleche-g" id="jp-prec" data-i18n-aria="jp_precedent" aria-label="Photogramme précédent">&#8592;</button>
+            <img id="jp-image" alt="" style="display:none">
+            <div class="jp-scene-attente" id="jp-scene-attente" data-i18n="jp_images_arrivent">Les images arrivent…</div>
+            <button class="jp-scene-fleche jp-scene-fleche-d" id="jp-suiv" data-i18n-aria="jp_suivant" aria-label="Photogramme suivant">&#8594;</button>
+            <div class="jp-scene-voile" id="jp-voile"></div>
+          </div>
+
+          <div class="jp-indices" id="jp-indices"></div>
+
+          <div class="jp-saisie-bloc">
+            <div class="jp-saisie">
+              <label for="jp-reponse" class="jp-label" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" data-i18n="jp_l_reponse">Titre du film</label>
+              <input type="text" id="jp-reponse" maxlength="200" autocomplete="off" autocapitalize="sentences" spellcheck="false" enterkeyhint="send" data-i18n-ph="jp_ph_reponse" placeholder="Le titre du film…">
+              <button type="button" id="jp-btn-valider" data-i18n="jp_valider">Valider</button>
+            </div>
+            <div class="jp-verdict" id="jp-verdict">
+              <span id="jp-verdict-txt"></span>
+              <span class="jp-essais" id="jp-essais"></span>
+            </div>
+          </div>
+
+          <div class="jp-pellicule" id="jp-pellicule" role="tablist" data-i18n-aria="jp_pellicule_aria" aria-label="Les photogrammes de la partie"></div>
+
+          <div class="jp-smileys" id="jp-smileys">
+            <span class="jp-smileys-etiq" data-i18n="jp_reagir">Réagir</span>
+          </div>
+        </div>
+
+        <aside class="jp-colonne-cote">
+          <div class="jp-panneau" id="jp-panneau-classement">
+            <h2 class="jp-panneau-titre"><span data-i18n="jp_classement">Classement</span><span id="jp-classement-etat"></span></h2>
+            <ol class="jp-rang-liste" id="jp-rangs"></ol>
+            <p class="jp-aide" id="jp-classement-masque" style="display:none" data-i18n="jp_classement_masque">Le créateur a choisi de ne dévoiler le classement qu'à la fin.</p>
+          </div>
+
+          <div class="jp-panneau">
+            <h2 class="jp-panneau-titre" data-i18n="jp_presents">Autour de la table</h2>
+            <div class="jp-presents" id="jp-presents"></div>
+          </div>
+
+          <!-- Visible du seul créateur -->
+          <div class="jp-panneau" id="jp-panneau-arbitrage" style="display:none">
+            <h2 class="jp-panneau-titre"><span data-i18n="jp_arbitrage">À arbitrer</span><span id="jp-arbitrage-compte"></span></h2>
+            <ul class="jp-arbitrage" id="jp-arbitrage"></ul>
+            <p class="jp-aide" id="jp-arbitrage-vide" data-i18n="jp_arbitrage_vide">Rien en attente. Les titres reconnus sont acceptés tout seuls.</p>
+          </div>
+
+          <div class="jp-panneau" id="jp-panneau-createur" style="display:none">
+            <h2 class="jp-panneau-titre" data-i18n="jp_outils_createur">Vos commandes</h2>
+            <div id="jp-indices-commandes"></div>
+            <div class="jp-actions" style="margin:12px 0 0">
+              <button class="jp-btn jp-btn-petit" id="jp-btn-clore" data-i18n="jp_clore">Clore la partie</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ RÉSULTATS ═══════════════════════════════════════════════════ -->
+  <section id="jp-vue-resultats" class="jp-vue" aria-labelledby="jp-res-titre">
+    <button class="jp-fil" id="jp-retour-resultats" data-i18n="jp_retour_liste">← Toutes les parties</button>
+    <h1 class="jp-titre-page" id="jp-res-titre"></h1>
+    <p class="jp-sous-titre" id="jp-res-sous"></p>
+
+    <h2 class="jp-section-titre" data-i18n="jp_classement_final">Classement final</h2>
+    <div class="jp-podium" id="jp-podium"></div>
+    <ol class="jp-rang-liste" id="jp-res-rangs"></ol>
+    <p class="jp-vide" id="jp-res-rangs-vide" style="display:none" data-i18n="jp_personne">Personne n'a joué cette partie.</p>
+
+    <h2 class="jp-section-titre" data-i18n="jp_les_reponses">Les réponses</h2>
+    <div class="jp-solutions" id="jp-solutions"></div>
+  </section>
+
+</div>
+
+<div class="jp-pluie" id="jp-pluie" aria-hidden="true"></div>
+
+<footer class="tc-pied">
+  <a href="index.html" data-i18n="jp_retour_site">Retour au site</a>
+  <span class="tc-pied-sep" aria-hidden="true">&middot;</span>
+  <a href="confidentialite.html" data-i18n="footer_confidentialite">Confidentialité</a>
+  <span class="tc-pied-sep" aria-hidden="true">&middot;</span>
+  <a href="mentions-legales.html" data-i18n="footer_mentions">Mentions légales</a>
+</footer>
+
+<script defer src="photogramme.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+</body>
+</html>
