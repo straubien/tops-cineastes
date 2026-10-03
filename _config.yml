@@ -87,4 +87,5 @@ exclude:
   # rien de secret (la securite tient aux regles RLS, pas a leur discretion),
   # mais ils n'ont rien a faire sur le site public non plus.
   - photogramme.sql
+  - photogramme-maj-1.sql
   - INSTALLATION-photogramme.md

@@ -388,8 +388,11 @@ function jpRendreParties(){
 
 function jpCarte(p){
   var etat = jpEtat(p);
-  var el = document.createElement('button');
-  el.type = 'button';
+  // Un <div> activable, et non un <button> : la carte accueille maintenant
+  // un vrai bouton « Gerer », et un bouton dans un bouton n'est pas du HTML
+  // valide (les navigateurs le reparent n'importe comment). tcRendreActivable
+  // (utils.js) lui rend le clavier, exactement comme aux lignes de l'index.
+  var el = document.createElement('div');
   el.className = 'jp-carte' + (etat === 'terminee' ? ' jp-carte-finie' : '');
 
   var h = document.createElement('h3');
@@ -436,10 +439,24 @@ function jpCarte(p){
   pied.appendChild(badge);
   el.appendChild(pied);
 
-  el.addEventListener('click', function(){
+  // Le createur retrouve sa partie, quel que soit son etat : c'est le seul
+  // chemin vers le studio une fois la partie publiee.
+  if(JP_MOI && String(p.createur_id) === String(JP_MOI.id) && etat !== 'brouillon'){
+    var ger = document.createElement('button');
+    ger.type = 'button';
+    ger.className = 'jp-btn jp-btn-petit';
+    ger.textContent = t('jp_gerer');
+    // On arrete la propagation : sans cela, le clic (ou Entree) remonterait
+    // jusqu'a la carte, qui ouvrirait la partie par-dessus le studio.
+    ger.addEventListener('click', function(ev){ ev.stopPropagation(); jpAller('#studio/' + p.id); });
+    ger.addEventListener('keydown', function(ev){ ev.stopPropagation(); });
+    pied.appendChild(ger);
+  }
+
+  tcRendreActivable(el, function(){
     if(etat === 'brouillon') jpAller('#studio/' + p.id);
     else jpAller('#partie/' + p.code);
-  });
+  }, p.titre);
   return el;
 }
 
@@ -504,12 +521,35 @@ function jpRemplirStudio(p){
 
   // Une partie publiee et commencee ne se remanie plus : la base le refuse,
   // autant le dire ici plutot que de laisser cliquer dans le vide.
-  var fige = p.publiee && jpEtat(p) !== 'a_venir';
+  var etatPartie = jpEtat(p);
+  var fige = p.publiee && etatPartie !== 'a_venir';
   ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance', 'jp-f-preroll',
    'jp-f-base', 'jp-f-bonus', 'jp-f-live'].forEach(function(k){
     jpEl(k).disabled = fige;
   });
   jpEl('jp-depot').style.display = fige ? 'none' : '';
+
+  // On annonce franchement ce qui reste modifiable. Un createur qui revient
+  // sur une partie deja jouee doit comprendre tout de suite pourquoi la
+  // moitie des champs est grisee, plutot que de cliquer dans le vide en se
+  // demandant si quelque chose est casse.
+  if(etatPartie === 'terminee' || etatPartie === 'annulee'){
+    jpAlerte('jp-studio-etape', t('jp_etape_terminee'), 'info');
+  } else if(fige){
+    jpAlerte('jp-studio-etape', t('jp_etape_commencee'), 'info');
+  } else if(p.publiee){
+    jpAlerte('jp-studio-etape', t('jp_etape_publiee'), 'info');
+  } else {
+    jpAlerte('jp-studio-etape', '');
+  }
+
+  // Une partie deja publiee ne se « prepare » plus et ne se publie plus :
+  // les intitules suivent, sinon le studio raconte autre chose que ce qu'il
+  // propose.
+  jpEl('jp-titre-studio').textContent = p.publiee ? t('jp_studio_titre_modif') : t('jp_studio_titre');
+  jpEl('jp-studio-sous').style.display = p.publiee ? 'none' : '';
+  jpEl('jp-studio-s3').textContent     = p.publiee ? t('jp_studio_s3_gerer') : t('jp_studio_s3');
+  jpEl('jp-aide-publier').style.display = p.publiee ? 'none' : '';
 }
 
 function jpLireFormulaire(){
@@ -549,9 +589,18 @@ function jpEnregistrerPartie(){
 
   var promesse;
   if(JP_BROUILLON){
+    // Une fois la partie commencee, la base refuse tout changement d'horaire
+    // ou de regle. On n'envoie donc QUE ce qui reste permis : renvoyer les
+    // champs grises, meme inchanges, suffirait a faire echouer la correction
+    // d'un simple titre (le champ datetime-local perd les secondes, et la
+    // valeur relue ne serait plus tout a fait l'ancienne).
+    var charge = f;
+    if(JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir'){
+      charge = { titre: f.titre, description: f.description };
+    }
     // Une modification est idempotente : on peut la rejouer sans risque.
     promesse = tcWithRetryTimeout(function(){
-      return JP_SB.from('jeu_sessions').update(f).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
+      return JP_SB.from('jeu_sessions').update(charge).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
     });
   } else {
     // Une creation, elle, n'est JAMAIS rejouee automatiquement : une reponse
@@ -564,7 +613,11 @@ function jpEnregistrerPartie(){
     btn.disabled = false;
     if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/enregistrer');
     var neuve = !JP_BROUILLON;
-    JP_BROUILLON = r.data;
+    // On FUSIONNE au lieu de remplacer. La reponse d'un UPDATE ne contient
+    // que les colonnes demandees : si l'une venait a manquer, remplacer
+    // l'objet entier ferait oublier au studio que la partie est publiee —
+    // et il reproposerait alors les boutons d'une partie en brouillon.
+    JP_BROUILLON = Object.assign({}, JP_BROUILLON || {}, r.data);
     jpRemplirStudio(JP_BROUILLON);
     jpAlerte('jp-studio-msg', t('jp_enregistree'), 'ok');
     if(neuve){
@@ -635,6 +688,9 @@ function jpFiche(p, i){
   pos.textContent = p.position;
   gauche.appendChild(pos);
 
+  var etatImg = document.createElement('div');
+  etatImg.className = 'jp-fiche-etat';
+
   if(!fige){
     var outils = document.createElement('div');
     outils.className = 'jp-fiche-outils';
@@ -642,7 +698,34 @@ function jpFiche(p, i){
     outils.appendChild(jpBoutonNu('↓', t('jp_descendre'), function(){ jpDeplacer(i, 1); }, i === JP_PHOTOS.length - 1));
     outils.appendChild(jpBoutonNu('✕', t('jp_retirer'), function(){ jpRetirerPhoto(p); }));
     gauche.appendChild(outils);
+
+    // Remplacer l'image SANS perdre la place du photogramme dans l'ordre.
+    // Supprimer puis redeposer marchait deja, mais renvoyait l'image en fin
+    // de liste : sur une partie de dix photogrammes montee avec soin, c'est
+    // tout l'ordre a refaire pour une seule image a changer.
+    var champImg = document.createElement('input');
+    champImg.type = 'file';
+    champImg.accept = 'image/jpeg,image/png,image/webp';
+    champImg.style.display = 'none';
+    champImg.setAttribute('aria-label', t('jp_remplacer_image'));
+    var bRemp = document.createElement('button');
+    bRemp.type = 'button';
+    bRemp.className = 'jp-btn jp-btn-petit';
+    bRemp.style.marginTop = '6px';
+    bRemp.textContent = t('jp_remplacer_image');
+    bRemp.addEventListener('click', function(){ champImg.click(); });
+    champImg.addEventListener('change', function(){
+      if(this.files && this.files[0]) jpRemplacerImage(p, this.files[0], img, etatImg, bRemp);
+      this.value = '';
+    });
+    gauche.appendChild(bRemp);
+    gauche.appendChild(champImg);
+  } else {
+    // Apres le depart, l'image est figee : la remplacer falsifierait ce que
+    // les joueurs ont vu, et le classement etabli dessus.
+    etatImg.textContent = t('jp_image_figee');
   }
+  gauche.appendChild(etatImg);
   f.appendChild(gauche);
 
   // Colonne saisie
@@ -841,6 +924,57 @@ function jpRetirerPhoto(p){
 }
 
 
+// Remplace l'image d'un photogramme en gardant sa position.
+//
+// POINT DELICAT : on envoie le fichier sous un chemin NEUF, jamais par-dessus
+// l'ancien. Le seau est public, donc servi par un cache de diffusion :
+// reecrire a la meme adresse laisserait reapparaitre l'ancienne image, chez
+// les uns ou les autres, parfois pendant des heures. Une adresse neuve n'a
+// pas ce probleme. L'ancien fichier, lui, est retire juste apres.
+function jpRemplacerImage(p, fichier, imgEl, etatEl, btn){
+  var cheminNeuf = null;
+  var ancien = p.image_path;
+  btn.disabled = true;
+  etatEl.classList.remove('jp-fiche-etat-ok');
+  etatEl.textContent = t('jp_prepare');
+
+  jpVraieImage(fichier).then(function(ok){
+    if(!ok) throw new Error(t('jp_err_format'));
+    return jpReduire(fichier);
+  }).then(function(red){
+    var ext = red.type === 'image/webp' ? 'webp' : 'jpg';
+    cheminNeuf = JP_MOI.id + '/' + p.session_id + '/' + jpAlea() + '.' + ext;
+    return tcWithRetryTimeout(function(){
+      return JP_SB.storage.from('photogrammes').upload(cheminNeuf, red.blob, { contentType: red.type, upsert: false });
+    }, { timeoutMs: 45000 }).then(function(r){
+      if(r && r.error) throw tcSbError(r.error, 'storage/remplacement');
+      return tcWithRetryTimeout(function(){
+        return JP_SB.from('jeu_photogrammes')
+          .update({ image_path: cheminNeuf, largeur: red.largeur, hauteur: red.hauteur })
+          .eq('id', p.id).select().single();
+      });
+    });
+  }).then(function(r){
+    if(r && r.error) throw tcSbError(r.error, 'jeu_photogrammes/remplacement');
+    // L'ancienne image ne sert plus a rien : on la retire du seau.
+    if(ancien) JP_SB.storage.from('photogrammes').remove([ancien]).then(function(){}, function(){});
+    p.image_path = cheminNeuf;
+    if(r.data){ p.largeur = r.data.largeur; p.hauteur = r.data.hauteur; }
+    JP_URLS[String(p.id)] = jpUrlImage(cheminNeuf);
+    imgEl.src = JP_URLS[String(p.id)];
+    btn.disabled = false;
+    etatEl.textContent = t('jp_image_remplacee');
+    etatEl.classList.add('jp-fiche-etat-ok');
+  }).catch(function(e){
+    // L'envoi a reussi mais l'enregistrement a echoue : on ne laisse pas de
+    // fichier orphelin derriere nous.
+    if(cheminNeuf) JP_SB.storage.from('photogrammes').remove([cheminNeuf]).then(function(){}, function(){});
+    btn.disabled = false;
+    etatEl.textContent = jpErreur(e);
+  });
+}
+
+
 // ── 9. L'ENVOI DES IMAGES ──────────────────────────────────────────────────
 
 // Un photogramme sorti d'un lecteur vidéo pèse souvent 3 à 6 Mo. Tel quel,
@@ -1000,7 +1134,14 @@ function jpPublier(){
 
 function jpSupprimerPartie(){
   if(!JP_BROUILLON) return;
-  if(!confirm(t('jp_confirme_suppression'))) return;
+  // Une partie jamais publiee ne coute rien a personne. Une partie jouee
+  // emporte avec elle les reponses et LE CLASSEMENT PUBLIC : on ne demande
+  // pas la meme chose dans les deux cas.
+  var etat = jpEtat(JP_BROUILLON);
+  var question = (etat === 'brouillon' || etat === 'a_venir')
+    ? t('jp_confirme_suppression')
+    : t('jp_confirme_suppression_jouee');
+  if(!confirm(question)) return;
   var chemins = JP_PHOTOS.map(function(p){ return p.image_path; });
   JP_SB.from('jeu_sessions').delete().eq('id', JP_BROUILLON.id).then(function(r){
     if(r && r.error){ jpAlerte('jp-studio-msg', jpErreur(r.error)); return; }
@@ -1016,6 +1157,10 @@ function jpSupprimerPartie(){
 
 function jpQuitterPartie(){
   JP_JETON++;
+  ['jp-gerer-avant', 'jp-gerer-resultats'].forEach(function(id){
+    var b = jpEl(id);
+    if(b) b.style.display = 'none';
+  });
   if(JP_CANAL){ try{ JP_SB.removeChannel(JP_CANAL); }catch(e){} JP_CANAL = null; }
   if(JP_HORLOGE){ clearInterval(JP_HORLOGE); JP_HORLOGE = null; }
   JP_PARTIE = null;
@@ -1089,6 +1234,7 @@ function jpBasculerEtat(jeton, etat){
     jpEl('jp-avant').style.display = '';
     jpEl('jp-pendant').style.display = 'none';
     jpEl('jp-avant-note').textContent = t('jp_avant_note', JP_PARTIE.titre);
+    jpEl('jp-gerer-avant').style.display = jpSuisCreateur() ? '' : 'none';
     return;
   }
 
@@ -1233,6 +1379,7 @@ function jpPreparerJeu(){
   var createur = jpSuisCreateur();
   jpEl('jp-panneau-arbitrage').style.display = createur ? '' : 'none';
   jpEl('jp-panneau-createur').style.display  = createur ? '' : 'none';
+  jpEl('jp-gerer-avant').style.display = 'none';
   jpEl('jp-reponse').disabled = createur || !jpConnecte();
   jpEl('jp-btn-valider').disabled = createur || !jpConnecte();
   if(createur){
@@ -1902,6 +2049,7 @@ function jpClore(){
 
 function jpMontrerResultats(jeton){
   jpAfficher('resultats');
+  jpEl('jp-gerer-resultats').style.display = jpSuisCreateur() ? '' : 'none';
   jpEl('jp-res-titre').textContent = JP_PARTIE.titre;
   var g = JP_GENS[String(JP_PARTIE.createur_id)];
   jpEl('jp-res-sous').textContent =
@@ -2118,6 +2266,13 @@ function jpBrancher(){
     if(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) jpEnvoyerFichiers(ev.dataTransfer.files);
   });
 
+  ['jp-gerer-avant', 'jp-gerer-resultats', 'jp-gerer-jeu'].forEach(function(id){
+    var b = jpEl(id);
+    if(b) b.addEventListener('click', function(){
+      if(JP_PARTIE) jpAller('#studio/' + JP_PARTIE.id);
+    });
+  });
+
   jpEl('jp-btn-valider').addEventListener('click', jpRepondre);
   jpEl('jp-prec').addEventListener('click', function(){ jpAllerPhoto(JP_IDX - 1); });
   jpEl('jp-suiv').addEventListener('click', function(){ jpAllerPhoto(JP_IDX + 1); });
@@ -2141,6 +2296,9 @@ function jpSeConnecter(){
 // Le changement de langue redessine ce qui est deja a l'ecran : sans cela,
 // la page resterait a moitie traduite jusqu'au prochain rechargement.
 window.tcAfterLangChange = function(){
+  // Le studio ecrit certains libelles a la main (titre, 3e section) : sans ce
+  // rappel, ils resteraient dans l'ancienne langue.
+  if(JP_VUE === 'studio' && JP_BROUILLON){ jpRemplirStudio(JP_BROUILLON); jpRendreFiches(); }
   if(JP_VUE === 'parties') jpRendreParties();
   else if(JP_VUE === 'jeu' && JP_PHOTOS.length){
     jpRendrePellicule();

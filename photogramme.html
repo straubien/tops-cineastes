@@ -105,9 +105,10 @@
   <section id="jp-vue-studio" class="jp-vue" aria-labelledby="jp-titre-studio">
     <button class="jp-fil" id="jp-retour-studio" data-i18n="jp_retour_liste">← Toutes les parties</button>
     <h1 class="jp-titre-page" id="jp-titre-studio" data-i18n="jp_studio_titre">Préparer une partie</h1>
-    <p class="jp-sous-titre" data-i18n="jp_studio_sous">Réglez le jeu, ajoutez vos photogrammes, puis publiez. Rien n'est visible des autres avant la publication.</p>
+    <p class="jp-sous-titre" id="jp-studio-sous" data-i18n="jp_studio_sous">Réglez le jeu, ajoutez vos photogrammes, puis publiez. Rien n'est visible des autres avant la publication.</p>
 
     <div class="jp-alerte jp-alerte-cache" id="jp-studio-msg"></div>
+    <div class="jp-alerte jp-alerte-info jp-alerte-cache" id="jp-studio-etape"></div>
 
     <div class="jp-studio">
 
@@ -185,8 +186,8 @@
         <div id="jp-envois"></div>
         <div id="jp-fiches" style="margin-top:1.6rem"></div>
 
-        <h2 class="jp-section-titre"><span data-i18n="jp_studio_s3">3 — Publier</span></h2>
-        <p class="jp-aide" data-i18n="jp_aide_publier">Une fois publiée, la partie apparaît pour tous les cinéphiles. Vous pourrez encore corriger un titre attendu jusqu'à la fin, mais plus changer les images ni les horaires.</p>
+        <h2 class="jp-section-titre"><span id="jp-studio-s3" data-i18n="jp_studio_s3">3 — Publier</span></h2>
+        <p class="jp-aide" id="jp-aide-publier" data-i18n="jp_aide_publier">Une fois publiée, la partie apparaît pour tous les cinéphiles. Vous pourrez encore corriger un titre attendu jusqu'à la fin, mais plus changer les images ni les horaires.</p>
         <div class="jp-actions">
           <button class="jp-btn jp-btn-fort" id="jp-btn-publier" data-i18n="jp_publier">Publier la partie</button>
           <button class="jp-btn" id="jp-btn-supprimer" data-i18n="jp_supprimer">Supprimer</button>
@@ -201,6 +202,7 @@
     <!-- Avant le départ -->
     <div id="jp-avant" style="display:none">
       <button class="jp-fil" id="jp-retour-avant" data-i18n="jp_retour_liste">← Toutes les parties</button>
+      <button class="jp-btn jp-btn-petit" id="jp-gerer-avant" style="display:none;margin-left:12px" data-i18n="jp_modifier_partie">Modifier cette partie</button>
       <div class="jp-avant">
         <h1 class="jp-titre-page" style="justify-content:center" id="jp-avant-titre"></h1>
         <p class="jp-avant-etiq" data-i18n="jp_depart_dans">Départ dans</p>
@@ -287,6 +289,7 @@
             <div id="jp-indices-commandes"></div>
             <div class="jp-actions" style="margin:12px 0 0">
               <button class="jp-btn jp-btn-petit" id="jp-btn-clore" data-i18n="jp_clore">Clore la partie</button>
+              <button class="jp-btn jp-btn-petit" id="jp-gerer-jeu" data-i18n="jp_modifier_partie">Modifier cette partie</button>
             </div>
           </div>
         </aside>
@@ -297,6 +300,7 @@
   <!-- ══ RÉSULTATS ═══════════════════════════════════════════════════ -->
   <section id="jp-vue-resultats" class="jp-vue" aria-labelledby="jp-res-titre">
     <button class="jp-fil" id="jp-retour-resultats" data-i18n="jp_retour_liste">← Toutes les parties</button>
+    <button class="jp-btn jp-btn-petit" id="jp-gerer-resultats" style="display:none;margin-left:12px" data-i18n="jp_modifier_partie">Modifier cette partie</button>
     <h1 class="jp-titre-page" id="jp-res-titre"></h1>
     <p class="jp-sous-titre" id="jp-res-sous"></p>
 

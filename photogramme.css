@@ -191,10 +191,13 @@
 }
 .jp-carte-meta strong { color: var(--text-dim); font-weight: 600; }
 .jp-carte-pied {
+  /* Trois elements depuis que le createur a son bouton « Gerer » : auteur,
+     bouton, etat. `flex-wrap` evite qu'un nom un peu long ne les ecrase. */
   display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; margin-top: 16px; padding-top: 13px;
+  flex-wrap: wrap; gap: 8px 10px; margin-top: 16px; padding-top: 13px;
   border-top: 1px solid var(--border-dim);
 }
+.jp-carte-pied .jp-btn-petit { flex: 0 0 auto; }
 .jp-carte-auteur { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .jp-carte-auteur span {
   font-family: var(--font); font-size: 14px; color: var(--brun-pale);
