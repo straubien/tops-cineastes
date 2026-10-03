@@ -419,7 +419,8 @@ var TC_TRANSLATIONS = {
     tc_session_expired: "Votre session a expiré. Reconnectez-vous (dans un autre onglet) pour enregistrer vos changements.",
     data_tops_partial: "Certains tops importés n'ont pas pu être chargés — les compteurs peuvent être incomplets. Rechargez la page.",
     // ── JEU DU PHOTOGRAMME (photogramme.html / photogramme.js) ──────────
-    jp_titre: "Jeu du photogramme",
+    jp_titre: "Le Jeu du Photogramme",
+    jp_accroche: "Une image, un film. Reconnaissez-le, écrivez son titre — et faites-le avant les autres.",
     jp_chargement: "Chargement…",
     jp_creer_partie: "Créer une partie",
     jp_invite_connexion: "Connectez-vous pour jouer ou créer une partie.",
@@ -586,7 +587,7 @@ var TC_TRANSLATIONS = {
     nav_actualites: "News",
     nav_contributeurs: "Cinephiles",
     nav_statistiques: "Statistics",
-    nav_photogramme: "Guess the movie challenge",
+    nav_photogramme: "Guess the Frame",
     nav_mes_tops: "My tops",
     nav_mon_profil: "My profile",
     nav_se_connecter: "Log in",
@@ -984,8 +985,9 @@ var TC_TRANSLATIONS = {
     data_tops_partial: "Some imported tops could not be loaded — counts may be incomplete. Please reload the page.",
     adm_flags_countries: "Current countries (ISO)",
     adm_flags_historic: "Historical countries / entities",
-    // ── GUESS THE MOVIE CHALLENGE (photogramme.html / photogramme.js) ────────
-    jp_titre: "Guess the movie challenge",
+    // ── GUESS THE FRAME GAME (photogramme.html / photogramme.js) ────────
+    jp_titre: "Guess the Frame",
+    jp_accroche: "One image, one film. Name it, type its title — and get there before everyone else.",
     jp_chargement: "Loading…",
     jp_creer_partie: "Create a game",
     jp_invite_connexion: "Log in to play or to create a game.",
