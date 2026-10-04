@@ -181,7 +181,7 @@
           <div class="jp-depot-gros" data-i18n="jp_depot_gros">Déposez vos images ici</div>
           <div class="jp-depot-petit" data-i18n="jp_depot_petit">ou cliquez pour les choisir — JPEG, PNG ou WebP, 30 au maximum</div>
         </div>
-        <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
+        <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp,image/bmp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
 
         <div id="jp-envois"></div>
         <div id="jp-fiches" style="margin-top:1.6rem"></div>
@@ -212,6 +212,13 @@
     </div>
 
     <!-- Pendant la partie -->
+    <!-- Plein ecran d'un photogramme (point 8). Hors du flux : il recouvre
+         la page entiere, et ne deplace rien quand il s'ouvre. -->
+    <div class="jp-plein" id="jp-plein" hidden>
+      <img id="jp-plein-img" alt="">
+      <button class="jp-plein-fermer" id="jp-plein-fermer" type="button" data-i18n-aria="jp_reduire" aria-label="Réduire le photogramme" data-i18n-title="jp_reduire" title="Réduire le photogramme">&#10005;</button>
+    </div>
+
     <div id="jp-pendant" style="display:none">
       <div class="jp-bandeau">
         <div class="jp-bandeau-bloc">
@@ -242,6 +249,7 @@
             <div class="jp-scene-attente" id="jp-scene-attente" data-i18n="jp_images_arrivent">Les images arrivent…</div>
             <button class="jp-scene-fleche jp-scene-fleche-d" id="jp-suiv" data-i18n-aria="jp_suivant" aria-label="Photogramme suivant">&#8594;</button>
             <div class="jp-scene-voile" id="jp-voile"></div>
+            <button class="jp-scene-loupe" id="jp-loupe" type="button" data-i18n-aria="jp_agrandir" aria-label="Agrandir le photogramme" data-i18n-title="jp_agrandir" title="Agrandir le photogramme">&#9974;</button>
           </div>
 
           <div class="jp-indices" id="jp-indices"></div>
@@ -275,6 +283,13 @@
           <div class="jp-panneau">
             <h2 class="jp-panneau-titre" data-i18n="jp_presents">Autour de la table</h2>
             <div class="jp-presents" id="jp-presents"></div>
+          </div>
+
+          <!-- Qui trouve quoi, en direct (point 7). -->
+          <div class="jp-panneau" id="jp-panneau-journal">
+            <h2 class="jp-panneau-titre" data-i18n="jp_journal">Les trouvailles</h2>
+            <ul class="jp-journal" id="jp-journal" aria-live="polite"></ul>
+            <p class="jp-aide" id="jp-journal-vide" data-i18n="jp_journal_vide">Personne n'a encore trouvé.</p>
           </div>
 
           <!-- Visible du seul créateur -->

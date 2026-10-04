@@ -776,3 +776,137 @@
   .jp-pluie, .jp-onglets, .jp-fil, .header, .tc-pied { display: none !important; }
   .jp-main { padding: 0; }
 }
+
+/* Barre « Tout enregistrer », en tete des fiches du studio (point 6). */
+.jp-fiches-barre {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+/* ── AGRANDISSEMENT D'UN PHOTOGRAMME (point 8) ─────────────────────────────
+   Un voile par-dessus la page, pas le plein ecran du navigateur : l'aller et
+   le retour sont instantanes, et la partie continue de tourner derriere. */
+.jp-scene-loupe {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  line-height: 1;
+  color: #f0ece3;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(240, 236, 227, 0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.jp-scene-loupe:hover,
+.jp-scene-loupe:focus-visible { background: rgba(0, 0, 0, 0.75); transform: scale(1.06); }
+
+.jp-plein {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vmin;
+  background: rgba(10, 8, 6, 0.94);
+  cursor: zoom-out;
+}
+.jp-plein[hidden] { display: none; }
+.jp-plein img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* Le photogramme garde ses pixels : pas de lissage inventé par le
+     navigateur sur une image agrandie. */
+  image-rendering: auto;
+}
+.jp-plein-fermer {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  color: #f0ece3;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(240, 236, 227, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.jp-plein-fermer:hover,
+.jp-plein-fermer:focus-visible { background: rgba(255, 255, 255, 0.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .jp-scene-loupe { transition: none; }
+  .jp-scene-loupe:hover, .jp-scene-loupe:focus-visible { transform: none; }
+}
+
+/* ── JOURNAL DES TROUVAILLES (point 7) ─────────────────────────────────── */
+.jp-journal { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; }
+.jp-journal-ligne {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.jp-journal-ligne:last-child { border-bottom: 0; }
+.jp-journal-moi .jp-journal-txt { font-weight: 700; }
+.jp-journal-num {
+  flex: 0 0 auto;
+  min-width: 22px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--rouge);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.jp-journal-txt { color: var(--text); }
+
+/* Texte reserve aux lecteurs d'ecran : hors de l'ecran, mais bien lu. */
+.jp-lu-seulement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── UN PHOTOGRAMME TOMBÉ (option « course ») ───────────────────────────── */
+/* Trouvé par quelqu'un d'autre : il sort du jeu, et cela doit se voir sans
+   avoir à lire — la vignette grise, le verdict le dit en toutes lettres. */
+.jp-vignette-tombe { opacity: 0.55; }
+.jp-vignette-tombe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg, transparent 0 6px, rgba(0, 0, 0, 0.18) 6px 12px);
+  pointer-events: none;
+}
+.jp-verdict-tombe { color: var(--brun-pale); font-style: italic; }
+.jp-journal-txt { color: var(--text); }
