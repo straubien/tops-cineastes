@@ -285,6 +285,19 @@
             <div class="jp-presents" id="jp-presents"></div>
           </div>
 
+          <!-- Le chat de la partie (point 10). -->
+          <div class="jp-panneau jp-panneau-chat" id="jp-panneau-chat">
+            <h2 class="jp-panneau-titre" data-i18n="jp_chat">Discussion</h2>
+            <ul class="jp-chat" id="jp-chat" aria-live="polite"></ul>
+            <p class="jp-aide" id="jp-chat-vide" data-i18n="jp_chat_vide">Personne n'a encore parlé.</p>
+            <div class="jp-chat-saisie">
+              <label for="jp-chat-texte" class="jp-lu-seulement" data-i18n="jp_chat_label">Votre message</label>
+              <input type="text" id="jp-chat-texte" maxlength="400" autocomplete="off" enterkeyhint="send" data-i18n-ph="jp_chat_ph" placeholder="Dire quelque chose…">
+              <button type="button" id="jp-chat-envoyer" data-i18n="jp_chat_envoyer">Envoyer</button>
+            </div>
+            <p class="jp-aide jp-chat-etat" id="jp-chat-etat"></p>
+          </div>
+
           <!-- Qui trouve quoi, en direct (point 7). -->
           <div class="jp-panneau" id="jp-panneau-journal">
             <h2 class="jp-panneau-titre" data-i18n="jp_journal">Les trouvailles</h2>

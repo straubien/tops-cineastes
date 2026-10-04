@@ -1220,6 +1220,10 @@ function jpSupprimerPartie(){
 // ── 11. OUVRIR UNE PARTIE ──────────────────────────────────────────────────
 
 function jpQuitterPartie(){
+  JP_MESSAGES = [];
+  JP_CHAT_CHARGE = false;
+  JP_REVELE = {};
+  JP_JOURNAL = [];
   JP_JETON++;
   ['jp-gerer-avant', 'jp-gerer-resultats'].forEach(function(id){
     var b = jpEl(id);
@@ -1278,6 +1282,7 @@ function jpDemarrerPartie(jeton){
   jpEl('jp-res-titre').textContent = JP_PARTIE.titre;
 
   jpAbonner();
+  jpChargerChat();
   jpBoucleHorloge(jeton);
 
   if(etat === 'terminee' || etat === 'annulee'){ jpMontrerResultats(jeton); return; }
@@ -1814,6 +1819,136 @@ function jpBulle(emoji, nom){
 }
 
 
+// ── LE CHAT DE LA PARTIE (point 10) ────────────────────────────────────────
+// Les messages passent tous par la fonction « jeu_dire » de la base : c'est
+// elle, et elle seule, qui a le droit d'ecrire dans la table. La raison est
+// le filtre des titres — il ne peut pas vivre ici, puisque le navigateur
+// d'un joueur n'a pas le droit de connaitre les titres attendus. S'il
+// vivait ici, il suffirait d'ouvrir la console pour le contourner.
+var JP_MESSAGES = [];
+var JP_CHAT_CHARGE = false;
+
+function jpChargerChat(){
+  if(!JP_PARTIE) return Promise.resolve();
+  return JP_SB.from('jeu_messages')
+    .select('id,session_id,contributor_id,texte,created_at')
+    .eq('session_id', JP_PARTIE.id)
+    .order('created_at', { ascending: false })
+    .limit(100)
+    .then(function(r){
+      if(!r || r.error) return;
+      JP_MESSAGES = (r.data || []).slice().reverse();
+      JP_CHAT_CHARGE = true;
+      var manquants = JP_MESSAGES.map(function(m){ return m.contributor_id; })
+        .filter(function(id){ return id && !JP_GENS[String(id)]; });
+      if(manquants.length) return jpChargerGens(manquants).then(jpRendreChat);
+      jpRendreChat();
+    }, function(){});
+}
+
+function jpAjouterMessage(m){
+  if(!m || !m.id) return;
+  for(var i = 0; i < JP_MESSAGES.length; i++){ if(String(JP_MESSAGES[i].id) === String(m.id)) return; }
+  JP_MESSAGES.push(m);
+  if(JP_MESSAGES.length > 200) JP_MESSAGES.shift();
+  if(m.contributor_id && !JP_GENS[String(m.contributor_id)]){
+    jpChargerGens([m.contributor_id]).then(jpRendreChat);
+    return;
+  }
+  jpRendreChat();
+}
+
+function jpRetirerMessage(id){
+  for(var i = 0; i < JP_MESSAGES.length; i++){
+    if(String(JP_MESSAGES[i].id) === String(id)){ JP_MESSAGES.splice(i, 1); break; }
+  }
+  jpRendreChat();
+}
+
+function jpRendreChat(){
+  var ul = jpEl('jp-chat');
+  var vide = jpEl('jp-chat-vide');
+  if(!ul) return;
+  // On ne redescend l'ascenseur que si l'on y etait deja : sinon on
+  // arracherait des yeux un message qu'on etait en train de lire.
+  var enBas = ul.scrollHeight - ul.scrollTop - ul.clientHeight < 40;
+  jpVider(ul);
+  if(vide) vide.style.display = JP_MESSAGES.length ? 'none' : '';
+  var createur = jpSuisCreateur();
+  JP_MESSAGES.forEach(function(m){
+    var g = JP_GENS[String(m.contributor_id)] || {};
+    var moi = JP_MOI && String(m.contributor_id) === String(JP_MOI.id);
+    var li = document.createElement('li');
+    li.className = 'jp-chat-ligne' + (moi ? ' jp-chat-moi' : '');
+    var nom = document.createElement('span');
+    nom.className = 'jp-chat-nom';
+    nom.textContent = formatContribNamePlain(g.display_name || '…');
+    li.appendChild(nom);
+    var txt = document.createElement('span');
+    txt.className = 'jp-chat-txt';
+    txt.textContent = m.texte;
+    li.appendChild(txt);
+    if(createur){
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'jp-chat-retirer';
+      x.textContent = '✕';
+      x.setAttribute('aria-label', t('jp_chat_retirer'));
+      x.addEventListener('click', function(){
+        JP_SB.from('jeu_messages').delete().eq('id', m.id).then(function(){ jpRetirerMessage(m.id); }, function(){});
+      });
+      li.appendChild(x);
+    }
+    ul.appendChild(li);
+  });
+  if(enBas) ul.scrollTop = ul.scrollHeight;
+}
+
+function jpChatEtat(msg, duree){
+  var el = jpEl('jp-chat-etat');
+  if(!el) return;
+  el.textContent = msg || '';
+  if(msg) jpAnnoncer(msg);
+  if(duree) setTimeout(function(){ if(el.textContent === msg) el.textContent = ''; }, duree);
+}
+
+function jpDire(){
+  if(!jpConnecte()){ jpExigeConnexion(); return; }
+  if(!JP_PARTIE) return;
+  var champ = jpEl('jp-chat-texte');
+  var bouton = jpEl('jp-chat-envoyer');
+  var texte = (champ.value || '').trim();
+  if(!texte) return;
+
+  champ.disabled = true; if(bouton) bouton.disabled = true;
+  jpChatEtat(t('jp_chat_envoi'));
+  tcWithRetryTimeout(function(){
+    return JP_SB.rpc('jeu_dire', { p_session_id: JP_PARTIE.id, p_texte: texte });
+  }, { retries: 0, timeoutMs: 12000 }).then(function(r){
+    champ.disabled = false; if(bouton) bouton.disabled = false;
+    if(r && r.error) throw tcSbError(r.error, 'jeu_dire');
+    var d = r.data || {};
+    if(d.ok){
+      champ.value = '';
+      jpChatEtat('');
+      champ.focus();
+      return;
+    }
+    // Le message n'est pas parti : on le laisse dans le champ, il n'y a
+    // qu'a le corriger.
+    if(d.raison === 'titre')            jpChatEtat(t('jp_chat_err_titre'), 8000);
+    else if(d.raison === 'trop_vite')   jpChatEtat(t('jp_chat_err_vite'), 4000);
+    else if(d.raison === 'non_connecte')jpChatEtat(t('jp_chat_err_connexion'), 6000);
+    else                                jpChatEtat(t('jp_chat_err'), 6000);
+    champ.focus();
+  }).catch(function(e){
+    champ.disabled = false; if(bouton) bouton.disabled = false;
+    jpChatEtat(jpErreur(e), 8000);
+    champ.focus();
+  });
+}
+
+
 // ── 15. LE DIRECT (Realtime) ───────────────────────────────────────────────
 
 function jpAbonner(){
@@ -1872,6 +2007,14 @@ function jpAbonner(){
       if(r[pos] && r[pos].nom) jpNoterTrouvaille(Number(pos), r[pos].nom, r[pos].titre, false);
     });
   });
+
+  JP_CANAL.on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'jeu_messages', filter: 'session_id=eq.' + sid },
+    function(msg){ if(msg.new) jpAjouterMessage(msg.new); });
+
+  JP_CANAL.on('postgres_changes',
+    { event: 'DELETE', schema: 'public', table: 'jeu_messages', filter: 'session_id=eq.' + sid },
+    function(msg){ if(msg.old && msg.old.id) jpRetirerMessage(msg.old.id); });
 
   JP_CANAL.on('presence', { event: 'sync' }, jpRendrePresents);
 
@@ -2613,6 +2756,11 @@ function jpBrancher(){
   jpEl('jp-suiv').addEventListener('click', function(){ jpAllerPhoto(JP_IDX + 1); });
 
   // Agrandissement : la loupe, l'image elle-meme, et le voile pour refermer.
+  jpEl('jp-chat-envoyer').addEventListener('click', jpDire);
+  jpEl('jp-chat-texte').addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter'){ ev.preventDefault(); jpDire(); }
+  });
+
   jpEl('jp-loupe').addEventListener('click', jpBasculerPlein);
   jpEl('jp-image').addEventListener('click', jpOuvrirPlein);
   jpEl('jp-plein-fermer').addEventListener('click', jpFermerPlein);
