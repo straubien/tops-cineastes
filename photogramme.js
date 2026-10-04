@@ -58,7 +58,6 @@ var JP_HORLOGE   = null;   // le minuteur d'affichage du chrono
 var JP_ETAT      = '';     // etat de la partie tel qu'affiche
 var JP_PRECHARGE = false;
 var JP_JETON     = 0;      // invalide les chargements d'une partie quittee
-var JP_DERNIER_SMILEY = 0;
 var JP_BROUILLON = null;   // la partie en cours de preparation dans le studio
 
 var JP_SMILEYS = ['😮', '😂', '🤯', '❤️',
@@ -324,7 +323,29 @@ function jpExigeConnexion(){
 
 var JP_COLONNES_PARTIE =
   'id,code,titre,description,createur_id,debut_at,fin_at,cloture_at,publiee,annulee,'
-  + 'essais_max,preroll_secondes,classement_live,points_base,bonus_vitesse_max,tolerance_fautes,created_at';
+  + 'essais_max,preroll_secondes,classement_live,points_base,bonus_vitesse_max,tolerance_fautes,'
+  + 'cloture_manuelle,created_at';
+
+// La colonne « cloture_manuelle » arrive avec le fichier SQL n° 6. Si les
+// fichiers du site sont poses AVANT que ce fichier soit passe dans Supabase,
+// chaque lecture de partie echouerait sur « column does not exist » et la
+// page resterait desesperement vide. On regarde donc une fois, au demarrage,
+// si la colonne est la ; sinon on s'en passe, la cloture a la main est
+// simplement indisponible, et la console dit pourquoi.
+var JP_SANS_CLOTURE_MANUELLE = false;
+
+function jpVerifierColonnes(){
+  return JP_SB.from('jeu_sessions').select('cloture_manuelle').limit(1).then(function(r){
+    if(!r || !r.error) return;
+    JP_SANS_CLOTURE_MANUELLE = true;
+    JP_COLONNES_PARTIE = JP_COLONNES_PARTIE.replace('cloture_manuelle,', '');
+    var ligne = jpEl('jp-f-manuelle');
+    if(ligne && ligne.parentNode) ligne.parentNode.style.display = 'none';
+    console.warn('photogramme : la colonne « cloture_manuelle » est absente de la base. '
+      + 'Passez le fichier A-FAIRE-DANS-SUPABASE-6.sql dans Supabase pour activer la '
+      + 'cloture a la main. Message de la base : ' + (r.error.message || ''));
+  }, function(){});
+}
 
 function jpChargerParties(){
   var liste = jpEl('jp-liste');
@@ -402,7 +423,10 @@ function jpCarte(p){
 
   var meta = document.createElement('p');
   meta.className = 'jp-carte-meta';
-  if(etat === 'en_cours' || etat === 'preroll'){
+  if((etat === 'en_cours' || etat === 'preroll') && p.cloture_manuelle && !p.cloture_at){
+    // Pas d'heure de fin annoncee : on ne peut pas dire « finit dans ».
+    meta.innerHTML = '<strong>' + escapeHtml(t('jp_sans_fin')) + '</strong>';
+  } else if(etat === 'en_cours' || etat === 'preroll'){
     meta.innerHTML = '<strong>' + escapeHtml(t('jp_fin_dans')) + ' '
       + escapeHtml(jpDuree(Date.parse(p.cloture_at || p.fin_at) - jpMaintenant())) + '</strong>';
   } else if(etat === 'a_venir'){
@@ -487,6 +511,16 @@ function jpOuvrirStudio(id){
     jpEl('jp-f-base').value      = '1';
     jpEl('jp-f-bonus').value     = '0';
     jpEl('jp-f-live').checked    = false;
+    jpEl('jp-f-manuelle').checked = false;
+    // Venir d'une partie deja commencee laissait les champs grises : ils y
+    // sont desactives, et rien ne les rouvrait pour la partie suivante.
+    ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance', 'jp-f-preroll',
+     'jp-f-base', 'jp-f-bonus', 'jp-f-live', 'jp-f-manuelle'].forEach(function(k){
+      jpEl(k).disabled = false;
+    });
+    jpEl('jp-depot').style.display = '';
+    jpAlerte('jp-studio-etape', '');
+    jpMajManuelle();
     jpEl('jp-studio-etat').textContent = '';
     jpEl('jp-f-titre').focus();
     return;
@@ -515,6 +549,7 @@ function jpRemplirStudio(p){
   jpEl('jp-f-base').value      = String(p.points_base);
   jpEl('jp-f-bonus').value     = String(p.bonus_vitesse_max);
   jpEl('jp-f-live').checked    = !!p.classement_live;
+  jpEl('jp-f-manuelle').checked = !!p.cloture_manuelle;
   jpEl('jp-studio-photos').style.display = '';
   jpEl('jp-btn-publier').style.display = p.publiee ? 'none' : '';
   jpEl('jp-studio-etat').textContent = p.publiee ? t('jp_deja_publiee') : t('jp_brouillon_enregistre');
@@ -524,9 +559,10 @@ function jpRemplirStudio(p){
   var etatPartie = jpEtat(p);
   var fige = p.publiee && etatPartie !== 'a_venir';
   ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance', 'jp-f-preroll',
-   'jp-f-base', 'jp-f-bonus', 'jp-f-live'].forEach(function(k){
+   'jp-f-base', 'jp-f-bonus', 'jp-f-live', 'jp-f-manuelle'].forEach(function(k){
     jpEl(k).disabled = fige;
   });
+  jpMajManuelle();
   jpEl('jp-depot').style.display = fige ? 'none' : '';
 
   // On annonce franchement ce qui reste modifiable. Un createur qui revient
@@ -552,19 +588,31 @@ function jpRemplirStudio(p){
   jpEl('jp-aide-publier').style.display = p.publiee ? 'none' : '';
 }
 
+// Le filet de securite d'une partie close a la main : sept jours. La base
+// exige une heure de fin ; on en met une assez lointaine pour qu'elle ne
+// tombe jamais pendant la soiree, et assez proche pour qu'une partie oubliee
+// finisse par se refermer toute seule.
+var JP_FILET_MANUEL_MS = 7 * 24 * 3600 * 1000;
+
 function jpLireFormulaire(){
-  var debut = jpDepuisChamp(jpEl('jp-f-debut').value);
-  var fin   = jpDepuisChamp(jpEl('jp-f-fin').value);
+  var debut    = jpDepuisChamp(jpEl('jp-f-debut').value);
+  var manuelle = jpEl('jp-f-manuelle').checked;
+  var fin      = manuelle
+    ? (debut ? new Date(Date.parse(debut) + JP_FILET_MANUEL_MS).toISOString() : null)
+    : jpDepuisChamp(jpEl('jp-f-fin').value);
   var titre = jpEl('jp-f-titre').value.trim();
   if(titre.length < 3) return { erreur: t('jp_err_titre') };
-  if(!debut || !fin)   return { erreur: t('jp_err_dates') };
-  if(Date.parse(fin) <= Date.parse(debut)) return { erreur: t('jp_err_ordre') };
+  if(!debut)           return { erreur: t('jp_err_dates') };
+  if(!manuelle){
+    if(!fin) return { erreur: t('jp_err_dates') };
+    if(Date.parse(fin) <= Date.parse(debut)) return { erreur: t('jp_err_ordre') };
+  }
   function n(id, min, max, def){
     var v = parseInt(jpEl(id).value, 10);
     if(isNaN(v)) v = def;
     return Math.max(min, Math.min(max, v));
   }
-  return {
+  var charge = {
     titre: titre,
     description: jpEl('jp-f-desc').value.trim() || null,
     debut_at: debut,
@@ -573,9 +621,36 @@ function jpLireFormulaire(){
     tolerance_fautes:  n('jp-f-tolerance', 0, 4, 2),
     preroll_secondes:  n('jp-f-preroll', 0, 300, 15),
     points_base:       n('jp-f-base', 1, 1000, 100),
-    bonus_vitesse_max: n('jp-f-bonus', 0, 1000, 100),
+    // Sans heure de fin, la rapidite n'a rien a quoi se comparer : le serveur
+    // calculerait un bonus presque entier pour tout le monde, puisque chacun
+    // repondrait au tout debut d'une partie longue de sept jours. On le met
+    // donc a zero, et le studio l'annonce.
+    bonus_vitesse_max: manuelle ? 0 : n('jp-f-bonus', 0, 1000, 100),
     classement_live:   jpEl('jp-f-live').checked
   };
+  // Tant que la colonne n'existe pas dans la base, on ne l'envoie pas : la
+  // case est masquee de toute facon.
+  if(!JP_SANS_CLOTURE_MANUELLE) charge.cloture_manuelle = manuelle;
+  return charge;
+}
+
+// La case « je clôture moi-même » commande le champ « Fin » : il n'a plus de
+// sens quand elle est cochee.
+function jpMajManuelle(){
+  var manuelle = jpEl('jp-f-manuelle').checked;
+  var fin  = jpEl('jp-f-fin');
+  var aide = jpEl('jp-aide-manuelle');
+  var bonus = jpEl('jp-f-bonus');
+  if(fin){
+    fin.disabled = manuelle || jpEl('jp-f-manuelle').disabled;
+    fin.closest('.jp-champ').style.opacity = manuelle ? '0.45' : '';
+  }
+  if(bonus) bonus.disabled = manuelle || jpEl('jp-f-manuelle').disabled;
+  if(aide) aide.style.display = manuelle ? '' : 'none';
+  // « La partie s'ouvre et se ferme toute seule » devient faux : on retire
+  // la phrase plutot que de laisser deux explications se contredire.
+  var horaires = jpEl('jp-aide-horaires');
+  if(horaires) horaires.style.display = manuelle ? 'none' : '';
 }
 
 function jpEnregistrerPartie(){
@@ -664,20 +739,27 @@ function jpRendreFiches(){
     hote.appendChild(v);
     return;
   }
+
   // « Tout enregistrer » : sur une partie de dix a trente photogrammes,
-  // cliquer trente fois etait le vrai cout du studio.
-  var barre = document.createElement('div');
-  barre.className = 'jp-actions jp-fiches-barre';
-  var bTout = document.createElement('button');
-  bTout.type = 'button';
-  bTout.className = 'jp-btn';
-  bTout.id = 'jp-btn-tout-enregistrer';
-  bTout.textContent = t('jp_tout_enregistrer');
-  var etatTout = document.createElement('span');
-  etatTout.className = 'jp-fiche-etat';
-  barre.appendChild(bTout);
-  barre.appendChild(etatTout);
-  hote.appendChild(barre);
+  // cliquer trente fois etait le vrai cout du studio. La barre est posee EN
+  // HAUT ET EN BAS de la liste : sur trente fiches, celle du haut est a
+  // plusieurs ecrans de la derniere que l'on vient de remplir.
+  function barre(place){
+    var b = document.createElement('div');
+    b.className = 'jp-actions jp-fiches-barre jp-fiches-barre-' + place;
+    var bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'jp-btn';
+    bouton.textContent = t('jp_tout_enregistrer');
+    var etat = document.createElement('span');
+    etat.className = 'jp-fiche-etat';
+    b.appendChild(bouton);
+    b.appendChild(etat);
+    return { bloc: b, bouton: bouton, etat: etat };
+  }
+
+  var haut = barre('haut');
+  hote.appendChild(haut.bloc);
 
   var fiches = JP_PHOTOS.map(function(p, i){
     var f = jpFiche(p, i);
@@ -685,13 +767,29 @@ function jpRendreFiches(){
     return f;
   });
 
-  bTout.addEventListener('click', function(){
+  var bas = barre('bas');
+  hote.appendChild(bas.bloc);
+
+  // Les deux barres commandent la meme chose et disent la meme chose : on
+  // les mene ensemble, sinon celle que l'on ne regarde pas raconterait
+  // l'etat d'avant.
+  var barres = [haut, bas];
+  function dire(txt, fini){
+    barres.forEach(function(x){
+      x.etat.textContent = txt;
+      x.etat.classList.toggle('jp-fiche-etat-ok', !!fini);
+    });
+  }
+  function bloquer(oui){
+    barres.forEach(function(x){ x.bouton.disabled = oui; });
+  }
+
+  function toutEnregistrer(){
     var aFaire = fiches.filter(function(f){ return typeof f.jpEnregistrer === 'function'; });
     if(!aFaire.length) return;
-    bTout.disabled = true;
+    bloquer(true);
     var faits = 0, echecs = 0, vides = 0;
-    etatTout.classList.remove('jp-fiche-etat-ok');
-    etatTout.textContent = t('jp_tout_en_cours', [0, aFaire.length]);
+    dire(t('jp_tout_en_cours', [0, aFaire.length]), false);
     // Une fiche apres l'autre : trente requetes simultanees se genent, et la
     // premiere erreur rendrait les suivantes illisibles.
     var suite = Promise.resolve();
@@ -701,20 +799,18 @@ function jpRendreFiches(){
           if(!r.rempli) vides++;
           else if(r.ok) faits++;
           else echecs++;
-          etatTout.textContent = t('jp_tout_en_cours', [faits + echecs + vides, aFaire.length]);
+          dire(t('jp_tout_en_cours', [faits + echecs + vides, aFaire.length]), false);
         });
       });
     });
     suite.then(function(){
-      bTout.disabled = false;
-      if(echecs || vides){
-        etatTout.textContent = t('jp_tout_partiel', [faits, echecs + vides]);
-      } else {
-        etatTout.textContent = t('jp_tout_fait', faits);
-        etatTout.classList.add('jp-fiche-etat-ok');
-      }
+      bloquer(false);
+      if(echecs || vides) dire(t('jp_tout_partiel', [faits, echecs + vides]), false);
+      else dire(t('jp_tout_fait', faits), true);
     });
-  });
+  }
+
+  barres.forEach(function(x){ x.bouton.addEventListener('click', toutEnregistrer); });
 }
 
 function jpFiche(p, i){
@@ -1310,6 +1406,11 @@ function jpOuvrirPartie(code){
   });
 }
 
+// La partie en cours n'a-t-elle pas d'heure de fin annoncee ?
+function jpSansFin(){
+  return !!(JP_PARTIE && JP_PARTIE.cloture_manuelle && !JP_PARTIE.cloture_at);
+}
+
 function jpSuisCreateur(){
   return !!(JP_MOI && JP_PARTIE && String(JP_PARTIE.createur_id) === String(JP_MOI.id));
 }
@@ -1373,17 +1474,27 @@ function jpBoucleHorloge(jeton){
       var av = jpEl('jp-avant-chrono');
       if(av) av.textContent = jpDuree(Date.parse(JP_PARTIE.debut_at) - n);
     } else if(etat === 'en_cours'){
-      var reste = Date.parse(JP_PARTIE.cloture_at || JP_PARTIE.fin_at) - n;
       var ch = jpEl('jp-chrono');
-      if(ch){
-        var txt = jpDuree(reste);
-        if(ch.textContent !== txt){
-          ch.textContent = txt;
-          ch.classList.toggle('jp-chrono-urgent', reste < 60000);
-          // Les dernieres minutes sont annoncees, pas seulement affichees.
-          var s = Math.round(reste / 1000);
-          if(s === 60 || s === 30 || s === 10) jpAnnoncer(t('jp_reste', txt));
+      if(!ch) return;
+      // Cloture a la main : il n'y a pas de compte a rebours a montrer. On
+      // affiche le temps ECOULE, qui est ce dont l'animateur a besoin pour
+      // decider du moment d'arreter.
+      if(jpSansFin()){
+        var depuis = jpDuree(n - Date.parse(JP_PARTIE.debut_at));
+        if(ch.textContent !== depuis){
+          ch.textContent = depuis;
+          ch.classList.remove('jp-chrono-urgent');
         }
+        return;
+      }
+      var reste = Date.parse(JP_PARTIE.cloture_at || JP_PARTIE.fin_at) - n;
+      var txt = jpDuree(reste);
+      if(ch.textContent !== txt){
+        ch.textContent = txt;
+        ch.classList.toggle('jp-chrono-urgent', reste < 60000);
+        // Les dernieres minutes sont annoncees, pas seulement affichees.
+        var s = Math.round(reste / 1000);
+        if(s === 60 || s === 30 || s === 10) jpAnnoncer(t('jp_reste', txt));
       }
     }
   }
@@ -1485,12 +1596,26 @@ function jpPreparerJeu(){
   jpEl('jp-scene-attente').style.display = 'none';
   JP_IMG.style.display = '';
 
-  jpRendreSmileys();
   jpRendrePellicule();
+  jpRendreEmojis();
   jpAllerPhoto(jpPremierNonTrouve());
-  jpMajScoreBandeau();
 
   var createur = jpSuisCreateur();
+
+  // Les deux etiquettes du bandeau dependent de la partie et du role. On
+  // change l'attribut « data-i18n » plutot que le seul texte : sans cela,
+  // passer en anglais pendant la partie les remettrait a leur valeur d'origine.
+  var etiqT = jpEl('jp-trouves-etiq');
+  if(etiqT){
+    etiqT.setAttribute('data-i18n', createur ? 'jp_trouves_table' : 'jp_trouves');
+    etiqT.textContent = t(createur ? 'jp_trouves_table' : 'jp_trouves');
+  }
+  var etiqR = jpEl('jp-restant-etiq');
+  if(etiqR){
+    etiqR.setAttribute('data-i18n', jpSansFin() ? 'jp_depuis' : 'jp_restant');
+    etiqR.textContent = t(jpSansFin() ? 'jp_depuis' : 'jp_restant');
+  }
+  jpMajScoreBandeau();
   jpEl('jp-panneau-arbitrage').style.display = createur ? '' : 'none';
   jpEl('jp-panneau-createur').style.display  = createur ? '' : 'none';
   jpEl('jp-gerer-avant').style.display = 'none';
@@ -1814,80 +1939,88 @@ function jpRepondre(){
   });
 }
 
+// Le compteur du bandeau.
+//
+// Pour un joueur : SES trouvailles. Pour l'animateur, qui ne joue pas, ce
+// chiffre valait toujours zero — c'etait le defaut signale. Il voit desormais
+// ce qui a ete trouve A LA TABLE, c'est-a-dire le nombre de photogrammes
+// tombes, qui est la seule chose qui l'interesse pendant la partie.
 function jpMajScoreBandeau(){
-  var trouves = 0, points = 0;
+  var total = JP_PHOTOS.length;
+
+  if(jpSuisCreateur()){
+    var tombes = 0;
+    JP_PHOTOS.forEach(function(p){ if(JP_REVELE[p.position]) tombes++; });
+    var ce = jpEl('jp-score-trouves');
+    if(ce) ce.textContent = tombes + '/' + total;
+    return;
+  }
+
+  var local = 0;
   JP_PHOTOS.forEach(function(p){
     var m = JP_MES[String(p.id)];
-    if(m && m.statut === 'accepte'){ trouves++; points += m.points || 0; }
+    if(m && m.statut === 'accepte') local++;
   });
-  // Ma ligne de `jeu_scores` fait foi : c'est le serveur qui compte. Le
-  // decompte local ci-dessus sert tant qu'elle n'est pas encore arrivee, et
-  // quand elle arrive elle corrige, par exemple apres un arbitrage dont
-  // l'evenement se serait perdu.
+
+  // Ma ligne de `jeu_scores` sert de filet : elle rattrape un evenement
+  // perdu, par exemple un arbitrage. Mais elle est relue toutes les quinze
+  // secondes seulement : juste apres une bonne reponse, elle est en retard
+  // d'un cran. Prendre le plus grand des deux, c'est afficher la trouvaille
+  // a l'instant ou elle a lieu, sans rien perdre de la correction du
+  // serveur — c'etait le defaut signale : le compteur restait sur l'ancien
+  // chiffre jusqu'a la relecture suivante.
+  var trouves = local;
   if(JP_MOI){
     for(var i = 0; i < JP_SCORES.length; i++){
       if(String(JP_SCORES[i].contributor_id) === String(JP_MOI.id)){
-        if(typeof JP_SCORES[i].trouves === 'number') trouves = JP_SCORES[i].trouves;
-        if(typeof JP_SCORES[i].points === 'number') points = JP_SCORES[i].points;
+        if(typeof JP_SCORES[i].trouves === 'number'){
+          trouves = Math.max(local, JP_SCORES[i].trouves);
+        }
         break;
       }
     }
   }
-  var a = jpEl('jp-score-trouves'), b = jpEl('jp-score-points');
-  if(a) a.textContent = trouves + '/' + JP_PHOTOS.length;
-  if(b) b.textContent = String(points);
+  var a = jpEl('jp-score-trouves');
+  if(a) a.textContent = trouves + '/' + total;
 }
 
 
-// ── 14. LES SMILEYS ────────────────────────────────────────────────────────
+// ── 14. LES ÉMOJIS DE LA DISCUSSION ──────────────────────────
+// Les emojis etaient une rangee sous la pellicule : on cliquait, une bulle
+// montait a l'ecran de tout le monde, et il n'en restait rien. Ils sont
+// desormais dans la discussion, ou ils servent : un clic les ecrit dans le
+// message en cours, a l'endroit du curseur, et ils partent avec lui.
 
-function jpRendreSmileys(){
-  var zone = jpEl('jp-smileys');
+function jpRendreEmojis(){
+  var zone = jpEl('jp-chat-emojis');
   if(!zone || zone.getAttribute('data-pret')) return;
   JP_SMILEYS.forEach(function(e){
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'jp-smiley';
+    b.className = 'jp-emoji';
     b.textContent = e;
-    b.setAttribute('aria-label', t('jp_reagir_avec', e));
-    b.addEventListener('click', function(){ jpReagir(e); });
+    b.setAttribute('aria-label', t('jp_emoji_ajouter', e));
+    b.setAttribute('title', t('jp_emoji_ajouter', e));
+    b.addEventListener('click', function(){ jpAjouterEmoji(e); });
     zone.appendChild(b);
   });
   zone.setAttribute('data-pret', '1');
 }
 
-// Les reactions ne passent PAS par la base : Broadcast les envoie d'un
-// navigateur a l'autre, sans ecriture, sans declencheur, sans classement a
-// recalculer. C'est ce qui les rend instantanees — et ce qui fait qu'une
-// pluie de smileys ne ralentit pas le jeu.
-function jpReagir(emoji){
-  var n = Date.now();
-  if(n - JP_DERNIER_SMILEY < 400) return;   // un doigt nerveux n'inonde personne
-  JP_DERNIER_SMILEY = n;
-  jpBulle(emoji, null);
-  if(!JP_CANAL || !jpConnecte()) return;
-  try{
-    JP_CANAL.send({
-      type: 'broadcast', event: 'reaction',
-      payload: { e: emoji, n: formatContribNamePlain(JP_MOI.display_name) }
-    });
-  }catch(e){ /* canal pas encore pret : la reaction reste locale */ }
-}
-
-function jpBulle(emoji, nom){
-  var pluie = jpEl('jp-pluie');
-  if(!pluie) return;
-  var b = document.createElement('div');
-  b.className = 'jp-bulle';
-  b.style.left = (8 + Math.random() * 78) + '%';
-  b.appendChild(document.createTextNode(emoji));
-  if(nom){
-    var s = document.createElement('span');
-    s.textContent = nom;
-    b.appendChild(s);
+function jpAjouterEmoji(emoji){
+  var champ = jpEl('jp-chat-texte');
+  if(!champ || champ.disabled) return;
+  // A l'endroit du curseur, et le curseur reste juste apres : on peut en
+  // poser trois de suite, ou en glisser un au milieu d'une phrase deja ecrite.
+  var d = champ.selectionStart, f = champ.selectionEnd;
+  if(typeof d === 'number' && typeof f === 'number'){
+    champ.value = champ.value.slice(0, d) + emoji + champ.value.slice(f);
+    var apres = d + emoji.length;
+    try{ champ.setSelectionRange(apres, apres); }catch(e){}
+  } else {
+    champ.value += emoji;
   }
-  pluie.appendChild(b);
-  setTimeout(function(){ if(b.parentNode) b.parentNode.removeChild(b); }, 2700);
+  champ.focus();
 }
 
 
@@ -1938,6 +2071,7 @@ function jpRetirerMessage(id){
 }
 
 function jpRendreChat(){
+  jpRendreEmojis();
   var ul = jpEl('jp-chat');
   var vide = jpEl('jp-chat-vide');
   if(!ul) return;
@@ -2053,11 +2187,6 @@ function jpAbonner(){
     { event: 'UPDATE', schema: 'public', table: 'jeu_sessions', filter: 'id=eq.' + sid },
     function(msg){ if(msg.new) { JP_PARTIE = msg.new; } });
 
-  JP_CANAL.on('broadcast', { event: 'reaction' }, function(msg){
-    var p = msg.payload || {};
-    if(p.e) jpBulle(p.e, p.n);
-  });
-
   // Un photogramme vient de tomber : on ne croit pas l'annonce sur parole,
   // elle sert seulement de signal. C'est la base qui dit QUOI et PAR QUI.
   JP_CANAL.on('broadcast', { event: 'trouvaille' }, function(msg){
@@ -2161,6 +2290,7 @@ function jpNoterTrouves(lignes){
   });
   jpRendreTrouves();
   jpMajVignettesRevelees();
+  jpMajScoreBandeau();
   var courant = JP_PHOTOS[JP_IDX];
   if(courant){
     jpRendreVerdictCourant(courant);
@@ -2355,7 +2485,13 @@ function jpSurReponse(ligne, type){
       }
     }
   }
-  if(jpSuisCreateur() && type !== 'DELETE') jpChargerArbitrage();
+  if(jpSuisCreateur() && type !== 'DELETE'){
+    jpChargerArbitrage();
+    // L'animateur voit passer toutes les reponses : si celle-ci est bonne,
+    // un photogramme vient de tomber, et son compteur doit le dire tout de
+    // suite plutot qu'a la relecture suivante.
+    if(ligne.statut === 'accepte') jpChargerTrouves();
+  }
 }
 
 function jpRafraichirIndices(){
@@ -2847,6 +2983,31 @@ function jpClavier(ev){
 
 // ── 20. DÉMARRAGE ──────────────────────────────────────────────────────────
 
+// ── LES IMAGES NE SE PRENNENT PAS (point 5) ──────────────────────
+// Le geste que l'on veut empecher est precis : clic droit sur le
+// photogramme, « Rechercher l'image avec Google », et la partie est finie.
+// On coupe donc le menu contextuel, le glisser-deposer vers un autre onglet
+// et la copie, sur la scene, sur l'agrandissement et sur la pellicule. Le
+// CSS fait le reste (selection impossible, pas de menu au appui long).
+//
+// CE QUE CELA NE FAIT PAS, et il faut le savoir : une capture d'ecran marche
+// toujours, et l'adresse de l'image reste lisible dans les outils de
+// developpement du navigateur. Pour afficher une image, il faut bien la lui
+// donner. Ceci arrete le geste facile, pas quelqu'un de determine.
+//
+// Le studio et la page de resultats ne sont PAS proteges : l'animateur doit
+// pouvoir manipuler ses images, et apres la partie il n'y a plus rien a
+// cacher.
+function jpProtegerImages(){
+  ['jp-scene', 'jp-plein', 'jp-pellicule'].forEach(function(id){
+    var zone = jpEl(id);
+    if(!zone) return;
+    ['contextmenu', 'dragstart', 'copy', 'cut'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); });
+    });
+  });
+}
+
 function jpBrancher(){
   jpEl('btn-dark').addEventListener('click', toggleDark);
   jpEl('btn-lang').addEventListener('click', toggleLang);
@@ -2886,6 +3047,7 @@ function jpBrancher(){
     });
   });
 
+  jpEl('jp-f-manuelle').addEventListener('change', jpMajManuelle);
   jpEl('jp-btn-enregistrer').addEventListener('click', jpEnregistrerPartie);
   jpEl('jp-btn-publier').addEventListener('click', jpPublier);
   jpEl('jp-btn-supprimer').addEventListener('click', jpSupprimerPartie);
@@ -2934,6 +3096,7 @@ function jpBrancher(){
   jpEl('jp-btn-quitter').addEventListener('click', function(){ jpAller('#parties'); });
   jpEl('jp-btn-clore').addEventListener('click', jpClore);
 
+  jpProtegerImages();
   document.addEventListener('keydown', jpClavier);
 }
 
@@ -2999,7 +3162,7 @@ JP_SB.auth.onAuthStateChange(function(evenement, session){
 // etats de partie en dependent, et un premier affichage faux (« a venir »
 // alors que la partie tourne) serait pire qu'un dixieme de seconde
 // d'attente.
-jpSynchroniser().then(function(){
+Promise.all([jpSynchroniser(), jpVerifierColonnes()]).then(function(){
   jpBrancher();
   jpRouter();
 });

@@ -140,7 +140,12 @@
           <input type="datetime-local" class="jp-saisie-simple" id="jp-f-fin">
         </div>
       </div>
-      <p class="jp-aide" data-i18n="jp_aide_horaires">Les horaires sont ceux de votre appareil. La partie s'ouvre et se ferme toute seule, à la seconde près, pour tout le monde en même temps.</p>
+      <label class="jp-reglage" style="margin-top:4px">
+        <input type="checkbox" id="jp-f-manuelle">
+        <span data-i18n="jp_l_manuelle">Je clôturerai la partie moi-même</span>
+      </label>
+      <p class="jp-aide" id="jp-aide-horaires" data-i18n="jp_aide_horaires">Les horaires sont ceux de votre appareil. La partie s'ouvre et se ferme toute seule, à la seconde près, pour tout le monde en même temps.</p>
+      <p class="jp-aide" id="jp-aide-manuelle" style="display:none" data-i18n="jp_aide_manuelle">Pas d'heure de fin : la partie reste ouverte jusqu'à ce que vous cliquiez sur « Clore maintenant ». Un filet de sécurité la ferme quand même au bout de sept jours, si vous oubliez. Le bonus de vitesse est alors mis à zéro : sans heure de fin, il n'y a rien à quoi comparer la rapidité.</p>
 
       <h2 class="jp-section-titre" data-i18n="jp_studio_regles">Les règles</h2>
       <div class="jp-reglage-grille">
@@ -229,16 +234,15 @@
     <div id="jp-pendant" style="display:none">
       <div class="jp-bandeau">
         <div class="jp-bandeau-bloc">
-          <span class="jp-bandeau-etiq" data-i18n="jp_restant">Restant</span>
+          <span class="jp-bandeau-etiq" id="jp-restant-etiq" data-i18n="jp_restant">Restant</span>
           <span class="jp-chrono" id="jp-chrono">—</span>
         </div>
+        <!-- « Points » a disparu : avec un point par trouvaille et pas de
+             bonus de vitesse, il affichait exactement le meme nombre que
+             « Trouvés ». Les points restent dans le classement, à droite. -->
         <div class="jp-bandeau-bloc">
-          <span class="jp-bandeau-etiq" data-i18n="jp_trouves">Trouvés</span>
+          <span class="jp-bandeau-etiq" id="jp-trouves-etiq" data-i18n="jp_trouves">Trouvés</span>
           <span class="jp-bandeau-score" id="jp-score-trouves">0/0</span>
-        </div>
-        <div class="jp-bandeau-bloc">
-          <span class="jp-bandeau-etiq" data-i18n="jp_points">Points</span>
-          <span class="jp-bandeau-score" id="jp-score-points">0</span>
         </div>
         <div class="jp-bandeau-pousse">
           <button class="jp-btn jp-btn-petit" id="jp-btn-quitter" data-i18n="jp_quitter">Quitter</button>
@@ -277,9 +281,6 @@
 
           <div class="jp-pellicule" id="jp-pellicule" role="tablist" data-i18n-aria="jp_pellicule_aria" aria-label="Les photogrammes de la partie"></div>
 
-          <div class="jp-smileys" id="jp-smileys">
-            <span class="jp-smileys-etiq" data-i18n="jp_reagir">Réagir</span>
-          </div>
         </div>
 
         <aside class="jp-colonne-cote">
@@ -299,6 +300,7 @@
             <h2 class="jp-panneau-titre" data-i18n="jp_chat">Discussion</h2>
             <ul class="jp-chat" id="jp-chat" aria-live="polite"></ul>
             <p class="jp-aide" id="jp-chat-vide" data-i18n="jp_chat_vide">Personne n'a encore parlé.</p>
+            <div class="jp-chat-emojis" id="jp-chat-emojis" role="group" data-i18n-aria="jp_emojis_aria" aria-label="Ajouter un émoji au message"></div>
             <div class="jp-chat-saisie">
               <label for="jp-chat-texte" class="jp-lu-seulement" data-i18n="jp_chat_label">Votre message</label>
               <input type="text" id="jp-chat-texte" maxlength="400" autocomplete="off" enterkeyhint="send" data-i18n-ph="jp_chat_ph" placeholder="Dire quelque chose…">
@@ -352,7 +354,6 @@
 
 </div>
 
-<div class="jp-pluie" id="jp-pluie" aria-hidden="true"></div>
 
 <footer class="tc-pied">
   <a href="index.html" data-i18n="jp_retour_site">Retour au site</a>

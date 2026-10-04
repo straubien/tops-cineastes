@@ -455,48 +455,44 @@
 .jp-vignette-non     .jp-vignette-etat { display: flex; background: var(--rouge); color: #fff; }
 .jp-vignette-ok { opacity: 1; }
 
-/* ── Les smileys ────────────────────────────────────────────────────────── */
-.jp-smileys {
-  display: flex; gap: 5px; flex-wrap: wrap;
-  margin-top: 16px; align-items: center;
+/* ── Les émojis de la discussion ───────────────────────────── */
+/* Une rangée au-dessus du champ : on clique, l'émoji s'écrit dans le
+   message. Ils étaient auparavant sous la pellicule, où ils ne servaient
+   qu'à faire monter une bulle qui ne laissait aucune trace. */
+/* Une grille de huit colonnes plutôt qu'une rangée qui s'enroule : la
+   colonne de droite est étroite, et huit émojis « à la bonne taille »
+   finissaient par passer à sept plus un. Ici ils se partagent la largeur,
+   quelle qu'elle soit, et restent sur une seule ligne. */
+.jp-chat-emojis {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  margin: 2px 0 8px;
 }
-.jp-smileys-etiq {
-  font-family: var(--font); font-size: 12px; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--brun-pale); margin-right: 6px;
-}
-.jp-smiley {
-  font-size: 23px; line-height: 1;
-  width: 44px; height: 44px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: none; border: 1px solid transparent; border-radius: 0;
+.jp-emoji {
+  font-size: 19px;
+  line-height: 1;
+  min-width: 0;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0;
   cursor: pointer;
+  padding: 0;
   transition: transform 0.12s, border-color 0.12s, background 0.12s;
 }
-.jp-smiley:hover { background: var(--bg-subtle); border-color: var(--border); transform: scale(1.14); }
-.jp-smiley:active { transform: scale(0.94); }
+.jp-emoji:hover { background: var(--bg-subtle); border-color: var(--border); transform: scale(1.14); }
+.jp-emoji:active { transform: scale(0.94); }
 
-/* Les reactions qui montent. `position: fixed` + `transform` seulement :
-   rien ne touche a la mise en page de la page, donc rien ne saccade. */
-.jp-pluie {
-  position: fixed; inset: 0;
-  pointer-events: none; overflow: hidden; z-index: 60;
+/* Sur un écran tactile, la cible doit faire 44 px dans les deux sens. Huit
+   colonnes n'y suffisent pas : on passe à deux rangées de quatre. */
+@media (max-width: 760px), (pointer: coarse) {
+  .jp-chat-emojis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .jp-emoji { height: 44px; font-size: 22px; }
 }
-.jp-bulle {
-  position: absolute; bottom: 70px;
-  font-size: 30px; line-height: 1;
-  will-change: transform, opacity;
-  animation: jp-monte 2.6s ease-out forwards;
-}
-.jp-bulle span {
-  display: block; font-size: 11px; font-family: var(--font);
-  text-align: center; color: var(--brun-pale); margin-top: 2px;
-  white-space: nowrap;
-}
-@keyframes jp-monte {
-  0%   { transform: translateY(0)      scale(0.6); opacity: 0; }
-  12%  { transform: translateY(-26px)  scale(1.1); opacity: 1; }
-  100% { transform: translateY(-230px) scale(0.85); opacity: 0; }
 }
 
 /* ── Le classement ──────────────────────────────────────────────────────── */
@@ -788,8 +784,6 @@
   .jp-saisie button { padding: 0 17px; min-height: 48px; font-size: 12px; }
   .jp-verdict { font-size: 15px; min-height: 24px; margin-top: 6px; }
   .jp-jeu-decale { padding-bottom: 130px; }
-  .jp-smileys-etiq { display: none; }
-  .jp-smiley { width: 40px; height: 40px; font-size: 21px; }
   .jp-onglet { padding: 12px 13px; font-size: 13px; }
   .jp-bandeau { gap: 12px; padding: 9px 12px; }
   .jp-scene { max-height: 42vh; }
@@ -815,13 +809,12 @@
   .jp-etat-en_cours::before { animation: none; }
   .jp-rang { transition: none; }
   .jp-carte:hover:not(.jp-carte-finie) { transform: none; }
-  .jp-bulle { display: none; }
 }
 
 /* Impression : le classement final, et rien d'autre. */
 @media print {
-  .jp-bandeau, .jp-saisie-bloc, .jp-pellicule, .jp-smileys,
-  .jp-pluie, .jp-onglets, .jp-fil, .header, .tc-pied { display: none !important; }
+  .jp-bandeau, .jp-saisie-bloc, .jp-pellicule, .jp-chat-emojis,
+  .jp-onglets, .jp-fil, .header, .tc-pied { display: none !important; }
   .jp-main { padding: 0; }
 }
 
@@ -1101,4 +1094,52 @@
      de style.css, qui ne connaît que « .nav a »). */
   .jp-nav-btn { min-height: 44px; border-left: none; }
   .jp-nav-user { border-left: none; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LES PHOTOGRAMMES NE SE PRENNENT PAS  (point 5)
+   ════════════════════════════════════════════════════════════════════════
+   Le geste visé est précis : clic droit sur l'image, « Rechercher l'image
+   avec Google », et la partie est finie. Le JavaScript coupe le menu
+   contextuel, le glisser-déposer et la copie ; ces règles-ci coupent la
+   sélection et, sur téléphone, le menu qui s'ouvre après un appui long.
+
+   Ce que cela ne fait pas : une capture d'écran marche toujours, et
+   l'adresse de l'image reste lisible dans les outils de développement du
+   navigateur — pour afficher une image, il faut bien la lui donner. Ceci
+   arrête le geste facile, pas quelqu'un de déterminé.
+
+   Le studio et la page de résultats ne sont pas concernés : l'animateur doit
+   pouvoir manipuler ses images, et après la partie il n'y a plus rien à
+   cacher. */
+
+.jp-scene,
+.jp-plein,
+.jp-pellicule {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.jp-scene img,
+.jp-plein img,
+.jp-vignette {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+}
+
+/* Le numéro posé sur la scène et la bande du film trouvé ne se
+   sélectionnent pas non plus : on ne copie pas un titre par mégarde. */
+.jp-scene-num,
+.jp-trouve { -webkit-user-select: none; user-select: none; }
+
+
+/* ── La barre « Tout enregistrer » du bas (point 4) ────────────────────── */
+/* La même qu'en haut, mais détachée de la dernière fiche pour qu'on ne la
+   prenne pas pour un bouton de cette fiche-là. */
+.jp-fiches-barre-bas {
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
 }
