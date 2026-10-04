@@ -1323,14 +1323,8 @@ function buildProposalCard(p, container){
 
     var headerEl = document.createElement('div'); headerEl.className = 'prop-card-header';
 
-    if(p.photo_tmdb){
-      var photoImg = document.createElement('img');
-      photoImg.className = 'prop-photo';
-      photoImg.alt = ''; photoImg.loading = 'lazy';
-      photoImg.src = 'https://image.tmdb.org/t/p/w92' + p.photo_tmdb;
-      photoImg.onerror = function(){ photoImg.remove(); };
-      headerEl.appendChild(photoImg);
-    }
+    var photoImg = tcProposalPhotoImg(p.nom, p.prenom, p.photo_tmdb, 'prop-photo');
+    if(photoImg) headerEl.appendChild(photoImg);
 
     var infoEl = document.createElement('div'); infoEl.className = 'prop-card-info';
 

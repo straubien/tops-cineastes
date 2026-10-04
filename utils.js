@@ -53,9 +53,16 @@ function normStr(s){
 // l'<img>) et affiche un avatar vide si aucun n'existe.
 function tcLocalPortraitCandidates(nom){
   if(!nom) return [];
-  if(/straub/i.test(nom)&&/huillet/i.test(nom)) return ['portraits/portrait-Straub.jpg'];
-  if(/reis/i.test(nom)&&/cordeiro/i.test(nom)) return ['portraits/portrait-Reis.jpg'];
+  // Une majuscule apres chaque espace, et RIEN apres un trait d'union : c'est
+  // la convention des fichiers deja presents dans le depot
+  // (portrait-Kragh-jacobsen.jpg, portrait-Moholy-nagy.jpg). Capitaliser
+  // apres le trait d'union ferait echouer ces quatre portraits.
   var titleCase=function(s){return s.split(' ').map(function(w){return w?w.charAt(0)+w.slice(1).toLowerCase():w;}).join(' ');};
+  // ... mais l'autre orthographe reste plausible pour un fichier ajoute plus
+  // tard : on l'essaie en dernier recours (voir « variantes » plus bas).
+  var titleCaseTirets=function(s){
+    return s.toLowerCase().replace(/(^|[\s-])([^\s-])/g, function(_,sep,c){ return sep + c.toUpperCase(); });
+  };
   var hasComma=nom.indexOf(',')!==-1;
   var clean=nom.replace(/,.*$/,'');
   var prenom=hasComma?nom.split(',').slice(1).join(',').trim():'';
@@ -65,6 +72,14 @@ function tcLocalPortraitCandidates(nom){
   var surnameTitled=titleCase(surnameUpper);
   var candidates=['portraits/portrait-'+surnameTitled+'.jpg'];
   if(prenom) candidates.push('portraits/portrait-'+surnameTitled+', '+titleCase(prenom)+'.jpg');
+  // Nom compose : on ajoute l'orthographe a majuscules (Castaing-Taylor) apres
+  // celle du depot (Castaing-taylor). Un seul des deux fichiers existe ; le
+  // navigateur essaie les candidats dans l'ordre et s'arrete au premier trouve.
+  var surnameTirets=titleCaseTirets(surnameUpper);
+  if(surnameTirets!==surnameTitled){
+    candidates.push('portraits/portrait-'+surnameTirets+'.jpg');
+    if(prenom) candidates.push('portraits/portrait-'+surnameTirets+', '+titleCase(prenom)+'.jpg');
+  }
   return candidates;
 }
 
@@ -74,27 +89,75 @@ function tcLocalPortraitPath(nom){
   return candidates.length?candidates[0]:null;
 }
 
-// Cas générique "duo" pour le fallback local : en base, un couple de cinéastes
-// partageant le même nom de famille est stocké sous la forme "NOM, Prénom1 &
-// Prénom2" (ex. "COEN, Joel & Ethan", "HEIN, Wilhelm & Birgit" — un seul NOM,
-// jamais répété). Quand ce duo ne correspond à aucun des couples à nom de
-// famille distinct codés en dur ci-dessus (donc pas de fichier combiné du type
-// portrait-Straub.jpg), chaque membre peut néanmoins avoir son propre portrait
-// local (ex. portraits/portrait-Hein, Wilhelm.jpg et portraits/portrait-Hein,
-// Birgit.jpg). Renvoie un tableau de deux listes de candidats (une par membre)
-// si nom est bien un duo générique de ce type, sinon null.
+// ── DUOS DE CINEASTES ────────────────────────────────────────────
+// En base, un duo porte TOUJOURS un « & » dans son nom, et seuls les duos en
+// portent un : verifie sur les 3 356 cineastes de l'index — 54 duos, aucune
+// exception dans un sens comme dans l'autre. Deux ecritures coexistent :
+//
+//   « NOM, Prenom1 & Prenom2 »  quand les deux partagent le nom de famille
+//                               (COEN, Joel & Ethan — HEIN, Wilhelm & Birgit)
+//   « NOM1 & NOM2 »             quand les noms de famille different
+//                               (ALOV & NAUMOV — GIANIKIAN & RICCI LUCCHI)
+//
+// Cette fonction rend les deux membres sous la forme attendue par
+// tcLocalPortraitCandidates. Elle remplace les exceptions qui etaient ecrites
+// en dur pour Straub/Huillet, Reis/Cordeiro et Gianikian/Ricci Lucchi : ces
+// trois-la n'etaient pas des cas particuliers, seulement des duos
+// « NOM1 & NOM2 » dont un seul membre possede un portrait dans le depot.
+function tcDuoMembres(nom){
+  if(!nom || nom.indexOf(' & ') === -1) return null;
+  var virgule = nom.indexOf(',');
+  if(virgule !== -1){
+    var surname = nom.slice(0, virgule).trim();
+    var prenoms = nom.slice(virgule + 1).split(' & ');
+    if(prenoms.length !== 2 || !surname) return null;
+    return [surname + ', ' + prenoms[0].trim(), surname + ', ' + prenoms[1].trim()];
+  }
+  var noms = nom.split(' & ');
+  if(noms.length !== 2 || !noms[0].trim() || !noms[1].trim()) return null;
+  return [noms[0].trim(), noms[1].trim()];
+}
+
+// Chemins candidats des portraits locaux des deux membres d'un duo : un
+// tableau de deux listes (une par membre), ou null si ce n'est pas un duo.
 function tcLocalPortraitDuoCandidates(nom){
-  if(!nom) return null;
-  if(/straub/i.test(nom)&&/huillet/i.test(nom)) return null;
-  if(/reis/i.test(nom)&&/cordeiro/i.test(nom)) return null;
-  if(/gianikian/i.test(nom)&&/ricci/i.test(nom)&&/lucchi/i.test(nom)) return [['portraits/portrait-Gianikian.jpg'],['portraits/portrait-Ricci Lucchi.jpg']];
-  if(nom.indexOf(' & ')===-1) return null;
-  var commaIdx=nom.indexOf(',');
-  if(commaIdx===-1) return null;
-  var surname=nom.slice(0,commaIdx).trim();
-  var prenoms=nom.slice(commaIdx+1).split(' & ');
-  if(prenoms.length!==2||!surname) return null;
-  return [tcLocalPortraitCandidates(surname+', '+prenoms[0].trim()),tcLocalPortraitCandidates(surname+', '+prenoms[1].trim())];
+  var membres = tcDuoMembres(nom);
+  if(!membres) return null;
+  var memeNom = nom.indexOf(',') !== -1;
+  return membres.map(function(m){
+    var c = tcLocalPortraitCandidates(m);
+    // Quand les deux membres partagent le nom de famille, le fichier
+    // « portrait-Nom.jpg » ne designe personne en particulier : s'en servir
+    // afficherait DEUX FOIS la meme photo. On ne garde donc que le fichier
+    // nomme « portrait-Nom, Prenom.jpg ».
+    return (memeNom && c.length > 1) ? c.slice(1) : c;
+  });
+}
+
+// Vignette d'une proposition de cineaste, pour la liste des demandes en
+// attente. Jusqu'ici, cocher « Aucune photo disponible » voulait dire « pas de
+// lien TMDB » et la demande s'affichait sans aucune image — alors que le
+// portrait se trouvait peut-etre deja dans le depot. On le cherche donc,
+// exactement comme le fait l'index une fois le cineaste accepte.
+// Renvoie un <img> pret a inserer, ou null s'il n'y a rien a montrer.
+function tcProposalPhotoImg(nomFamille, prenom, cheminTmdb, cls){
+  var img = document.createElement('img');
+  img.className = cls; img.alt = ''; img.loading = 'lazy';
+  if(cheminTmdb){
+    img.src = 'https://image.tmdb.org/t/p/w92' + cheminTmdb;
+    img.onerror = function(){ img.remove(); };
+    return img;
+  }
+  var nom = prenom ? (nomFamille + ', ' + prenom) : nomFamille;
+  var candidats = (tcLocalPortraitDuoCandidates(nom) || [tcLocalPortraitCandidates(nom)])[0];
+  if(!candidats || !candidats.length) return null;
+  var reste = candidats.slice(1);
+  img.src = candidats[0];
+  img.onerror = function(){
+    if(reste.length){ img.src = reste.shift(); return; }
+    img.remove();
+  };
+  return img;
 }
 
 // Détecte une erreur Supabase due à une session expirée / non authentifiée

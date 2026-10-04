@@ -145,9 +145,40 @@ test('tcLocalPortraitCandidates : les particules restent dans le nom', () => {
   ]);
 });
 
-test('tcLocalPortraitCandidates : Straub/Huillet a un fichier commun', () => {
-  assert.deepEqual(u.tcLocalPortraitCandidates('STRAUB, Jean-Marie & HUILLET'),
-    ['portraits/portrait-Straub.jpg']);
+// Straub/Huillet, Reis/Cordeiro et Gianikian/Ricci Lucchi etaient ecrits en
+// dur dans le code. Ce ne sont pas des cas particuliers : seulement des duos
+// « NOM1 & NOM2 », comme les 25 autres. Ces tests verifient que la regle
+// generale les retrouve sans exception.
+test('tcDuoMembres : « NOM1 & NOM2 », noms de famille differents', () => {
+  assert.deepEqual(u.tcDuoMembres('ALOV & NAUMOV'), ['ALOV', 'NAUMOV']);
+  assert.deepEqual(u.tcDuoMembres('STRAUB & HUILLET'), ['STRAUB', 'HUILLET']);
+  assert.deepEqual(u.tcDuoMembres('GIANIKIAN & RICCI LUCCHI'), ['GIANIKIAN', 'RICCI LUCCHI']);
+});
+
+test('tcDuoMembres : « NOM, Prenom1 & Prenom2 », nom de famille commun', () => {
+  assert.deepEqual(u.tcDuoMembres('COEN, Joel & Ethan'), ['COEN, Joel', 'COEN, Ethan']);
+  assert.deepEqual(u.tcDuoMembres('HEIN, Wilhelm & Birgit'), ['HEIN, Wilhelm', 'HEIN, Birgit']);
+});
+
+test('tcDuoMembres : un cineaste seul n\'est pas un duo', () => {
+  assert.equal(u.tcDuoMembres('MIZOGUCHI, Kenji'), null);
+  assert.equal(u.tcDuoMembres('RICCI LUCCHI'), null);
+  assert.equal(u.tcDuoMembres(''), null);
+});
+
+test('tcLocalPortraitDuoCandidates : chaque membre a son propre portrait', () => {
+  assert.deepEqual(u.tcLocalPortraitDuoCandidates('ALOV & NAUMOV'),
+    [['portraits/portrait-Alov.jpg'], ['portraits/portrait-Naumov.jpg']]);
+  assert.deepEqual(u.tcLocalPortraitDuoCandidates('GIANIKIAN & RICCI LUCCHI'),
+    [['portraits/portrait-Gianikian.jpg'], ['portraits/portrait-Ricci Lucchi.jpg']]);
+});
+
+test('tcLocalPortraitDuoCandidates : a nom commun, pas de fichier generique', () => {
+  // « portrait-Hein.jpg » ne designerait personne : s'en servir afficherait
+  // deux fois la meme photo pour les deux membres.
+  const d = u.tcLocalPortraitDuoCandidates('HEIN, Wilhelm & Birgit');
+  assert.deepEqual(d[0], ['portraits/portrait-Hein, Wilhelm.jpg']);
+  assert.deepEqual(d[1], ['portraits/portrait-Hein, Birgit.jpg']);
 });
 
 test('tcLocalPortraitCandidates : nom vide ne plante pas', () => {

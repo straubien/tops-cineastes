@@ -178,17 +178,19 @@ var PHOTOS_TMDB={}; // nom cinéaste → profile_path TMDB (ou [path1,path2] pou
 // localPortraitPath() est désormais mutualisée dans utils.js (tcLocalPortraitPath).
 // Fallback portrait local quand TMDB n'a pas de photo. L'image pointe vers /portraits ;
 // si le fichier n'existe pas non plus, wirePortraitFallbacks() la remplace par le div vide.
+// Une moitie de portrait : la cascade de candidats locaux, ou une case vide.
+function tcPortraitLocalHtml(candidates,cls){
+  var emptyDiv='<div class="'+cls+' '+cls+'-empty"></div>';
+  if(!candidates||!candidates.length) return emptyDiv;
+  return '<img class="'+cls+' photo-portrait-fallback" src="'+escapeHtml(candidates[0])+'" alt="" loading="lazy"'
+    +' data-candidates="'+escapeHtml(candidates.slice(1).join('|'))+'"'
+    +' data-empty-class="'+escapeHtml(cls+' '+cls+'-empty')+'">';
+}
 function portraitFallbackHtml(nom,cls){
-  var memberHtml=function(candidates){
-    var emptyDiv='<div class="'+cls+' '+cls+'-empty"></div>';
-    if(!candidates.length) return emptyDiv;
-    return '<img class="'+cls+' photo-portrait-fallback" src="'+escapeHtml(candidates[0])+'" alt="" loading="lazy"'
-      +' data-candidates="'+escapeHtml(candidates.slice(1).join('|'))+'"'
-      +' data-empty-class="'+escapeHtml(cls+' '+cls+'-empty')+'">';
-  };
   var duoCandidates=tcLocalPortraitDuoCandidates(nom);
-  if(duoCandidates) return '<div class="'+cls+'-duo">'+memberHtml(duoCandidates[0])+memberHtml(duoCandidates[1])+'</div>';
-  return memberHtml(tcLocalPortraitCandidates(nom));
+  if(duoCandidates) return '<div class="'+cls+'-duo">'
+    +tcPortraitLocalHtml(duoCandidates[0],cls)+tcPortraitLocalHtml(duoCandidates[1],cls)+'</div>';
+  return tcPortraitLocalHtml(tcLocalPortraitCandidates(nom),cls);
 }
 // Attache la cascade de candidats (puis le remplacement par le div vide si aucun
 // n'existe) sur les portraits locaux. (Les handlers inline sont interdits par la
@@ -213,16 +215,29 @@ function wirePortraitFallbacks(root){
   }
 }
 function buildPhotoHtml(photoVal,cls,size,nom){
-  if(Array.isArray(photoVal)){
-    var single=photoVal[0]&&!photoVal[1]?photoVal[0]:(!photoVal[0]&&photoVal[1]?photoVal[1]:null);
-    if(single) return '<img class="'+cls+'" src="https://image.tmdb.org/t/p/w'+size+escapeHtml(single)+'" alt="" loading="lazy">';
-    if(!photoVal[0]&&!photoVal[1]) return portraitFallbackHtml(nom,cls);
-    return '<div class="'+cls+'-duo">'
-      +(photoVal[0]?'<img class="'+cls+'" src="https://image.tmdb.org/t/p/w'+size+escapeHtml(photoVal[0])+'" alt="" loading="lazy">':'<div class="'+cls+' '+cls+'-empty"></div>')
-      +(photoVal[1]?'<img class="'+cls+'" src="https://image.tmdb.org/t/p/w'+size+escapeHtml(photoVal[1])+'" alt="" loading="lazy">':'<div class="'+cls+' '+cls+'-empty"></div>')
-      +'</div>';
+  var imgTmdb=function(chemin){
+    return '<img class="'+cls+'" src="https://image.tmdb.org/t/p/w'+size+escapeHtml(chemin)+'" alt="" loading="lazy">';
+  };
+  // Un duo se traite MOITIE PAR MOITIE, sans se demander combien de photos
+  // TMDB sont disponibles. Chaque membre a sa propre cascade : sa photo TMDB
+  // si elle existe, sinon son portrait dans le depot, sinon une case vide.
+  //
+  // L'ancienne version court-circuitait des qu'une seule photo TMDB etait
+  // connue : elle affichait cette photo SEULE, et le second membre n'etait
+  // jamais cherche dans /portraits. C'est ce qui faisait disparaitre Naumov
+  // derriere la photo TMDB d'Alov.
+  var duoCandidates=tcLocalPortraitDuoCandidates(nom);
+  if(duoCandidates){
+    // « ALOV & NAUMOV » est stocke avec une simple chaine au lieu d'un couple :
+    // on la rattache au premier membre, faute de pouvoir deviner mieux.
+    var paths=Array.isArray(photoVal)?photoVal:[photoVal,null];
+    var moitie=function(i){
+      return paths[i]?imgTmdb(paths[i]):tcPortraitLocalHtml(duoCandidates[i],cls);
+    };
+    return '<div class="'+cls+'-duo">'+moitie(0)+moitie(1)+'</div>';
   }
-  if(photoVal) return '<img class="'+cls+'" src="https://image.tmdb.org/t/p/w'+size+escapeHtml(photoVal)+'" alt="" loading="lazy">';
+  if(Array.isArray(photoVal)) photoVal=photoVal[0]||photoVal[1]||null;
+  if(photoVal) return imgTmdb(photoVal);
   return portraitFallbackHtml(nom,cls);
 }
 var MUZARD_DATA=null; // index par nom de cinéaste
@@ -965,15 +980,16 @@ function formatFavName(f){
 
 function buildPortraitSrc(f){
   var particles=['De','Van','von','Von','Du','du','Di','di','Da','da','Le','La','del','Del','Della','lo','Lo'];
-  if(f==='Straub/Huillet'||(/straub/i.test(f)&&/huillet/i.test(f)))return{candidates:['portraits/portrait-Straub.jpg'],initials:'S'};
-  if(/reis/i.test(f)&&/cordeiro/i.test(f))return{candidates:['portraits/portrait-Reis.jpg'],initials:'R'};
-  if(/gianikian/i.test(f)&&/ricci/i.test(f)&&/lucchi/i.test(f))return{candidates:['portraits/portrait-Gianikian.jpg','portraits/portrait-Ricci Lucchi.jpg'],initials:'G'};
-  var normalized=f;
+  // Un cinephile ecrit ses favoris librement : « Straub/Huillet »,
+  // « Reis & Cordeiro », « Gianikian & Ricci Lucchi »... Cette vignette
+  // n'affiche qu'un seul portrait : on retient le premier des deux noms,
+  // quel que soit le separateur. C'est ce que faisaient les trois exceptions
+  // ecrites en dur ici — elles ne servaient qu'a cela.
+  var normalized=f.split(/\s*[\/&]\s*/)[0].trim() || f;
   var prenom='';
   if(f.indexOf(',')!==-1){
     var p=f.split(',');normalized=p[0].trim();prenom=p.slice(1).join(',').trim();
   }
-  if(normalized.indexOf(' & ')!==-1){normalized=normalized.split(' & ')[0].trim();}
   var parts=normalized.split(' ');
   var last=parts[parts.length-1];
   var secondLast=parts.length>1?parts[parts.length-2]:'';
@@ -1099,8 +1115,7 @@ function renderProfilFavs(favs){
     var candidates=p.candidates.slice();
     item.innerHTML='<img class="'+imgClass+'" src="'+escapeHtml(candidates.shift())+'" alt="'+escapeHtml(f)+'" loading="lazy">'
       +'<div class="'+initClass+'" style="display:none">'+escapeHtml(p.initials)+'</div>'
-      +'<div class="profil-fav-name">'+
-      ((/straub/i.test(f)&&/huillet/i.test(f))?'Straub/Huillet':escapeHtml(formatFavName(f)))+'</div>';
+      +'<div class="profil-fav-name">'+escapeHtml(formatFavName(f))+'</div>';
     var favImg=item.querySelector('img');
     favImg.addEventListener('error',function(){
       if(candidates.length){this.src=candidates.shift();return;}
@@ -5003,14 +5018,8 @@ function openFicheThematique(themeNom){
 
       var headerEl = document.createElement('div'); headerEl.className = 'prop-card-header';
 
-      if(p.photo_tmdb){
-        var photoImg = document.createElement('img');
-        photoImg.className = 'prop-photo';
-        photoImg.alt = ''; photoImg.loading = 'lazy';
-        photoImg.src = 'https://image.tmdb.org/t/p/w92' + p.photo_tmdb;
-        photoImg.onerror = function(){ photoImg.remove(); };
-        headerEl.appendChild(photoImg);
-      }
+      var photoImg = tcProposalPhotoImg(p.nom, p.prenom, p.photo_tmdb, 'prop-photo');
+      if(photoImg) headerEl.appendChild(photoImg);
 
       var infoEl = document.createElement('div'); infoEl.className = 'prop-card-info';
 
