@@ -302,14 +302,52 @@
 .jp-scene-fleche-d { right: 0; }
 
 /* Voile de resultat pose sur l'image : trouve / epuise */
-.jp-scene-voile {
-  position: absolute; inset: 0;
-  display: none; align-items: center; justify-content: center;
-  background: rgba(13, 13, 13, 0.72);
-  font-family: var(--font-names); font-size: 26px; color: #f0ece3;
-  text-align: center; padding: 1.5rem; z-index: 3;
+/* ── LA BANDE DU FILM TROUVÉ (point 1) ─────────────────────────────────── */
+/* Une bande au bas de l'image, pas un voile par-dessus : on veut lire le
+   titre ET continuer à voir le photogramme. Le dégradé rend le texte lisible
+   sur un plan clair comme sur un plan sombre, sans cacher le film. */
+.jp-trouve {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  /* 64 px a droite : la loupe du plein ecran occupe ce coin (44 px + 10 px
+     de marge). Sans cette reserve, un titre long passait dessous. */
+  padding: 34px 64px 12px;
+  text-align: center;
+  background: linear-gradient(to top,
+    rgba(10, 8, 6, 0.92) 0%, rgba(10, 8, 6, 0.78) 46%, rgba(10, 8, 6, 0) 100%);
+  pointer-events: none;
 }
-.jp-scene-voile.jp-montre { display: flex; }
+.jp-trouve[hidden] { display: none; }
+.jp-trouve-titre {
+  font-family: var(--font-names);
+  font-size: clamp(19px, 2.4vw, 27px);
+  line-height: 1.2;
+  color: #f7f3ec;
+}
+.jp-trouve-par {
+  font-family: var(--font);
+  font-size: clamp(13px, 1.3vw, 15px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ambre);
+}
+/* Chez l'animateur, avant que quiconque ait trouvé : c'est le titre attendu,
+   pas encore une trouvaille. On le dit en retrait. */
+.jp-trouve-attendu .jp-trouve-titre { color: rgba(247, 243, 236, 0.78); }
+.jp-trouve-attendu .jp-trouve-par { color: rgba(247, 243, 236, 0.5); }
+
+.jp-plein-trouve {
+  bottom: max(12px, env(safe-area-inset-bottom));
+  padding-bottom: 14px;
+  /* En grand, rien n'occupe le bas de l'ecran : le titre peut s'etaler. */
+  padding-left: 24px;
+  padding-right: 24px;
+}
 
 /* ── Les indices ────────────────────────────────────────────────────────── */
 .jp-indices { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -528,6 +566,16 @@
 .jp-marche-2 { border-top: 4px solid var(--jp-noir); }
 .jp-marche-3 { border-top: 4px solid var(--border); }
 .jp-marche .jp-pastille { width: 54px; height: 54px; font-size: 18px; margin: 0 auto 10px; }
+
+/* Les coupes : or, argent, bronze. La couleur EST l'information, elle est
+   donc doublée d'un texte « 1ʳᵉ place » lu par les lecteurs d'écran. */
+.jp-coupe { display: block; margin: 0 auto 6px; }
+.jp-coupe-1 { color: #c9a227; }
+.jp-coupe-2 { color: #8e9499; }
+.jp-coupe-3 { color: #a06a30; }
+.dark .jp-coupe-1 { color: #e0bb3f; }
+.dark .jp-coupe-2 { color: #b9c0c6; }
+.dark .jp-coupe-3 { color: #c08447; }
 .jp-marche-nom { font-family: var(--font-names); font-size: 19px; color: var(--text); line-height: 1.3; }
 .jp-marche-pts { font-family: var(--font-names); font-size: 26px; color: var(--rouge-texte); margin-top: 5px; }
 .jp-marche-det { font-family: var(--font); font-size: 14px; color: var(--brun-pale); margin-top: 3px; }
@@ -753,7 +801,7 @@
      repousse tout le jeu vers le bas. Le nom reste lisible dans le
      classement ; ici, il ne sert a rien. Regle limitee a cette page :
      photogramme.css n'est charge que par elle. */
-  .header-user { display: none !important; }
+  .jp-nav-user { display: none !important; }
 }
 
 /* Mouvement reduit : on garde les changements d'etat, on retire le mouvement.
@@ -858,7 +906,7 @@
   .jp-scene-loupe:hover, .jp-scene-loupe:focus-visible { transform: none; }
 }
 
-/* ── JOURNAL DES TROUVAILLES (point 7) ─────────────────────────────────── */
+/* ── LE PANNEAU « FILMS TROUVÉS » (points 3 et 7) ──────────────────────── */
 .jp-journal { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; }
 .jp-journal-ligne {
   display: flex;
@@ -869,7 +917,7 @@
   border-bottom: 1px solid var(--border-dim);
 }
 .jp-journal-ligne:last-child { border-bottom: 0; }
-.jp-journal-moi .jp-journal-txt { font-weight: 700; }
+.jp-journal-moi .jp-journal-titre { font-weight: 700; }
 .jp-journal-num {
   flex: 0 0 auto;
   min-width: 22px;
@@ -881,7 +929,15 @@
   border-radius: 3px;
   padding: 1px 4px;
 }
-.jp-journal-txt { color: var(--text); }
+.jp-journal-corps { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.jp-journal-titre { color: var(--text); font-family: var(--font-names); font-size: 15px; line-height: 1.25; }
+.jp-journal-par {
+  font-family: var(--font);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
 
 /* Texte reserve aux lecteurs d'ecran : hors de l'ecran, mais bien lu. */
 .jp-lu-seulement {
@@ -909,7 +965,6 @@
   pointer-events: none;
 }
 .jp-verdict-tombe { color: var(--brun-pale); font-style: italic; }
-.jp-journal-txt { color: var(--text); }
 
 /* ── LA DISCUSSION (point 10) ───────────────────────────────────────────── */
 .jp-chat {
@@ -988,4 +1043,62 @@
 
 @media (prefers-reduced-motion: reduce) {
   .jp-chat-retirer { transition: none; opacity: 1; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   L'EN-TÊTE DE LA PAGE  (point 7)
+   ════════════════════════════════════════════════════════════════════════
+   Cette page reprenait le balisage de « submit.html », dont les styles
+   d'en-tête sont écrits en dur DANS submit.html. Résultat ici : le bouton
+   « Déconnexion » s'affichait tel que le navigateur le dessine (gris, Arial,
+   avec son cadre), et le bouton du mode sombre, prévu pour un fond noir,
+   était crème sur crème — donc invisible.
+
+   L'en-tête reprend désormais celui de l'index : barre tripartite, logo au
+   carré rouge, et navigation en blocs. Ce qui suit habille les deux éléments
+   que l'index n'a pas — la mention « Connecté en tant que » et les boutons —
+   pour qu'ils tombent exactement dans le même moule que « .nav a ». */
+
+.jp-nav { align-items: stretch; }
+
+.jp-nav-user,
+.jp-nav-btn {
+  font-family: var(--font);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--brun);
+  padding: 7px 16px;
+  border-left: 1px solid var(--border);
+  background: none;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* « Connecte en tant que » et le nom sont deux elements : sans cet ecart,
+   un conteneur « flex » les colle l'un a l'autre, l'espace du HTML etant
+   mange par la mise en page. */
+.jp-nav-user { font-style: italic; gap: 0.33em; }
+.jp-nav-user strong { font-style: normal; font-weight: 600; color: var(--text); }
+
+.jp-nav-btn { cursor: pointer; transition: background 0.2s, color 0.2s; }
+.jp-nav-btn:hover { background: var(--rouge); color: var(--bg); }
+
+/* Les deux icônes : une cible carrée, et pas de fond rouge au survol —
+   le dessin se contente de changer de couleur, comme sur l'index. */
+.jp-nav-icone { padding-left: 12px; padding-right: 12px; }
+.jp-nav-icone:hover { background: none; color: var(--rouge-texte); }
+.jp-nav-icone .btn-lang-img { opacity: 0.75; transition: opacity 0.2s; }
+.jp-nav-icone:hover .btn-lang-img { opacity: 1; }
+
+@media (max-width: 760px), (pointer: coarse) {
+  /* Même cible de 44 px que les autres entrées de la barre (règle A-153
+     de style.css, qui ne connaît que « .nav a »). */
+  .jp-nav-btn { min-height: 44px; border-left: none; }
+  .jp-nav-user { border-left: none; }
 }

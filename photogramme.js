@@ -978,7 +978,45 @@ function jpRetirerPhoto(p){
     JP_PHOTOS = JP_PHOTOS.filter(function(x){ return x.id !== p.id; });
     delete JP_SECRETS[String(p.id)];
     jpRendreFiches();
+    // Retirer le 3 d'une serie de cinq laissait 1, 2, 4, 5. On renumerote.
+    jpRenumeroter();
   }, function(e){ jpAlerte('jp-studio-msg', jpErreur(e)); });
+}
+
+// Redonne aux photogrammes les numeros 1, 2, 3… sans trou.
+//
+// POINT DELICAT : deux photogrammes d'une meme partie ne peuvent pas porter
+// le meme numero. On les traite donc du plus petit au plus grand : chaque
+// numero vise vient d'etre libere par celui d'avant, ou l'etait deja. Dans ce
+// sens-la, et dans celui-la seulement, aucune collision n'est possible — on
+// n'a pas besoin des positions de garage de « jpDeplacer », qui, lui, echange
+// deux numeros tous les deux occupes.
+function jpRenumeroter(){
+  var aFaire = [];
+  JP_PHOTOS.forEach(function(x, i){
+    if(x.position !== i + 1) aFaire.push({ photo: x, vise: i + 1 });
+  });
+  if(!aFaire.length) return Promise.resolve();
+
+  var suite = Promise.resolve();
+  aFaire.forEach(function(w){
+    suite = suite.then(function(){
+      return JP_SB.from('jeu_photogrammes').update({ position: w.vise }).eq('id', w.photo.id)
+        .then(function(r){
+          if(r && r.error) throw tcSbError(r.error, 'jeu_photogrammes/renumerotation');
+          w.photo.position = w.vise;
+        });
+    });
+  });
+  return suite.then(function(){
+    jpRendreFiches();
+  }, function(e){
+    // La renumerotation a echoue a mi-chemin : on le dit, et on redessine
+    // ce que la base contient reellement plutot que de laisser croire a un
+    // ordre qui n'existe pas.
+    jpAlerte('jp-studio-msg', jpErreur(e));
+    if(JP_BROUILLON) jpChargerPhotosStudio(JP_BROUILLON.id).catch(function(){});
+  });
 }
 
 
@@ -1223,7 +1261,8 @@ function jpQuitterPartie(){
   JP_MESSAGES = [];
   JP_CHAT_CHARGE = false;
   JP_REVELE = {};
-  JP_JOURNAL = [];
+  JP_TROUVES_EN_VOL = false;
+  JP_TROUVES_A_REFAIRE = false;
   JP_JETON++;
   ['jp-gerer-avant', 'jp-gerer-resultats'].forEach(function(id){
     var b = jpEl(id);
@@ -1409,6 +1448,12 @@ function jpChargerJeu(jeton){
     jpChargerScores();
     if(jpSuisCreateur()) jpChargerArbitrage();
     if(JP_ETAT === 'en_cours') jpPreparerJeu();
+    // Ce qui est deja tombe, pour qui arrive en cours de partie ou recharge
+    // la page : sans cela, il chercherait des photogrammes finis. Une fois
+    // la liste connue, on le place sur le premier photogramme encore en jeu.
+    jpChargerTrouves().then(function(){
+      if(jeton === JP_JETON && JP_ETAT === 'en_cours') jpAllerPhoto(jpPremierNonTrouve());
+    });
   }).catch(function(e){
     if(jeton !== JP_JETON) return;
     var at = jpEl('jp-scene-attente');
@@ -1537,7 +1582,7 @@ function jpAllerPhoto(i){
 
   jpRendreIndices(p);
   jpRendreVerdictCourant(p);
-  jpRendreVoile(p);
+  jpRendreTrouve(p);
   jpMajPlein();
 
   jpMajSaisie(p, true);
@@ -1559,6 +1604,7 @@ function jpOuvrirPlein(){
   img.alt = t('jp_photogramme_n', p.position);
   voile.hidden = false;
   JP_PLEIN = true;
+  jpRendrePleinBande(p);
   var fermer = jpEl('jp-plein-fermer');
   if(fermer) fermer.focus();
   jpAnnoncer(t('jp_agrandi', p.position));
@@ -1584,33 +1630,63 @@ function jpMajPlein(){
   var p = JP_PHOTOS[JP_IDX];
   var img = jpEl('jp-plein-img');
   if(p && img){ img.src = JP_URLS[String(p.id)] || ''; img.alt = t('jp_photogramme_n', p.position); }
+  jpRendrePleinBande(p);
 }
 
-function jpRendreVoile(p){
-  var voile = jpEl('jp-voile');
-  var m = JP_MES[String(p.id)];
-  var createur = jpSuisCreateur();
-  if(createur && JP_SECRETS[String(p.id)]){
-    voile.textContent = JP_SECRETS[String(p.id)].titre_attendu;
-    voile.classList.remove('jp-montre');
-    return;
-  }
-  var tombe = jpTombeParUnAutre(p);
-  if(tombe && tombe.titre){
-    // Trouve par un autre : le titre reste affiche. Il n'y a plus rien a
-    // chercher ici, autant le lire.
-    voile.textContent = tombe.titre;
-    voile.classList.add('jp-montre');
-    return;
-  }
-  if(m && m.statut === 'accepte'){
-    voile.textContent = '✓ ' + m.texte;
-    voile.classList.add('jp-montre');
-    // Le voile s'efface tout seul : on veut revoir l'image, pas la reponse.
-    setTimeout(function(){ voile.classList.remove('jp-montre'); }, 1100);
-  } else {
-    voile.classList.remove('jp-montre');
-  }
+// La meme bande qu'en petit : un photogramme trouve le dit aussi en grand.
+function jpRendrePleinBande(p){
+  var bande = jpEl('jp-plein-trouve');
+  if(!bande) return;
+  jpVider(bande);
+  var r = p && JP_REVELE[p.position];
+  var sec = p && JP_SECRETS[String(p.id)];
+  var titre = r ? r.titre : (jpSuisCreateur() && sec ? sec.titre_attendu : '');
+  if(!titre){ bande.hidden = true; return; }
+  bande.hidden = false;
+  var t1 = document.createElement('span');
+  t1.className = 'jp-trouve-titre';
+  t1.textContent = titre;
+  bande.appendChild(t1);
+  var t2 = document.createElement('span');
+  t2.className = 'jp-trouve-par';
+  t2.textContent = r
+    ? (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom))
+    : t('jp_bande_attendu');
+  bande.appendChild(t2);
+}
+
+// Le bandeau pose sur l'image (point 1). Des qu'un photogramme est trouve,
+// il porte le TITRE ATTENDU et le NOM de celui qui l'a donne, et il y reste :
+// c'est a cela que les autres voient, sans rien lire ailleurs, que ce
+// photogramme est fini.
+//
+// Il ne recouvre pas l'image : une bande en bas, assez sombre pour que le
+// texte se lise sur n'importe quel plan. On veut l'information ET le film.
+function jpRendreTrouve(p){
+  var bande = jpEl('jp-trouve');
+  if(!bande) return;
+  jpVider(bande);
+  var r = p && JP_REVELE[p.position];
+  var sec = p && JP_SECRETS[String(p.id)];
+
+  // L'animateur voit le titre attendu des le debut : c'est lui qui arbitre.
+  // Tant que personne n'a trouve, la bande le dit ainsi ; des qu'un joueur
+  // trouve, elle devient la bande de tout le monde.
+  var titre = r ? r.titre : (jpSuisCreateur() && sec ? sec.titre_attendu : '');
+  if(!titre){ bande.hidden = true; return; }
+
+  bande.hidden = false;
+  bande.className = 'jp-trouve' + (r ? '' : ' jp-trouve-attendu');
+  var t1 = document.createElement('span');
+  t1.className = 'jp-trouve-titre';
+  t1.textContent = titre;
+  bande.appendChild(t1);
+  var t2 = document.createElement('span');
+  t2.className = 'jp-trouve-par';
+  t2.textContent = r
+    ? (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom))
+    : t('jp_bande_attendu');
+  bande.appendChild(t2);
 }
 
 function jpRendreIndices(p){
@@ -1637,22 +1713,19 @@ function jpRendreVerdictCourant(p){
   var v = jpEl('jp-verdict');
   v.className = 'jp-verdict';
   if(jpSuisCreateur()){
-    // L'animateur a besoin du titre sous les yeux : c'est lui qui arbitre, et
-    // qui decide de lacher un indice.
-    var sec = JP_SECRETS[String(p.id)];
-    txt.textContent = t('jp_vous_animez') + (sec ? ' ' + t('jp_attendu') + ' ' + sec.titre_attendu : '');
+    // L'animateur a le titre attendu sous les yeux, mais sur la bande posee
+    // au bas de l'image : inutile de le repeter ici.
+    txt.textContent = t('jp_vous_animez');
     ess.textContent = '';
     return;
   }
   // Tombe par quelqu'un d'autre : la course est finie pour ce photogramme.
-  // On donne le titre et le nom, et on ferme la saisie — c'est le principe
-  // de l'option retenue : le premier marque, les autres savent.
+  // Le titre et le nom sont sur la bande, au bas de l'image ; ici on dit
+  // seulement qu'il n'y a plus rien a chercher, et on ferme la saisie.
   var tombe = jpTombeParUnAutre(p);
   if(tombe){
     v.classList.add('jp-verdict-tombe');
-    txt.textContent = tombe.titre
-      ? t('jp_tombe_titre', [tombe.nom, tombe.titre])
-      : t('jp_tombe', tombe.nom);
+    txt.textContent = t('jp_tombe', tombe.nom);
     ess.textContent = '';
     return;
   }
@@ -1713,8 +1786,7 @@ function jpRepondre(){
       v.classList.add('jp-verdict-ok');
       txt.textContent = t('jp_bravo', d.points || 0);
       jpAnnoncer(t('jp_bravo', d.points || 0));
-      jpAnnoncerTrouvaille(p.position, texte);
-      jpRendreVoile(p);
+      jpAnnoncerTrouvaille(p.position);
       // On enchaine : le joueur n'a pas a chercher lui-meme l'image
       // suivante. 850 ms, le temps de voir le vert.
       setTimeout(function(){
@@ -1986,26 +2058,10 @@ function jpAbonner(){
     if(p.e) jpBulle(p.e, p.n);
   });
 
+  // Un photogramme vient de tomber : on ne croit pas l'annonce sur parole,
+  // elle sert seulement de signal. C'est la base qui dit QUOI et PAR QUI.
   JP_CANAL.on('broadcast', { event: 'trouvaille' }, function(msg){
-    var d = msg.payload || {};
-    if(d.p && d.n) jpNoterTrouvaille(d.p, d.n, d.t, false);
-  });
-
-  // Qui arrive en cours de route — ou dont la connexion a saute — n'a pas
-  // entendu les annonces precedentes. Il demande l'etat, et le premier qui
-  // l'a le lui donne. Sans cela, l'option « course » ne tiendrait pas : un
-  // retardataire chercherait des photogrammes deja tombes.
-  JP_CANAL.on('broadcast', { event: 'etat-demande' }, function(){
-    var connus = Object.keys(JP_REVELE);
-    if(!connus.length) return;
-    try{ JP_CANAL.send({ type: 'broadcast', event: 'etat-reponse', payload: { r: JP_REVELE } }); }catch(e){}
-  });
-
-  JP_CANAL.on('broadcast', { event: 'etat-reponse' }, function(msg){
-    var r = (msg.payload || {}).r || {};
-    Object.keys(r).forEach(function(pos){
-      if(r[pos] && r[pos].nom) jpNoterTrouvaille(Number(pos), r[pos].nom, r[pos].titre, false);
-    });
+    if((msg.payload || {}).p) jpChargerTrouves();
   });
 
   JP_CANAL.on('postgres_changes',
@@ -2025,7 +2081,6 @@ function jpAbonner(){
     // (ou non connecte, qui ne s'annonce pas) resterait devant un panneau
     // vide, sans meme le « personne pour l'instant ».
     jpRendrePresents();
-    try{ JP_CANAL.send({ type: 'broadcast', event: 'etat-demande', payload: {} }); }catch(e){}
     if(jpConnecte()){
       try{
         JP_CANAL.track({
@@ -2038,59 +2093,102 @@ function jpAbonner(){
   });
 }
 
-// ── LE JOURNAL DES TROUVAILLES (point 7) ───────────────────────────────────
-// La table des reponses n'est lisible que par son auteur et par l'animateur :
-// c'est voulu, cela empeche de lire les trouvailles des autres dans la base.
-// Pour que tout le monde sache quand meme QUI a trouve QUOI, celui qui trouve
-// l'annonce lui-meme sur le canal de la partie — le meme mecanisme que les
-// smileys. C'est declaratif : rien n'est accorde ni compte sur cette base,
-// les points restent calcules par le serveur.
-var JP_JOURNAL = [];
-
-// Un photogramme « tombe » : position -> { nom, titre }. Des que quelqu'un
-// trouve, le titre est dit a toute la table et le photogramme sort du jeu —
-// c'est une course, le premier marque.
+// ── LES FILMS TROUVÉS (points 1, 3 et 7) ────────────────────────
+// Dès qu'un photogramme tombe, trois choses doivent être vraies pour TOUT LE
+// MONDE : le titre attendu s'affiche, le nom de qui l'a trouvé aussi, et le
+// photogramme sort du jeu — c'est une course, le premier marque.
 //
-// Ces titres ne peuvent PAS venir de la base : la table des reponses n'est
-// lisible que par son auteur, et celle des titres attendus que par
-// l'animateur. C'est donc celui qui trouve qui l'annonce sur le canal, et
-// son texte fait foi puisque le serveur vient de l'accepter.
-var JP_REVELE = {};
+// D'où vient le titre. PAS du joueur qui a trouvé : il a pu écrire une
+// variante (« Breathless » pour « À bout de souffle »), et celui qui arrive
+// en retard ou qui recharge la page n'aurait rien entendu. Il vient de la
+// base, par « jeu_trouves », qui ne rend que les photogrammes DÉJÀ tombes —
+// les seuls dont le titre ne soit plus un secret.
+//
+// L'annonce sur le canal ne sert donc plus qu'à une chose : prévenir les
+// autres tout de suite, sans attendre la relecture périodique.
+var JP_REVELE = {};              // position -> { nom, titre }
+var JP_TROUVES_EN_VOL = false;   // une relecture est deja en route
+var JP_TROUVES_A_REFAIRE = false;// une annonce est arrivee pendant celle-ci
 
 // La saisie m'est-elle ouverte dans cette partie ? (l'animateur ne joue pas,
 // un visiteur non connecte non plus). Retenu pour ne pas rouvrir par
 // megarde un champ que l'etat de la partie avait ferme.
 var JP_SAISIE_OUVERTE = false;
 
-function jpAnnoncerTrouvaille(position, titre){
-  var nom = JP_MOI ? formatContribNamePlain(JP_MOI.display_name) : '';
-  if(JP_CANAL && nom){
+function jpAnnoncerTrouvaille(position){
+  if(JP_CANAL){
     try{
-      JP_CANAL.send({
-        type: 'broadcast', event: 'trouvaille',
-        payload: { p: position, n: nom, t: titre || '' }
-      });
-    }catch(e){ /* le journal est un agrement : son echec ne gene pas la partie */ }
+      JP_CANAL.send({ type: 'broadcast', event: 'trouvaille', payload: { p: position } });
+    }catch(e){ /* l'annonce est un agrement : son echec ne gene pas la partie */ }
   }
-  jpNoterTrouvaille(position, nom, titre, true);
+  jpChargerTrouves();
 }
 
-function jpNoterTrouvaille(position, nom, titre, moi){
-  if(!position || !nom) return;
-  if(JP_REVELE[position]) return;          // deja tombe : on n'empile pas
-  JP_REVELE[position] = { nom: nom, titre: titre || '' };
-  JP_JOURNAL.unshift({ p: position, n: nom, t: titre || '', moi: !!moi, at: jpMaintenant() });
-  if(JP_JOURNAL.length > 40) JP_JOURNAL.length = 40;
-  jpRendreJournal();
+// Relit la liste des photogrammes tombes. C'est la base qui fait foi.
+//
+// Deux annonces peuvent tomber coup sur coup. On n'en lance pas deux a la
+// fois : la seconde se contente de demander une relecture de plus des que la
+// premiere est revenue — sans quoi une trouvaille pouvait etre perdue.
+function jpChargerTrouves(){
+  if(!JP_PARTIE) return Promise.resolve();
+  if(JP_TROUVES_EN_VOL){ JP_TROUVES_A_REFAIRE = true; return Promise.resolve(); }
+  JP_TROUVES_EN_VOL = true;
+  JP_TROUVES_A_REFAIRE = false;
+  var jeton = JP_JETON;
+  var fini = function(){
+    JP_TROUVES_EN_VOL = false;
+    if(JP_TROUVES_A_REFAIRE && jeton === JP_JETON){
+      JP_TROUVES_A_REFAIRE = false;
+      jpChargerTrouves();
+    }
+  };
+  return JP_SB.rpc('jeu_trouves', { p_session_id: JP_PARTIE.id }).then(function(r){
+    if(jeton === JP_JETON && r && !r.error) jpNoterTrouves(r.data || []);
+    fini();
+  }, fini);
+}
+
+function jpNoterTrouves(lignes){
+  var neuves = [];
+  (lignes || []).forEach(function(x){
+    var pos = Number(x && x.pos);
+    if(!pos) return;
+    if(!JP_REVELE[pos]) neuves.push(pos);
+    JP_REVELE[pos] = {
+      nom: x.nom ? formatContribNamePlain(x.nom) : '',
+      titre: x.titre || ''
+    };
+  });
+  jpRendreTrouves();
   jpMajVignettesRevelees();
   var courant = JP_PHOTOS[JP_IDX];
-  if(courant && courant.position === position){
+  if(courant){
     jpRendreVerdictCourant(courant);
-    jpRendreVoile(courant);
+    jpRendreTrouve(courant);
     jpMajSaisie(courant, false);
   }
-  if(!moi) jpAnnoncer(titre ? t('jp_journal_ligne_titre', [nom, position, titre])
-                            : t('jp_journal_ligne', [nom, position]));
+  jpMajPlein();
+  // Pour qui ne voit pas l'ecran : on annonce ce qui vient de tomber, sauf
+  // ce que l'on vient de trouver soi-meme (deja annonce par le verdict).
+  neuves.forEach(function(pos){
+    var ph = jpPhotoPosition(pos);
+    if(ph && jpTrouveParMoi(ph)) return;
+    var r = JP_REVELE[pos];
+    jpAnnoncer(r.titre ? t('jp_journal_ligne_titre', [r.nom, pos, r.titre])
+                       : t('jp_journal_ligne', [r.nom, pos]));
+  });
+}
+
+function jpPhotoPosition(pos){
+  for(var i = 0; i < JP_PHOTOS.length; i++){
+    if(JP_PHOTOS[i].position === pos) return JP_PHOTOS[i];
+  }
+  return null;
+}
+
+function jpTrouveParMoi(p){
+  var m = p && JP_MES[String(p.id)];
+  return !!(m && m.statut === 'accepte');
 }
 
 // Un photogramme tombe se ferme pour tout le monde : sa vignette le montre,
@@ -2129,20 +2227,24 @@ function jpMajSaisie(p, replacerLeCurseur){
 function jpTombeParUnAutre(p){
   var r = p && JP_REVELE[p.position];
   if(!r) return null;
-  var m = JP_MES[String(p.id)];
-  if(m && m.statut === 'accepte') return null;   // c'est moi qui l'ai trouve
+  if(jpTrouveParMoi(p)) return null;   // c'est moi qui l'ai trouve
   return r;
 }
 
-function jpRendreJournal(){
+// Le panneau de droite : les films trouves, dans l'ordre des photogrammes
+// (et non dans l'ordre des decouvertes), avec le titre ATTENDU.
+function jpRendreTrouves(){
   var ul = jpEl('jp-journal');
   var vide = jpEl('jp-journal-vide');
   if(!ul) return;
   jpVider(ul);
-  if(vide) vide.style.display = JP_JOURNAL.length ? 'none' : '';
-  JP_JOURNAL.forEach(function(x){
+  var n = 0;
+  JP_PHOTOS.forEach(function(p){
+    var r = JP_REVELE[p.position];
+    if(!r) return;
+    n++;
     var li = document.createElement('li');
-    li.className = 'jp-journal-ligne' + (x.moi ? ' jp-journal-moi' : '');
+    li.className = 'jp-journal-ligne' + (jpTrouveParMoi(p) ? ' jp-journal-moi' : '');
     // La pastille porte le numero pour l'oeil ; elle ne dit rien a un lecteur
     // d'ecran, qui recevrait « 3 » sans savoir de quoi il s'agit. On la lui
     // cache, et on lui donne la phrase entiere dans un texte invisible.
@@ -2152,20 +2254,30 @@ function jpRendreJournal(){
     var num = document.createElement('span');
     num.className = 'jp-journal-num';
     num.setAttribute('aria-hidden', 'true');
-    num.textContent = x.p;
+    num.textContent = p.position;
     li.appendChild(num);
-    var txt = document.createElement('span');
-    txt.className = 'jp-journal-txt';
-    txt.setAttribute('aria-hidden', 'true');
-    txt.textContent = x.t ? t('jp_journal_nom_titre', [x.n, x.t]) : t('jp_journal_nom', x.n);
-    li.appendChild(txt);
+
+    var corps = document.createElement('span');
+    corps.className = 'jp-journal-corps';
+    corps.setAttribute('aria-hidden', 'true');
+    var ti = document.createElement('span');
+    ti.className = 'jp-journal-titre';
+    ti.textContent = r.titre || t('jp_journal_sans_titre');
+    corps.appendChild(ti);
+    var par = document.createElement('span');
+    par.className = 'jp-journal-par';
+    par.textContent = jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom);
+    corps.appendChild(par);
+    li.appendChild(corps);
+
     var lu = document.createElement('span');
     lu.className = 'jp-lu-seulement';
-    lu.textContent = x.t ? t('jp_journal_ligne_titre', [x.n, x.p, x.t])
-                         : t('jp_journal_ligne', [x.n, x.p]);
+    lu.textContent = r.titre ? t('jp_journal_ligne_titre', [r.nom, p.position, r.titre])
+                             : t('jp_journal_ligne', [r.nom, p.position]);
     li.appendChild(lu);
     ul.appendChild(li);
   });
+  if(vide) vide.style.display = n ? 'none' : '';
 }
 
 function jpRendrePresents(){
@@ -2239,7 +2351,7 @@ function jpSurReponse(ligne, type){
         jpAnnoncer(t('jp_arbitre_accepte'));
         var ph = null;
         for(var z = 0; z < JP_PHOTOS.length; z++){ if(String(JP_PHOTOS[z].id) === k){ ph = JP_PHOTOS[z]; break; } }
-        if(ph) jpAnnoncerTrouvaille(ph.position, ligne.texte);
+        if(ph) jpAnnoncerTrouvaille(ph.position);
       }
     }
   }
@@ -2279,6 +2391,7 @@ setInterval(function(){
     jpRendreClassement('jp-rangs');
     jpMajScoreBandeau();
   }, function(){});
+  jpChargerTrouves();
 }, 15000);
 
 // Le retour d'un onglet mis en veille : le navigateur a pu couper le direct
@@ -2292,6 +2405,7 @@ document.addEventListener('visibilitychange', function(){
     jpRendreClassement('jp-rangs');
     jpMajScoreBandeau();
   }, function(){});
+  jpChargerTrouves();
 });
 
 
@@ -2579,6 +2693,11 @@ function jpRendrePodium(){
     var g = JP_GENS[String(s.contributor_id)] || {};
     var d = document.createElement('div');
     d.className = 'jp-marche jp-marche-' + (i + 1);
+    d.appendChild(jpCoupe(i + 1));
+    var place = document.createElement('span');
+    place.className = 'jp-lu-seulement';
+    place.textContent = t('jp_place', i + 1);
+    d.appendChild(place);
     d.appendChild(jpPastille(g, 54));
     var nom = document.createElement('div');
     nom.className = 'jp-marche-nom';
@@ -2594,6 +2713,42 @@ function jpRendrePodium(){
     d.appendChild(det);
     zone.appendChild(d);
   });
+}
+
+// Les coupes du podium (point 5) : or, argent, bronze. Un dessin plutot
+// qu'un emoji — un emoji garde la couleur que lui donne le systeme, et c'est
+// justement la couleur qui porte le sens ici.
+function jpCoupe(rang){
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '30');
+  svg.setAttribute('height', '30');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('class', 'jp-coupe jp-coupe-' + rang);
+  ['M6 2.6h12V8a6 6 0 0 1-12 0V2.6Z',
+   'M11 13.6h2v2.8h-2z',
+   'M9.3 16.4h5.4l.9 3.1H8.4z',
+   'M7.4 19.5h9.2v1.9H7.4z'].forEach(function(d){
+    var pa = document.createElementNS(NS, 'path');
+    pa.setAttribute('d', d);
+    pa.setAttribute('fill', 'currentColor');
+    svg.appendChild(pa);
+  });
+  var anses = document.createElementNS(NS, 'path');
+  anses.setAttribute('d', 'M6 4.4H3.4v1.7A3.6 3.6 0 0 0 7 9.7M18 4.4h2.6v1.7A3.6 3.6 0 0 1 17 9.7');
+  anses.setAttribute('fill', 'none');
+  anses.setAttribute('stroke', 'currentColor');
+  anses.setAttribute('stroke-width', '1.5');
+  svg.appendChild(anses);
+  return svg;
+}
+
+// « Anne », « Anne et Bruno », « Anne, Bruno et Claire ».
+function jpListeNoms(noms){
+  if(noms.length <= 1) return noms[0] || '';
+  return noms.slice(0, -1).join(', ') + ' ' + t('jp_et') + ' ' + noms[noms.length - 1];
 }
 
 function jpRendreSolutions(solutions, stats){
@@ -2632,9 +2787,16 @@ function jpRendreSolutions(solutions, stats){
     if(st){
       var ligne = document.createElement('div');
       ligne.className = 'jp-solution-stat';
-      ligne.textContent = st.trouve_par === 0
-        ? t('jp_personne_trouve')
-        : t('jp_trouve_par', [st.trouve_par, joueurs]);
+      var noms = (st.trouveurs || []).map(function(n){ return formatContribNamePlain(n); });
+      if(!st.trouve_par){
+        ligne.textContent = t('jp_personne_trouve');
+      } else if(noms.length){
+        ligne.textContent = t('jp_trouve_par', jpListeNoms(noms));
+      } else {
+        // La base compte des reponses acceptees mais ne rend aucun nom (une
+        // fiche effacee, par exemple) : on s'en tient au nombre.
+        ligne.textContent = t('jp_trouve_par_n', [st.trouve_par, joueurs]);
+      }
       corps.appendChild(ligne);
     }
     var mien = JP_MES[k];

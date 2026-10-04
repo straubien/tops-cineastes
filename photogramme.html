@@ -32,25 +32,31 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="header-bar">
-    <div class="header-bar-main"></div>
-    <div class="header-bar-end"></div>
+<!-- L'en-tete reprend celui de l'index : meme barre tripartite, meme logo,
+     meme barre de navigation en blocs. Jusqu'ici cette page reprenait le
+     balisage de « submit.html » SANS reprendre ses styles, qui y sont ecrits
+     en dur : le bouton « Deconnexion » s'affichait donc tel que le navigateur
+     le dessine, et le bouton du mode sombre, en creme sur creme, etait
+     invisible. -->
+<header class="header">
+  <div class="header-geo-bar">
+    <div class="hgb-main"></div>
+    <div class="hgb-red"></div>
+    <div class="hgb-end"></div>
   </div>
   <div class="header-inner">
-    <div style="display:flex;align-items:center;gap:20px">
-      <a class="logo" href="index.html">TOPS<span>/</span>CINÉASTES</a>
-    </div>
-    <div style="display:flex;align-items:center;gap:16px">
-      <div class="header-user" id="header-user" style="display:none">
+    <a class="logo" href="index.html">TOPS<span class="slash-sq">/</span>CINÉASTES</a>
+    <nav class="nav jp-nav">
+      <a href="index.html" data-i18n="nav_index">Index</a>
+      <span class="jp-nav-user" id="header-user" style="display:none">
         <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
-      </div>
-      <button class="btn-logout" id="btn-logout" style="display:none" data-i18n="btn_logout">Déconnexion</button>
-      <button id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" data-i18n-aria="aria_mode_sombre" aria-label="Activer/désactiver le mode sombre" style="background:none;border:none;cursor:pointer;color:rgba(240,236,227,0.7);padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
-      <button class="btn-lang" id="btn-lang" title="Switch to English" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block;opacity:0.7"></button>
-    </div>
+      </span>
+      <button type="button" class="jp-nav-btn" id="btn-logout" style="display:none" data-i18n="nav_se_deconnecter">Se déconnecter</button>
+      <button type="button" class="jp-nav-btn jp-nav-icone" id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" data-i18n-aria="aria_mode_sombre" aria-label="Activer/désactiver le mode sombre"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
+      <button type="button" class="jp-nav-btn jp-nav-icone btn-lang" id="btn-lang" title="Switch to English"><img src="english.gif" alt="EN" class="btn-lang-img" style="display:block"></button>
+    </nav>
   </div>
-</div>
+</header>
 
 <!-- Zone d'annonce pour les lecteurs d'écran : le chrono, les verdicts et
      les changements de classement y sont écrits en clair. Sans elle, tout
@@ -216,6 +222,7 @@
          la page entiere, et ne deplace rien quand il s'ouvre. -->
     <div class="jp-plein" id="jp-plein" hidden>
       <img id="jp-plein-img" alt="">
+      <div class="jp-trouve jp-plein-trouve" id="jp-plein-trouve" hidden></div>
       <button class="jp-plein-fermer" id="jp-plein-fermer" type="button" data-i18n-aria="jp_reduire" aria-label="Réduire le photogramme" data-i18n-title="jp_reduire" title="Réduire le photogramme">&#10005;</button>
     </div>
 
@@ -248,7 +255,9 @@
             <img id="jp-image" alt="" style="display:none">
             <div class="jp-scene-attente" id="jp-scene-attente" data-i18n="jp_images_arrivent">Les images arrivent…</div>
             <button class="jp-scene-fleche jp-scene-fleche-d" id="jp-suiv" data-i18n-aria="jp_suivant" aria-label="Photogramme suivant">&#8594;</button>
-            <div class="jp-scene-voile" id="jp-voile"></div>
+            <!-- La bande du film trouvé (point 1) : titre attendu + nom de
+                 celui qui l'a donné, posée au bas de l'image. -->
+            <div class="jp-trouve" id="jp-trouve" hidden></div>
             <button class="jp-scene-loupe" id="jp-loupe" type="button" data-i18n-aria="jp_agrandir" aria-label="Agrandir le photogramme" data-i18n-title="jp_agrandir" title="Agrandir le photogramme">&#9974;</button>
           </div>
 
@@ -300,7 +309,7 @@
 
           <!-- Qui trouve quoi, en direct (point 7). -->
           <div class="jp-panneau" id="jp-panneau-journal">
-            <h2 class="jp-panneau-titre" data-i18n="jp_journal">Les trouvailles</h2>
+            <h2 class="jp-panneau-titre" data-i18n="jp_journal">Films trouvés</h2>
             <ul class="jp-journal" id="jp-journal" aria-live="polite"></ul>
             <p class="jp-aide" id="jp-journal-vide" data-i18n="jp_journal_vide">Personne n'a encore trouvé.</p>
           </div>
