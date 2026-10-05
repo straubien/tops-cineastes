@@ -499,18 +499,18 @@ function jpOuvrirStudio(id){
     JP_SECRETS = {};
     jpEl('jp-f-titre').value = '';
     jpEl('jp-f-desc').value  = '';
-    // Par defaut : ce soir a 21 h, pendant quinze minutes.
+    // Par defaut : ce soir a 20 h, pendant quinze minutes.
     var d = new Date(jpMaintenant());
-    d.setHours(21, 0, 0, 0);
+    d.setHours(20, 0, 0, 0);
     if(d.getTime() <= jpMaintenant()) d.setDate(d.getDate() + 1);
     jpEl('jp-f-debut').value = jpVersChamp(d.toISOString());
     jpEl('jp-f-fin').value   = jpVersChamp(new Date(d.getTime() + 30 * 60000).toISOString());
-    jpEl('jp-f-essais').value    = '5';
-    jpEl('jp-f-tolerance').value = '2';
+    jpEl('jp-f-essais').value    = '0';
+    jpEl('jp-f-tolerance').value = '0';
     jpEl('jp-f-preroll').value   = '0';
     jpEl('jp-f-base').value      = '1';
     jpEl('jp-f-bonus').value     = '0';
-    jpEl('jp-f-live').checked    = false;
+    jpEl('jp-f-live').checked    = true;
     jpEl('jp-f-manuelle').checked = false;
     // Venir d'une partie deja commencee laissait les champs grises : ils y
     // sont desactives, et rien ne les rouvrait pour la partie suivante.
