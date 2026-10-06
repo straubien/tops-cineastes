@@ -350,11 +350,11 @@ tcChargerConsentements();
 // La présence Realtime ci-dessus est volatile : elle disparaît dès que
 // l'onglet est fermé. On la complète par contributors.last_seen_at, écrit
 // périodiquement par le cinéphile connecté (« heartbeat »), pour pouvoir
-// afficher sur la page Index qui s'est connecté au cours des 48 dernières
+// afficher sur la page Index qui s'est connecté au cours des 24 dernières
 // heures. Nécessite la colonne :
 //   alter table public.contributors add column last_seen_at timestamptz;
 // Les policies RLS existantes suffisent (lecture publique, écriture par soi).
-var TC_RECENT_WINDOW_MS=48*60*60*1000; // fenêtre « vu récemment » : 48 h
+var TC_RECENT_WINDOW_MS=24*60*60*1000; // fenêtre « vu récemment » : 24 h
 var TC_LAST_SEEN_INTERVAL_MS=5*60*1000; // écriture du heartbeat : 5 min
 var TC_PRESENCE_TICK_MS=60*1000; // rafraîchit les « il y a X min » affichés
 var TC_LAST_SEEN_RELOAD_MS=10*60*1000; // relecture des last_seen_at : 10 min
@@ -448,7 +448,7 @@ function tcPresencePersonHtml(c,agoLabel){
 }
 
 // Bloc en haut de la page Index : qui est connecté en ce moment (présence
-// Realtime) et qui s'est connecté au cours des 48 dernières heures.
+// Realtime) et qui s'est connecté au cours des 24 dernières heures.
 function tcRenderIndexPresence(){
   var box=document.getElementById('index-presence');
   if(!box)return;
