@@ -10,12 +10,14 @@
 
 var TC_HISTORIC_FLAGS = {
   'cs':  'flags/cs.png',
+  'dr':  'flags/dr.png',
   'su':  'flags/su.png',
   'yu':  'flags/yu.png',
 };
 
 var TC_HISTORIC_LABELS = {
   'cs':  'Tchécoslovaquie',
+  'dr':  'Troisième Reich',
   'su':  'URSS',
   'yu':  'Yougoslavie',
 };
