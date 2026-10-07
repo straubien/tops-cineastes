@@ -794,6 +794,11 @@ function loadData(){
       });
     }).catch(function(){return null;}),
     tcWithRetryTimeout(function(){ return tcLoadCourants(TC_SB); }).catch(function(){return null;}),
+    // Le catalogue des TYPES de courants (courant, catégorie, école, studio…).
+    // Huit lignes, lues une fois : on ne les met pas en cache local, et un
+    // échec n'arrête rien — tcCourantTypeFamille retombe alors sur les deux
+    // types d'origine, exactement comme avant l'existence de cette table.
+    tcWithRetryTimeout(function(){ return tcLoadCourantTypes(TC_SB); }).catch(function(){return null;}),
   ]).then(function(results){
   // PANNE : on prévient, on journalise, on garde ce qui est affiché — et
   // surtout on ne réécrit pas le cache local. Cf. audit A-02.
@@ -2854,7 +2859,10 @@ function tcCourantLabelFromName(nomFr){
 function tcCourantTypeFromName(nomFr){
   if(!nomFr||!DATA||!DATA.courants)return 'courant';
   var row=DATA.courants.find(function(r){return typeof r.nom_fr==='string'&&r.nom_fr.toLowerCase()===nomFr.toLowerCase();});
-  return (row&&row.type==='categorie')?'categorie':'courant';
+  // `row.type` n'est plus forcément 'courant' ou 'categorie' : il peut valoir
+  // 'ecole', 'studio'… On passe donc par la famille (utils.js), qui range
+  // chaque type dans l'un des deux camps.
+  return row?tcCourantTypeFamille(row.type):'courant';
 }
 
 // Items du fil Actualités mis en cache après chargement réseau, pour que les
@@ -5332,7 +5340,10 @@ function openFicheThematique(themeNom){
     var lang = 'fr';
     try{ lang = localStorage.getItem('tc-lang') || 'fr'; }catch(e){}
     var out = (DATA && DATA.courants ? DATA.courants : []).map(function(row){
-      return { value: row.nom_fr, label: (lang === 'en' && row.nom_en) ? row.nom_en : row.nom_fr, type: row.type === 'categorie' ? 'categorie' : 'courant' };
+      // `type` porte ici la FAMILLE ('courant' ou 'categorie') : c'est elle
+      // qui range l'entrée dans l'un des deux groupes de la liste déroulante.
+      // Une « école » ou un « studio » se rangent donc avec les courants.
+      return { value: row.nom_fr, label: (lang === 'en' && row.nom_en) ? row.nom_en : row.nom_fr, type: tcCourantTypeFamille(row.type) };
     });
     out.sort(function(a,b){ return a.label.localeCompare(b.label,'fr'); });
     return out;

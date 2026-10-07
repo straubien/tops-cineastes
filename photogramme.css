@@ -537,6 +537,11 @@
   white-space: nowrap;
 }
 .jp-rang-detail { font-size: 13px; color: var(--brun-pale); margin-left: 5px; }
+/* Quand le barème ne distingue pas « points » et « trouvés », la ligne
+   n'affiche plus qu'un seul nombre : « 2/3 ». Il prend alors la place et la
+   couleur qu'occupaient les points, pour que le classement garde son relief. */
+.jp-rang-pts-simple { color: var(--text); }
+.jp-rang-1 .jp-rang-pts-simple { color: var(--rouge-texte); }
 .jp-rang-neuf { animation: jp-eclair 0.8s ease-out; }
 @keyframes jp-eclair {
   0%   { background: var(--rouge); color: #fff; }
@@ -575,6 +580,12 @@
 .jp-marche-nom { font-family: var(--font-names); font-size: 19px; color: var(--text); line-height: 1.3; }
 .jp-marche-pts { font-family: var(--font-names); font-size: 26px; color: var(--rouge-texte); margin-top: 5px; }
 .jp-marche-det { font-family: var(--font); font-size: 14px; color: var(--brun-pale); margin-top: 3px; }
+/* Même règle qu'au classement : privée de la ligne des points, qui disait la
+   même chose, celle-ci reprend sa taille et sa couleur. */
+.jp-marche-det-seule {
+  font-family: var(--font-names); font-size: 22px;
+  color: var(--rouge-texte); margin-top: 6px;
+}
 
 /* ── Les solutions (apres la fin) ───────────────────────────────────────── */
 .jp-solutions { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
@@ -959,36 +970,72 @@
 }
 .jp-verdict-tombe { color: var(--brun-pale); font-style: italic; }
 
-/* ── LA DISCUSSION (point 10) ───────────────────────────────────────────── */
+/* ── LA DISCUSSION (point 10) ─────────────────────────────────────────────
+   Refondue pour la lisibilité : un nom de 11 px tout en capitales au-dessus
+   d'un texte de 14 px faisait lire l'étiquette avant la phrase, et les lignes
+   séparées par un filet se ressemblaient toutes. Désormais : une bulle par
+   message, l'avatar et l'heure dans l'en-tête, les répliques d'un même auteur
+   groupées, et un panneau deux fois plus haut. */
 .jp-chat {
   list-style: none;
   margin: 0 0 10px;
   padding: 0;
-  max-height: 260px;
+  max-height: 340px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 .jp-chat-ligne {
   position: relative;
-  padding: 5px 0;
-  font-size: 14px;
-  line-height: 1.45;
-  border-bottom: 1px solid var(--border-dim);
+  padding: 7px 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  border-radius: 10px;
 }
-.jp-chat-ligne:last-child { border-bottom: 0; }
+/* Une suite de messages du même auteur : on colle les bulles et on arrondit
+   moins, pour qu'elles se lisent comme un seul tour de parole. */
+.jp-chat-suite { margin-top: -2px; border-top-left-radius: 3px; border-top-right-radius: 3px; }
+/* Mes propres messages : fond teinté plutôt qu'un nom d'une autre couleur.
+   On repère sa place dans la conversation d'un coup d'œil, sans lire. La
+   teinte est celle qui marque déjà sa propre ligne au classement — un seul
+   signal de « c'est vous » dans toute la page. */
+.jp-chat-moi { background: var(--rouge-glow); border-color: transparent; }
+.jp-chat-entete {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+.jp-chat-entete .jp-pastille { width: 20px; height: 20px; font-size: 8px; border-radius: 50%; }
 .jp-chat-nom {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--brun-pale);
+  font-family: var(--font-names);
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .jp-chat-moi .jp-chat-nom { color: var(--rouge-texte); }
+.jp-chat-heure {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  /* Ni interlettrage hérité, ni chiffres à chasse fixe : dans cette police à
+     empattements, le « 1 » est étroit, et le calage en colonne lui ajoutait
+     un blanc — « 12:34 » se lisait « 1 2:34 ». Rien ici n'a à s'aligner. */
+  letter-spacing: normal;
+  font-variant-numeric: normal;
+  color: var(--brun-pale);
+}
 .jp-chat-txt { color: var(--text); overflow-wrap: anywhere; }
 .jp-chat-retirer {
   position: absolute;
   top: 2px;
-  right: 0;
+  right: 2px;
   width: 24px;
   height: 24px;
   font-size: 12px;
@@ -1002,6 +1049,35 @@
 }
 .jp-chat-ligne:hover .jp-chat-retirer,
 .jp-chat-retirer:focus-visible { opacity: 1; }
+
+/* ── UN INDICE ÉCRIT EN PLEINE PARTIE (panneau du créateur) ───────────────
+   Même forme que la saisie de la discussion, juste en dessous : c'est le même
+   geste — on écrit une ligne, on appuie sur Entrée — et il n'y a aucune
+   raison qu'il se présente autrement. */
+.jp-indice-vif { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-dim); }
+.jp-indice-vif-ligne { display: flex; gap: 6px; margin-top: 6px; }
+.jp-indice-vif-ligne input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 6px 10px;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.jp-indice-vif-ligne button { flex: 0 0 auto; min-height: 44px; }
+.jp-indice-vif-etat:empty { display: none; }
+.jp-indice-vif-etat { margin-top: 7px; }
+
+/* ── LA DISCUSSION APRÈS LA FIN ───────────────────────────────────────────
+   Le panneau est déplacé tel quel sous les résultats, où il dispose de toute
+   la largeur de la page : la liste respire, sans que rien ne soit recopié. */
+.jp-res-chat { margin-bottom: 2rem; }
+.jp-panneau-chat-large { max-width: 680px; }
+.jp-panneau-chat-large .jp-chat { max-height: 420px; }
 
 .jp-chat-saisie { display: flex; gap: 6px; }
 .jp-chat-saisie input {

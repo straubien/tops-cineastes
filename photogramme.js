@@ -324,7 +324,7 @@ function jpExigeConnexion(){
 var JP_COLONNES_PARTIE =
   'id,code,titre,description,createur_id,debut_at,fin_at,cloture_at,publiee,annulee,'
   + 'essais_max,preroll_secondes,classement_live,points_base,bonus_vitesse_max,tolerance_fautes,'
-  + 'cloture_manuelle,created_at';
+  + 'cloture_manuelle,indice_demi,created_at';
 
 // La colonne « cloture_manuelle » arrive avec le fichier SQL n° 6. Si les
 // fichiers du site sont poses AVANT que ce fichier soit passe dans Supabase,
@@ -333,18 +333,34 @@ var JP_COLONNES_PARTIE =
 // si la colonne est la ; sinon on s'en passe, la cloture a la main est
 // simplement indisponible, et la console dit pourquoi.
 var JP_SANS_CLOTURE_MANUELLE = false;
+// Meme precaution pour « indice_demi », qui arrive avec le fichier SQL n° 7.
+var JP_SANS_INDICE_DEMI = false;
 
 function jpVerifierColonnes(){
-  return JP_SB.from('jeu_sessions').select('cloture_manuelle').limit(1).then(function(r){
-    if(!r || !r.error) return;
-    JP_SANS_CLOTURE_MANUELLE = true;
-    JP_COLONNES_PARTIE = JP_COLONNES_PARTIE.replace('cloture_manuelle,', '');
-    var ligne = jpEl('jp-f-manuelle');
-    if(ligne && ligne.parentNode) ligne.parentNode.style.display = 'none';
-    console.warn('photogramme : la colonne « cloture_manuelle » est absente de la base. '
-      + 'Passez le fichier A-FAIRE-DANS-SUPABASE-6.sql dans Supabase pour activer la '
-      + 'cloture a la main. Message de la base : ' + (r.error.message || ''));
-  }, function(){});
+  return Promise.all([
+    JP_SB.from('jeu_sessions').select('cloture_manuelle').limit(1).then(function(r){
+      if(!r || !r.error) return;
+      JP_SANS_CLOTURE_MANUELLE = true;
+      JP_COLONNES_PARTIE = JP_COLONNES_PARTIE.replace('cloture_manuelle,', '');
+      var ligne = jpEl('jp-f-manuelle');
+      if(ligne && ligne.parentNode) ligne.parentNode.style.display = 'none';
+      console.warn('photogramme : la colonne « cloture_manuelle » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-6.sql dans Supabase pour activer la '
+        + 'cloture a la main. Message de la base : ' + (r.error.message || ''));
+    }, function(){}),
+    JP_SB.from('jeu_sessions').select('indice_demi').limit(1).then(function(r){
+      if(!r || !r.error) return;
+      JP_SANS_INDICE_DEMI = true;
+      JP_COLONNES_PARTIE = JP_COLONNES_PARTIE.replace('indice_demi,', '');
+      var ligne = jpEl('jp-ligne-indice-demi');
+      if(ligne) ligne.style.display = 'none';
+      var aide = ligne && ligne.nextElementSibling;
+      if(aide && aide.className === 'jp-aide') aide.style.display = 'none';
+      console.warn('photogramme : la colonne « indice_demi » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-7.sql dans Supabase pour activer le '
+        + 'demi-point apres un indice. Message de la base : ' + (r.error.message || ''));
+    }, function(){})
+  ]);
 }
 
 function jpChargerParties(){
@@ -487,11 +503,17 @@ function jpCarte(p){
 
 // ── 7. LE STUDIO ───────────────────────────────────────────────────────────
 
+// Les champs de reglage, en un seul endroit : trois fonctions les grisaient
+// chacune avec sa propre liste, et la case du demi-point en aurait fait une
+// quatrieme a tenir a jour.
+var JP_CHAMPS_REGLAGES = ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance',
+  'jp-f-preroll', 'jp-f-base', 'jp-f-bonus', 'jp-f-live', 'jp-f-manuelle', 'jp-f-indice-demi'];
+
 function jpOuvrirStudio(id){
   if(!jpExigeConnexion()) return;
   jpAfficher('studio');
   jpAlerte('jp-studio-msg', '');
-  jpEl('jp-studio-photos').style.display = id ? '' : 'none';
+  jpStudioGarderEveille(true);
 
   if(!id){
     JP_BROUILLON = null;
@@ -499,7 +521,9 @@ function jpOuvrirStudio(id){
     JP_SECRETS = {};
     jpEl('jp-f-titre').value = '';
     jpEl('jp-f-desc').value  = '';
-    // Par defaut : ce soir a 20 h, pendant quinze minutes.
+    // Par defaut : ce soir a 20 h, pendant une demi-heure. Ces valeurs ne
+    // sont plus qu'un point de depart : on ne les regle qu'a la toute fin,
+    // une fois les photogrammes en place (cf. l'ordre des sections).
     var d = new Date(jpMaintenant());
     d.setHours(20, 0, 0, 0);
     if(d.getTime() <= jpMaintenant()) d.setDate(d.getDate() + 1);
@@ -512,16 +536,20 @@ function jpOuvrirStudio(id){
     jpEl('jp-f-bonus').value     = '0';
     jpEl('jp-f-live').checked    = true;
     jpEl('jp-f-manuelle').checked = false;
+    jpEl('jp-f-indice-demi').checked = true;
     // Venir d'une partie deja commencee laissait les champs grises : ils y
     // sont desactives, et rien ne les rouvrait pour la partie suivante.
-    ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance', 'jp-f-preroll',
-     'jp-f-base', 'jp-f-bonus', 'jp-f-live', 'jp-f-manuelle'].forEach(function(k){
-      jpEl(k).disabled = false;
-    });
+    JP_CHAMPS_REGLAGES.forEach(function(k){ if(jpEl(k)) jpEl(k).disabled = false; });
     jpEl('jp-depot').style.display = '';
+    jpEl('jp-btn-supprimer').style.display = 'none';
     jpAlerte('jp-studio-etape', '');
     jpMajManuelle();
     jpEl('jp-studio-etat').textContent = '';
+    jpEl('jp-titre-studio').textContent = t('jp_studio_titre');
+    jpEl('jp-studio-sous').style.display = '';
+    jpEl('jp-btn-publier').textContent = t('jp_creer_la_partie');
+    jpRendreFiches();
+    jpMajVisibilitePhotos();
     jpEl('jp-f-titre').focus();
     return;
   }
@@ -538,6 +566,73 @@ function jpOuvrirStudio(id){
   });
 }
 
+// ── LA SECTION « PHOTOGRAMMES » S'OUVRE DES QUE LE TITRE EXISTE ────────────
+// Le brouillon, lui, n'est cree qu'au premier depot d'image : taper un titre
+// puis changer d'avis ne doit pas consommer l'une des cinq parties
+// autorisees par jour.
+function jpMajVisibilitePhotos(){
+  var bloc = jpEl('jp-studio-photos');
+  if(!bloc) return;
+  var pret = !!JP_BROUILLON || (jpEl('jp-f-titre').value || '').trim().length >= 3;
+  bloc.style.display = pret ? '' : 'none';
+}
+
+// Le brouillon existe-t-il ? Sinon on le cree, avec le titre deja saisi et
+// les horaires par defaut — qui seront remplaces par les vrais a la fin.
+// C'est ce qui permet de deposer des images AVANT d'avoir rien regle.
+function jpAssurerBrouillon(){
+  if(JP_BROUILLON) return Promise.resolve(JP_BROUILLON);
+  var titre = (jpEl('jp-f-titre').value || '').trim();
+  if(titre.length < 3) return Promise.reject(new Error(t('jp_err_titre')));
+  var f = jpLireFormulaire();
+  if(f.erreur) return Promise.reject(new Error(f.erreur));
+  f.createur_id = JP_MOI.id;
+  // Une creation n'est JAMAIS rejouee automatiquement : une reponse perdue
+  // creerait une partie en double. Meme regle que dans submit.js.
+  return JP_SB.from('jeu_sessions').insert(f).select(JP_COLONNES_PARTIE).single().then(function(r){
+    if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/creation');
+    JP_BROUILLON = r.data;
+    history.replaceState(null, '', '#studio/' + JP_BROUILLON.id);
+    JP_PHOTOS = [];
+    jpRendreFiches();
+    jpMajVisibilitePhotos();
+    jpEl('jp-btn-supprimer').style.display = '';
+    return JP_BROUILLON;
+  });
+}
+
+// ── GARDER LA SESSION VIVANTE PENDANT LA PREPARATION ──────────────────────
+// Monter trente photogrammes prend une heure ; le jeton d'acces, lui, dure
+// une heure. Deux mesures, et deux seulement :
+//
+//  1. UN BATTEMENT. Toutes les quatre minutes, on demande sa session a la
+//     bibliotheque, ce qui la renouvelle si elle approche de l'expiration.
+//     C'est la meme chose que fait le renouvellement automatique, mais sans
+//     dependre d'un minuteur qu'un onglet en arriere-plan peut suspendre.
+//
+//  2. UNE VERIFICATION AVANT CHAQUE ECRITURE (jpSessionFraiche). On ne
+//     decouvre plus l'expiration en perdant un envoi d'image.
+var JP_BATTEMENT = null;
+
+function jpStudioGarderEveille(oui){
+  if(JP_BATTEMENT){ clearInterval(JP_BATTEMENT); JP_BATTEMENT = null; }
+  if(!oui) return;
+  JP_BATTEMENT = setInterval(function(){
+    if(JP_VUE !== 'studio'){ clearInterval(JP_BATTEMENT); JP_BATTEMENT = null; return; }
+    try{ JP_SB.auth.getSession(); }catch(e){}
+  }, 4 * 60 * 1000);
+}
+
+// getSession() renouvelle le jeton de lui-meme s'il est expire ou sur le
+// point de l'etre. On l'attend avant d'ecrire : quelques millisecondes
+// contre un envoi perdu, le marche est vite fait.
+function jpSessionFraiche(){
+  try{
+    var p = JP_SB.auth.getSession();
+    return (p && typeof p.then === 'function') ? p.catch(function(){ return null; }) : Promise.resolve(null);
+  }catch(e){ return Promise.resolve(null); }
+}
+
 function jpRemplirStudio(p){
   jpEl('jp-f-titre').value     = p.titre || '';
   jpEl('jp-f-desc').value      = p.description || '';
@@ -550,18 +645,23 @@ function jpRemplirStudio(p){
   jpEl('jp-f-bonus').value     = String(p.bonus_vitesse_max);
   jpEl('jp-f-live').checked    = !!p.classement_live;
   jpEl('jp-f-manuelle').checked = !!p.cloture_manuelle;
+  // Par defaut a vrai : c'est aussi ce que dit la base pour les parties
+  // creees avant l'existence de cette colonne.
+  jpEl('jp-f-indice-demi').checked = (p.indice_demi === undefined || p.indice_demi === null) ? true : !!p.indice_demi;
   jpEl('jp-studio-photos').style.display = '';
-  jpEl('jp-btn-publier').style.display = p.publiee ? 'none' : '';
+  jpEl('jp-btn-supprimer').style.display = '';
+  // Le bouton ne disparait plus une fois la partie publiee : il reste le
+  // seul moyen d'enregistrer une correction de titre. Seul son libelle
+  // change — publier d'abord, enregistrer ensuite.
+  jpEl('jp-btn-publier').style.display = '';
+  jpEl('jp-btn-publier').textContent = p.publiee ? t('jp_enregistrer_modifs') : t('jp_creer_la_partie');
   jpEl('jp-studio-etat').textContent = p.publiee ? t('jp_deja_publiee') : t('jp_brouillon_enregistre');
 
   // Une partie publiee et commencee ne se remanie plus : la base le refuse,
   // autant le dire ici plutot que de laisser cliquer dans le vide.
   var etatPartie = jpEtat(p);
   var fige = p.publiee && etatPartie !== 'a_venir';
-  ['jp-f-debut', 'jp-f-fin', 'jp-f-essais', 'jp-f-tolerance', 'jp-f-preroll',
-   'jp-f-base', 'jp-f-bonus', 'jp-f-live', 'jp-f-manuelle'].forEach(function(k){
-    jpEl(k).disabled = fige;
-  });
+  JP_CHAMPS_REGLAGES.forEach(function(k){ if(jpEl(k)) jpEl(k).disabled = fige; });
   jpMajManuelle();
   jpEl('jp-depot').style.display = fige ? 'none' : '';
 
@@ -586,6 +686,8 @@ function jpRemplirStudio(p){
   jpEl('jp-studio-sous').style.display = p.publiee ? 'none' : '';
   jpEl('jp-studio-s3').textContent     = p.publiee ? t('jp_studio_s3_gerer') : t('jp_studio_s3');
   jpEl('jp-aide-publier').style.display = p.publiee ? 'none' : '';
+  var aidePhotos = jpEl('jp-aide-photos');
+  if(aidePhotos) aidePhotos.style.display = fige ? 'none' : '';
 }
 
 // Le filet de securite d'une partie close a la main : sept jours. La base
@@ -631,6 +733,7 @@ function jpLireFormulaire(){
   // Tant que la colonne n'existe pas dans la base, on ne l'envoie pas : la
   // case est masquee de toute facon.
   if(!JP_SANS_CLOTURE_MANUELLE) charge.cloture_manuelle = manuelle;
+  if(!JP_SANS_INDICE_DEMI)      charge.indice_demi = jpEl('jp-f-indice-demi').checked;
   return charge;
 }
 
@@ -653,56 +756,33 @@ function jpMajManuelle(){
   if(horaires) horaires.style.display = manuelle ? 'none' : '';
 }
 
-function jpEnregistrerPartie(){
-  if(!jpExigeConnexion()) return;
+// Enregistre les REGLAGES de la partie (titre, horaires, bareme). Appelee
+// par l'action unique ci-dessous, plus jamais par un bouton a elle.
+function jpEnregistrerReglages(){
   var f = jpLireFormulaire();
-  if(f.erreur){ jpAlerte('jp-studio-msg', f.erreur); return; }
+  if(f.erreur) return Promise.reject(new Error(f.erreur));
+  if(!JP_BROUILLON) return jpAssurerBrouillon();
 
-  var btn = jpEl('jp-btn-enregistrer');
-  btn.disabled = true;
-  jpAlerte('jp-studio-msg', '');
-
-  var promesse;
-  if(JP_BROUILLON){
-    // Une fois la partie commencee, la base refuse tout changement d'horaire
-    // ou de regle. On n'envoie donc QUE ce qui reste permis : renvoyer les
-    // champs grises, meme inchanges, suffirait a faire echouer la correction
-    // d'un simple titre (le champ datetime-local perd les secondes, et la
-    // valeur relue ne serait plus tout a fait l'ancienne).
-    var charge = f;
-    if(JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir'){
-      charge = { titre: f.titre, description: f.description };
-    }
-    // Une modification est idempotente : on peut la rejouer sans risque.
-    promesse = tcWithRetryTimeout(function(){
-      return JP_SB.from('jeu_sessions').update(charge).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
-    });
-  } else {
-    // Une creation, elle, n'est JAMAIS rejouee automatiquement : une reponse
-    // perdue creerait une partie en double. Meme regle que dans submit.js.
-    f.createur_id = JP_MOI.id;
-    promesse = JP_SB.from('jeu_sessions').insert(f).select(JP_COLONNES_PARTIE).single();
+  // Une fois la partie commencee, la base refuse tout changement d'horaire
+  // ou de regle. On n'envoie donc QUE ce qui reste permis : renvoyer les
+  // champs grises, meme inchanges, suffirait a faire echouer la correction
+  // d'un simple titre (le champ datetime-local perd les secondes, et la
+  // valeur relue ne serait plus tout a fait l'ancienne).
+  var charge = f;
+  if(JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir'){
+    charge = { titre: f.titre, description: f.description };
   }
-
-  promesse.then(function(r){
-    btn.disabled = false;
+  // Une modification est idempotente : on peut la rejouer sans risque.
+  return tcWithRetryTimeout(function(){
+    return JP_SB.from('jeu_sessions').update(charge).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
+  }).then(function(r){
     if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/enregistrer');
-    var neuve = !JP_BROUILLON;
     // On FUSIONNE au lieu de remplacer. La reponse d'un UPDATE ne contient
     // que les colonnes demandees : si l'une venait a manquer, remplacer
     // l'objet entier ferait oublier au studio que la partie est publiee —
     // et il reproposerait alors les boutons d'une partie en brouillon.
     JP_BROUILLON = Object.assign({}, JP_BROUILLON || {}, r.data);
-    jpRemplirStudio(JP_BROUILLON);
-    jpAlerte('jp-studio-msg', t('jp_enregistree'), 'ok');
-    if(neuve){
-      history.replaceState(null, '', '#studio/' + JP_BROUILLON.id);
-      JP_PHOTOS = [];
-      jpRendreFiches();
-    }
-  }).catch(function(e){
-    btn.disabled = false;
-    jpAlerte('jp-studio-msg', jpErreur(e));
+    return JP_BROUILLON;
   });
 }
 
@@ -732,6 +812,9 @@ function jpRendreFiches(){
   var hote = jpEl('jp-fiches');
   if(!hote) return;
   jpVider(hote);
+  // On repart de zero AVANT tout : sans cela, passer d'une partie a une autre
+  // laisserait le bouton unique enregistrer les fiches de la precedente.
+  JP_FICHES = [];
   if(!JP_PHOTOS.length){
     var v = document.createElement('p');
     v.className = 'jp-vide';
@@ -740,77 +823,41 @@ function jpRendreFiches(){
     return;
   }
 
-  // « Tout enregistrer » : sur une partie de dix a trente photogrammes,
-  // cliquer trente fois etait le vrai cout du studio. La barre est posee EN
-  // HAUT ET EN BAS de la liste : sur trente fiches, celle du haut est a
-  // plusieurs ecrans de la derniere que l'on vient de remplir.
-  function barre(place){
-    var b = document.createElement('div');
-    b.className = 'jp-actions jp-fiches-barre jp-fiches-barre-' + place;
-    var bouton = document.createElement('button');
-    bouton.type = 'button';
-    bouton.className = 'jp-btn';
-    bouton.textContent = t('jp_tout_enregistrer');
-    var etat = document.createElement('span');
-    etat.className = 'jp-fiche-etat';
-    b.appendChild(bouton);
-    b.appendChild(etat);
-    return { bloc: b, bouton: bouton, etat: etat };
-  }
-
-  var haut = barre('haut');
-  hote.appendChild(haut.bloc);
-
-  var fiches = JP_PHOTOS.map(function(p, i){
+  // LES BOUTONS « ENREGISTRER » ONT DISPARU — tous. Chaque fiche se garde
+  // d'elle-meme des qu'on la quitte, et le bouton unique du bas de page
+  // ramasse de toute facon ce qui resterait en attente avant de publier.
+  // C'etait le vrai cout du studio : trente clics, et autant d'occasions
+  // d'en oublier un.
+  JP_FICHES = JP_PHOTOS.map(function(p, i){
     var f = jpFiche(p, i);
     hote.appendChild(f);
     return f;
   });
+}
 
-  var bas = barre('bas');
-  hote.appendChild(bas.bloc);
+// Les fiches actuellement a l'ecran. Le bouton unique s'en sert pour
+// enregistrer d'un coup tout ce qui n'a pas encore ete sauve.
+var JP_FICHES = [];
 
-  // Les deux barres commandent la meme chose et disent la meme chose : on
-  // les mene ensemble, sinon celle que l'on ne regarde pas raconterait
-  // l'etat d'avant.
-  var barres = [haut, bas];
-  function dire(txt, fini){
-    barres.forEach(function(x){
-      x.etat.textContent = txt;
-      x.etat.classList.toggle('jp-fiche-etat-ok', !!fini);
-    });
-  }
-  function bloquer(oui){
-    barres.forEach(function(x){ x.bouton.disabled = oui; });
-  }
-
-  function toutEnregistrer(){
-    var aFaire = fiches.filter(function(f){ return typeof f.jpEnregistrer === 'function'; });
-    if(!aFaire.length) return;
-    bloquer(true);
-    var faits = 0, echecs = 0, vides = 0;
-    dire(t('jp_tout_en_cours', [0, aFaire.length]), false);
-    // Une fiche apres l'autre : trente requetes simultanees se genent, et la
-    // premiere erreur rendrait les suivantes illisibles.
-    var suite = Promise.resolve();
-    aFaire.forEach(function(f){
-      suite = suite.then(function(){
-        return f.jpEnregistrer().then(function(r){
-          if(!r.rempli) vides++;
-          else if(r.ok) faits++;
-          else echecs++;
-          dire(t('jp_tout_en_cours', [faits + echecs + vides, aFaire.length]), false);
-        });
+// Enregistre toutes les fiches, l'une apres l'autre : trente requetes
+// simultanees se genent, et la premiere erreur rendrait les suivantes
+// illisibles. Rend { faits, echecs, vides }.
+function jpEnregistrerToutesLesFiches(surAvancement){
+  var aFaire = JP_FICHES.filter(function(f){ return typeof f.jpEnregistrer === 'function'; });
+  var bilan = { faits: 0, echecs: 0, vides: 0, total: aFaire.length };
+  if(!aFaire.length) return Promise.resolve(bilan);
+  var suite = Promise.resolve();
+  aFaire.forEach(function(f){
+    suite = suite.then(function(){
+      return f.jpEnregistrer().then(function(r){
+        if(!r.rempli) bilan.vides++;
+        else if(r.ok) bilan.faits++;
+        else bilan.echecs++;
+        if(surAvancement) surAvancement(bilan.faits + bilan.echecs + bilan.vides, bilan.total);
       });
     });
-    suite.then(function(){
-      bloquer(false);
-      if(echecs || vides) dire(t('jp_tout_partiel', [faits, echecs + vides]), false);
-      else dire(t('jp_tout_fait', faits), true);
-    });
-  }
-
-  barres.forEach(function(x){ x.bouton.addEventListener('click', toutEnregistrer); });
+  });
+  return suite.then(function(){ return bilan; });
 }
 
 function jpFiche(p, i){
@@ -961,23 +1008,41 @@ function jpFiche(p, i){
   aide.textContent = t('jp_aide_indice');
   droite.appendChild(aide);
 
-  // Enregistrement de la fiche
+  // ── L'ÉTAT DE LA FICHE, SANS BOUTON ─────────────────────────────────────
+  // Le bouton « Enregistrer » de chaque fiche a disparu : il ne reste que la
+  // ligne d'etat, qui dit ce qui s'est passe. La fiche se garde toute seule
+  // des qu'on la quitte (voir plus bas) — c'est aussi le filet de securite
+  // d'une preparation qui dure : rien n'attend la fin pour etre ecrit.
   var barre = document.createElement('div');
   barre.className = 'jp-actions';
   barre.style.margin = '12px 0 0';
-  var bOk = document.createElement('button');
-  bOk.type = 'button';
-  bOk.className = 'jp-btn jp-btn-petit';
-  bOk.textContent = t('jp_enregistrer');
   var etat = document.createElement('span');
   etat.className = 'jp-fiche-etat';
   etat.textContent = sec.titre_attendu ? t('jp_fiche_prete') : t('jp_fiche_sans_titre');
   if(sec.titre_attendu) etat.classList.add('jp-fiche-etat-ok');
 
+  // Signature de ce qui est ECRIT EN BASE : elle evite de renvoyer trente
+  // fois la meme fiche a chaque sortie de champ.
+  function signature(){
+    return JSON.stringify([
+      cTitre.value.trim(), cReal.value.trim(),
+      vars,
+      inds.filter(function(x){ return x.texte && x.texte.trim(); })
+          .map(function(x){ return [x.texte.trim(), Math.max(0, x.apres || 0)]; })
+    ]);
+  }
+  var dernierEnvoi = sec.titre_attendu ? signature() : null;
+
   // Enregistrer cette fiche. Rendue sur l'element lui-meme (f.jpEnregistrer)
-  // pour que le bouton « Tout enregistrer » puisse la rappeler sans dupliquer
-  // une ligne de cette logique. Renvoie une promesse : « rempli » dit si la
-  // fiche avait un titre, « ok » si l'enregistrement a abouti.
+  // pour que le bouton unique de bas de page puisse la rappeler sans
+  // dupliquer une ligne de cette logique. Renvoie une promesse : « rempli »
+  // dit si la fiche avait un titre, « ok » si l'enregistrement a abouti.
+  // L'envoi en vol, s'il y en a un. On ne lance jamais deux ecritures de la
+  // meme fiche en parallele : on attend la premiere, puis on recommence avec
+  // le contenu le plus recent. Sans cela, un enregistrement automatique
+  // declenche par le clic sur « Créer la partie » et celui du bouton
+  // lui-meme se croiseraient, et c'est le plus ancien qui pourrait gagner.
+  var enVol = null;
   function enregistrer(){
     var titre = cTitre.value.trim();
     if(!titre){
@@ -985,7 +1050,7 @@ function jpFiche(p, i){
       etat.classList.remove('jp-fiche-etat-ok');
       return Promise.resolve({ rempli: false, ok: false });
     }
-    bOk.disabled = true;
+    if(enVol) return enVol.then(function(){ return enregistrer(); });
     etat.textContent = t('jp_enregistrement');
     etat.classList.remove('jp-fiche-etat-ok');
     var charge = {
@@ -997,25 +1062,51 @@ function jpFiche(p, i){
       indices: inds.filter(function(x){ return x.texte && x.texte.trim(); })
                    .map(function(x){ return { texte: x.texte.trim(), apres: Math.max(0, x.apres || 0) }; })
     };
-    return tcWithRetryTimeout(function(){
-      return JP_SB.from('jeu_photogrammes_secret').upsert(charge, { onConflict: 'photogramme_id' }).select().single();
+    var envoye = signature();
+    // Le jeton d'abord : une preparation qui dure une heure se heurtait a
+    // son expiration, et l'envoi partait pour rien.
+    enVol = jpSessionFraiche().then(function(){
+      return tcWithRetryTimeout(function(){
+        return JP_SB.from('jeu_photogrammes_secret').upsert(charge, { onConflict: 'photogramme_id' }).select().single();
+      });
     }).then(function(r){
-      bOk.disabled = false;
+      enVol = null;
       if(r && r.error) throw tcSbError(r.error, 'jeu_photogrammes_secret');
       JP_SECRETS[String(p.id)] = r.data;
+      dernierEnvoi = envoye;
       etat.textContent = t('jp_fiche_prete');
       etat.classList.add('jp-fiche-etat-ok');
       return { rempli: true, ok: true };
     }).catch(function(e){
-      bOk.disabled = false;
-      etat.textContent = jpErreur(e);
+      enVol = null;
+      // Session expiree : on le dit franchement, et SURTOUT on ne vide rien.
+      // Le texte saisi reste a l'ecran ; se reconnecter dans un autre onglet
+      // puis quitter de nouveau le champ suffit a le sauver.
+      if(tcIsAuthError(e)){ tcNotifyAuthExpired(); etat.textContent = t('jp_fiche_session'); }
+      else etat.textContent = jpErreur(e);
+      etat.classList.remove('jp-fiche-etat-ok');
       return { rempli: true, ok: false };
     });
+    return enVol;
   }
   f.jpEnregistrer = enregistrer;
-  bOk.addEventListener('click', enregistrer);
 
-  barre.appendChild(bOk);
+  // L'ENREGISTREMENT AUTOMATIQUE. A la sortie de la fiche, et non a la
+  // frappe : ecrire a chaque touche ferait trente requetes par titre, et un
+  // demi-titre dans la base entre deux. On ne renvoie que si quelque chose a
+  // change depuis le dernier envoi reussi.
+  //
+  // Une fiche de partie commencee reste concernee : son image est figee,
+  // mais son titre attendu se corrige jusqu'a la fin — c'est meme la seule
+  // chose qu'on puisse encore y faire.
+  droite.addEventListener('focusout', function(ev){
+    // Un deplacement DANS la meme fiche ne vaut pas sortie.
+    if(ev.relatedTarget && droite.contains(ev.relatedTarget)) return;
+    if(!cTitre.value.trim()) return;      // une fiche vide n'est pas une erreur
+    if(signature() === dernierEnvoi) return;
+    enregistrer();
+  });
+
   barre.appendChild(etat);
   droite.appendChild(barre);
   f.appendChild(droite);
@@ -1239,6 +1330,22 @@ function jpVraieImage(fichier){
   });
 }
 
+// Le depot d'images cree le brouillon s'il n'existe pas encore : c'est le
+// premier geste reellement engageant du studio, et il n'y a plus de bouton
+// « Enregistrer » pour le faire a sa place. Taper un titre puis renoncer ne
+// consomme donc aucune des cinq parties autorisees par jour.
+function jpDeposerFichiers(fichiers){
+  if(!jpExigeConnexion()) return;
+  if(JP_BROUILLON) return jpEnvoyerFichiers(fichiers);
+  jpAlerte('jp-studio-msg', '');
+  jpAssurerBrouillon().then(function(){
+    jpEnvoyerFichiers(fichiers);
+  }, function(e){
+    jpAlerte('jp-studio-msg', jpErreur(e));
+    if(tcIsAuthError(e)) tcNotifyAuthExpired();
+  });
+}
+
 function jpEnvoyerFichiers(fichiers){
   if(!JP_BROUILLON){ jpAlerte('jp-studio-msg', t('jp_err_enregistrer_dabord')); return; }
   var reste = 30 - JP_PHOTOS.length;
@@ -1265,7 +1372,10 @@ function jpEnvoyerFichiers(fichiers){
 
     suite = suite.then(function(){
       barre.style.width = '15%';
-      return jpVraieImage(f).then(function(ok){
+      // Le jeton avant chaque image, et non une seule fois pour tout le lot :
+      // trente envois peuvent couvrir plus d'une heure, et c'est au milieu du
+      // lot que l'expiration frappait.
+      return jpSessionFraiche().then(function(){ return jpVraieImage(f); }).then(function(ok){
         if(!ok) throw new Error(t('jp_err_format'));
         barre.style.width = '35%';
         return jpReduire(f);
@@ -1292,6 +1402,9 @@ function jpEnvoyerFichiers(fichiers){
         ligne.parentNode.removeChild(ligne);
         jpRendreFiches();
       }).catch(function(e){
+        // Session expiree au milieu d'un lot : on le dit une bonne fois, au
+        // lieu de laisser trente lignes rouges sans explication.
+        if(tcIsAuthError(e)) tcNotifyAuthExpired();
         ligne.textContent = f.name + ' — ' + jpErreur(e);
         barre.style.background = 'var(--rouge)';
       });
@@ -1303,31 +1416,76 @@ function jpEnvoyerFichiers(fichiers){
 
 // ── 10. PUBLIER, SUPPRIMER ─────────────────────────────────────────────────
 
-function jpPublier(){
-  if(!JP_BROUILLON) return;
-  var sans = JP_PHOTOS.filter(function(p){
-    var s = JP_SECRETS[String(p.id)];
-    return !s || !s.titre_attendu;
-  });
-  if(!JP_PHOTOS.length){ jpAlerte('jp-studio-msg', t('jp_err_sans_photo')); return; }
-  if(sans.length){ jpAlerte('jp-studio-msg', t('jp_err_sans_titre', sans.length)); return; }
-  if(!confirm(t('jp_confirme_publier'))) return;
-
+// ── LE BOUTON UNIQUE ───────────────────────────────────────────────────────
+// « Enregistrer » puis « Publier » étaient deux gestes, et le premier
+// s'oubliait. Il n'en reste qu'un, qui fait les trois choses dans l'ordre :
+//
+//   1. les reglages de la partie (titre, horaires, bareme) ;
+//   2. toutes les fiches qui ne sont pas deja enregistrees ;
+//   3. la publication.
+//
+// Sur une partie deja publiee, l'etape 3 saute : le bouton s'appelle alors
+// « Enregistrer les modifications », et c'est le seul moyen d'en corriger
+// le titre.
+function jpCreerLaPartie(){
+  if(!jpExigeConnexion()) return;
   var btn = jpEl('jp-btn-publier');
+  var etatEl = jpEl('jp-studio-etat');
+  var dejaPubliee = !!(JP_BROUILLON && JP_BROUILLON.publiee);
+
+  // On valide AVANT de rien ecrire : rien de pire qu'une partie a moitie
+  // publiee parce qu'une date etait a l'envers.
+  var f = jpLireFormulaire();
+  if(f.erreur){ jpAlerte('jp-studio-msg', f.erreur); return; }
+  if(!dejaPubliee && !JP_PHOTOS.length){ jpAlerte('jp-studio-msg', t('jp_err_sans_photo')); return; }
+  if(!dejaPubliee && !confirm(t('jp_confirme_publier'))) return;
+
   btn.disabled = true;
-  tcWithRetryTimeout(function(){
-    return JP_SB.from('jeu_sessions').update({ publiee: true }).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
-  }).then(function(r){
-    btn.disabled = false;
-    if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/publier');
-    JP_BROUILLON = r.data;
-    jpRemplirStudio(JP_BROUILLON);
-    jpAlerte('jp-studio-msg', t('jp_publiee', JP_BROUILLON.code), 'ok');
-    JP_PARTIES = [];
-  }).catch(function(e){
-    btn.disabled = false;
-    jpAlerte('jp-studio-msg', jpErreur(e));
-  });
+  jpAlerte('jp-studio-msg', '');
+  function dire(txt){ if(etatEl) etatEl.textContent = txt; }
+
+  dire(t('jp_etape_reglages'));
+  jpSessionFraiche()
+    .then(jpEnregistrerReglages)
+    .then(function(){
+      dire(t('jp_etape_fiches'));
+      return jpEnregistrerToutesLesFiches(function(fait, total){
+        dire(t('jp_tout_en_cours', [fait, total]));
+      });
+    })
+    .then(function(bilan){
+      // Une fiche sans titre attendu empeche la publication — c'est la base
+      // qui le dit aussi, mais autant le dire avant de l'appeler pour rien.
+      if(bilan.echecs) throw new Error(t('jp_err_fiches_echec', bilan.echecs));
+      if(!dejaPubliee){
+        var sans = JP_PHOTOS.filter(function(p){
+          var s = JP_SECRETS[String(p.id)];
+          return !s || !s.titre_attendu;
+        });
+        if(sans.length) throw new Error(t('jp_err_sans_titre', sans.length));
+      }
+      if(dejaPubliee) return JP_BROUILLON;
+      dire(t('jp_etape_publication'));
+      return tcWithRetryTimeout(function(){
+        return JP_SB.from('jeu_sessions').update({ publiee: true }).eq('id', JP_BROUILLON.id).select(JP_COLONNES_PARTIE).single();
+      }).then(function(r){
+        if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/publier');
+        JP_BROUILLON = Object.assign({}, JP_BROUILLON, r.data);
+        JP_PARTIES = [];
+        return JP_BROUILLON;
+      });
+    })
+    .then(function(){
+      btn.disabled = false;
+      jpRemplirStudio(JP_BROUILLON);
+      jpAlerte('jp-studio-msg', dejaPubliee ? t('jp_enregistree') : t('jp_publiee', JP_BROUILLON.code), 'ok');
+    })
+    .catch(function(e){
+      btn.disabled = false;
+      dire('');
+      if(tcIsAuthError(e)) tcNotifyAuthExpired();
+      jpAlerte('jp-studio-msg', jpErreur(e));
+    });
 }
 
 function jpSupprimerPartie(){
@@ -1354,6 +1512,7 @@ function jpSupprimerPartie(){
 // ── 11. OUVRIR UNE PARTIE ──────────────────────────────────────────────────
 
 function jpQuitterPartie(){
+  jpChatVers(null);
   JP_MESSAGES = [];
   JP_CHAT_CHARGE = false;
   JP_REVELE = {};
@@ -1455,6 +1614,7 @@ function jpBasculerEtat(jeton, etat){
     }
     jpEl('jp-avant').style.display = 'none';
     jpEl('jp-pendant').style.display = '';
+    jpChatVers(null);          // la discussion reprend sa place dans la colonne
     jpPreparerJeu();
     return;
   }
@@ -1711,6 +1871,9 @@ function jpAllerPhoto(i){
   jpMajPlein();
 
   jpMajSaisie(p, true);
+  // Le champ « un indice, tout de suite » vise le photogramme affiché : son
+  // libellé doit suivre la flèche, sinon on écrit pour le précédent.
+  jpMajLibelleIndiceVif();
   jpAnnoncer(t('jp_photogramme_n', p.position));
 }
 
@@ -1857,7 +2020,7 @@ function jpRendreVerdictCourant(p){
   if(!m){ txt.textContent = ''; ess.textContent = ''; return; }
   if(m.statut === 'accepte'){
     v.classList.add('jp-verdict-ok');
-    txt.textContent = t('jp_trouve_en', [jpChrono(m.elapsed_ms || 0), m.points || 0]);
+    txt.textContent = t('jp_trouve_en', [jpChrono(m.elapsed_ms || 0), jpPoints(m.points)]);
   } else if(m.statut === 'en_attente'){
     v.classList.add('jp-verdict-attente');
     txt.textContent = t('jp_en_arbitrage', m.texte);
@@ -1909,8 +2072,8 @@ function jpRepondre(){
     v.className = 'jp-verdict jp-verdict-anime';
     if(d.statut === 'accepte'){
       v.classList.add('jp-verdict-ok');
-      txt.textContent = t('jp_bravo', d.points || 0);
-      jpAnnoncer(t('jp_bravo', d.points || 0));
+      txt.textContent = t('jp_bravo', jpPoints(d.points));
+      jpAnnoncer(t('jp_bravo', jpPoints(d.points)));
       jpAnnoncerTrouvaille(p.position);
       // On enchaine : le joueur n'a pas a chercher lui-meme l'image
       // suivante. 850 ms, le temps de voir le vert.
@@ -2070,6 +2233,38 @@ function jpRetirerMessage(id){
   jpRendreChat();
 }
 
+// ── LA DISCUSSION SUIT LA PARTIE JUSQUE DANS SES RÉSULTATS ─────────────────
+// Le panneau est DÉPLACÉ, pas recopié : il emporte ses messages, son champ de
+// saisie, ses écouteurs et son abonnement en direct. Un second panneau aurait
+// voulu dire deux listes à tenir d'accord, et deux fois les mêmes
+// identifiants dans la page.
+//
+// Côté serveur, rien à faire : la fonction « jeu_dire » accepte déjà les
+// messages après la fin (elle ne filtre les titres que pendant la partie,
+// puisqu'ensuite ils sont tous publiés). Seule l'interface les cachait.
+var JP_CHAT_PLACE = null;   // { parent, avant } — l'emplacement d'origine
+
+function jpChatVers(hoteId){
+  var panneau = jpEl('jp-panneau-chat');
+  if(!panneau) return;
+  if(!JP_CHAT_PLACE) JP_CHAT_PLACE = { parent: panneau.parentNode, avant: panneau.nextSibling };
+  var hote = hoteId ? jpEl(hoteId) : null;
+  if(hote){
+    if(panneau.parentNode !== hote) hote.appendChild(panneau);
+  } else if(JP_CHAT_PLACE.parent && panneau.parentNode !== JP_CHAT_PLACE.parent){
+    JP_CHAT_PLACE.parent.insertBefore(panneau, JP_CHAT_PLACE.avant);
+  }
+  panneau.classList.toggle('jp-panneau-chat-large', !!hote);
+}
+
+// « 21:04 » — l'heure seule suffit : une discussion de partie tient dans
+// une soirée, la date n'apprendrait rien.
+function jpHeureCourte(iso){
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+
 function jpRendreChat(){
   jpRendreEmojis();
   var ul = jpEl('jp-chat');
@@ -2081,19 +2276,44 @@ function jpRendreChat(){
   jpVider(ul);
   if(vide) vide.style.display = JP_MESSAGES.length ? 'none' : '';
   var createur = jpSuisCreateur();
+  var precedent = null;
   JP_MESSAGES.forEach(function(m){
     var g = JP_GENS[String(m.contributor_id)] || {};
     var moi = JP_MOI && String(m.contributor_id) === String(JP_MOI.id);
+    // Deux messages d'affilée du même auteur, à moins de cinq minutes : on
+    // ne réécrit ni son nom ni son avatar. Trois répliques de suite se
+    // lisaient comme trois inconnus.
+    var suite = precedent
+      && String(precedent.contributor_id) === String(m.contributor_id)
+      && Math.abs(Date.parse(m.created_at) - Date.parse(precedent.created_at)) < 5 * 60000;
+
     var li = document.createElement('li');
-    li.className = 'jp-chat-ligne' + (moi ? ' jp-chat-moi' : '');
-    var nom = document.createElement('span');
-    nom.className = 'jp-chat-nom';
-    nom.textContent = formatContribNamePlain(g.display_name || '…');
-    li.appendChild(nom);
-    var txt = document.createElement('span');
+    li.className = 'jp-chat-ligne' + (moi ? ' jp-chat-moi' : '') + (suite ? ' jp-chat-suite' : '');
+
+    if(!suite){
+      var entete = document.createElement('div');
+      entete.className = 'jp-chat-entete';
+      entete.appendChild(jpPastille(g));
+      var nom = document.createElement('span');
+      nom.className = 'jp-chat-nom';
+      nom.textContent = formatContribNamePlain(g.display_name || '…');
+      entete.appendChild(nom);
+      var heure = document.createElement('time');
+      heure.className = 'jp-chat-heure';
+      heure.dateTime = m.created_at || '';
+      heure.textContent = jpHeureCourte(m.created_at);
+      entete.appendChild(heure);
+      li.appendChild(entete);
+    }
+
+    var txt = document.createElement('div');
     txt.className = 'jp-chat-txt';
     txt.textContent = m.texte;
+    // Le nom reste lisible par les lecteurs d'écran sur les messages groupés,
+    // qui n'affichent plus d'en-tête.
+    if(suite) txt.setAttribute('aria-label', formatContribNamePlain(g.display_name || '…') + ' : ' + m.texte);
     li.appendChild(txt);
+
     if(createur){
       var x = document.createElement('button');
       x.type = 'button';
@@ -2106,6 +2326,7 @@ function jpRendreChat(){
       li.appendChild(x);
     }
     ul.appendChild(li);
+    precedent = m;
   });
   if(enBas) ul.scrollTop = ul.scrollHeight;
 }
@@ -2560,11 +2781,45 @@ function jpChargerScores(){
 }
 
 function jpTrier(){
+  // Les points sont devenus des nombres a virgule : selon le pilote, ils
+  // arrivent en nombre ou en chaine (« 1.50 »). On compare des nombres, et
+  // jamais des chaines — « 10 » est plus petit que « 9 » en texte.
+  function pts(x){ var n = typeof x === 'number' ? x : parseFloat(x); return isFinite(n) ? n : 0; }
   return JP_SCORES.slice().sort(function(a, b){
-    if(b.points !== a.points) return b.points - a.points;
+    if(pts(b.points) !== pts(a.points)) return pts(b.points) - pts(a.points);
     if(a.temps_total_ms !== b.temps_total_ms) return a.temps_total_ms - b.temps_total_ms;
     return b.trouves - a.trouves;
   });
+}
+
+// Les points ne sont plus des entiers : un indice peut en couper un en deux.
+// « 2 » reste « 2 », « 1.5 » devient « 1,5 » en français et « 1.5 » en anglais.
+function jpPoints(v){
+  var n = typeof v === 'number' ? v : parseFloat(v);
+  if(!isFinite(n)) n = 0;
+  var lang = 'fr';
+  try{ lang = localStorage.getItem('tc-lang') || 'fr'; }catch(e){}
+  return (Math.round(n * 100) / 100).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR',
+    { maximumFractionDigits: 2 });
+}
+
+// ── LE DOUBLON DU CLASSEMENT ───────────────────────────────────────────────
+// Chaque ligne portait DEUX nombres côte à côte : les points, puis
+// « trouvés / total ». Avec un point par bonne réponse et aucun bonus de
+// vitesse — le réglage par défaut — ces deux nombres sont forcément le même :
+// le classement se lisait deux fois.
+//
+// On ne garde alors que « trouvés / total », qui dit en plus combien il
+// reste à trouver. Dès qu'un barème sépare les deux (bonus de vitesse, ou
+// demi-point tombé après un indice), ce sont deux informations distinctes,
+// et les deux colonnes reviennent d'elles-mêmes.
+function jpClassementRedondant(lot){
+  if(!JP_PARTIE) return false;
+  if(Number(JP_PARTIE.points_base) !== 1 || Number(JP_PARTIE.bonus_vitesse_max) !== 0) return false;
+  for(var i = 0; i < lot.length; i++){
+    if(Number(lot[i].points) !== Number(lot[i].trouves)) return false;
+  }
+  return true;
 }
 
 function jpRendreClassement(cible, idAnime){
@@ -2588,6 +2843,8 @@ function jpRendreClassement(cible, idAnime){
   var vide2 = jpEl('jp-res-rangs-vide');
   if(vide2 && cible === 'jp-res-rangs') vide2.style.display = 'none';
 
+  var redondant = jpClassementRedondant(lot);
+
   lot.forEach(function(s, i){
     var g = JP_GENS[String(s.contributor_id)] || {};
     var li = document.createElement('li');
@@ -2609,11 +2866,17 @@ function jpRendreClassement(cible, idAnime){
 
     var pts = document.createElement('span');
     pts.className = 'jp-rang-pts';
-    pts.textContent = s.points;
-    var det = document.createElement('span');
-    det.className = 'jp-rang-detail';
-    det.textContent = s.trouves + (JP_PHOTOS.length ? '/' + JP_PHOTOS.length : '');
-    pts.appendChild(det);
+    if(redondant){
+      // Un seul nombre : « 2 / 3 ». Les points le répétaient mot pour mot.
+      pts.classList.add('jp-rang-pts-simple');
+      pts.textContent = s.trouves + (JP_PHOTOS.length ? '/' + JP_PHOTOS.length : '');
+    } else {
+      pts.textContent = jpPoints(s.points);
+      var det = document.createElement('span');
+      det.className = 'jp-rang-detail';
+      det.textContent = s.trouves + (JP_PHOTOS.length ? '/' + JP_PHOTOS.length : '');
+      pts.appendChild(det);
+    }
     li.appendChild(pts);
 
     ol.appendChild(li);
@@ -2720,7 +2983,70 @@ function jpArbitrer(id, accepte, variante, li){
   });
 }
 
+// ── UN INDICE ÉCRIT EN PLEINE PARTIE ───────────────────────────────────────
+// Jusqu'ici, un indice qui n'avait pas été prévu à l'avance obligeait à
+// quitter la partie pour « Modifier cette partie » — donc à abandonner le
+// plateau d'arbitrage et le classement, au moment précis où ils servent.
+//
+// L'indice porte sur le PHOTOGRAMME AFFICHÉ. C'est le seul choix qui ne
+// demande rien : l'animateur regarde l'image sur laquelle personne ne trouve,
+// il écrit, il appuie sur Entrée.
+function jpAjouterIndiceVif(){
+  var champ = jpEl('jp-indice-vif-texte');
+  var bouton = jpEl('jp-indice-vif-envoyer');
+  if(!champ || !JP_PARTIE || !jpSuisCreateur()) return;
+  var texte = (champ.value || '').trim();
+  var p = JP_PHOTOS[JP_IDX];
+  if(!texte || !p) return;
+
+  champ.disabled = true; if(bouton) bouton.disabled = true;
+  jpIndiceVifEtat(t('jp_indice_vif_envoi'));
+  tcWithRetryTimeout(function(){
+    return JP_SB.rpc('jeu_ajouter_indice', { p_photogramme_id: p.id, p_texte: texte });
+  }, { retries: 0, timeoutMs: 12000 }).then(function(r){
+    champ.disabled = false; if(bouton) bouton.disabled = false;
+    if(r && r.error) throw tcSbError(r.error, 'jeu_ajouter_indice');
+    champ.value = '';
+    // On relit depuis la base plutot que d'inscrire l'indice de memoire :
+    // c'est elle qui decide de ce qui est devoile, pour tout le monde.
+    JP_SB.from('jeu_photogrammes_secret')
+      .select('photogramme_id,titre_attendu,realisateur,indices')
+      .eq('session_id', JP_PARTIE.id).then(function(res){
+        if(res && res.data){
+          JP_SECRETS = {};
+          res.data.forEach(function(s){ JP_SECRETS[String(s.photogramme_id)] = s; });
+        }
+        jpRendreCommandesCreateur();
+      }, function(){});
+    jpRafraichirIndices();
+    jpIndiceVifEtat(t('jp_indice_vif_ok', p.position), 5000);
+    champ.focus();
+  }).catch(function(e){
+    champ.disabled = false; if(bouton) bouton.disabled = false;
+    jpIndiceVifEtat(jpErreur(e), 9000);
+    champ.focus();
+  });
+}
+
+function jpIndiceVifEtat(msg, duree){
+  var el = jpEl('jp-indice-vif-etat');
+  if(!el) return;
+  el.textContent = msg || '';
+  if(msg) jpAnnoncer(msg);
+  if(duree) setTimeout(function(){ if(el.textContent === msg) el.textContent = ''; }, duree);
+}
+
+// Le libellé rappelle sur QUEL photogramme l'indice va tomber : sans cela,
+// on écrit dans le vide en croyant viser celui qu'on vient de quitter.
+function jpMajLibelleIndiceVif(){
+  var lab = jpEl('jp-indice-vif-label');
+  if(!lab) return;
+  var p = JP_PHOTOS[JP_IDX];
+  lab.textContent = p ? t('jp_l_indice_vif_n', p.position) : t('jp_l_indice_vif');
+}
+
 function jpRendreCommandesCreateur(){
+  jpMajLibelleIndiceVif();
   var zone = jpEl('jp-indices-commandes');
   if(!zone) return;
   jpVider(zone);
@@ -2771,6 +3097,9 @@ function jpClore(){
 
 function jpMontrerResultats(jeton){
   jpAfficher('resultats');
+  // La discussion descend avec nous : c'est souvent apres coup qu'on a le
+  // plus a se dire, et jusqu'ici le panneau disparaissait avec la partie.
+  jpChatVers('jp-res-chat');
   jpEl('jp-gerer-resultats').style.display = jpSuisCreateur() ? '' : 'none';
   jpEl('jp-res-titre').textContent = JP_PARTIE.titre;
   var g = JP_GENS[String(JP_PARTIE.createur_id)];
@@ -2823,6 +3152,9 @@ function jpRendrePodium(){
   // un vrai podium. À deux, on s'en tient à l'ordre naturel : le vainqueur
   // à droite d'un second surprendrait plus qu'autre chose.
   var ordre = lot.length >= 3 ? [1, 0, 2] : (lot.length === 2 ? [0, 1] : [0]);
+  // Même doublon qu'au classement : « 2 pts » au-dessus de « 2 trouvés sur 3 »
+  // ne dit qu'une seule chose. On ne garde alors que la seconde ligne.
+  var redondant = jpClassementRedondant(jpTrier());
   ordre.forEach(function(i){
     var s = lot[i];
     if(!s) return;
@@ -2839,12 +3171,14 @@ function jpRendrePodium(){
     nom.className = 'jp-marche-nom';
     nom.textContent = formatContribNamePlain(g.display_name || '…');
     d.appendChild(nom);
-    var pts = document.createElement('div');
-    pts.className = 'jp-marche-pts';
-    pts.textContent = s.points + ' ' + t('jp_u_pts');
-    d.appendChild(pts);
+    if(!redondant){
+      var pts = document.createElement('div');
+      pts.className = 'jp-marche-pts';
+      pts.textContent = jpPoints(s.points) + ' ' + t('jp_u_pts');
+      d.appendChild(pts);
+    }
     var det = document.createElement('div');
-    det.className = 'jp-marche-det';
+    det.className = 'jp-marche-det' + (redondant ? ' jp-marche-det-seule' : '');
     det.textContent = t('jp_trouves_sur', [s.trouves, JP_PHOTOS.length]);
     d.appendChild(det);
     zone.appendChild(d);
@@ -3048,14 +3382,16 @@ function jpBrancher(){
   });
 
   jpEl('jp-f-manuelle').addEventListener('change', jpMajManuelle);
-  jpEl('jp-btn-enregistrer').addEventListener('click', jpEnregistrerPartie);
-  jpEl('jp-btn-publier').addEventListener('click', jpPublier);
+  // UN SEUL bouton : il enregistre les reglages, les fiches, puis publie.
+  jpEl('jp-btn-publier').addEventListener('click', jpCreerLaPartie);
   jpEl('jp-btn-supprimer').addEventListener('click', jpSupprimerPartie);
+  // La section « photogrammes » s'ouvre des que le titre tient debout.
+  jpEl('jp-f-titre').addEventListener('input', jpMajVisibilitePhotos);
 
   var depot = jpEl('jp-depot'), champFichiers = jpEl('jp-fichiers');
   tcRendreActivable(depot, function(){ champFichiers.click(); }, t('jp_depot_aria'));
   champFichiers.addEventListener('change', function(){
-    if(this.files && this.files.length) jpEnvoyerFichiers(this.files);
+    if(this.files && this.files.length) jpDeposerFichiers(this.files);
     this.value = '';
   });
   ['dragenter', 'dragover'].forEach(function(e){
@@ -3065,7 +3401,7 @@ function jpBrancher(){
     depot.addEventListener(e, function(ev){ ev.preventDefault(); depot.classList.remove('jp-survol'); });
   });
   depot.addEventListener('drop', function(ev){
-    if(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) jpEnvoyerFichiers(ev.dataTransfer.files);
+    if(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) jpDeposerFichiers(ev.dataTransfer.files);
   });
 
   ['jp-gerer-avant', 'jp-gerer-resultats', 'jp-gerer-jeu'].forEach(function(id){
@@ -3083,6 +3419,12 @@ function jpBrancher(){
   jpEl('jp-chat-envoyer').addEventListener('click', jpDire);
   jpEl('jp-chat-texte').addEventListener('keydown', function(ev){
     if(ev.key === 'Enter'){ ev.preventDefault(); jpDire(); }
+  });
+
+  // Un indice ecrit en pleine partie, sans quitter le plateau.
+  jpEl('jp-indice-vif-envoyer').addEventListener('click', jpAjouterIndiceVif);
+  jpEl('jp-indice-vif-texte').addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter'){ ev.preventDefault(); jpAjouterIndiceVif(); }
   });
 
   jpEl('jp-loupe').addEventListener('click', jpBasculerPlein);
@@ -3154,6 +3496,16 @@ JP_SB.auth.onAuthStateChange(function(evenement, session){
     JP_MOI = null;
     jpAuthRealtime(null);
     jpMajEntete();
+    // ON NE QUITTE PAS LE STUDIO. Une session qui expire au bout d'une heure
+    // emportait jusqu'ici une heure de preparation : la page basculait sur la
+    // liste des parties, et tout ce qui etait a l'ecran disparaissait. On
+    // reste donc sur place, on le dit, et la saisie est conservee : il suffit
+    // de se reconnecter dans un autre onglet pour reprendre ou on en etait.
+    if(JP_VUE === 'studio'){
+      jpAlerte('jp-studio-msg', t('jp_studio_deconnecte'));
+      tcNotifyAuthExpired();
+      return;
+    }
     jpAller('#parties');
   }
 });

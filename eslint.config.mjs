@@ -44,6 +44,11 @@ const globauxDuProjet = {
   tcCourantLabelFromName: 'readonly', tcCourantFlagHtml: 'readonly', tcCourantYears: 'readonly',
   tcCourantIds: 'readonly', tcCourantType: 'readonly', tcCourantTypeFromName: 'readonly',
   _TC_COURANTS_CACHE: 'writable',
+  // Catalogue des TYPES d'entrée (table « courant_types »), défini dans utils.js
+  TC_TYPES_DE_BASE: 'readonly', tcLoadCourantTypes: 'readonly',
+  tcCourantTypesListe: 'readonly', tcCourantTypeLabel: 'readonly',
+  tcCourantTypeFamille: 'readonly', tcCourantTypeCle: 'readonly',
+  _TC_TYPES_CACHE: 'writable',
   parseTopsBrut: 'readonly', parseFilmStr: 'readonly', tcMessageLignesIgnorees: 'readonly',
   formatPresentation: 'readonly', friendlyError: 'readonly', tcFetchWithTimeout: 'readonly',
   tcWithRetryTimeout: 'readonly', tcSafeUrl: 'readonly', TC_CONTRIB_COLONNES: 'readonly',

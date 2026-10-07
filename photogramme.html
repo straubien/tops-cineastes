@@ -118,7 +118,13 @@
 
     <div class="jp-studio">
 
-      <h2 class="jp-section-titre" data-i18n="jp_studio_s1">1 — Le jeu</h2>
+      <!-- ══ 1 — LE TITRE ════════════════════════════════════════════════
+           L'ordre des trois sections a été inversé : images et titres
+           d'abord, horaires ensuite. Monter une partie de trente
+           photogrammes prend du temps ; la session, elle, expire. Tout ce
+           qui est long se fait donc AVANT de régler l'heure du départ, et
+           chaque fiche s'enregistre toute seule dès qu'on la quitte. ══ -->
+      <h2 class="jp-section-titre" data-i18n="jp_studio_s1">1 — La partie</h2>
 
       <div class="jp-champ">
         <label class="jp-label" for="jp-f-titre" data-i18n="jp_l_titre">Titre de la partie</label>
@@ -129,6 +135,24 @@
         <label class="jp-label" for="jp-f-desc" data-i18n="jp_l_desc">Présentation (facultatif)</label>
         <textarea class="jp-zone" id="jp-f-desc" maxlength="2000" data-i18n-ph="jp_ph_desc" placeholder="Une phrase pour situer : la règle du jour, le thème, l'ambiance…"></textarea>
       </div>
+
+      <!-- ── 2 — Les photogrammes ─────────────────────────────────────── -->
+      <div id="jp-studio-photos" style="display:none">
+        <h2 class="jp-section-titre"><span data-i18n="jp_studio_s2">2 — Les photogrammes</span></h2>
+        <p class="jp-aide" id="jp-aide-photos" data-i18n="jp_aide_photos">Déposez vos images, écrivez les titres attendus : chaque fiche s'enregistre d'elle-même dès que vous la quittez. Prenez le temps qu'il faut, rien ne se perd.</p>
+
+        <div class="jp-depot" id="jp-depot" role="button" tabindex="0" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
+          <div class="jp-depot-gros" data-i18n="jp_depot_gros">Déposez vos images ici</div>
+          <div class="jp-depot-petit" data-i18n="jp_depot_petit">ou cliquez pour les choisir — JPEG, PNG ou WebP, 30 au maximum</div>
+        </div>
+        <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp,image/bmp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
+
+        <div id="jp-envois"></div>
+        <div id="jp-fiches" style="margin-top:1.6rem"></div>
+      </div>
+
+      <!-- ── 3 — Quand, et selon quelles règles ───────────────────────── -->
+      <h2 class="jp-section-titre" id="jp-studio-s3" data-i18n="jp_studio_s3">3 — L'heure et les règles</h2>
 
       <div class="jp-duo">
         <div class="jp-champ">
@@ -178,31 +202,19 @@
         <input type="checkbox" id="jp-f-live" checked>
         <span data-i18n="jp_l_live">Classement visible pendant la partie</span>
       </label>
+      <!-- Le demi-point après un indice. -->
+      <label class="jp-reglage" id="jp-ligne-indice-demi" style="margin-top:10px">
+        <input type="checkbox" id="jp-f-indice-demi" checked>
+        <span data-i18n="jp_l_indice_demi">Un indice divise les points par deux</span>
+      </label>
+      <p class="jp-aide" data-i18n="jp_aide_indice_demi">Ne vaut que pour le photogramme concerné, et seulement pour les réponses données APRÈS l'indice : ceux qui avaient déjà trouvé gardent tous leurs points.</p>
 
+      <!-- ── Un seul bouton : il enregistre tout, puis publie ─────────── -->
+      <p class="jp-aide" id="jp-aide-publier" data-i18n="jp_aide_publier">Un seul bouton : il enregistre les réglages, toutes les fiches, puis publie. Une fois publiée, la partie apparaît pour tous les cinéphiles. Vous pourrez encore corriger un titre attendu jusqu'à la fin, mais plus changer les images ni les horaires.</p>
       <div class="jp-actions">
-        <button class="jp-btn jp-btn-fort" id="jp-btn-enregistrer" data-i18n="jp_enregistrer">Enregistrer</button>
+        <button class="jp-btn jp-btn-fort" id="jp-btn-publier" data-i18n="jp_creer_la_partie">Créer la partie</button>
+        <button class="jp-btn" id="jp-btn-supprimer" style="display:none" data-i18n="jp_supprimer">Supprimer</button>
         <span class="jp-aide" id="jp-studio-etat"></span>
-      </div>
-
-      <!-- ── Les photogrammes ─────────────────────────────────────── -->
-      <div id="jp-studio-photos" style="display:none">
-        <h2 class="jp-section-titre"><span data-i18n="jp_studio_s2">2 — Les photogrammes</span></h2>
-
-        <div class="jp-depot" id="jp-depot" role="button" tabindex="0" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
-          <div class="jp-depot-gros" data-i18n="jp_depot_gros">Déposez vos images ici</div>
-          <div class="jp-depot-petit" data-i18n="jp_depot_petit">ou cliquez pour les choisir — JPEG, PNG ou WebP, 30 au maximum</div>
-        </div>
-        <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp,image/bmp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
-
-        <div id="jp-envois"></div>
-        <div id="jp-fiches" style="margin-top:1.6rem"></div>
-
-        <h2 class="jp-section-titre"><span id="jp-studio-s3" data-i18n="jp_studio_s3">3 — Publier</span></h2>
-        <p class="jp-aide" id="jp-aide-publier" data-i18n="jp_aide_publier">Une fois publiée, la partie apparaît pour tous les cinéphiles. Vous pourrez encore corriger un titre attendu jusqu'à la fin, mais plus changer les images ni les horaires.</p>
-        <div class="jp-actions">
-          <button class="jp-btn jp-btn-fort" id="jp-btn-publier" data-i18n="jp_publier">Publier la partie</button>
-          <button class="jp-btn" id="jp-btn-supprimer" data-i18n="jp_supprimer">Supprimer</button>
-        </div>
       </div>
     </div>
   </section>
@@ -325,6 +337,19 @@
 
           <div class="jp-panneau" id="jp-panneau-createur" style="display:none">
             <h2 class="jp-panneau-titre" data-i18n="jp_outils_createur">Vos commandes</h2>
+
+            <!-- Écrire un indice SANS quitter la partie. Jusqu'ici il fallait
+                 repasser par « Modifier cette partie », donc abandonner le
+                 plateau d'arbitrage et le classement en pleine course. -->
+            <div class="jp-indice-vif">
+              <label class="jp-label" for="jp-indice-vif-texte" id="jp-indice-vif-label" data-i18n="jp_l_indice_vif">Un indice, tout de suite</label>
+              <div class="jp-indice-vif-ligne">
+                <input type="text" id="jp-indice-vif-texte" maxlength="240" autocomplete="off" enterkeyhint="send" data-i18n-ph="jp_ph_indice_vif" placeholder="Un indice pour ce photogramme…">
+                <button type="button" class="jp-btn jp-btn-petit" id="jp-indice-vif-envoyer" data-i18n="jp_devoiler_maintenant">Dévoiler</button>
+              </div>
+              <p class="jp-aide jp-indice-vif-etat" id="jp-indice-vif-etat"></p>
+            </div>
+
             <div id="jp-indices-commandes"></div>
             <div class="jp-actions" style="margin:12px 0 0">
               <button class="jp-btn jp-btn-petit" id="jp-btn-clore" data-i18n="jp_clore">Clore la partie</button>
@@ -350,6 +375,13 @@
 
     <h2 class="jp-section-titre" data-i18n="jp_les_reponses">Les réponses</h2>
     <div class="jp-solutions" id="jp-solutions"></div>
+
+    <!-- La discussion ne meurt pas avec la partie : le panneau est DÉPLACÉ
+         ici (et non recopié) à l'arrivée sur les résultats, avec ses
+         messages, son champ de saisie et son abonnement en direct. C'est
+         souvent après coup qu'on a le plus à se dire. -->
+    <h2 class="jp-section-titre" data-i18n="jp_chat">Discussion</h2>
+    <div class="jp-res-chat" id="jp-res-chat"></div>
   </section>
 
 </div>

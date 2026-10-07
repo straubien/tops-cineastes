@@ -429,6 +429,18 @@ body {
   padding: 12px 16px;
   margin-bottom: 10px;
 }
+/* Les lignes du catalogue des TYPES : mêmes cadre, marges et typographie que
+   les courants, mais cinq colonnes au lieu de huit (ni drapeau, ni années). */
+.courant-gestion-list-head-type,
+.courant-row-type {
+  grid-template-columns: minmax(96px,0.9fr) minmax(150px,1.6fr) minmax(148px,1.3fr) minmax(92px,0.9fr) 72px 108px;
+}
+/* La clé technique est un identifiant, pas une phrase : on la donne à lire
+   comme telle, sinon « cinematheque » se confond avec un nom mal orthographié. */
+.courant-row-type .courant-type-cle { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+/* Un type de base (courant, catégorie) ne se supprime pas : le bouton reste
+   visible — pour que la ligne ne paraisse pas tronquée — mais inerte. */
+.courant-row-type .btn-reject:disabled { opacity: 0.35; cursor: not-allowed; }
 .courant-row-flag { width: 28px; height: 28px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
 .courant-row-flag-historic { width: auto; height: 28px; }
 .courant-row-nom-fr { font-family: var(--font-names); font-size: 17px; color: var(--text); overflow-wrap: break-word; }

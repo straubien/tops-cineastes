@@ -313,12 +313,90 @@ function tcCourantIds(c){
   return [c.courant, c.courant2, c.courant3].filter(function(v){ return v; });
 }
 
-// Type d'une entrée du catalogue : 'courant' (mouvement daté) ou 'categorie'
-// (transversale, ex. Cinéma Bis, Cinéma d'animation). Défaut 'courant' si absent.
+// ── LES TYPES D'ENTRÉE DU CATALOGUE (table "courant_types") ──────────────
+// « Courant » et « Catégorie » étaient deux valeurs écrites en dur dans une
+// contrainte de la base : ajouter « École », « Collectif », « Studio »…
+// imposait d'y toucher. Ce sont désormais les lignes d'une table, gérée
+// depuis « Admin > Gestion des courants ».
+//
+// Chaque type déclare sa FAMILLE : 'courant' ou 'categorie'. C'est la
+// famille — et elle seule — que lit le reste du site. Un type inventé demain
+// se range donc d'un côté ou de l'autre sans qu'aucune autre ligne de code
+// n'ait à le connaître.
+//
+// Le repli ci-dessous (TC_TYPES_DE_BASE) fait vivre la page même si la table
+// n'est pas lisible : une panne réseau ne doit pas faire disparaître toutes
+// les étiquettes du site.
+var TC_TYPES_DE_BASE = {
+  courant:   { cle: 'courant',   nom_fr: 'Courant cinématographique', nom_en: 'Film movement', famille: 'courant',   ordre: 10 },
+  categorie: { cle: 'categorie', nom_fr: 'Catégorie',                 nom_en: 'Category',      famille: 'categorie', ordre: 20 }
+};
+var _TC_TYPES_CACHE = null;
+
+function tcLoadCourantTypes(sbClient){
+  return sbClient.from('courant_types').select('cle, nom_fr, nom_en, famille, ordre')
+    .order('ordre', { ascending: true }).then(function(res){
+      // Même règle que pour les courants : une panne ne remplace pas le
+      // catalogue déjà en mémoire, et un catalogue vide n'efface rien.
+      if(res && res.error) throw tcSbError(res.error, 'courant_types');
+      var rows = res.data || [];
+      if(!rows.length) return rows;
+      var map = {};
+      rows.forEach(function(row){ map[row.cle] = row; });
+      _TC_TYPES_CACHE = map;
+      return rows;
+    });
+}
+
+// Les types connus, triés, sous forme de tableau. Sert aux listes
+// déroulantes de l'administration.
+function tcCourantTypesListe(){
+  var src = _TC_TYPES_CACHE || TC_TYPES_DE_BASE;
+  var out = [];
+  for(var k in src){ if(Object.prototype.hasOwnProperty.call(src, k)) out.push(src[k]); }
+  return out.sort(function(a, b){
+    if((a.ordre || 0) !== (b.ordre || 0)) return (a.ordre || 0) - (b.ordre || 0);
+    return String(a.nom_fr || '').localeCompare(String(b.nom_fr || ''));
+  });
+}
+
+// Libellé affichable d'un type, dans la langue en cours.
+function tcCourantTypeLabel(cle){
+  var src = _TC_TYPES_CACHE || TC_TYPES_DE_BASE;
+  var row = src[cle] || TC_TYPES_DE_BASE[cle];
+  if(!row) return cle || '';
+  var lang = 'fr';
+  try{ lang = localStorage.getItem('tc-lang') || 'fr'; }catch(e){}
+  return (lang === 'en' && row.nom_en) ? row.nom_en : row.nom_fr;
+}
+
+// Famille d'un type : 'courant' ou 'categorie'. Un type inconnu (table pas
+// encore chargée, ligne supprimée entre-temps) est traité comme un courant,
+// ce qui était déjà le comportement du site avant cette table.
+function tcCourantTypeFamille(cle){
+  var src = _TC_TYPES_CACHE || TC_TYPES_DE_BASE;
+  var row = src[cle] || TC_TYPES_DE_BASE[cle];
+  return (row && row.famille === 'categorie') ? 'categorie' : 'courant';
+}
+
+// Famille d'une entrée du catalogue, par son id : 'courant' (mouvement daté,
+// école, collectif, studio…) ou 'categorie' (transversale, ex. Cinéma Bis,
+// Cinéma d'animation). Défaut 'courant' si absent.
+//
+// Le nom de cette fonction n'a pas changé : tout le site l'appelle, et elle
+// répond toujours la même chose pour les deux types d'origine.
 function tcCourantType(id){
   if(!id || !_TC_COURANTS_CACHE) return 'courant';
   var row = _TC_COURANTS_CACHE[id];
-  return (row && row.type === 'categorie') ? 'categorie' : 'courant';
+  return row ? tcCourantTypeFamille(row.type) : 'courant';
+}
+
+// Le type EXACT d'une entrée (sa clé : 'ecole', 'studio'…), par opposition à
+// sa famille. Utile là où l'on veut nommer précisément l'étiquette.
+function tcCourantTypeCle(id){
+  if(!id || !_TC_COURANTS_CACHE) return 'courant';
+  var row = _TC_COURANTS_CACHE[id];
+  return (row && row.type) || 'courant';
 }
 
 function parseTopsBrut(texte){

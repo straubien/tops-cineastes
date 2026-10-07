@@ -124,6 +124,12 @@ tcWithRetryTimeout(function(){ return loadAllCineastesAdmin(0, 1000); }).then(fu
 // courants déjà affectés à un cinéaste dans l'onglet "Gérer les courants".
 tcWithRetryTimeout(function(){ return tcLoadCourants(sb); }).catch(function(){ return []; });
 
+// Catalogue des TYPES d'entrée (clé -> libellés + famille). Huit lignes,
+// lues au démarrage : les statistiques et les sélecteurs d'emplacement s'en
+// servent sans attendre l'ouverture de l'onglet « Gestion des courants ».
+// Un échec est sans conséquence : utils.js retombe sur les deux types d'origine.
+tcWithRetryTimeout(function(){ return tcLoadCourantTypes(sb); }).catch(function(){ return []; });
+
 // ═══════════════════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════════════════
@@ -257,7 +263,10 @@ document.querySelectorAll('.tab').forEach(function(tab){
     if(tab.getAttribute('data-tab') === 'flags') renderFlagsAdmin();
     if(tab.getAttribute('data-tab') === 'thematiques') loadThematicTops();
     if(tab.getAttribute('data-tab') === 'courants') loadCourantProposals();
-    if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantCatalogue(); initCourantFicheSearch(); }
+    // Les TYPES d'abord : le catalogue des courants s'en sert pour remplir
+    // ses sélecteurs. Les deux lectures partent en parallèle, et chacune
+    // redessine ce qui la concerne quand elle revient.
+    if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantTypes(); loadCourantCatalogue(); initCourantFicheSearch(); }
     if(isStatsTabActive) renderStats();
     if(tab.getAttribute('data-tab') === 'reglages'){ loadReglagesAffiniteFormule(); loadReglagesAffinitePoids(); }
   });
@@ -2263,6 +2272,301 @@ async function rejectCourant(id, apprBtn, rejBtn){
 // d'emplacement de la section « Courants et catégories d'un cinéaste ».
 var _courantCatalogueRows = [];
 
+
+// ══ LE CATALOGUE DES TYPES D'ENTRÉE ════════════════════════════════════════
+// « Courant » et « Catégorie » étaient deux valeurs écrites dans une
+// contrainte de la base : ajouter « École », « Studio »… imposait d'y
+// toucher. Ce sont désormais des lignes, modifiables depuis cet onglet.
+//
+// Chaque type appartient à une FAMILLE ('courant' ou 'categorie'), et c'est
+// elle seule que lit le reste du site — d'où l'absence totale de changement
+// visible sur les fiches publiques tant qu'on n'affecte aucun nouveau type.
+
+// Les deux types de base : renommables, mais ni supprimables ni déplaçables
+// d'une famille à l'autre (la base le refuse aussi, cf. fichier SQL n° 7).
+var COURANT_TYPES_DE_BASE = ['courant', 'categorie'];
+
+function estTypeDeBase(cle){ return COURANT_TYPES_DE_BASE.indexOf(cle) !== -1; }
+
+// Options d'un sélecteur de type, groupées par famille pour qu'on voie d'un
+// coup d'œil de quel côté se rangera l'entrée créée.
+function courantTypeOptionsHtml(selected){
+  var liste = typeof tcCourantTypesListe === 'function' ? tcCourantTypesListe() : [];
+  if(!liste.length) return '<option value="courant">Courant</option><option value="categorie">Catégorie</option>';
+  var opt = function(ty){
+    return '<option value="' + escapeHtml(ty.cle) + '"' + (ty.cle === selected ? ' selected' : '') + '>'
+      + escapeHtml(ty.nom_fr) + '</option>';
+  };
+  var fCourant  = liste.filter(function(ty){ return ty.famille !== 'categorie'; });
+  var fCategorie = liste.filter(function(ty){ return ty.famille === 'categorie'; });
+  return (fCourant.length ? '<optgroup label="Famille : courant">' + fCourant.map(opt).join('') + '</optgroup>' : '')
+       + (fCategorie.length ? '<optgroup label="Famille : catégorie">' + fCategorie.map(opt).join('') + '</optgroup>' : '');
+}
+
+// Recharge la table, puis redessine TOUT ce qui en dépend : la liste des
+// types, le sélecteur du formulaire d'ajout de courant, et les lignes du
+// catalogue (dont chaque sélecteur de type).
+async function loadCourantTypes(){
+  var listEl = document.getElementById('courant-type-list');
+  var errEl = document.getElementById('courant-type-error');
+  if(listEl) listEl.innerHTML = '<div class="empty-state">Chargement…</div>';
+  if(errEl) errEl.style.display = 'none';
+
+  try {
+    await tcWithRetryTimeout(function(){ return tcLoadCourantTypes(sb); });
+  } catch(err){
+    // La table n'existe pas encore (fichier SQL n° 7 pas encore passé) :
+    // utils.js retombe sur les deux types d'origine, et l'onglet continue de
+    // fonctionner comme avant. On le dit, sans crier à la panne.
+    if(errEl){
+      errEl.textContent = 'Le catalogue des types n\'a pas pu être lu. Tant que le fichier '
+        + 'A-FAIRE-DANS-SUPABASE-7.sql n\'est pas passé dans Supabase, seuls « Courant » et '
+        + '« Catégorie » sont disponibles. (' + ((err && err.message) || '') + ')';
+      errEl.style.display = 'block';
+    }
+    if(listEl) listEl.innerHTML = '';
+    renderCourantTypeSelects();
+    return;
+  }
+  renderCourantTypeCatalogue();
+  renderCourantTypeSelects();
+}
+
+// Le sélecteur du formulaire « Ajouter au catalogue ». Les sélecteurs des
+// lignes existantes sont redessinés par renderCourantCatalogue.
+function renderCourantTypeSelects(){
+  var sel = document.getElementById('courant-gestion-type');
+  if(sel){
+    // On repose la valeur choisie après avoir redessiné les options : sans
+    // cela, redessiner la liste pendant une saisie remettrait « Courant ».
+    var avant = sel.value;
+    sel.innerHTML = courantTypeOptionsHtml(avant || 'courant');
+    if(avant) sel.value = avant;
+    if(!sel.value) sel.value = 'courant';
+  }
+  if(_courantCatalogueRows && _courantCatalogueRows.length) renderCourantCatalogue(_courantCatalogueRows);
+}
+
+function renderCourantTypeCatalogue(){
+  var listEl = document.getElementById('courant-type-list');
+  if(!listEl) return;
+  listEl.innerHTML = '';
+  var liste = typeof tcCourantTypesListe === 'function' ? tcCourantTypesListe() : [];
+  if(!liste.length){
+    listEl.innerHTML = '<div class="empty-state">Aucun type dans le catalogue.</div>';
+    return;
+  }
+
+  liste.forEach(function(ty){
+    var base = estTypeDeBase(ty.cle);
+    var rowEl = document.createElement('div');
+    rowEl.className = 'courant-row courant-row-type';
+
+    var cleEl = document.createElement('span');
+    cleEl.className = 'courant-type-cle';
+    cleEl.textContent = ty.cle;
+
+    var frInput = document.createElement('input');
+    frInput.type = 'text';
+    frInput.className = 'autocomplete-input';
+    frInput.value = ty.nom_fr || '';
+    frInput.placeholder = 'Nom français…';
+
+    var enInput = document.createElement('input');
+    enInput.type = 'text';
+    enInput.className = 'autocomplete-input';
+    enInput.value = ty.nom_en || '';
+    enInput.placeholder = 'Nom anglais…';
+
+    var famSel = document.createElement('select');
+    famSel.className = 'contrib-select';
+    famSel.innerHTML = '<option value="courant">Courant</option><option value="categorie">Catégorie</option>';
+    famSel.value = ty.famille === 'categorie' ? 'categorie' : 'courant';
+    // La famille des deux types de base commande tout le rangement du site :
+    // la base refuse de la changer, autant ne pas laisser cliquer dans le vide.
+    famSel.disabled = base;
+
+    var ordreInput = document.createElement('input');
+    ordreInput.type = 'number';
+    ordreInput.className = 'autocomplete-input';
+    ordreInput.value = (ty.ordre == null ? '' : ty.ordre);
+    ordreInput.placeholder = 'Ordre';
+
+    var actionsCell = document.createElement('div');
+    actionsCell.className = 'courant-row-actions';
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-primary';
+    saveBtn.textContent = 'Enregistrer';
+    saveBtn.addEventListener('click', function(){
+      saveCourantTypeEdits(ty.cle, {
+        nom_fr: frInput.value.trim(),
+        nom_en: enInput.value.trim(),
+        famille: famSel.value === 'categorie' ? 'categorie' : 'courant',
+        ordre: ordreInput.value ? parseInt(ordreInput.value, 10) : 100
+      }, saveBtn);
+    });
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn-reject';
+    delBtn.textContent = 'Supprimer';
+    delBtn.disabled = base;
+    delBtn.title = base ? 'Les deux types de base ne peuvent pas être supprimés.' : '';
+    if(!base){
+      delBtn.addEventListener('click', function(){
+        showConfirmModal('Supprimer le type « ' + ty.nom_fr + ' » ? Les entrées du catalogue qui l\'utilisent encore '
+          + 'empêcheront la suppression.', function(){
+          deleteCourantType(ty.cle, ty.nom_fr, delBtn);
+        });
+      });
+    }
+    actionsCell.appendChild(saveBtn);
+    actionsCell.appendChild(delBtn);
+
+    // Même repli mobile que les lignes de courant : un en-tête cliquable.
+    var mobileHeader = document.createElement('div');
+    mobileHeader.className = 'courant-row-mobile-header';
+    var mobileType = document.createElement('span');
+    mobileType.className = 'courant-row-mobile-type';
+    mobileType.textContent = ty.famille === 'categorie' ? 'Catégorie' : 'Courant';
+    var mobileNom = document.createElement('span');
+    mobileNom.className = 'courant-row-nom-fr';
+    mobileNom.textContent = ty.nom_fr;
+    var mobileChevron = document.createElement('span');
+    mobileChevron.className = 'courant-row-mobile-chevron';
+    mobileChevron.textContent = '▾';
+    mobileHeader.appendChild(mobileType);
+    mobileHeader.appendChild(mobileNom);
+    mobileHeader.appendChild(mobileChevron);
+    mobileHeader.addEventListener('click', function(){ rowEl.classList.toggle('expanded'); });
+
+    rowEl.appendChild(mobileHeader);
+    rowEl.appendChild(cleEl);
+    rowEl.appendChild(frInput);
+    rowEl.appendChild(enInput);
+    rowEl.appendChild(famSel);
+    rowEl.appendChild(ordreInput);
+    rowEl.appendChild(actionsCell);
+    listEl.appendChild(rowEl);
+  });
+}
+
+async function saveCourantTypeEdits(cle, champs, btn){
+  if(!champs.nom_fr){ showAdminNotice('Le nom français est obligatoire.', false); return; }
+  if(!champs.nom_en){ showAdminNotice('Le nom anglais est obligatoire.', false); return; }
+  btn.disabled = true;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('courant_types').update(champs).eq('cle', cle).select('cle');
+    });
+  } catch(err){
+    admErreur(null, err);
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  if(res.error){ showAdminNotice('Erreur : ' + friendlyError(res.error), false); return; }
+  if(!res.data || !res.data.length){
+    showAdminNotice('Modification sans effet — vérifiez vos droits d\'administrateur.', false);
+    return;
+  }
+  showAdminNotice('Type « ' + champs.nom_fr +' » mis à jour.', true);
+  // Les libellés changent partout : on relit la table, puis on redessine le
+  // catalogue des courants qui s'en sert.
+  loadCourantTypes();
+  refreshStatsIfActive();
+}
+
+async function deleteCourantType(cle, nom, btn){
+  btn.disabled = true;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('courant_types').delete().eq('cle', cle).select('cle');
+    }, { retries: 0 });
+  } catch(err){
+    admErreur(null, err);
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  if(res.error){
+    // La cause la plus fréquente : des courants portent encore ce type. La
+    // base le dit en langage de clé étrangère ; on le traduit.
+    var brut = res.error.message || '';
+    var msg = /foreign key|violates/i.test(brut)
+      ? 'Ce type est encore affecté à des entrées du catalogue. Changez leur type d\'abord.'
+      : friendlyError(res.error);
+    showAdminNotice('Erreur : ' + msg, false);
+    return;
+  }
+  if(!res.data || !res.data.length){
+    showAdminNotice('Suppression sans effet — vérifiez vos droits d\'administrateur.', false);
+    return;
+  }
+  showAdminNotice('Type « ' + nom + ' » supprimé.', true);
+  loadCourantTypes();
+}
+
+async function addCourantType(){
+  var cleInput = document.getElementById('courant-type-cle');
+  var frInput = document.getElementById('courant-type-fr');
+  var enInput = document.getElementById('courant-type-en');
+  var famSel = document.getElementById('courant-type-famille');
+  var ordreInput = document.getElementById('courant-type-ordre');
+  var btn = document.getElementById('courant-type-btn-add');
+  if(!cleInput || !frInput || !enInput || !famSel || !btn) return;
+
+  var nomFr = frInput.value.trim();
+  var nomEn = enInput.value.trim();
+  // La clé voyage dans des URL et des noms de classes : on la normalise au
+  // lieu de refuser « Cinémathèque » à l'utilisateur.
+  var cle = (cleInput.value.trim() || nomFr)
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 31);
+
+  if(!nomFr){ showAdminNotice('Le nom français est obligatoire.', false); return; }
+  if(!nomEn){ showAdminNotice('Le nom anglais est obligatoire.', false); return; }
+  if(!/^[a-z][a-z0-9_]{1,30}$/.test(cle)){
+    showAdminNotice('La clé technique doit commencer par une lettre et ne contenir que des lettres, des chiffres et des tirets bas.', false);
+    return;
+  }
+
+  btn.disabled = true;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('courant_types').insert({
+        cle: cle, nom_fr: nomFr, nom_en: nomEn,
+        famille: famSel.value === 'categorie' ? 'categorie' : 'courant',
+        ordre: ordreInput && ordreInput.value ? parseInt(ordreInput.value, 10) : 100
+      }).select('cle');
+    }, { retries: 0 });
+  } catch(err){
+    admErreur(null, err);
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  if(res.error){
+    var msg = /duplicate|unique|pkey/i.test(res.error.message || '')
+      ? 'La clé « ' + cle + ' » est déjà prise.' : friendlyError(res.error);
+    showAdminNotice('Erreur : ' + msg, false);
+    return;
+  }
+  if(!res.data || !res.data.length){
+    showAdminNotice('L\'ajout n\'a pas abouti — vérifiez vos droits d\'administrateur.', false);
+    return;
+  }
+  cleInput.value = ''; frInput.value = ''; enInput.value = '';
+  famSel.value = 'courant';
+  if(ordreInput) ordreInput.value = '';
+  showAdminNotice('Type « ' + nomFr + ' » ajouté.', true);
+  loadCourantTypes();
+}
+
+var _courantTypeBtnAdd = document.getElementById('courant-type-btn-add');
+if(_courantTypeBtnAdd) _courantTypeBtnAdd.addEventListener('click', addCourantType);
+
 async function loadCourantCatalogue(){
   var listEl = document.getElementById('courant-gestion-list');
   var errEl = document.getElementById('courant-gestion-error');
@@ -2310,8 +2614,20 @@ function renderCourantCatalogue(rows){
 
     var typeSel = document.createElement('select');
     typeSel.className = 'contrib-select';
-    typeSel.innerHTML = '<option value="courant">Courant</option><option value="categorie">Catégorie</option>';
-    typeSel.value = row.type === 'categorie' ? 'categorie' : 'courant';
+    // La liste des types vient de la table « courant_types » : elle contient
+    // « Courant » et « Catégorie », et tout ce que l'admin y a ajouté.
+    typeSel.innerHTML = courantTypeOptionsHtml(row.type || 'courant');
+    if(row.type) typeSel.value = row.type;
+    // Un type retiré du catalogue entre-temps ne figure plus dans la liste :
+    // le sélecteur serait vide et l'enregistrement écraserait silencieusement
+    // le type de la ligne. On réintroduit donc la valeur telle quelle.
+    if(!typeSel.value && row.type){
+      var orphelin = document.createElement('option');
+      orphelin.value = row.type;
+      orphelin.textContent = row.type + ' (type inconnu)';
+      typeSel.insertBefore(orphelin, typeSel.firstChild);
+      typeSel.value = row.type;
+    }
 
     var flagCell = document.createElement('div');
     flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(row.pays, 'courant-row-flag') : '';
@@ -2386,7 +2702,9 @@ function renderCourantCatalogue(rows){
     mobileHeader.className = 'courant-row-mobile-header';
     var mobileType = document.createElement('span');
     mobileType.className = 'courant-row-mobile-type';
-    mobileType.textContent = row.type === 'categorie' ? 'Catégorie' : 'Courant';
+    // Le libellé EXACT du type (« École », « Studio »…), et non sa famille :
+    // c'est le catalogue de l'administrateur, il doit s'y reconnaître.
+    mobileType.textContent = tcCourantTypeLabel(row.type);
     var mobileFlag = document.createElement('div');
     mobileFlag.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(row.pays, 'courant-row-flag') : '';
     var mobileNom = document.createElement('span');
@@ -2501,7 +2819,10 @@ async function addCourantToCatalogue(){
   var finInput = document.getElementById('courant-gestion-fin');
   var errEl = document.getElementById('courant-gestion-error');
   var btn = document.getElementById('courant-gestion-btn-add');
-  var type = typeSel && typeSel.value === 'categorie' ? 'categorie' : 'courant';
+  // Le type est désormais une clé libre de la table « courant_types » :
+  // on ne le réduit plus à « courant » ou « categorie ». La base refuse
+  // une clé inconnue (clé étrangère), et l'erreur remonte plus bas.
+  var type = (typeSel && typeSel.value) || 'courant';
   var nomFr = frInput.value.trim();
   var nomEn = enInput.value.trim();
   var pays = paysSel ? (paysSel.value || null) : null;
@@ -2535,7 +2856,7 @@ async function addCourantToCatalogue(){
 
   frInput.value = '';
   enInput.value = '';
-  if(typeSel) typeSel.value = 'courant';
+  if(typeSel) typeSel.value = 'courant';   // le type de base, toujours présent
   if(paysSel) paysSel.value = '';
   if(debutInput) debutInput.value = '';
   if(finInput) finInput.value = '';
@@ -2606,8 +2927,10 @@ function courantSlotOptionsHtml(selectedId){
     return '<option value="' + r.id + '"' + (Number(r.id) === Number(selectedId) ? ' selected' : '') + '>'
       + escapeHtml(r.nom_fr) + '</option>';
   };
-  var courants = rows.filter(function(r){ return r.type !== 'categorie'; });
-  var categories = rows.filter(function(r){ return r.type === 'categorie'; });
+  // Groupés par FAMILLE : une « école » ou un « studio » se rangent avec les
+  // courants, comme ils s'afficheront sur la fiche publique.
+  var courants = rows.filter(function(r){ return tcCourantTypeFamille(r.type) !== 'categorie'; });
+  var categories = rows.filter(function(r){ return tcCourantTypeFamille(r.type) === 'categorie'; });
   return '<option value=""' + (selectedId ? '' : ' selected') + '>— emplacement vide —</option>'
     + (courants.length ? '<optgroup label="Courants">' + courants.map(opt).join('') + '</optgroup>' : '')
     + (categories.length ? '<optgroup label="Catégories">' + categories.map(opt).join('') + '</optgroup>' : '');
@@ -2807,7 +3130,14 @@ async function renderStats(){
   // dans le même graphique, le type ne sert plus qu'à la couleur de la barre
   // et au décompte ventilé du bandeau de synthèse.
   var typeById = {};
-  rows.forEach(function(row){ typeById[row.id] = row.type === 'categorie' ? 'categorie' : 'courant'; });
+  // On indexe la FAMILLE, pas la clé : c'est elle qui ventile le bandeau de
+  // synthèse et colore les barres. `typeCleById` garde la clé exacte, pour
+  // pouvoir nommer « École » plutôt que « Courant » sur chaque ligne.
+  var typeCleById = {};
+  rows.forEach(function(row){
+    typeById[row.id] = tcCourantTypeFamille(row.type);
+    typeCleById[row.id] = row.type || 'courant';
+  });
 
   // Une fiche pouvant porter jusqu'à trois entrées, on distingue les cinéastes
   // DISTINCTS rattachés (total mis en avant, plus sa ventilation par famille)
@@ -2837,6 +3167,7 @@ async function renderStats(){
       debut: row.annee_debut,
       fin: row.annee_fin,
       estCategorie: typeById[row.id] === 'categorie',
+      typeLabel: tcCourantTypeLabel(typeCleById[row.id]),
       count: countById[row.id] || 0
     };
   });
@@ -2952,7 +3283,9 @@ function buildStatsBar(it, index, maxCount, totalFiches){
   meta.className = 'stats-bar-meta';
   var typeEl = document.createElement('span');
   typeEl.className = 'stats-bar-type';
-  typeEl.textContent = it.estCategorie ? 'Catégorie' : 'Courant';
+  // Le libellé exact du type, avec repli sur la famille si le catalogue des
+  // types n'a pas pu être lu.
+  typeEl.textContent = it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant');
   meta.appendChild(typeEl);
   var annees = statsAnnees(it);
   if(annees){

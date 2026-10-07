@@ -78,8 +78,22 @@ function makeTmdbAvatar(photoVal){
   img.onerror = function(){ img.replaceWith(makeEmptyAvatar()); };
   return img;
 }
+// Les candidats de portrait d'un nom, DUOS COMPRIS. Sans ce detour, un duo
+// ecrit « STRAUB & HUILLET » produisait l'unique chemin
+// « portrait-Straub Huillet.jpg » — les deux patronymes colles en un seul
+// nom de fichier, qui n'existe evidemment pas. Resultat : aucune photo pour
+// les 55 duos du catalogue dans « Mon profil », alors que
+// « portrait-Straub.jpg » est bien dans le depot.
+// On essaie donc le premier membre, puis le second (un duo n'a souvent qu'un
+// seul portrait disponible), et enfin la forme generique en dernier recours.
+function tcCandidatsPortraitNom(n){
+  var duo = tcLocalPortraitDuoCandidates(n);
+  if(!duo) return tcLocalPortraitCandidates(n);
+  return duo[0].concat(duo[1]);
+}
+
 function makeLocalAvatar(n, fallbackToTmdb){
-  var candidates = tcLocalPortraitCandidates(n);
+  var candidates = tcCandidatsPortraitNom(n);
   if(!candidates.length){
     if(fallbackToTmdb){
       var pv = lookupPhoto(n) || lookupPhoto(n.replace(/,.*$/, '').trim());
