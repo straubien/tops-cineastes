@@ -537,6 +537,14 @@
      et par submit.html (messages de succes). Definis ici une seule fois. */
   --vert:        #1a6b3a;
   --ambre:       #9c6b1f;
+  /* Or des etiquettes de courant des fiches (#A8841E) : repris par la frise
+     "Courants & Categories" et par les statistiques du back-office, pour un
+     seul code couleur or = courant / rouge = categorie. --or sert de FOND
+     (point de frise, barres, pastilles), --or-texte au petit texte, qui
+     demande 4,5:1 sur fond clair -- meme partage que --rouge / --rouge-texte
+     (action A-121). */
+  --or:          #A8841E;
+  --or-texte:    #7A5F12;
   --border-dark: #e8e2d8;
 
   --tag-bg:      #ede8df;
@@ -589,6 +597,8 @@
   --border-dim:  #262018;
   --vert:        #4caf70;
   --ambre:       #d9a34a;
+  --or:          #A8841E;
+  --or-texte:    #C9A33B;
   --border-dark: #201c18;
   --tag-bg:      #201d18;
   --tag-border:  #332d20;
@@ -1833,7 +1843,7 @@ a { text-decoration: none; color: inherit; }
   white-space: nowrap;
 }
 
-/* ── FRISE CHRONOLOGIQUE — COURANTS CINÉMATOGRAPHIQUES ────────── */
+/* ── FRISE CHRONOLOGIQUE — COURANTS & CATÉGORIES ──────────────── */
 .courants-timeline {
   position: relative;
   margin-top: 0.5rem;
@@ -1879,6 +1889,9 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 0 0 4px var(--bg);
   flex-shrink: 0;
 }
+/* Classement unique "Courants & Categories" : le point reprend l'or de
+   l'etiquette de courant des fiches, et reste rouge pour une categorie. */
+.courant-tl-dot.is-courant { background: var(--or); }
 .courant-tl-content {
   margin-left: 34px;
   flex: 1;

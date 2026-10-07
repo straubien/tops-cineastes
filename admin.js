@@ -267,6 +267,8 @@ document.querySelectorAll('.tab').forEach(function(tab){
     // ses sélecteurs. Les deux lectures partent en parallèle, et chacune
     // redessine ce qui la concerne quand elle revient.
     if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantTypes(); loadCourantCatalogue(); initCourantFicheSearch(); }
+    // Onglet « Types d'entrée » : il ne lit que sa propre table.
+    if(tab.getAttribute('data-tab') === 'courants-types') loadCourantTypes();
     if(isStatsTabActive) renderStats();
     if(tab.getAttribute('data-tab') === 'reglages'){ loadReglagesAffiniteFormule(); loadReglagesAffinitePoids(); }
   });

@@ -529,7 +529,8 @@ body {
 
 /* ── STATISTIQUES ── */
 /* Une seule carte : courants et catégories sont classés ensemble, la couleur de
-   la barre (vert / ambre) et l'étiquette sous le nom distinguant les deux.
+   la barre (or / rouge, comme les étiquettes des fiches publiques) et
+   l'étiquette sous le nom distinguant les deux.
    Bandeau de synthèse avec les totaux, puis les barres, puis l'échelle et la
    légende. Les lignes de barres et l'échelle partagent la même grille via
    --stats-cols, pour que les graduations tombent exactement sous les barres. */
@@ -558,7 +559,7 @@ body {
   position: absolute;
   top: 0; right: 0;
   width: 8px; height: 100%;
-  background: linear-gradient(to bottom, var(--vert) 0 50%, var(--ambre) 50% 100%);
+  background: linear-gradient(to bottom, var(--or) 0 50%, var(--rouge) 50% 100%);
 }
 .stats-summary-value { display: block; font-size: 46px; font-weight: 700; line-height: 1; }
 .stats-summary-label { display: block; font-size: 17px; letter-spacing: 0.04em; line-height: 1.25; margin-top: 7px; opacity: 0.88; }
@@ -566,8 +567,8 @@ body {
 .stats-summary-kpi { padding: 1.3rem 0.8rem; text-align: center; border-left: 1px solid var(--border-dim); }
 .stats-summary-kpi:first-child { border-left: none; }
 .stats-summary-kpi-value { display: block; font-size: 25px; font-weight: 700; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
-.stats-summary-kpi.is-courant .stats-summary-kpi-value { color: var(--vert); }
-.stats-summary-kpi.is-categorie .stats-summary-kpi-value { color: var(--ambre); }
+.stats-summary-kpi.is-courant .stats-summary-kpi-value { color: var(--or-texte); }
+.stats-summary-kpi.is-categorie .stats-summary-kpi-value { color: var(--rouge-texte); }
 .stats-summary-kpi-label {
   display: block;
   font-family: system-ui, sans-serif;
@@ -609,8 +610,8 @@ body {
    reposer sur la seule couleur) puis la période éventuelle. */
 .stats-bar-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; margin-top: 2px; }
 .stats-bar-type { font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; }
-.stats-bar-item.is-courant .stats-bar-type { color: var(--vert); }
-.stats-bar-item.is-categorie .stats-bar-type { color: var(--ambre); }
+.stats-bar-item.is-courant .stats-bar-type { color: var(--or-texte); }
+.stats-bar-item.is-categorie .stats-bar-type { color: var(--rouge-texte); }
 .stats-bar-years { font-family: var(--font); font-size: 12px; font-style: italic; color: var(--brun-pale); }
 .stats-bar-track {
   position: relative;
@@ -621,12 +622,12 @@ body {
 }
 .stats-bar-fill {
   height: 100%;
-  background: var(--vert);
+  background: var(--or);
   min-width: 2px;
   box-shadow: inset -2px 0 0 rgba(0,0,0,0.18);
   transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.stats-bar-item.is-categorie .stats-bar-fill { background: var(--ambre); }
+.stats-bar-item.is-categorie .stats-bar-fill { background: var(--rouge); }
 .stats-bar-count { text-align: right; font-variant-numeric: tabular-nums; }
 .stats-bar-count-n { display: block; font-size: 19px; font-weight: 700; line-height: 1; color: var(--text); }
 .stats-bar-count-pct {
@@ -676,8 +677,8 @@ body {
   color: var(--brun-pale);
 }
 .stats-legend-key i { width: 13px; height: 13px; flex-shrink: 0; box-shadow: inset -2px 0 0 rgba(0,0,0,0.18); }
-.stats-legend-key.is-courant i { background: var(--vert); }
-.stats-legend-key.is-categorie i { background: var(--ambre); }
+.stats-legend-key.is-courant i { background: var(--or); }
+.stats-legend-key.is-categorie i { background: var(--rouge); }
 .stats-legend-note { display: block; font-size: 13px; font-style: italic; color: var(--brun-pale); line-height: 1.4; }
 
 @media (max-width: 900px) {

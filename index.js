@@ -3302,8 +3302,11 @@ function openCourantDetail(courantId){
   tcOuvrirOverlay(courant, null, {t:'cour', c:courantId});
 }
 
-// Frise chronologique partagée par les classements "Courants" et "Catégories" :
+// Frise chronologique du classement unique "Courants & Catégories" :
 // tri par année de début, année affichée une seule fois par groupe d'années identiques.
+// La famille de chaque entrée se lit à la couleur du point — l'or des étiquettes
+// de courant sur les fiches, le rouge pour une catégorie — doublée d'un libellé
+// réservé aux lecteurs d'écran : l'information ne repose pas sur la seule couleur.
 function renderCourantTimeline(el,keys){
   if(!el)return;
   el.innerHTML='';
@@ -3318,10 +3321,12 @@ function renderCourantTimeline(el,keys){
     var debut=(_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[k]&&_TC_COURANTS_CACHE[k].annee_debut)||'';
     var debutHtml=(debut!==''&&debut===prevDebut)?'':debut;
     prevDebut=debut;
+    var estCategorie=tcCourantType(Number(k))==='categorie';
+    var famille=escapeHtml(t(estCategorie?'ranking_famille_categorie':'ranking_famille_courant'));
     row.innerHTML='<div class="courant-tl-year">'+debutHtml+'</div>'
-      +'<div class="courant-tl-dot"></div>'
+      +'<div class="courant-tl-dot'+(estCategorie?'':' is-courant')+'" title="'+famille+'"></div>'
       +'<div class="courant-tl-content">'
-        +'<div class="courant-tl-name">'+escapeHtml(tcCourantLabel(Number(k)))+flag+'</div>'
+        +'<div class="courant-tl-name">'+escapeHtml(tcCourantLabel(Number(k)))+flag+'<span class="sr-only">'+famille+'</span></div>'
         +yearsHtml
       +'</div>';
     row.setAttribute('data-courant',k);
@@ -3346,22 +3351,17 @@ function renderStatistiques(){
       courantCount[id]=(courantCount[id]||0)+1;
     });
   });
-  var courKeys=Object.keys(courantCount).filter(function(k){return tcCourantType(Number(k))!=='categorie';}).sort(function(a,b){
+  var courKeys=Object.keys(courantCount).filter(function(k){return tcCourantType(Number(k))!=='categorie';});
+  var catKeys=Object.keys(courantCount).filter(function(k){return tcCourantType(Number(k))==='categorie';});
+  // Classement unique « Courants & Catégories » : les deux familles sont
+  // classées ensemble par année de début. Les deux listes ci-dessus ne servent
+  // plus qu'à compter chaque famille dans le bandeau de synthèse.
+  var courCatKeys=courKeys.concat(catKeys).sort(function(a,b){
     var ra=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[a],rb=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[b];
     var ya=(ra&&ra.annee_debut)||Infinity;
     var yb=(rb&&rb.annee_debut)||Infinity;
     if(ya!==yb)return ya-yb;
-    // À année de début égale, le courant le plus court passe en premier.
-    var da=(ra&&ra.annee_debut&&ra.annee_fin)?(ra.annee_fin-ra.annee_debut):Infinity;
-    var db=(rb&&rb.annee_debut&&rb.annee_fin)?(rb.annee_fin-rb.annee_debut):Infinity;
-    return da-db;
-  });
-  var catKeys=Object.keys(courantCount).filter(function(k){return tcCourantType(Number(k))==='categorie';}).sort(function(a,b){
-    var ra=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[a],rb=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[b];
-    var ya=(ra&&ra.annee_debut)||Infinity;
-    var yb=(rb&&rb.annee_debut)||Infinity;
-    if(ya!==yb)return ya-yb;
-    // À année de début égale, la catégorie la plus courte passe en premier.
+    // À année de début égale, l'entrée la plus courte passe en premier.
     var da=(ra&&ra.annee_debut&&ra.annee_fin)?(ra.annee_fin-ra.annee_debut):Infinity;
     var db=(rb&&rb.annee_debut&&rb.annee_fin)?(rb.annee_fin-rb.annee_debut):Infinity;
     return da-db;
@@ -3418,8 +3418,7 @@ function renderStatistiques(){
     rankEl.appendChild(row);
   });
 
-  renderCourantTimeline(document.getElementById('ranking-courants'),courKeys);
-  renderCourantTimeline(document.getElementById('ranking-categories'),catKeys);
+  renderCourantTimeline(document.getElementById('ranking-courants'),courCatKeys);
 
   renderFilmsRanking();
   applyRankingSelection();
@@ -3433,7 +3432,7 @@ function applyRankingSelection(){
       btn.classList.toggle('active',btn.getAttribute('data-ranking')===RANKING_SELECTED);
     });
   }
-  ['cineastes','films','courants','categories'].forEach(function(name){
+  ['cineastes','films','courants'].forEach(function(name){
     var panel=document.getElementById('ranking-panel-'+name);
     if(panel)panel.classList.toggle('active',name===RANKING_SELECTED);
   });

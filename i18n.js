@@ -209,8 +209,9 @@ var TC_TRANSLATIONS = {
     tc_cm_confirmer_suppression: "Supprimer ce commentaire ?",
     // Statistiques
     ranking_cineastes_titre: "Cinéastes les plus topés",
-    ranking_courants_titre: "Courants cinématographiques",
-    ranking_categories_titre: "Catégories",
+    ranking_courants_categories_titre: "Courants & Catégories",
+    ranking_famille_courant: "Courant cinématographique",
+    ranking_famille_categorie: "Catégorie",
     ranking_films_titre: "Films dans les tops",
     ranking_mode_films: "Nombre de films",
     ranking_mode_ratio: "Ratio films/tops",
@@ -839,8 +840,9 @@ var TC_TRANSLATIONS = {
     tc_cm_confirmer_suppression: "Delete this comment?",
     // Statistiques
     ranking_cineastes_titre: "Top-ranked filmmakers",
-    ranking_courants_titre: "Movements",
-    ranking_categories_titre: "Categories",
+    ranking_courants_categories_titre: "Movements & Categories",
+    ranking_famille_courant: "Film movement",
+    ranking_famille_categorie: "Category",
     ranking_films_titre: "Films in tops",
     ranking_mode_films: "Number of films",
     ranking_mode_ratio: "Films/tops ratio",
