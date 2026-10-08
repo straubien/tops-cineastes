@@ -789,7 +789,7 @@ function jpEnregistrerReglages(){
 function jpChargerPhotosStudio(sid){
   return Promise.all([
     JP_SB.from('jeu_photogrammes').select('id,session_id,position,image_path').eq('session_id', sid).order('position'),
-    JP_SB.from('jeu_photogrammes_secret').select('photogramme_id,titre_attendu,realisateur,variantes,indices').eq('session_id', sid)
+    JP_SB.from('jeu_photogrammes_secret').select('photogramme_id,titre_attendu,titre_original,realisateur,variantes,indices').eq('session_id', sid)
   ]).then(function(res){
     if(res[0] && res[0].error) throw tcSbError(res[0].error, 'jeu_photogrammes');
     JP_PHOTOS = (res[0] && res[0].data) || [];
@@ -932,6 +932,21 @@ function jpFiche(p, i){
   ligne.appendChild(cTitre); ligne.appendChild(cReal);
   droite.appendChild(ligne);
 
+  // LE TITRE ORIGINAL. Il vaut reponse exacte, exactement comme le titre
+  // attendu, et il sert de seconde clef dans les tables d'equivalences du
+  // site : une fiche « Val Abraham » dont la VO est « Vale Abraao »
+  // reconnait les deux sans arbitrage. Facultatif — pour un film francais,
+  // il ne change rien. Mais c'est la ligne qui epargne un arbitrage aux
+  // cinephiles qui ne connaissent pas le titre francais.
+  var lblVO = document.createElement('div');
+  lblVO.className = 'jp-label';
+  lblVO.textContent = t('jp_l_vo');
+  droite.appendChild(lblVO);
+  var cVO = jpChamp('text', t('jp_ph_vo'), sec.titre_original || '', 200);
+  cVO.style.maxWidth = '330px';
+  cVO.style.marginBottom = '12px';
+  droite.appendChild(cVO);
+
   // Variantes acceptees
   var lblV = document.createElement('div');
   lblV.className = 'jp-label';
@@ -1052,7 +1067,7 @@ function jpFiche(p, i){
   // fois la meme fiche a chaque sortie de champ.
   function signature(){
     return JSON.stringify([
-      cTitre.value.trim(), cReal.value.trim(),
+      cTitre.value.trim(), cVO.value.trim(), cReal.value.trim(),
       vars,
       inds.filter(function(x){ return x.texte && x.texte.trim(); })
           .map(function(x){ return [x.texte.trim(), Math.max(0, x.apres || 0)]; })
@@ -1087,6 +1102,7 @@ function jpFiche(p, i){
       photogramme_id: p.id,
       session_id: p.session_id,
       titre_attendu: titre,
+      titre_original: cVO.value.trim() || null,
       realisateur: cReal.value.trim() || null,
       variantes: vars,
       indices: inds.filter(function(x){ return x.texte && x.texte.trim(); })
@@ -2057,7 +2073,7 @@ function jpRendreVerdictCourant(p){
     txt.textContent = t('jp_trouve_en', [jpChrono(m.elapsed_ms || 0), jpPoints(m.points)]);
   } else if(m.statut === 'en_attente'){
     v.classList.add('jp-verdict-attente');
-    txt.textContent = t('jp_en_arbitrage', m.texte);
+    txt.textContent = t('jp_en_arbitrage', [m.texte, jpChrono(m.elapsed_ms || 0)]);
   } else {
     v.classList.add('jp-verdict-non');
     txt.textContent = t('jp_refuse', m.texte);
@@ -2095,9 +2111,11 @@ function jpRepondre(){
     var d = r.data || {};
     if(d.statut === 'deja') return;
 
+    var ancien = JP_MES[k] || {};
     JP_MES[k] = {
       statut: d.statut, texte: texte,
-      points: d.points || 0, elapsed_ms: d.elapsed_ms || 0
+      points: d.points || ancien.points || 0,
+      elapsed_ms: d.elapsed_ms || ancien.elapsed_ms || 0
     };
     jpMajVignette(p.id);
     jpMajScoreBandeau();
@@ -2116,7 +2134,7 @@ function jpRepondre(){
       }, 850);
     } else if(d.statut === 'en_attente'){
       v.classList.add('jp-verdict-attente');
-      txt.textContent = d.repete ? t('jp_deja_propose') : t('jp_soumis_arbitrage');
+      txt.textContent = d.repete ? t('jp_deja_propose') : t('jp_soumis_arbitrage', jpChrono(d.elapsed_ms || 0));
       jpAnnoncer(txt.textContent);
     } else {
       v.classList.add('jp-verdict-non');
