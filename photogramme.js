@@ -942,8 +942,17 @@ function jpFiche(p, i){
   droite.appendChild(puces);
 
   var vars = (sec.variantes || []).slice();
+
+  // Le champ d'ajout vit EN DEHORS du redessin des puces. Le recreer a chaque
+  // fois faisait perdre le focus apres chaque Entree, et surtout le supprimer
+  // au moment meme ou le focus le quitte pouvait empecher l'enregistrement
+  // automatique de la fiche de partir.
+  var ajout = jpChamp('text', t('jp_ph_variante'), '', 200);
+  ajout.style.maxWidth = '230px';
+
   function dessinerPuces(){
-    jpVider(puces);
+    var vieilles = puces.querySelectorAll('.jp-puce');
+    for(var n = 0; n < vieilles.length; n++) puces.removeChild(vieilles[n]);
     vars.forEach(function(v, k){
       var pc = document.createElement('span');
       pc.className = 'jp-puce';
@@ -954,18 +963,36 @@ function jpFiche(p, i){
       x.setAttribute('aria-label', t('jp_retirer_variante', v));
       x.addEventListener('click', function(){ vars.splice(k, 1); dessinerPuces(); });
       pc.appendChild(x);
-      puces.appendChild(pc);
+      puces.insertBefore(pc, ajout);
     });
-    var ajout = jpChamp('text', t('jp_ph_variante'), '', 200);
-    ajout.style.maxWidth = '230px';
-    ajout.addEventListener('keydown', function(ev){
-      if(ev.key !== 'Enter') return;
-      ev.preventDefault();
-      var v = ajout.value.trim();
-      if(v && vars.indexOf(v) === -1 && vars.length < 20){ vars.push(v); dessinerPuces(); }
-    });
-    puces.appendChild(ajout);
   }
+
+  // CE QUI RESTE DANS LE CHAMP VAUT VARIANTE. Entrée n'est plus la seule
+  // facon de valider : quitter le champ, quitter la fiche ou enregistrer
+  // absorbent aussi le texte en cours. Avant, taper « Gun Crazy » puis
+  // cliquer ailleurs le perdait sans un mot, et la bonne reponse d'un joueur
+  // partait en arbitrage alors que le createur l'avait bel et bien prevue.
+  function absorberVariante(){
+    var v = (ajout.value || '').trim();
+    if(!v) return;
+    // Au plafond, on garde le texte sous les yeux plutot que de l'effacer :
+    // une variante perdue en silence est precisement ce qu'on corrige ici.
+    if(vars.indexOf(v) === -1){
+      if(vars.length >= 20) return;
+      vars.push(v);
+      dessinerPuces();
+    }
+    ajout.value = '';
+  }
+
+  ajout.addEventListener('keydown', function(ev){
+    if(ev.key !== 'Enter') return;
+    ev.preventDefault();
+    absorberVariante();
+  });
+  ajout.addEventListener('blur', absorberVariante);
+
+  puces.appendChild(ajout);
   dessinerPuces();
 
   // Indices
@@ -1044,6 +1071,9 @@ function jpFiche(p, i){
   // lui-meme se croiseraient, et c'est le plus ancien qui pourrait gagner.
   var enVol = null;
   function enregistrer(){
+    // Un clic direct sur « Enregistrer » ou « Créer la partie » ne doit pas
+    // laisser filer la variante encore en cours de frappe.
+    absorberVariante();
     var titre = cTitre.value.trim();
     if(!titre){
       etat.textContent = t('jp_err_attendu');
@@ -1100,6 +1130,10 @@ function jpFiche(p, i){
   // mais son titre attendu se corrige jusqu'a la fin — c'est meme la seule
   // chose qu'on puisse encore y faire.
   droite.addEventListener('focusout', function(ev){
+    // D'abord absorber la variante en cours, AVANT de comparer la signature :
+    // selon le navigateur, ce focusout peut preceder le blur du champ d'ajout,
+    // et la variante manquerait alors l'envoi qui part juste en dessous.
+    absorberVariante();
     // Un deplacement DANS la meme fiche ne vaut pas sortie.
     if(ev.relatedTarget && droite.contains(ev.relatedTarget)) return;
     if(!cTitre.value.trim()) return;      // une fiche vide n'est pas une erreur
