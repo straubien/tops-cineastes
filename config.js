@@ -45,4 +45,4 @@ var TC_AVATAR_MAX_SIZE = 2 * 1024 * 1024;
 // que la cle anon de Supabase juste au-dessus : une cle TMDB v3 ne donne
 // acces qu'EN LECTURE au catalogue public de TMDB. Elle ne permet pas
 // d'ecrire chez TMDB, et elle n'ouvre rien de ce site.
-var TC_TMDB_KEY = '';
+var TC_TMDB_KEY = 'fea3cb32bf2802cf15b71898983593ae';
