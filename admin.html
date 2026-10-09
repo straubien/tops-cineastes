@@ -84,6 +84,7 @@
       <button class="tab" data-tab="courants-gestion">Gestion des courants</button>
       <button class="tab" data-tab="courants-types">Types d'entrée</button>
       <button class="tab" data-tab="statistiques">Statistiques</button>
+      <button class="tab" data-tab="activite">Activité</button>
       <button class="tab" data-tab="reglages">Réglages</button>
     </div>
 
@@ -367,37 +368,34 @@
       <div id="stats-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin-bottom:1rem;font-size:15px;"></div>
 
       <div id="stats-chart" class="stats-chart"></div>
+    </div>
 
-      <!-- ── LES CINÉPHILES LES PLUS ACTIFS ──
-           Ce palmarès vit dans le back-office, et nulle part ailleurs : savoir
-           qui se connecte et à quelle fréquence est une donnée personnelle, et
-           les cinéphiles ont déjà un droit de retrait sur l'affichage public de
-           leur simple présence (contributors.presence_publique). ── -->
-      <div class="section-title" style="margin-top:2.6rem;">Les cinéphiles les plus actifs</div>
-      <div style="font-size:13px;color:var(--brun-pale);margin-bottom:0.6rem;max-width:880px;">
-        Tout ce que le site sait de l'activité de chacun depuis la création du site.
-        Cliquez sur un en-tête pour trier ; les cellules groupées donnent leur détail au survol.
-      </div>
-      <div style="font-size:13px;color:var(--brun-pale);margin-bottom:0.6rem;max-width:880px;">
-        Le score d'activité pèse chaque geste selon ce qu'il demande d'engagement :
-        une partie du Jeu du photogramme montée vaut&nbsp;25, un top publié ou envoyé&nbsp;10,
-        une partie jouée&nbsp;8, une proposition de cinéaste&nbsp;4, un commentaire&nbsp;3,
-        une proposition de courant&nbsp;2, un photogramme trouvé&nbsp;1, une connexion&nbsp;1.
-        Ces poids sont des choix, pas une vérité : ils se changent en un endroit
-        (<code>ACT_POIDS</code>, dans <code>admin.js</code>).
-      </div>
-      <div style="font-size:13px;color:var(--rouge-texte);margin-bottom:1rem;max-width:880px;">
+    <!-- ── TAB 12 : ACTIVITÉ DES CINÉPHILES ──
+         Cet onglet vit dans le back-office, et nulle part ailleurs : savoir qui
+         se connecte et à quelle fréquence est une donnée personnelle, et les
+         cinéphiles ont déjà un droit de retrait sur l'affichage public de leur
+         simple présence (contributors.presence_publique).
+
+         Tout le contenu est construit par admin.js : le bandeau de tête, le
+         classement en barres empilées et le tableau de détail. ── -->
+    <div class="tab-panel" id="panel-activite">
+      <div class="section-title">Activité des cinéphiles</div>
+      <p class="act-intro">
+        Tout ce que le site sait de l'activité de chacun depuis sa création : les tops,
+        les propositions, le Jeu du photogramme, les commentaires et les connexions.
+      </p>
+      <p class="act-intro act-avertissement">
         ⚠ La colonne « Connexions » ne compte qu'à partir de l'installation du journal
         des connexions (fichier SQL n° 7). Avant lui, le site n'enregistrait que la
         <em>dernière</em> visite de chacun, en écrasant la précédente : cet historique-là
         n'existe nulle part et ne peut pas être reconstitué. Toutes les autres colonnes,
         elles, remontent bien à la création du site.
-      </div>
+      </p>
       <div id="activite-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin-bottom:1rem;font-size:15px;"></div>
-      <div id="activite-table"></div>
+      <div id="activite-vue"></div>
     </div>
 
-    <!-- ── TAB 12 : RÉGLAGES ── -->
+    <!-- ── TAB 13 : RÉGLAGES ── -->
     <div class="tab-panel" id="panel-reglages">
       <div class="section-title">Onglet public « Affinités » — calcul du pourcentage</div>
       <div style="font-size:13px;color:var(--brun-pale);margin-bottom:1.2rem;max-width:640px;">

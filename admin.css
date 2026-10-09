@@ -527,49 +527,427 @@ body {
   .courant-slot-label { grid-column: 1 / -1; }
 }
 
-/* ── LES CINÉPHILES LES PLUS ACTIFS ── */
-/* Un tableau, et non des barres comme le graphique des courants : ici on
-   compare dix gestes différents d'un cinéphile à l'autre, et c'est le chiffre
-   exact qui intéresse, pas la silhouette. Les en-têtes sont de vrais boutons :
-   tout se trie d'un clic, et au clavier. */
-.act-table {
-  width: 100%;
-  border-collapse: collapse;
+/* ── ACTIVITÉ DES CINÉPHILES (onglet « Activité ») ──────────────────────────
+   Le bandeau de tête, le classement en barres empilées et le tableau de
+   détail. L'habillage reprend celui du back-office — carte crème, ombre
+   portée de 4 px, chiffres tabulaires, micro-libellés en capitales — mais les
+   MARQUES, elles, suivent les règles de lisibilité des graphiques : pas de
+   bordure autour d'une barre (c'est le vide qui sépare), un écart de 2 px en
+   couleur de fond entre deux segments, un bout de barre arrondi à 4 px du
+   côté de la donnée et carré du côté de l'origine, et des graduations en
+   filet d'un pixel, discrètes.
+
+   ── LES QUATRE COULEURS DE FAMILLE ──
+   Elles ne sont pas choisies à l'œil. Deux viennent du site (--rouge et
+   --or), les deux autres ont été calées sur les contrôles mesurables d'une
+   palette catégorielle : bande de clarté, plancher de chromie, écart entre
+   paires voisines sous daltonisme (protanopie et deutéranopie), plancher en
+   vision normale, et contraste avec le fond.
+
+   Le premier jeu essayé — rouge, or, bleu marine, vert du site — a échoué :
+   rouge et vert ne se séparaient que de ΔE 4,9 en deutéranopie, là où il en
+   faut 8. Un lecteur daltonien sur douze n'aurait pas distingué « Tops » de
+   « Jeu ». D'où le sarcelle à la place du vert, et le bleu GLISSÉ ENTRE le
+   rouge et l'or dans l'ordre de la pile (cf. ACT_FAMILLES dans admin.js) :
+   dans une barre empilée, seules les paires qui se touchent ont à être
+   distinguées. Le jeu retenu passe les cinq contrôles dans les DEUX modes,
+   le plus mauvais écart voisin valant 11,9 en clair et 13,1 en sombre.
+
+   Le mode sombre n'est pas un inversement automatique du mode clair : ses
+   paliers sont choisis et vérifiés séparément, contre le fond sombre. */
+#panel-activite {
+  --act-tops:  #A33025;   /* le rouge du site (--rouge en mode clair) */
+  --act-jeu:   #2E62B0;   /* le bleu des étiquettes du back-office, éclairci */
+  --act-props: #A8841E;   /* l'or des courants (--or, inchangé dans les 2 modes) */
+  --act-ech:   #0E9384;
+}
+.dark #panel-activite {
+  --act-tops:  #CC6B55;
+  --act-jeu:   #5B8FD6;
+  --act-props: #A8841E;
+  --act-ech:   #2BA594;
+}
+
+.act-intro {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--brun-pale);
+  max-width: 880px;
+  margin-bottom: 0.6rem;
+}
+.act-avertissement { color: var(--rouge-texte); margin-bottom: 1.4rem; }
+
+/* ── Le bandeau de tête ── */
+.act-bandeau {
+  display: flex;
+  flex-wrap: wrap;
   margin-bottom: 1.6rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   box-shadow: 4px 4px 0 var(--border-dim);
+}
+/* Le chiffre que l'on vient chercher en ouvrant l'onglet : il a droit à sa
+   taille. Le filet de droite reprend les quatre couleurs de famille — c'est
+   la carte et la légende qui se répondent. */
+.act-tete {
+  flex: 1 1 280px;
+  position: relative;
+  padding: 1.3rem 1.9rem 1.3rem 1.5rem;
+  background: var(--noir);
+  color: #f0ece3;
+}
+.dark .act-tete { color: #1a1714; }
+.act-tete::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 8px; height: 100%;
+  background: linear-gradient(to bottom,
+    var(--act-tops)  0 25%,  var(--act-jeu)   25% 50%,
+    var(--act-props) 50% 75%, var(--act-ech)  75% 100%);
+}
+.act-tete-sur {
+  display: block;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.act-tete-nom {
+  display: block;
+  font-family: var(--font-names);
+  font-size: 21px;
+  line-height: 1.2;
+  margin: 9px 0 10px;
+  overflow-wrap: break-word;
+}
+/* PAS de tabular-nums ici, ni sur les compteurs ci-dessous. Les chiffres de
+   largeur fixe servent à aligner des nombres les uns SOUS les autres (les
+   lignes du tableau, les valeurs au bout des barres) ; sur un grand nombre
+   isolé, ils ne font que déliter les chiffres. La police de titrage du site
+   est conservée : tout le back-office est composé dedans, et le bandeau de
+   synthèse des courants fait déjà de même. */
+.act-tete-valeur {
+  display: block;
+  font-size: 50px;
+  font-weight: 700;
+  line-height: 1;
+}
+.act-tete-unite {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-left: 9px;
+}
+.act-kpis {
+  flex: 1 1 420px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+}
+.act-kpi {
+  padding: 1.3rem 0.8rem;
+  text-align: center;
+  border-left: 1px solid var(--border-dim);
+}
+.act-kpi:first-child { border-left: none; }
+.act-kpi-valeur {
+  display: block;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.act-kpi-label {
+  display: block;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+/* ── Les deux cartes : le classement, puis le détail ── */
+.act-bloc {
+  margin-bottom: 1.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border-dim);
+}
+.act-bloc-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.act-bloc-titre {
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.act-bloc-aide { font-size: 12px; font-style: italic; color: var(--brun-pale); }
+
+/* La légende est toujours là : l'identité ne repose jamais sur la seule
+   couleur. Son ordre est celui de la pile, pour qu'on puisse lire l'une dans
+   l'autre sans réfléchir. */
+.act-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-left: auto;
+}
+.act-legende-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  /* Le texte ne porte JAMAIS la couleur de la donnée : c'est la pastille à
+     côté qui tient l'identité. En or, ce libellé tomberait sous le contraste
+     exigé. */
+  color: var(--brun-pale);
+}
+.act-cle {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border-radius: 2px;
+}
+.act-cle-tops  { background: var(--act-tops); }
+.act-cle-jeu   { background: var(--act-jeu); }
+.act-cle-props { background: var(--act-props); }
+.act-cle-ech   { background: var(--act-ech); }
+
+/* ── Le classement ── */
+.act-barres { padding: 0.35rem 0 0.25rem; }
+.act-barre-ligne {
+  display: grid;
+  grid-template-columns: 30px minmax(120px, 1.1fr) minmax(90px, 3fr) 62px;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 1.5rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+.act-barre-ligne:last-child { border-bottom: none; }
+.act-barre-ligne:hover { background: var(--bg-subtle); }
+.act-rang {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--brun-pale);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* Le podium se distingue par la GRAISSE, pas par la couleur. En rouge, ces
+   trois chiffres auraient porté la couleur de la famille « Tops » : un texte
+   ne porte jamais la couleur d'une donnée, sous peine de laisser croire
+   qu'il en désigne une. */
+.act-barre-ligne:nth-child(-n+3) .act-rang { color: var(--text); font-weight: 700; }
+.act-nom {
+  font-family: var(--font-names);
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+/* La piste : le fond et ses graduations au quart, en filet d'un pixel. Elle
+   remplace l'axe — chaque barre porte déjà sa valeur au bout, il n'y a donc
+   pas d'échelle chiffrée à afficher.
+
+   LA MARQUE FAIT 14 PX, LA CIBLE 24. Le remplissage de 5 px en haut et en bas
+   agrandit la zone qui répond au pointeur et au clavier sans épaissir la
+   barre : viser une réglette de quatorze pixels à la souris est une
+   corvée. `background-clip: content-box` garde le fond et les graduations
+   dans les quatorze pixels du milieu. */
+.act-piste {
+  height: 24px;
+  padding: 5px 0;
+  background: var(--bg-subtle);
+  background-image: repeating-linear-gradient(to right,
+    var(--border-dim) 0 1px, transparent 1px 25%);
+  background-clip: content-box;
+}
+.act-piste:focus-visible { outline: 2px solid var(--rouge); outline-offset: 3px; }
+.act-barre {
+  display: flex;
+  gap: 2px;              /* l'écart qui sépare, en couleur de fond */
+  height: 100%;
+  transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.act-seg {
+  /* Trois pixels au minimum : une famille qui a servi doit se voir, même
+     pour un seul geste. L'infobulle et le tableau donnent le chiffre juste. */
+  min-width: 3px;
+  flex-basis: 0;
+}
+/* Arrondi du côté de la donnée, carré du côté de l'origine. */
+.act-seg:last-child { border-radius: 0 4px 4px 0; }
+.act-seg-tops  { background: var(--act-tops); }
+.act-seg-jeu   { background: var(--act-jeu); }
+.act-seg-props { background: var(--act-props); }
+.act-seg-ech   { background: var(--act-ech); }
+/* La marque survolée réagit : on voit ce qu'on interroge. */
+.act-piste:hover .act-seg, .act-piste:focus-visible .act-seg { filter: brightness(1.12); }
+.act-valeur {
+  text-align: right;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.act-note {
+  padding: 0.9rem 1.5rem 1.1rem;
+  border-top: 1px solid var(--border-dim);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--brun-pale);
+}
+.act-note strong { color: var(--text-dim); font-weight: 600; }
+
+/* ── L'infobulle ── */
+.act-bulle {
+  position: fixed;
+  z-index: 300;
+  min-width: 196px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border-dim);
+  font-size: 12px;
+  pointer-events: none;   /* elle ne doit jamais voler le survol à la barre */
+  opacity: 0;
+  visibility: hidden;
+}
+.act-bulle.est-visible { opacity: 1; visibility: visible; }
+.act-bulle-nom {
+  font-family: var(--font-names);
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.act-bulle-ligne, .act-bulle-total {
+  display: grid;
+  grid-template-columns: 11px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.act-bulle-total {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-dim);
+  grid-column-start: 2;
+  grid-template-columns: 1fr auto;
+}
+.act-bulle-vide { opacity: 0.45; }
+.act-bulle-fam {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
+/* Dans l'infobulle, la hiérarchie de la légende s'inverse : le lecteur a la
+   famille sous les yeux, c'est le chiffre qu'il vient chercher. */
+.act-bulle-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Le tableau de détail ── */
+/* Quatorze colonnes : sur un écran étroit, le tableau défile au lieu de se
+   tasser, et la colonne des noms reste accrochée à gauche. */
+.act-defilement { overflow-x: auto; }
+.act-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 13px;
 }
+/* 8 px et non 10 : sur quatorze colonnes, ces deux pixels de part et d'autre
+   font cent-douze pixels de large, et c'est exactement ce qui manquait pour
+   que la derniere colonne tienne a l'ecran. */
 .act-table th, .act-table td {
-  padding: 7px 9px;
+  padding: 7px 8px;
   text-align: right;
   white-space: nowrap;
   border-bottom: 1px solid var(--border-dim);
   font-variant-numeric: tabular-nums;
 }
-.act-table th { vertical-align: bottom; border-bottom: 1px solid var(--border); }
+.act-table thead th { vertical-align: bottom; }
 .act-table tbody tr:last-child td { border-bottom: none; }
-.act-table tbody tr:hover { background: var(--bg-subtle); }
-.act-table .act-gauche { text-align: left; white-space: normal; }
+.act-table tbody tr:hover td { background: var(--bg-subtle); }
+.act-table .act-gauche { text-align: left; white-space: normal; min-width: 130px; }
+/* La colonne des noms reste visible pendant le défilement latéral. */
+.act-table th.act-gauche, .act-table td.act-gauche {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}
+.act-table tbody tr:hover td.act-gauche { background: var(--bg-subtle); }
+
+/* La bande de famille : c'est elle qui relie le tableau aux barres du dessus. */
+.act-bande-cell {
+  padding: 8px 10px 5px;
+  text-align: left;
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  border-bottom: 3px solid transparent;
+}
+.act-bande-tops  { border-bottom-color: var(--act-tops); }
+.act-bande-jeu   { border-bottom-color: var(--act-jeu); }
+.act-bande-props { border-bottom-color: var(--act-props); }
+.act-bande-ech   { border-bottom-color: var(--act-ech); }
+
 .act-tri {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   font-family: system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--brun-pale);
+  text-align: right;
 }
 .act-tri:hover { color: var(--text); }
 .act-tri-actif { color: var(--text); font-weight: 700; }
+.act-fleche { font-size: 12px; }
 .act-score { font-weight: 700; color: var(--text); }
 /* Un zéro s'écrit « · » et s'efface : ce qui doit sauter aux yeux dans ce
    tableau, c'est ce que les gens ONT fait. */
 .act-zero { color: var(--border); }
-.act-top .act-score { color: var(--rouge-texte); }
+
+@media (max-width: 760px) {
+  .act-barre-ligne { grid-template-columns: 24px minmax(90px, 1fr) minmax(60px, 2fr) 52px; gap: 9px; padding: 8px 1rem; }
+  .act-tete-valeur { font-size: 40px; }
+  .act-bloc-tete, .act-note { padding-left: 1rem; padding-right: 1rem; }
+}
 
 /* ── STATISTIQUES ── */
 /* Une seule carte : courants et catégories sont classés ensemble, la couleur de

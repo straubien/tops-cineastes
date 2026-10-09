@@ -270,6 +270,10 @@ document.querySelectorAll('.tab').forEach(function(tab){
     // Onglet « Types d'entrée » : il ne lit que sa propre table.
     if(tab.getAttribute('data-tab') === 'courants-types') loadCourantTypes();
     if(isStatsTabActive) renderStats();
+    // L'activite des cinephiles : une seule lecture, gardee deux minutes.
+    // Pas de rafraichissement periodique — ces chiffres se comptent en mois,
+    // pas en secondes.
+    if(tab.getAttribute('data-tab') === 'activite') renderActivite(false);
     if(tab.getAttribute('data-tab') === 'reglages'){ loadReglagesAffiniteFormule(); loadReglagesAffinitePoids(); }
   });
 });
@@ -3110,11 +3114,11 @@ function refreshStatsIfActive(){
   if(isStatsTabActive) renderStats();
 }
 
-// ════════════════════════════════════════════════════════════
-// LES CINÉPHILES LES PLUS ACTIFS (onglet Statistiques)
-// ════════════════════════════════════════════════════════════
-// Tout vient d'UNE fonction de la base — `tc_activite_cinephiles`, livrée
-// avec le fichier SQL n° 7 : une ligne par cinéphile, tous les compteurs déjà
+// ═══════════════════════════════════════════════════════════════
+// ACTIVITÉ DES CINÉPHILES (onglet « Activité »)
+// ═══════════════════════════════════════════════════════════════
+// Tout vient d'UNE fonction de la base — `tc_activite_cinephiles`, livrée avec
+// le fichier SQL n° 7 : une ligne par cinéphile, tous les compteurs déjà
 // faits. C'est voulu. Compter ici aurait voulu dire relire page par page les
 // 12 000 tops et les 500 soumissions, puisque PostgREST plafonne chaque
 // réponse à un millier de lignes — une douzaine de requêtes pour un tableau
@@ -3122,6 +3126,19 @@ function refreshStatsIfActive(){
 //
 // La base vérifie elle-même que l'appelant est administrateur, et refuse la
 // requête sinon : l'affichage n'est pas la barrière, il ne l'est jamais.
+//
+// ── CE QUE L'ONGLET MONTRE, ET DANS QUEL ORDRE ───────────────────────────
+//   1. un chiffre de tête : le cinéphile le plus actif ;
+//   2. quatre compteurs de cadrage (inscrits, vus ce mois, tops, propositions) ;
+//   3. le classement, en barres empilées : la LONGUEUR dit le volume, les
+//      SEGMENTS disent de quoi cette activité est faite ;
+//   4. le détail chiffre par chiffre, triable.
+//
+// Le point 3 est le coeur. Un simple classement de scores dirait « Alice est
+// devant Bruno » et s'arrêterait là. Les segments disent POURQUOI : l'une
+// publie des tops, l'autre anime le Jeu du photogramme, une troisième
+// propose des cinéastes sans jamais jouer. C'est cette question-là qu'on se
+// pose en ouvrant cet onglet.
 
 // Le poids de chaque geste dans le score d'activité. Ils sont ici, en clair et
 // à un seul endroit, parce qu'il n'existe pas de bonne réponse : ce sont des
@@ -3140,43 +3157,82 @@ var ACT_POIDS = {
   jeu_bonnes_reponses:  1
 };
 
-// Les colonnes, dans l'ordre d'affichage.
-//   clef    la donnée rendue par la base, ou l'une des deux calculées ici
-//           (`score`, `propositions`, `jeu`)
+// ── LES QUATRE FAMILLES DE GESTES ─────────────────────────────────────────
+// Dix compteurs, c'est trop pour une barre empilée : au-delà de cinq ou six
+// segments, plus personne ne distingue les couleurs. On les regroupe donc en
+// quatre familles qui ont un sens pour le site, et le tableau du bas garde
+// les dix chiffres exacts.
+//
+// ⚠ L'ORDRE DE CETTE LISTE EST L'ORDRE DE LA PILE, ET IL N'EST PAS LIBRE.
+// Dans une barre empilée, seuls les segments VOISINS se touchent : ce sont
+// donc les paires voisines qui doivent rester distinguables. Or le rouge et
+// l'or, côte à côte, ne se séparent pas assez en mode sombre pour un œil
+// daltonien (deutéranopie : écart de 5,9 là où il en faut 8). Le bleu est
+// glissé entre eux : chaque paire voisine passe alors les contrôles, dans
+// les deux modes. Ne remettez pas « Propositions » juste après « Tops ».
+var ACT_FAMILLES = [
+  { clef: 'tops',  nom: 'Tops',
+    compte: ['tops_publies', 'tops_proposes', 'tops_thematiques'] },
+  { clef: 'jeu',   nom: 'Jeu du photogramme',
+    compte: ['jeu_parties_creees', 'jeu_parties_jouees', 'jeu_bonnes_reponses'] },
+  { clef: 'props', nom: 'Propositions',
+    compte: ['prop_cineastes', 'prop_courants'] },
+  { clef: 'ech',   nom: 'Échanges & présence',
+    compte: ['commentaires', 'nb_connexions'] }
+];
+
+// ── LES COLONNES DU TABLEAU DE DÉTAIL ─────────────────────────────────────
+// Elles suivent les familles ci-dessus, dans le même ordre : l'en-tête porte
+// une bande de la couleur de la famille, et le lecteur retrouve dans le
+// tableau ce qu'il vient de voir dans les barres.
+//   clef    la donnée rendue par la base, ou `score`, calculé ici
+//   fam     la famille d'appartenance (pour la bande de couleur de l'en-tête)
 //   texte   colonne de texte : alignée à gauche, triée alphabétiquement
 //   date    colonne de date : affichée en français, triée chronologiquement
-//   detail  l'infobulle, quand la colonne regroupe plusieurs compteurs
+//   aide    l'infobulle de l'en-tête, quand le titre court ne suffit pas
 var ACT_COLONNES = [
   { clef: 'display_name', titre: 'Cinéphile', texte: true },
   { clef: 'score', titre: 'Activité', fort: true,
-    detail: function(){ return 'Somme pondérée de toutes les colonnes de gestes (voir la légende au-dessus du tableau).'; } },
-  { clef: 'nb_connexions', titre: 'Connexions',
-    detail: function(r){ return r.jours_de_visite + ' jour(s) de visite distincts. Ne compte qu\u2019à partir du fichier SQL n° 7.'; } },
-  { clef: 'tops_publies', titre: 'Tops publiés',
-    detail: function(){ return 'Tops en ligne, un par cinéaste (table « tops »).'; } },
-  { clef: 'tops_proposes', titre: 'Tops envoyés',
-    detail: function(){ return 'Tops envoyés depuis l\u2019espace contributeur, en attente ou validés. Une soumission modifiée est mise à jour sur place par le site : elle compte pour une, pas pour deux.'; } },
-  { clef: 'propositions', titre: 'Propositions',
-    detail: function(r){ return r.prop_cineastes + ' cinéaste(s), ' + r.prop_courants
-      + ' courant(s) ou catégorie(s), ' + r.tops_thematiques + ' top(s) thématique(s).'; } },
-  { clef: 'commentaires', titre: 'Comm.',
-    detail: function(){ return 'Commentaires écrits sous les tops.'; } },
-  { clef: 'jeu', titre: 'Jeu',
-    detail: function(r){ return r.jeu_parties_creees + ' partie(s) montée(s), ' + r.jeu_parties_jouees
-      + ' jouée(s), ' + r.jeu_bonnes_reponses + ' photogramme(s) trouvé(s).'; } },
-  { clef: 'inscrit_le', titre: 'Membre depuis', date: true },
-  { clef: 'derniere_visite', titre: 'Dernière visite', date: true,
-    detail: function(){ return 'contributors.last_seen_at : la dernière visite connue, écrasée à chaque passage.'; } }
+    aide: 'Somme pondérée de tous les gestes, selon les poids annoncés sous le classement.' },
+  { clef: 'tops_publies', titre: 'Publiés', fam: 'tops',
+    aide: 'Tops en ligne, un par cinéaste (table « tops »).' },
+  { clef: 'tops_proposes', titre: 'Envoyés', fam: 'tops',
+    aide: 'Tops envoyés depuis l’espace contributeur, en attente ou validés. Une soumission modifiée est mise à jour sur place par le site : elle compte pour une, pas pour deux.' },
+  { clef: 'tops_thematiques', titre: 'Thémat.', fam: 'tops',
+    aide: 'Tops thématiques proposés.' },
+  { clef: 'jeu_parties_creees', titre: 'Montées', fam: 'jeu',
+    aide: 'Parties du Jeu du photogramme préparées et publiées.' },
+  { clef: 'jeu_parties_jouees', titre: 'Jouées', fam: 'jeu',
+    aide: 'Parties auxquelles le cinéphile a répondu au moins une fois.' },
+  { clef: 'jeu_bonnes_reponses', titre: 'Trouvés', fam: 'jeu',
+    aide: 'Photogrammes trouvés, toutes parties confondues.' },
+  { clef: 'prop_cineastes', titre: 'Cinéastes', fam: 'props',
+    aide: 'Propositions de fiches cinéaste.' },
+  { clef: 'prop_courants', titre: 'Courants', fam: 'props',
+    aide: 'Propositions de courants et de catégories.' },
+  { clef: 'commentaires', titre: 'Comm.', fam: 'ech',
+    aide: 'Commentaires écrits sous les tops.' },
+  { clef: 'nb_connexions', titre: 'Connex.', fam: 'ech',
+    aide: 'Visites enregistrées depuis l’installation du journal des connexions (fichier SQL n° 7). Avant lui, rien n’était conservé.' },
+  // Titres courts et dates à deux chiffres : à quatorze colonnes, « Membre
+  // depuis » et « 02/06/2026 » poussaient les deux dernières hors de
+  // l'écran. L'infobulle de l'en-tête dit ce que la colonne compte.
+  { clef: 'inscrit_le', titre: 'Inscrit', date: true,
+    aide: 'Date d’inscription du cinéphile.' },
+  { clef: 'derniere_visite', titre: 'Vu le', date: true,
+    aide: 'contributors.last_seen_at : la dernière visite connue, écrasée à chaque passage.' }
 ];
 
-// L'état du tableau. Un objet, et non des variables nues : le linter du projet
-// signale une variable réaffectée après une attente réseau, et il a raison de
-// le faire — la propriété d'un objet dit la même chose sans ajouter un
-// avertissement de plus.
+// L'état de l'onglet. Un objet, et non des variables nues : le linter du
+// projet signale une variable réaffectée après une attente réseau, et il a
+// raison de le faire — la propriété d'un objet dit la même chose sans
+// ajouter un avertissement de plus.
 var ACT_ETAT = { ts: 0, enVol: false, lignes: null, tri: 'score', descendant: true };
 
-// Les compteurs bruts de la base, plus les trois valeurs qui se calculent
-// ici : les deux regroupements affichés, et le score.
+var ACT_TRENTE_JOURS = 30 * 24 * 3600 * 1000;
+
+// Les compteurs bruts de la base, plus ce qui se calcule ici : le total de
+// chaque famille, sa part pondérée dans le score, et le score lui-même.
 function activiteNormaliser(brut){
   return (brut || []).map(function(r){
     var o = {
@@ -3184,14 +3240,34 @@ function activiteNormaliser(brut){
       display_name:    r.display_name || '—',
       inscrit_le:      r.inscrit_le || null,
       derniere_visite: r.derniere_visite || null,
-      jours_de_visite: Number(r.jours_de_visite) || 0
+      jours_de_visite: Number(r.jours_de_visite) || 0,
+      familles:        {}
     };
     Object.keys(ACT_POIDS).forEach(function(k){ o[k] = Number(r[k]) || 0; });
-    o.propositions = o.prop_cineastes + o.prop_courants + o.tops_thematiques;
-    o.jeu = o.jeu_parties_creees + o.jeu_parties_jouees + o.jeu_bonnes_reponses;
-    o.score = Object.keys(ACT_POIDS).reduce(function(s, k){ return s + o[k] * ACT_POIDS[k]; }, 0);
+    o.score = 0;
+    ACT_FAMILLES.forEach(function(f){
+      // Deux grandeurs par famille, et elles ne servent pas à la même chose :
+      // `gestes` est le nombre de gestes (ce que l'infobulle annonce), `poids`
+      // leur contribution au score (ce que le segment mesure). Mélanger les
+      // deux donnerait une barre dont la longueur ne serait plus le score.
+      var gestes = 0, poids = 0;
+      f.compte.forEach(function(k){
+        gestes += o[k];
+        poids  += o[k] * ACT_POIDS[k];
+      });
+      o.familles[f.clef] = { gestes: gestes, poids: poids };
+      o.score += poids;
+    });
     return o;
   });
+}
+
+// « 02/06/26 » plutôt que « 02/06/2026 » : deux colonnes de dates sur
+// quatorze, c'est là qu'on gagne la largeur qui manquait. Le back-office est
+// en français et le restera (cf. README).
+function actDateCourte(iso){
+  return new Date(iso).toLocaleDateString('fr-FR',
+    { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
 function actColonne(clef){
@@ -3209,14 +3285,28 @@ function actClefDeTri(r, col){
   return Number(r[col.clef]) || 0;
 }
 
+function actTriees(clef, descendant){
+  var col = actColonne(clef);
+  return (ACT_ETAT.lignes || []).slice().sort(function(a, b){
+    var x = actClefDeTri(a, col), y = actClefDeTri(b, col);
+    var c = (typeof x === 'string') ? x.localeCompare(y, 'fr') : (x - y);
+    if(c !== 0) return descendant ? -c : c;
+    // À égalité, l'ordre alphabétique — toujours dans le même sens, pour que
+    // deux affichages de suite ne se contredisent pas.
+    return String(a.display_name).localeCompare(String(b.display_name), 'fr');
+  });
+}
+
+// ── LE CHARGEMENT ─────────────────────────────────────────────────────────
+
 function renderActivite(forcer){
-  var hote = document.getElementById('activite-table');
+  var hote = document.getElementById('activite-vue');
   if(!hote) return;
-  // L'onglet Statistiques se recalcule toutes les vingt secondes. Ce tableau,
-  // lui, ne bouge pratiquement jamais : deux minutes de fraîcheur suffisent,
-  // et le tri se refait sans rien redemander à la base.
+  // Les chiffres ne bougent pratiquement pas d'une minute à l'autre : on ne
+  // redemande pas la base chaque fois qu'on revient sur l'onglet. Le tri, lui,
+  // se refait sans rien redemander du tout.
   if(!forcer && ACT_ETAT.lignes && Date.now() - ACT_ETAT.ts < 120000){
-    rendreTableauActivite();
+    rendreActivite();
     return;
   }
   if(ACT_ETAT.enVol) return;
@@ -3230,61 +3320,318 @@ function renderActivite(forcer){
     if(res && res.error) throw tcSbError(res.error, 'tc_activite_cinephiles');
     ACT_ETAT.lignes = activiteNormaliser(res && res.data);
     ACT_ETAT.ts = Date.now();
-    rendreTableauActivite();
+    rendreActivite();
   }).catch(function(err){
     ACT_ETAT.enVol = false;
     // La fonction n'existe pas encore : le fichier SQL n° 7 n'a pas été
     // exécuté. On le dit en clair plutôt que de laisser s'afficher un message
     // de base de données que personne n'a à déchiffrer. Le reste du
-    // back-office, lui, n'en souffre pas : cette lecture est isolée.
+    // back-office n'en souffre pas : cette lecture est isolée.
     var brut = (err && err.message) ? err.message : String(err);
     if(/tc_activite_cinephiles|PGRST202|schema cache|does not exist|n'existe pas/i.test(brut)){
-      hote.innerHTML = '<div class="empty-state">Ce palmarès attend le fichier SQL n° 7. '
+      hote.innerHTML = '<div class="empty-state">Cet onglet attend le fichier SQL n°&nbsp;7. '
         + 'Collez-le dans Supabase → SQL Editor, puis rechargez cette page.</div>';
       return;
     }
     hote.innerHTML = '';
-    admErreur(errEl, err, 'palmarès d\'activité');
+    admErreur(errEl, err, 'activité des cinéphiles');
   });
 }
 
-function rendreTableauActivite(){
-  var hote = document.getElementById('activite-table');
+// ── LE RENDU ──────────────────────────────────────────────────────────────
+
+function rendreActivite(){
+  var hote = document.getElementById('activite-vue');
   if(!hote) return;
-  var lignes = (ACT_ETAT.lignes || []).slice();
   hote.innerHTML = '';
-  if(!lignes.length){
+  if(!(ACT_ETAT.lignes || []).length){
     hote.innerHTML = '<div class="empty-state">Aucun cinéphile inscrit.</div>';
     return;
   }
+  hote.appendChild(actBandeau());
+  hote.appendChild(actClassement());
+  hote.appendChild(actTableau());
+}
 
-  var col = actColonne(ACT_ETAT.tri);
-  lignes.sort(function(a, b){
-    var x = actClefDeTri(a, col), y = actClefDeTri(b, col);
-    var c = (typeof x === 'string') ? x.localeCompare(y, 'fr') : (x - y);
-    if(c !== 0) return ACT_ETAT.descendant ? -c : c;
-    // À égalité, l'ordre alphabétique — toujours dans le même sens, pour que
-    // deux affichages de suite ne se contredisent pas.
-    return String(a.display_name).localeCompare(String(b.display_name), 'fr');
+function actEl(balise, classe, texte){
+  var e = document.createElement(balise);
+  if(classe) e.className = classe;
+  // textContent, jamais innerHTML : un nom d'affichage est saisi par le
+  // cinéphile lui-même.
+  if(texte !== undefined && texte !== null) e.textContent = texte;
+  return e;
+}
+
+// ── 1 & 2. LE CHIFFRE DE TÊTE ET LES COMPTEURS DE CADRAGE ─────────────────
+// Le plus actif n'est pas une barre d'un pixel de plus que la suivante : c'est
+// le chiffre que l'on vient chercher, il a droit à sa place et à sa taille.
+function actBandeau(){
+  var lignes = ACT_ETAT.lignes;
+  var tete = actTriees('score', true)[0];
+  var somme = function(clef){
+    return lignes.reduce(function(s, r){ return s + (r[clef] || 0); }, 0);
+  };
+  var limite = Date.now() - ACT_TRENTE_JOURS;
+  var vus = lignes.filter(function(r){
+    return r.derniere_visite && Date.parse(r.derniere_visite) >= limite;
+  }).length;
+
+  var carte = actEl('div', 'act-bandeau');
+
+  var gauche = actEl('div', 'act-tete');
+  gauche.appendChild(actEl('span', 'act-tete-sur', 'Le plus actif'));
+  gauche.appendChild(actEl('span', 'act-tete-nom', tete.display_name));
+  var chiffre = actEl('span', 'act-tete-valeur', statsFmtNb(tete.score));
+  chiffre.appendChild(actEl('span', 'act-tete-unite', 'points'));
+  gauche.appendChild(chiffre);
+  carte.appendChild(gauche);
+
+  var kpis = actEl('div', 'act-kpis');
+  [ { v: lignes.length, l: 'Cinéphiles inscrits' },
+    { v: vus,           l: 'Vus ces 30 jours' },
+    { v: somme('tops_publies'), l: 'Tops en ligne' },
+    { v: somme('prop_cineastes') + somme('prop_courants'), l: 'Propositions reçues' }
+  ].forEach(function(k){
+    var c = actEl('div', 'act-kpi');
+    c.appendChild(actEl('span', 'act-kpi-valeur', statsFmtNb(k.v)));
+    c.appendChild(actEl('span', 'act-kpi-label', k.l));
+    kpis.appendChild(c);
   });
-  // Le podium ne se souligne que quand le tableau est trié par score
-  // décroissant : ailleurs, « les trois premières lignes » ne voudrait rien
-  // dire.
-  var podium = ACT_ETAT.tri === 'score' && ACT_ETAT.descendant;
+  carte.appendChild(kpis);
+  return carte;
+}
 
-  var table = document.createElement('table');
-  table.className = 'act-table';
+// ── 3. LE CLASSEMENT EN BARRES EMPILÉES ───────────────────────────────────
+function actClassement(){
+  var bloc = actEl('div', 'act-bloc');
+  var tete = actEl('div', 'act-bloc-tete');
+  tete.appendChild(actEl('h3', 'act-bloc-titre', 'Qui fait quoi'));
 
-  var thead = document.createElement('thead');
-  var trh = document.createElement('tr');
+  // La légende est TOUJOURS là. C'est le canal d'identité fiable : jamais la
+  // couleur seule, qui laisserait de côté un lecteur daltonien sur douze.
+  var legende = actEl('div', 'act-legende');
+  legende.setAttribute('role', 'list');
+  ACT_FAMILLES.forEach(function(f){
+    var item = actEl('span', 'act-legende-item');
+    item.setAttribute('role', 'listitem');
+    var puce = actEl('span', 'act-cle act-cle-' + f.clef);
+    puce.setAttribute('aria-hidden', 'true');
+    item.appendChild(puce);
+    item.appendChild(actEl('span', null, f.nom));
+    legende.appendChild(item);
+  });
+  tete.appendChild(legende);
+  bloc.appendChild(tete);
+
+  var lignes = actTriees('score', true);
+  var maxi = lignes.reduce(function(m, r){ return Math.max(m, r.score); }, 0) || 1;
+
+  var liste = actEl('div', 'act-barres');
+  lignes.forEach(function(r, i){
+    liste.appendChild(actBarre(r, i + 1, maxi));
+  });
+  bloc.appendChild(liste);
+
+  var note = actEl('p', 'act-note');
+  note.appendChild(document.createTextNode(
+    'La longueur dit le volume d’activité, les segments disent de quoi elle est faite. '
+    + 'Le score pèse chaque geste selon ce qu’il demande d’engagement : '));
+  // Les poids affichés sont LUS dans ACT_POIDS, jamais recopiés à la main :
+  // une modification du barème ne peut donc pas laisser derrière elle une
+  // légende qui raconte autre chose.
+  note.appendChild(actEl('strong', null,
+    'une partie montée ' + ACT_POIDS.jeu_parties_creees
+    + ', un top publié ou envoyé ' + ACT_POIDS.tops_publies
+    + ', une partie jouée ' + ACT_POIDS.jeu_parties_jouees
+    + ', une proposition de cinéaste ' + ACT_POIDS.prop_cineastes
+    + ', un commentaire ' + ACT_POIDS.commentaires
+    + ', une proposition de courant ' + ACT_POIDS.prop_courants
+    + ', un photogramme trouvé ' + ACT_POIDS.jeu_bonnes_reponses
+    + ', une connexion ' + ACT_POIDS.nb_connexions + '.'));
+  note.appendChild(document.createTextNode(
+    ' Ce sont des choix, pas une vérité : ils se changent en un seul endroit '
+    + '(ACT_POIDS, dans admin.js).'));
+  bloc.appendChild(note);
+  return bloc;
+}
+
+function actBarre(r, rang, maxi){
+  var ligne = actEl('div', 'act-barre-ligne');
+
+  ligne.appendChild(actEl('span', 'act-rang', rang));
+  ligne.appendChild(actEl('span', 'act-nom', r.display_name));
+
+  var piste = actEl('div', 'act-piste');
+  // La barre entière est le point d'arrêt clavier, et non chacun de ses
+  // quatre segments : avec vingt-quatre cinéphiles, segmenter la tabulation
+  // ferait quatre-vingt-seize arrêts pour lire un classement. Au survol
+  // comme au clavier, l'infobulle donne les quatre familles d'un coup.
+  piste.tabIndex = 0;
+  piste.setAttribute('role', 'img');
+  piste.setAttribute('aria-label', actResume(r));
+
+  var barre = actEl('div', 'act-barre');
+  // La barre la plus longue occupe toute la largeur ; les autres s'y
+  // rapportent. C'est une comparaison entre pairs, il n'y a pas d'échelle
+  // absolue à respecter.
+  barre.style.width = (r.score > 0 ? Math.max(1.2, (r.score / maxi) * 100) : 0) + '%';
+
+  ACT_FAMILLES.forEach(function(f){
+    var part = r.familles[f.clef];
+    if(!part || part.poids <= 0) return;
+    var seg = actEl('span', 'act-seg act-seg-' + f.clef);
+    seg.style.flexGrow = String(part.poids);
+    seg.setAttribute('aria-hidden', 'true');
+    barre.appendChild(seg);
+  });
+  piste.appendChild(barre);
+  ligne.appendChild(piste);
+
+  var val = actEl('span', 'act-valeur', r.score > 0 ? statsFmtNb(r.score) : '·');
+  if(!r.score) val.classList.add('act-zero');
+  ligne.appendChild(val);
+
+  // L'infobulle : au survol ET au focus clavier, les mêmes détails.
+  var montrer = function(ev){ actBulleMontrer(r, piste, ev); };
+  piste.addEventListener('pointerenter', montrer);
+  piste.addEventListener('pointermove', montrer);
+  piste.addEventListener('focus', montrer);
+  piste.addEventListener('pointerleave', actBulleCacher);
+  piste.addEventListener('blur', actBulleCacher);
+  return ligne;
+}
+
+// Le résumé lu par un lecteur d'écran, et le repli si l'infobulle ne s'ouvre
+// pas : rien de ce qu'elle montre n'est accessible QUE par elle.
+function actResume(r){
+  var bouts = [r.display_name + ' : ' + r.score + ' points'];
+  ACT_FAMILLES.forEach(function(f){
+    var p = r.familles[f.clef];
+    if(p && p.gestes > 0) bouts.push(f.nom + ' ' + p.gestes);
+  });
+  return bouts.join(', ') + '.';
+}
+
+// ── L'INFOBULLE ───────────────────────────────────────────────────────────
+// Posée sur <body> et non dans la carte : à l'intérieur, le défilement de la
+// liste la couperait. Une seule existe, réutilisée par toutes les lignes.
+function actBulle(){
+  var el = document.getElementById('act-bulle');
+  if(el) return el;
+  el = actEl('div', 'act-bulle');
+  el.id = 'act-bulle';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(el);
+  return el;
+}
+
+function actBulleMontrer(r, piste, ev){
+  var b = actBulle();
+  b.innerHTML = '';
+  b.appendChild(actEl('div', 'act-bulle-nom', r.display_name));
+  ACT_FAMILLES.forEach(function(f){
+    var p = r.familles[f.clef] || { gestes: 0, poids: 0 };
+    var l = actEl('div', 'act-bulle-ligne' + (p.gestes ? '' : ' act-bulle-vide'));
+    var cle = actEl('span', 'act-cle act-cle-' + f.clef);
+    cle.setAttribute('aria-hidden', 'true');
+    l.appendChild(cle);
+    l.appendChild(actEl('span', 'act-bulle-fam', f.nom));
+    // La valeur est l'élément fort : le lecteur a déjà la famille sous les
+    // yeux, c'est le chiffre qu'il vient chercher.
+    l.appendChild(actEl('span', 'act-bulle-val', statsFmtNb(p.gestes)));
+    b.appendChild(l);
+  });
+  var total = actEl('div', 'act-bulle-total');
+  total.appendChild(actEl('span', 'act-bulle-fam', 'Score'));
+  total.appendChild(actEl('span', 'act-bulle-val', statsFmtNb(r.score)));
+  b.appendChild(total);
+
+  b.classList.add('est-visible');
+  // On place la bulle après l'avoir remplie : sa taille dépend de son contenu.
+  var r2 = b.getBoundingClientRect();
+  var cible = (ev && ev.clientX !== undefined && ev.type !== 'focus')
+    ? { x: ev.clientX + 14, y: ev.clientY + 14 }
+    : (function(){
+        var pr = piste.getBoundingClientRect();
+        return { x: pr.left + 20, y: pr.bottom + 8 };
+      })();
+  // Jamais hors de l'écran : on rabat du côté où il reste de la place.
+  var maxX = (window.innerWidth || 1024) - r2.width - 8;
+  var maxY = (window.innerHeight || 768) - r2.height - 8;
+  b.style.left = Math.max(8, Math.min(cible.x, maxX)) + 'px';
+  b.style.top  = Math.max(8, Math.min(cible.y, maxY)) + 'px';
+}
+
+function actBulleCacher(){
+  var el = document.getElementById('act-bulle');
+  if(el) el.classList.remove('est-visible');
+}
+
+// ── 4. LE DÉTAIL, CHIFFRE PAR CHIFFRE ─────────────────────────────────────
+// Dix compteurs qui portent tous du sens : au-delà de sept classes, c'est un
+// tableau qu'il faut, pas des couleurs en plus. Il sert aussi de repli
+// accessible au classement : aucune valeur n'est visible au seul survol.
+// Remplace le tableau sur place, puis rend le focus à l'en-tête sur lequel
+// on vient de cliquer : sans cela, trier au clavier renvoie le focus au
+// début de la page à chaque clic, et la colonne suivante est hors d'atteinte.
+function actRemplacerTableau(clefFocus){
+  var vieux = document.getElementById('act-detail');
+  if(!vieux || !vieux.parentNode){ rendreActivite(); return; }
+  var neuf = actTableau();
+  vieux.parentNode.replaceChild(neuf, vieux);
+  var cible = neuf.querySelector('[data-col="' + clefFocus + '"]');
+  if(cible) cible.focus();
+}
+
+function actTableau(){
+  var bloc = actEl('div', 'act-bloc');
+  bloc.id = 'act-detail';
+  var tete = actEl('div', 'act-bloc-tete');
+  tete.appendChild(actEl('h3', 'act-bloc-titre', 'Le détail, chiffre par chiffre'));
+  tete.appendChild(actEl('span', 'act-bloc-aide',
+    'Cliquez sur un en-tête pour trier. Survolez un en-tête pour savoir ce qu’il compte.'));
+  bloc.appendChild(tete);
+
+  var enveloppe = actEl('div', 'act-defilement');
+  var table = actEl('table', 'act-table');
+
+  // Deux lignes d'en-tête : la première regroupe les colonnes par famille et
+  // porte sa couleur, la seconde nomme et trie. C'est elle qui relie le
+  // tableau aux barres du dessus.
+  var thead = actEl('thead');
+  var bande = actEl('tr', 'act-bande');
+  var i = 0;
+  while(i < ACT_COLONNES.length){
+    var fam = ACT_COLONNES[i].fam || null;
+    var largeur = 1;
+    while(i + largeur < ACT_COLONNES.length && (ACT_COLONNES[i + largeur].fam || null) === fam) largeur++;
+    var th = actEl('th', 'act-bande-cell' + (fam ? ' act-bande-' + fam : ''));
+    th.colSpan = largeur;
+    th.setAttribute('scope', 'colgroup');
+    if(fam){
+      var f = ACT_FAMILLES.filter(function(x){ return x.clef === fam; })[0];
+      th.textContent = f ? f.nom : '';
+    }
+    bande.appendChild(th);
+    i += largeur;
+  }
+  thead.appendChild(bande);
+
+  var trh = actEl('tr');
   ACT_COLONNES.forEach(function(c){
-    var th = document.createElement('th');
-    if(c.texte) th.className = 'act-gauche';
+    var th = actEl('th', c.texte ? 'act-gauche' : null);
+    th.setAttribute('scope', 'col');
     var actif = c.clef === ACT_ETAT.tri;
-    var b = document.createElement('button');
+    if(actif) th.setAttribute('aria-sort', ACT_ETAT.descendant ? 'descending' : 'ascending');
+    var b = actEl('button', 'act-tri' + (actif ? ' act-tri-actif' : ''));
     b.type = 'button';
-    b.className = 'act-tri' + (actif ? ' act-tri-actif' : '');
-    b.textContent = c.titre + (actif ? (ACT_ETAT.descendant ? ' ↓' : ' ↑') : '');
+    b.appendChild(actEl('span', null, c.titre));
+    var fleche = actEl('span', 'act-fleche', actif ? (ACT_ETAT.descendant ? '↓' : '↑') : '');
+    fleche.setAttribute('aria-hidden', 'true');
+    b.appendChild(fleche);
+    b.setAttribute('data-col', c.clef);
+    b.title = (c.aide ? c.aide + ' — ' : '') + 'Trier par « ' + c.titre + ' »';
     b.setAttribute('aria-label', 'Trier par ' + c.titre);
     b.addEventListener('click', function(){
       if(ACT_ETAT.tri === c.clef){
@@ -3295,7 +3642,10 @@ function rendreTableauActivite(){
         // plus petit : c'est ce qu'on cherche dans chaque cas.
         ACT_ETAT.descendant = !c.texte;
       }
-      rendreTableauActivite();
+      // On ne refait QUE le tableau. Tout redessiner rejouerait l'animation
+      // des barres à chaque clic, et le classement, lui, reste toujours
+      // ordonné par score : ce n'est pas lui qu'on trie.
+      actRemplacerTableau(c.clef);
     });
     th.appendChild(b);
     trh.appendChild(th);
@@ -3303,40 +3653,35 @@ function rendreTableauActivite(){
   thead.appendChild(trh);
   table.appendChild(thead);
 
-  var tbody = document.createElement('tbody');
-  lignes.forEach(function(r, i){
-    var tr = document.createElement('tr');
-    if(podium && i < 3) tr.className = 'act-top';
+  var tbody = actEl('tbody');
+  actTriees(ACT_ETAT.tri, ACT_ETAT.descendant).forEach(function(r){
+    var tr = actEl('tr');
     ACT_COLONNES.forEach(function(c){
-      var td = document.createElement('td');
+      var td = actEl('td');
       if(c.texte){
         td.classList.add('act-gauche');
-        // textContent, jamais innerHTML : un nom d'affichage est saisi par le
-        // cinéphile lui-même.
         td.textContent = r[c.clef];
       } else if(c.date){
-        td.textContent = r[c.clef] ? new Date(r[c.clef]).toLocaleDateString('fr-FR') : '—';
+        td.textContent = r[c.clef] ? actDateCourte(r[c.clef]) : '—';
       } else {
         var n = Number(r[c.clef]) || 0;
         td.textContent = n ? statsFmtNb(n) : '·';
+        // Un zéro s'écrit « · » et s'efface : ce qui doit sauter aux yeux,
+        // c'est ce que les gens ONT fait.
         if(!n) td.classList.add('act-zero');
       }
       if(c.fort) td.classList.add('act-score');
-      if(c.detail) td.title = c.detail(r);
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
-  hote.appendChild(table);
+  enveloppe.appendChild(table);
+  bloc.appendChild(enveloppe);
+  return bloc;
 }
 
 async function renderStats(){
-  // Le palmares d'activite vit dans le meme onglet. Il se charge a part, et
-  // garde ses chiffres deux minutes : il n'a pas besoin du battement de
-  // vingt secondes du graphique des courants.
-  renderActivite(false);
-
   var errEl = document.getElementById('stats-error');
   var chartEl = document.getElementById('stats-chart');
   if(!chartEl) return;
