@@ -3110,7 +3110,233 @@ function refreshStatsIfActive(){
   if(isStatsTabActive) renderStats();
 }
 
+// ════════════════════════════════════════════════════════════
+// LES CINÉPHILES LES PLUS ACTIFS (onglet Statistiques)
+// ════════════════════════════════════════════════════════════
+// Tout vient d'UNE fonction de la base — `tc_activite_cinephiles`, livrée
+// avec le fichier SQL n° 7 : une ligne par cinéphile, tous les compteurs déjà
+// faits. C'est voulu. Compter ici aurait voulu dire relire page par page les
+// 12 000 tops et les 500 soumissions, puisque PostgREST plafonne chaque
+// réponse à un millier de lignes — une douzaine de requêtes pour un tableau
+// de vingt-quatre lignes.
+//
+// La base vérifie elle-même que l'appelant est administrateur, et refuse la
+// requête sinon : l'affichage n'est pas la barrière, il ne l'est jamais.
+
+// Le poids de chaque geste dans le score d'activité. Ils sont ici, en clair et
+// à un seul endroit, parce qu'il n'existe pas de bonne réponse : ce sont des
+// choix, et la page les annonce au lecteur plutôt que de classer les gens
+// selon une formule cachée.
+var ACT_POIDS = {
+  nb_connexions:        1,
+  tops_publies:        10,
+  tops_proposes:       10,
+  tops_thematiques:    10,
+  prop_cineastes:       4,
+  prop_courants:        2,
+  commentaires:         3,
+  jeu_parties_creees:  25,
+  jeu_parties_jouees:   8,
+  jeu_bonnes_reponses:  1
+};
+
+// Les colonnes, dans l'ordre d'affichage.
+//   clef    la donnée rendue par la base, ou l'une des deux calculées ici
+//           (`score`, `propositions`, `jeu`)
+//   texte   colonne de texte : alignée à gauche, triée alphabétiquement
+//   date    colonne de date : affichée en français, triée chronologiquement
+//   detail  l'infobulle, quand la colonne regroupe plusieurs compteurs
+var ACT_COLONNES = [
+  { clef: 'display_name', titre: 'Cinéphile', texte: true },
+  { clef: 'score', titre: 'Activité', fort: true,
+    detail: function(){ return 'Somme pondérée de toutes les colonnes de gestes (voir la légende au-dessus du tableau).'; } },
+  { clef: 'nb_connexions', titre: 'Connexions',
+    detail: function(r){ return r.jours_de_visite + ' jour(s) de visite distincts. Ne compte qu\u2019à partir du fichier SQL n° 7.'; } },
+  { clef: 'tops_publies', titre: 'Tops publiés',
+    detail: function(){ return 'Tops en ligne, un par cinéaste (table « tops »).'; } },
+  { clef: 'tops_proposes', titre: 'Tops envoyés',
+    detail: function(){ return 'Tops envoyés depuis l\u2019espace contributeur, en attente ou validés. Une soumission modifiée est mise à jour sur place par le site : elle compte pour une, pas pour deux.'; } },
+  { clef: 'propositions', titre: 'Propositions',
+    detail: function(r){ return r.prop_cineastes + ' cinéaste(s), ' + r.prop_courants
+      + ' courant(s) ou catégorie(s), ' + r.tops_thematiques + ' top(s) thématique(s).'; } },
+  { clef: 'commentaires', titre: 'Comm.',
+    detail: function(){ return 'Commentaires écrits sous les tops.'; } },
+  { clef: 'jeu', titre: 'Jeu',
+    detail: function(r){ return r.jeu_parties_creees + ' partie(s) montée(s), ' + r.jeu_parties_jouees
+      + ' jouée(s), ' + r.jeu_bonnes_reponses + ' photogramme(s) trouvé(s).'; } },
+  { clef: 'inscrit_le', titre: 'Membre depuis', date: true },
+  { clef: 'derniere_visite', titre: 'Dernière visite', date: true,
+    detail: function(){ return 'contributors.last_seen_at : la dernière visite connue, écrasée à chaque passage.'; } }
+];
+
+// L'état du tableau. Un objet, et non des variables nues : le linter du projet
+// signale une variable réaffectée après une attente réseau, et il a raison de
+// le faire — la propriété d'un objet dit la même chose sans ajouter un
+// avertissement de plus.
+var ACT_ETAT = { ts: 0, enVol: false, lignes: null, tri: 'score', descendant: true };
+
+// Les compteurs bruts de la base, plus les trois valeurs qui se calculent
+// ici : les deux regroupements affichés, et le score.
+function activiteNormaliser(brut){
+  return (brut || []).map(function(r){
+    var o = {
+      contributor_id:  r.contributor_id,
+      display_name:    r.display_name || '—',
+      inscrit_le:      r.inscrit_le || null,
+      derniere_visite: r.derniere_visite || null,
+      jours_de_visite: Number(r.jours_de_visite) || 0
+    };
+    Object.keys(ACT_POIDS).forEach(function(k){ o[k] = Number(r[k]) || 0; });
+    o.propositions = o.prop_cineastes + o.prop_courants + o.tops_thematiques;
+    o.jeu = o.jeu_parties_creees + o.jeu_parties_jouees + o.jeu_bonnes_reponses;
+    o.score = Object.keys(ACT_POIDS).reduce(function(s, k){ return s + o[k] * ACT_POIDS[k]; }, 0);
+    return o;
+  });
+}
+
+function actColonne(clef){
+  for(var i = 0; i < ACT_COLONNES.length; i++){
+    if(ACT_COLONNES[i].clef === clef) return ACT_COLONNES[i];
+  }
+  return ACT_COLONNES[1];   // à défaut, le score
+}
+
+// La valeur sur laquelle une colonne se trie. Une date absente vaut -1 et non
+// zéro : « jamais venu » doit finir derrière « venu en 1970 », pas devant.
+function actClefDeTri(r, col){
+  if(col.date)  return r[col.clef] ? Date.parse(r[col.clef]) : -1;
+  if(col.texte) return String(r[col.clef] || '');
+  return Number(r[col.clef]) || 0;
+}
+
+function renderActivite(forcer){
+  var hote = document.getElementById('activite-table');
+  if(!hote) return;
+  // L'onglet Statistiques se recalcule toutes les vingt secondes. Ce tableau,
+  // lui, ne bouge pratiquement jamais : deux minutes de fraîcheur suffisent,
+  // et le tri se refait sans rien redemander à la base.
+  if(!forcer && ACT_ETAT.lignes && Date.now() - ACT_ETAT.ts < 120000){
+    rendreTableauActivite();
+    return;
+  }
+  if(ACT_ETAT.enVol) return;
+  ACT_ETAT.enVol = true;
+  var errEl = document.getElementById('activite-error');
+  if(errEl) errEl.style.display = 'none';
+  if(!ACT_ETAT.lignes) hote.innerHTML = '<div class="empty-state">Chargement…</div>';
+
+  tcWithRetryTimeout(function(){ return sb.rpc('tc_activite_cinephiles'); }).then(function(res){
+    ACT_ETAT.enVol = false;
+    if(res && res.error) throw tcSbError(res.error, 'tc_activite_cinephiles');
+    ACT_ETAT.lignes = activiteNormaliser(res && res.data);
+    ACT_ETAT.ts = Date.now();
+    rendreTableauActivite();
+  }).catch(function(err){
+    ACT_ETAT.enVol = false;
+    // La fonction n'existe pas encore : le fichier SQL n° 7 n'a pas été
+    // exécuté. On le dit en clair plutôt que de laisser s'afficher un message
+    // de base de données que personne n'a à déchiffrer. Le reste du
+    // back-office, lui, n'en souffre pas : cette lecture est isolée.
+    var brut = (err && err.message) ? err.message : String(err);
+    if(/tc_activite_cinephiles|PGRST202|schema cache|does not exist|n'existe pas/i.test(brut)){
+      hote.innerHTML = '<div class="empty-state">Ce palmarès attend le fichier SQL n° 7. '
+        + 'Collez-le dans Supabase → SQL Editor, puis rechargez cette page.</div>';
+      return;
+    }
+    hote.innerHTML = '';
+    admErreur(errEl, err, 'palmarès d\'activité');
+  });
+}
+
+function rendreTableauActivite(){
+  var hote = document.getElementById('activite-table');
+  if(!hote) return;
+  var lignes = (ACT_ETAT.lignes || []).slice();
+  hote.innerHTML = '';
+  if(!lignes.length){
+    hote.innerHTML = '<div class="empty-state">Aucun cinéphile inscrit.</div>';
+    return;
+  }
+
+  var col = actColonne(ACT_ETAT.tri);
+  lignes.sort(function(a, b){
+    var x = actClefDeTri(a, col), y = actClefDeTri(b, col);
+    var c = (typeof x === 'string') ? x.localeCompare(y, 'fr') : (x - y);
+    if(c !== 0) return ACT_ETAT.descendant ? -c : c;
+    // À égalité, l'ordre alphabétique — toujours dans le même sens, pour que
+    // deux affichages de suite ne se contredisent pas.
+    return String(a.display_name).localeCompare(String(b.display_name), 'fr');
+  });
+  // Le podium ne se souligne que quand le tableau est trié par score
+  // décroissant : ailleurs, « les trois premières lignes » ne voudrait rien
+  // dire.
+  var podium = ACT_ETAT.tri === 'score' && ACT_ETAT.descendant;
+
+  var table = document.createElement('table');
+  table.className = 'act-table';
+
+  var thead = document.createElement('thead');
+  var trh = document.createElement('tr');
+  ACT_COLONNES.forEach(function(c){
+    var th = document.createElement('th');
+    if(c.texte) th.className = 'act-gauche';
+    var actif = c.clef === ACT_ETAT.tri;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'act-tri' + (actif ? ' act-tri-actif' : '');
+    b.textContent = c.titre + (actif ? (ACT_ETAT.descendant ? ' ↓' : ' ↑') : '');
+    b.setAttribute('aria-label', 'Trier par ' + c.titre);
+    b.addEventListener('click', function(){
+      if(ACT_ETAT.tri === c.clef){
+        ACT_ETAT.descendant = !ACT_ETAT.descendant;
+      } else {
+        ACT_ETAT.tri = c.clef;
+        // Un nom se lit de A à Z, un compteur et une date du plus grand au
+        // plus petit : c'est ce qu'on cherche dans chaque cas.
+        ACT_ETAT.descendant = !c.texte;
+      }
+      rendreTableauActivite();
+    });
+    th.appendChild(b);
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  lignes.forEach(function(r, i){
+    var tr = document.createElement('tr');
+    if(podium && i < 3) tr.className = 'act-top';
+    ACT_COLONNES.forEach(function(c){
+      var td = document.createElement('td');
+      if(c.texte){
+        td.classList.add('act-gauche');
+        // textContent, jamais innerHTML : un nom d'affichage est saisi par le
+        // cinéphile lui-même.
+        td.textContent = r[c.clef];
+      } else if(c.date){
+        td.textContent = r[c.clef] ? new Date(r[c.clef]).toLocaleDateString('fr-FR') : '—';
+      } else {
+        var n = Number(r[c.clef]) || 0;
+        td.textContent = n ? statsFmtNb(n) : '·';
+        if(!n) td.classList.add('act-zero');
+      }
+      if(c.fort) td.classList.add('act-score');
+      if(c.detail) td.title = c.detail(r);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  hote.appendChild(table);
+}
+
 async function renderStats(){
+  // Le palmares d'activite vit dans le meme onglet. Il se charge a part, et
+  // garde ses chiffres deux minutes : il n'a pas besoin du battement de
+  // vingt secondes du graphique des courants.
+  renderActivite(false);
+
   var errEl = document.getElementById('stats-error');
   var chartEl = document.getElementById('stats-chart');
   if(!chartEl) return;

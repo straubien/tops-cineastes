@@ -612,6 +612,33 @@ function tcSafeUrl(){
 // non accordee en base fait echouer toute la requete.
 var TC_CONTRIB_COLONNES = 'id,name,display_name,auth_id,created_at,cineaste_coeur,cineaste_autres,film_coeur,film_autres,presentation,avatar_url,json_name,is_admin,can_validate_courants,last_seen_at';
 
+// ── LE JOURNAL DES CONNEXIONS ─────────────────────────────────
+// Une visite de plus pour le cinéphile connecté. Les trois pages du site
+// l'appellent une fois, au moment où elles reconnaissent le compte.
+//
+// POURQUOI UNE TABLE, ET PAS UN SIMPLE COMPTEUR. `contributors.last_seen_at`
+// existait déjà, mais il est ÉCRASÉ à chaque visite : il dit quand quelqu'un
+// est venu la dernière fois, jamais combien de fois il est venu. L'historique
+// d'avant l'installation de ce journal est donc perdu pour de bon — personne
+// ne peut le reconstituer. Le compte part de zéro le jour de l'installation,
+// et il est juste pour toujours ensuite.
+//
+// CE N'EST PAS UN COMPTEUR DE PAGES VUES. C'est la base qui decide s'il
+// s'agit d'une visite neuve ou de la suite de la précédente (une demi-heure
+// d'écart) : recharger une page dix fois de suite ne vaut qu'une connexion,
+// et revenir le soir en vaut une seconde.
+//
+// ÉCHEC SILENCIEUX, TOUJOURS. Visiteur non connecté, fonction SQL pas encore
+// installée, réseau coupé : rien ne doit remonter à l'écran. Compter les
+// visites est un agrément de back-office, ce n'est pas le service rendu au
+// visiteur — il ne doit jamais en voir l'ombre d'un message.
+function tcJournalConnexion(sbClient){
+  try{
+    if(!sbClient || !sbClient.rpc) return;
+    sbClient.rpc('tc_journal_connexion').then(function(){}, function(){});
+  }catch(e){ /* rien : un agrément ne casse jamais une page */ }
+}
+
 // Envoi best-effort des erreurs JS vers la table Supabase `error_logs`.
 // Ne doit jamais lancer d'exception ni bloquer l'UI : échecs ignorés silencieusement.
 function tcReportErrorToSupabase(message, stack){

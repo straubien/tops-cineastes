@@ -527,6 +527,50 @@ body {
   .courant-slot-label { grid-column: 1 / -1; }
 }
 
+/* ── LES CINÉPHILES LES PLUS ACTIFS ── */
+/* Un tableau, et non des barres comme le graphique des courants : ici on
+   compare dix gestes différents d'un cinéphile à l'autre, et c'est le chiffre
+   exact qui intéresse, pas la silhouette. Les en-têtes sont de vrais boutons :
+   tout se trie d'un clic, et au clavier. */
+.act-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border-dim);
+  font-size: 13px;
+}
+.act-table th, .act-table td {
+  padding: 7px 9px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-dim);
+  font-variant-numeric: tabular-nums;
+}
+.act-table th { vertical-align: bottom; border-bottom: 1px solid var(--border); }
+.act-table tbody tr:last-child td { border-bottom: none; }
+.act-table tbody tr:hover { background: var(--bg-subtle); }
+.act-table .act-gauche { text-align: left; white-space: normal; }
+.act-tri {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
+.act-tri:hover { color: var(--text); }
+.act-tri-actif { color: var(--text); font-weight: 700; }
+.act-score { font-weight: 700; color: var(--text); }
+/* Un zéro s'écrit « · » et s'efface : ce qui doit sauter aux yeux dans ce
+   tableau, c'est ce que les gens ONT fait. */
+.act-zero { color: var(--border); }
+.act-top .act-score { color: var(--rouge-texte); }
+
 /* ── STATISTIQUES ── */
 /* Une seule carte : courants et catégories sont classés ensemble, la couleur de
    la barre (or / rouge, comme les étiquettes des fiches publiques) et

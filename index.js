@@ -386,6 +386,11 @@ function tcTouchLastSeen(){
 }
 function tcStartLastSeenHeartbeat(){
   tcTouchLastSeen();
+  // Une visite de plus au journal des connexions (cf. utils.js). Ici et pas
+  // dans le battement de cinq minutes : c'est une CONNEXION qu'on compte,
+  // pas un temps de presence. La base se charge de ne pas compter deux fois
+  // la meme.
+  tcJournalConnexion(TC_SB);
   if(tcLastSeenTimer)return;
   tcLastSeenTimer=setInterval(function(){
     if(document.visibilityState==='hidden')return; // onglet en arrière-plan

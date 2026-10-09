@@ -489,6 +489,24 @@ var TC_TRANSLATIONS = {
     jp_l_variantes: "Autres titres acceptés",
     jp_ph_variante: "Ajouter une variante (titre anglais, autre titre…)",
     jp_retirer_variante: function(v){ return "Retirer la variante " + v; },
+    // L'appoint TMDB (studio) : le titre original et le titre anglais
+    // complétés tout seuls à partir du titre français et du réalisateur.
+    jp_aide_tmdb: "Écrivez le titre français et le réalisateur : TMDB ajoute le titre original et le titre anglais, qui valent réponse exacte. Rien n'est jamais écrasé.",
+    jp_tmdb_tout: "Compléter les titres via TMDB",
+    jp_tmdb_en_cours: function(a){ return "TMDB — fiche " + a[0] + " sur " + a[1] + "…"; },
+    jp_tmdb_bilan: function(a){
+      var faits = a[0] === 1 ? "1 fiche complétée" : a[0] + " fiches complétées";
+      if(!a[1]) return faits + ". Rien d'autre à ajouter.";
+      return faits + ", " + (a[1] === 1 ? "1 à vérifier à la main." : a[1] + " à vérifier à la main.");
+    },
+    jp_tmdb_cherche: "TMDB : recherche…",
+    jp_tmdb_ok: function(a){ return "TMDB : « " + a[0] + " »" + (a[1] ? " (" + a[1] + ")" : "") + " — titres ajoutés."; },
+    jp_tmdb_rien_a_ajouter: function(n){ return "TMDB : « " + n + " » — aucun autre titre à ajouter."; },
+    jp_tmdb_introuvable: "TMDB : film introuvable — à saisir à la main.",
+    jp_tmdb_ambigu: "TMDB : plusieurs films portent ce titre — à saisir à la main.",
+    jp_tmdb_real_different: function(a){ return "TMDB : « " + a[0] + " » est crédité à " + a[1] + ". Rien n'a été ajouté — vérifiez le réalisateur."; },
+    jp_tmdb_erreur: "TMDB : service injoignable. Réessayez, ou saisissez les titres à la main.",
+    jp_tmdb_sans_real: "TMDB : indiquez le réalisateur pour compléter les titres.",
     jp_l_indices: "Indices",
     jp_ph_indice: "Texte de l'indice",
     jp_ph_apres: "après (s)",
@@ -1119,6 +1137,23 @@ var TC_TRANSLATIONS = {
     jp_l_variantes: "Other accepted titles",
     jp_ph_variante: "Add a variant (English title, other title…)",
     jp_retirer_variante: function(v){ return "Remove the variant " + v; },
+    // TMDB top-up (studio)
+    jp_aide_tmdb: "Enter the French title and the director: TMDB adds the original and English titles, which count as exact answers. Nothing is ever overwritten.",
+    jp_tmdb_tout: "Fill in the titles from TMDB",
+    jp_tmdb_en_cours: function(a){ return "TMDB — frame " + a[0] + " of " + a[1] + "…"; },
+    jp_tmdb_bilan: function(a){
+      var faits = a[0] === 1 ? "1 frame filled in" : a[0] + " frames filled in";
+      if(!a[1]) return faits + ". Nothing else to add.";
+      return faits + ", " + (a[1] === 1 ? "1 to check by hand." : a[1] + " to check by hand.");
+    },
+    jp_tmdb_cherche: "TMDB: searching…",
+    jp_tmdb_ok: function(a){ return "TMDB: “" + a[0] + "”" + (a[1] ? " (" + a[1] + ")" : "") + " — titles added."; },
+    jp_tmdb_rien_a_ajouter: function(n){ return "TMDB: “" + n + "” — no other title to add."; },
+    jp_tmdb_introuvable: "TMDB: film not found — enter the titles by hand.",
+    jp_tmdb_ambigu: "TMDB: several films share this title — enter the titles by hand.",
+    jp_tmdb_real_different: function(a){ return "TMDB: “" + a[0] + "” is credited to " + a[1] + ". Nothing was added — check the director."; },
+    jp_tmdb_erreur: "TMDB: service unreachable. Try again, or enter the titles by hand.",
+    jp_tmdb_sans_real: "TMDB: add the director to fill in the titles.",
     jp_l_indices: "Hints",
     jp_ph_indice: "Hint text",
     jp_ph_apres: "after (s)",

@@ -20,6 +20,7 @@ const globauxDuProjet = {
   // config.js
   TC_SUPABASE_URL: 'readonly', TC_SUPABASE_KEY: 'readonly', tcCreateClient: 'readonly',
   TC_AUTOCOMPLETE_MAX: 'readonly', TC_AVATAR_MAX_SIZE: 'readonly',
+  TC_TMDB_KEY: 'readonly',
   // i18n.js
   TC_TRANSLATIONS: 'readonly', t: 'readonly', applyLang: 'readonly', toggleLang: 'readonly',
   tcLocale: 'readonly', tcDate: 'readonly', tcDateCourte: 'readonly', tcDateHeure: 'readonly',
@@ -56,6 +57,7 @@ const globauxDuProjet = {
   tcRendreActivable: 'readonly', tcAnnoncer: 'readonly', tcFondInerte: 'readonly',
   IntersectionObserver: 'readonly', DocumentFragment: 'readonly',
   tcBarreRoving: 'readonly', tcBarreRovingMaj: 'readonly',
+  tcJournalConnexion: 'readonly',
   // bibliotheque externe (jsDelivr)
   supabase: 'readonly'
 };

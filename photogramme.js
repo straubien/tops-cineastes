@@ -242,6 +242,10 @@ function jpChargerMoi(){
     if(r && r.error && r.error.code !== 'PGRST116') throw tcSbError(r.error, 'contributors/photogramme');
     JP_MOI = (r && r.data) || null;
     if(JP_MOI) JP_GENS[String(JP_MOI.id)] = JP_MOI;
+    // Une visite de plus au journal des connexions (cf. utils.js) : sans cet
+    // appel, un cinephile qui ne vient que pour jouer n'apparaitrait nulle
+    // part dans le palmares d'activite du back-office.
+    if(JP_MOI) tcJournalConnexion(JP_SB);
   }).catch(function(e){
     console.error('photogramme : profil illisible', e);
     JP_MOI = null;
@@ -820,6 +824,7 @@ function jpRendreFiches(){
     v.className = 'jp-vide';
     v.textContent = t('jp_aucun_photogramme');
     hote.appendChild(v);
+    jpMajBarreTmdb();
     return;
   }
 
@@ -833,6 +838,7 @@ function jpRendreFiches(){
     hote.appendChild(f);
     return f;
   });
+  jpMajBarreTmdb();
 }
 
 // Les fiches actuellement a l'ecran. Le bouton unique s'en sert pour
@@ -859,6 +865,248 @@ function jpEnregistrerToutesLesFiches(surAvancement){
   });
   return suite.then(function(){ return bilan; });
 }
+
+// ── 8 bis. L'APPOINT TMDB : LE TITRE ORIGINAL ET LE TITRE ANGLAIS ──────
+//
+// CE QUE CELA CHANGE. Le créateur ne saisit plus que ce qu'il connait : le
+// titre français et le réalisateur. Le titre original et le titre anglais
+// — les deux formes sous lesquelles un cinéphile répond le plus souvent quand
+// le titre français ne lui vient pas — sont demandés à TMDB et ajoutés à la
+// fiche. Sur une partie de trente photogrammes, c'est soixante saisies en
+// moins, et autant d'arbitrages évités pendant la partie.
+//
+// CE QUE CELA NE CHANGE PAS. On n'écrase JAMAIS rien. Un titre original déjà
+// saisi est laissé tel quel, une variante déjà présente n'est jamais retirée,
+// et le titre attendu du créateur n'est pas touché. TMDB complète, il ne
+// corrige pas : le créateur reste maitre de sa fiche.
+//
+// LE RÉALISATEUR SERT D'ARBITRE. « Solaris » désigne deux films (Tarkovski
+// 1972, Soderbergh 2002), et TMDB cherche large : une recherche sur le seul
+// titre français ramènerait parfois le mauvais film. Or un mauvais titre
+// original est PIRE que pas de titre du tout, puisqu'il vaut réponse exacte :
+// il ferait gagner un point à qui nomme un autre film. On ne retient donc un
+// film que si TMDB le crédite au réalisateur saisi. Sinon on ne devine pas :
+// la fiche dit ce qu'elle a trouvé, et attend une saisie à la main.
+//
+// SANS CLÉ API (TC_TMDB_KEY vide dans config.js), tout ce qui suit dort :
+// aucun appel réseau, aucun bouton, et le studio se comporte comme avant.
+
+var JP_TMDB_URL = 'https://api.themoviedb.org/3';
+
+// Les réponses déjà obtenues, par couple « titre|réalisateur » normalisé. Le
+// bouton « compléter les titres » repasse sur des fiches déjà faites : sans ce
+// cache, il redemanderait à TMDB ce que l'on sait déjà.
+var JP_TMDB_CACHE = {};
+
+function jpTmdbActif(){
+  return typeof TC_TMDB_KEY === 'string' && TC_TMDB_KEY.trim() !== '';
+}
+
+function jpTmdbAppel(chemin, params){
+  var url = JP_TMDB_URL + chemin + '?api_key=' + encodeURIComponent(TC_TMDB_KEY.trim());
+  Object.keys(params).forEach(function(k){
+    url += '&' + k + '=' + encodeURIComponent(params[k]);
+  });
+  // Huit secondes et un seul réessai : c'est un agrément, le studio ne doit
+  // jamais rester suspendu dessus. tcFetchWithTimeout (utils.js) fait le
+  // reste — c'est lui qui distingue une panne réseau d'un refus.
+  return tcFetchWithTimeout(url, { timeoutMs: 8000, retries: 1 }).then(function(res){
+    if(!res.ok) throw new Error('TMDB ' + res.status);
+    return res.json();
+  });
+}
+
+// Normalisation de comparaison : sans accent, sans casse, sans ponctuation.
+// « À bout de souffle » et « A bout de souffle. » sont le même titre.
+function jpTmdbNorm(s){
+  return normStr(s || '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Distance de Levenshtein, plafonnée : au-delà du plafond on s'arrête, la
+// valeur exacte ne sert à rien. Elle sert à reconnaitre un nom translittéré
+// autrement (Tarkovski / Tarkovsky) — la base fait la même chose de son
+// côté, avec sa fonction « jeu_distance ». Les seuils, eux, sont dans
+// jpTmdbTolerance juste en dessous, et ils sont serrés.
+function jpTmdbDistance(a, b, plafond){
+  if(a === b) return 0;
+  if(Math.abs(a.length - b.length) > plafond) return plafond + 1;
+  var prec = [], cour = [], i, j;
+  for(j = 0; j <= b.length; j++) prec[j] = j;
+  for(i = 1; i <= a.length; i++){
+    cour[0] = i;
+    var mini = cour[0];
+    for(j = 1; j <= b.length; j++){
+      cour[j] = Math.min(prec[j] + 1, cour[j - 1] + 1,
+                         prec[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+      if(cour[j] < mini) mini = cour[j];
+    }
+    // Toute la ligne dépasse déjà le plafond : la suite ne redescendra pas.
+    if(mini > plafond) return plafond + 1;
+    for(j = 0; j <= b.length; j++) prec[j] = cour[j];
+  }
+  return prec[b.length];
+}
+
+// Combien de fautes on tolère sur un nom, selon sa longueur.
+//
+// CES SEUILS SONT VOLONTAIREMENT AVARES, et ils l'ont été rendus après essai :
+// une tolérance d'une faute à partir de cinq lettres rapprochait « Bresson »
+// de « Besson ». Deux cinéastes bien réels, une lettre d'écart, et un titre
+// original faux écrit dans la fiche — c'est-à-dire un point donné à qui
+// nomme un autre film.
+//
+// Les deux erreurs ne coûtent pas la même chose. Refuser un accord juste ne
+// coûte qu'une saisie à la main, et la fiche dit alors quel film et quel
+// réalisateur TMDB a trouvés : le créateur voit sa coquille en un coup d'oeil.
+// Accepter un accord faux, lui, falsifie la partie en silence. On tranche
+// donc toujours du côté du refus.
+//
+// Ce qui passe encore : « Tarkovski » pour « Tarkovsky », « Mizoguchi »,
+// « Eisenstein ». Ce qui ne passe plus : « Dovjenko » pour « Dovzhenko »
+// (deux fautes sur huit lettres) — la fiche nommera le film et son auteur,
+// et il n'y aura qu'à recopier.
+function jpTmdbTolerance(mot){
+  if(mot.length <= 7)  return 0;
+  if(mot.length <= 11) return 1;
+  return 2;
+}
+
+// TMDB crédite-t-il ce film au réalisateur saisi ?
+//
+// On ne compare que le DERNIER mot du nom saisi — le nom de famille dans
+// l'usage français comme dans celui de TMDB. Comparer tous les mots
+// rapprocherait « Jean Renoir » de « Jean-Luc Godard » par leur prénom, et
+// c'est exactement le genre de faux rapprochement qui mettrait un mauvais
+// titre dans une fiche.
+function jpTmdbRealCorrespond(saisi, credites){
+  var mots = jpTmdbNorm(saisi).split(' ').filter(function(m){ return m.length >= 3; });
+  if(!mots.length || !credites || !credites.length) return false;
+  var nom = mots[mots.length - 1];
+  var tol = jpTmdbTolerance(nom);
+  return credites.some(function(c){
+    return jpTmdbNorm(c).split(' ').some(function(mt){
+      return mt.length >= 3 && jpTmdbDistance(nom, mt, tol) <= tol;
+    });
+  });
+}
+
+// La fiche complète d'un candidat. « language=en-US » n'est pas un détail :
+// c'est ainsi que « title » rend le titre ANGLAIS, tandis que
+// « original_title » ne dépend d'aucune langue.
+function jpTmdbDetails(lot){
+  return Promise.all(lot.map(function(r){
+    return jpTmdbAppel('/movie/' + r.id, { language: 'en-US', append_to_response: 'credits' })
+      .then(function(d){
+        if(!d || !d.id) return null;
+        var equipe = (d.credits && d.credits.crew) || [];
+        return {
+          titre_en:       d.title || '',
+          titre_original: d.original_title || '',
+          annee:          (d.release_date || '').slice(0, 4),
+          realisateurs:   equipe.filter(function(m){ return m && m.job === 'Director'; })
+                                .map(function(m){ return m.name || ''; })
+        };
+      });
+  }));
+}
+
+// Cherche le film. Rend une promesse de { etat, film } :
+//   'ok'              — un film, et un seul, crédité au réalisateur saisi
+//   'real_different'  — un film porte bien ce titre, mais d'un autre auteur
+//   'ambigu'          — plusieurs films possibles, on ne tranche pas
+//   'introuvable'     — TMDB ne connait pas ce titre
+// Elle rejette en cas de panne : l'appelant distingue « rien trouvé » de
+// « TMDB injoignable », qui ne se corrigent pas de la même façon.
+function jpTmdbChercher(titre, real){
+  var clef = jpTmdbNorm(titre) + '|' + jpTmdbNorm(real);
+  if(JP_TMDB_CACHE[clef]) return JP_TMDB_CACHE[clef];
+
+  var p = jpTmdbAppel('/search/movie', {
+    query: titre, language: 'fr-FR', include_adult: 'false'
+  }).then(function(rep){
+    var res = (rep && rep.results) || [];
+    if(!res.length) return { etat: 'introuvable' };
+    var n = jpTmdbNorm(titre);
+    // TMDB cherche large : « Solaris » ramène aussi « Solaris Rising ». On
+    // retient d'abord les titres qui correspondent vraiment — français ou
+    // original. À défaut, les cinq premiers, et c'est alors le réalisateur
+    // seul qui pourra conclure.
+    var exacts = res.filter(function(r){
+      return jpTmdbNorm(r.title) === n || jpTmdbNorm(r.original_title) === n;
+    });
+    var lot = (exacts.length ? exacts : res).slice(0, 5);
+    return jpTmdbDetails(lot).then(function(films){
+      var trouves = films.filter(function(f){ return !!f; });
+      var bons = trouves.filter(function(f){ return jpTmdbRealCorrespond(real, f.realisateurs); });
+      if(bons.length === 1) return { etat: 'ok', film: bons[0] };
+      if(bons.length > 1){
+        // Plusieurs fiches TMDB pour le même film du même auteur, cela
+        // arrive (doublons du catalogue). Si elles portent les mêmes titres,
+        // le choix est sans conséquence : on prend la première. Sinon, ce
+        // sont deux films différents et on ne tranche pas à sa place.
+        var memes = bons.every(function(f){
+          return jpTmdbNorm(f.titre_original) === jpTmdbNorm(bons[0].titre_original)
+              && jpTmdbNorm(f.titre_en)       === jpTmdbNorm(bons[0].titre_en);
+        });
+        return memes ? { etat: 'ok', film: bons[0] } : { etat: 'ambigu' };
+      }
+      // Aucun réalisateur ne correspond. S'il n'y avait qu'un seul titre
+      // exact, on le NOMME sans rien remplir : neuf fois sur dix c'est une
+      // coquille dans le nom du réalisateur, et le créateur la voit d'un
+      // coup d'oeil. Mais c'est lui qui tranche, pas nous.
+      if(exacts.length === 1 && trouves.length === 1){
+        return { etat: 'real_different', film: trouves[0] };
+      }
+      return { etat: exacts.length ? 'ambigu' : 'introuvable' };
+    });
+  });
+
+  JP_TMDB_CACHE[clef] = p;
+  // Une panne ne se met pas en cache : la fiche suivante doit pouvoir
+  // retenter sa chance.
+  p.catch(function(){ delete JP_TMDB_CACHE[clef]; });
+  return p;
+}
+
+// Le bouton d'appoint n'a de sens qu'avec une clé ET au moins une fiche.
+function jpMajBarreTmdb(){
+  var barre = jpEl('jp-tmdb-barre');
+  if(!barre) return;
+  barre.style.display = (jpTmdbActif() && JP_FICHES.length) ? '' : 'none';
+}
+
+// « Compléter les titres via TMDB » : toutes les fiches d'un coup. C'est la
+// réponse au vrai coût du studio — trente fiches à compléter une par une.
+//
+// Les fiches sont traitées L'UNE APRÈS L'AUTRE, et non ensemble : TMDB
+// limite son débit, et trente recherches lancées en bloc reviendraient en
+// partie en erreur. L'attente est annoncée, fiche par fiche.
+function jpTmdbToutCompleter(){
+  var btn = jpEl('jp-btn-tmdb');
+  var bilan = jpEl('jp-tmdb-bilan');
+  var lot = JP_FICHES.filter(function(f){ return typeof f.jpTmdb === 'function'; });
+  if(!lot.length) return Promise.resolve();
+  if(btn) btn.disabled = true;
+  var faits = 0, verifier = 0, rang = 0;
+  var suite = Promise.resolve();
+  lot.forEach(function(f){
+    suite = suite.then(function(){
+      rang++;
+      if(bilan) bilan.textContent = t('jp_tmdb_en_cours', [rang, lot.length]);
+      return f.jpTmdb(true).then(function(code){
+        if(code === 'ok') faits++;
+        else if(code !== 'rien' && code !== 'inactif') verifier++;
+      });
+    });
+  });
+  return suite.then(function(){
+    if(btn) btn.disabled = false;
+    var txt = t('jp_tmdb_bilan', [faits, verifier]);
+    if(bilan) bilan.textContent = txt;
+    jpAnnoncer(txt);
+  });
+}
+
 
 function jpFiche(p, i){
   var sec = JP_SECRETS[String(p.id)] || { titre_attendu: '', realisateur: '', variantes: [], indices: [] };
@@ -944,8 +1192,20 @@ function jpFiche(p, i){
   droite.appendChild(lblVO);
   var cVO = jpChamp('text', t('jp_ph_vo'), sec.titre_original || '', 200);
   cVO.style.maxWidth = '330px';
-  cVO.style.marginBottom = '12px';
   droite.appendChild(cVO);
+
+  // Ce que TMDB a trouve, ou pourquoi il n'a rien rempli. La ligne vit sous
+  // le champ du titre original parce que c'est celui-la qu'il remplit. Vide,
+  // elle ne prend aucune place : la marge du bas est celle que portait le
+  // champ avant.
+  var etatTmdb = document.createElement('div');
+  etatTmdb.className = 'jp-aide';
+  etatTmdb.style.margin = '0 0 12px';
+  droite.appendChild(etatTmdb);
+  function direTmdb(txt){
+    etatTmdb.textContent = txt || '';
+    etatTmdb.style.paddingTop = txt ? '5px' : '0';
+  }
 
   // Variantes acceptees
   var lblV = document.createElement('div');
@@ -1137,6 +1397,78 @@ function jpFiche(p, i){
   }
   f.jpEnregistrer = enregistrer;
 
+  // ── L'APPOINT TMDB, FICHE PAR FICHE ───────────────────────────
+  // Rend une promesse de code, que le bouton du haut compte :
+  //   'ok'      quelque chose a été ajouté, et la fiche enregistrée
+  //   'rien'    il n'y avait rien à ajouter, ou rien à redemander
+  //   'inactif' pas de clé API dans config.js
+  //   le reste  à vérifier à la main (cf. jpTmdbChercher)
+  //
+  // On ne redemande pas deux fois la même chose : « dernierTmdb » retient le
+  // couple (titre, réalisateur) déjà soumis. Le bouton du haut, lui, force —
+  // c'est tout son intérêt quand le créateur vient de corriger un nom.
+  var dernierTmdb = '';
+  var tmdbEnVol = null;
+
+  function completerViaTmdb(forcer){
+    if(!jpTmdbActif()) return Promise.resolve('inactif');
+    var titre = cTitre.value.trim();
+    var real  = cReal.value.trim();
+    if(!titre) return Promise.resolve('rien');
+    // Rien à compléter : le titre original est là ET il y a déjà des
+    // variantes. Inutile de déranger TMDB.
+    if(cVO.value.trim() && vars.length) return Promise.resolve('rien');
+    if(!real){ direTmdb(t('jp_tmdb_sans_real')); return Promise.resolve('sans_real'); }
+    var clef = jpTmdbNorm(titre) + '|' + jpTmdbNorm(real);
+    if(!forcer && clef === dernierTmdb) return Promise.resolve('rien');
+    if(tmdbEnVol) return tmdbEnVol;
+    dernierTmdb = clef;
+    direTmdb(t('jp_tmdb_cherche'));
+
+    tmdbEnVol = jpTmdbChercher(titre, real).then(function(r){
+      tmdbEnVol = null;
+      var film = r && r.film;
+      var nom  = film ? (film.titre_en || film.titre_original || titre) : '';
+      if(!r || r.etat === 'introuvable'){ direTmdb(t('jp_tmdb_introuvable')); return 'introuvable'; }
+      if(r.etat === 'ambigu'){ direTmdb(t('jp_tmdb_ambigu')); return 'ambigu'; }
+      if(r.etat === 'real_different'){
+        direTmdb(t('jp_tmdb_real_different', [nom, (film.realisateurs || []).join(', ')]));
+        return 'real_different';
+      }
+
+      // ON AJOUTE, ON NE REMPLACE PAS. Un titre original déjà saisi reste
+      // tel quel, une variante déjà présente n'est pas doublée, et un titre
+      // qui répète le titre attendu n'apporte rien : pour un film français,
+      // TMDB ne remplit donc souvent rien, et c'est normal.
+      var nTitre = jpTmdbNorm(titre);
+      var vo = (film.titre_original || '').trim();
+      var en = (film.titre_en || '').trim();
+      var ajouts = 0;
+      if(vo && !cVO.value.trim() && jpTmdbNorm(vo) !== nTitre){ cVO.value = vo; ajouts++; }
+      var nVO = jpTmdbNorm(cVO.value);
+      var dejaConnu = function(x){
+        var nx = jpTmdbNorm(x);
+        if(!nx || nx === nTitre || nx === nVO) return true;
+        return vars.some(function(v){ return jpTmdbNorm(v) === nx; });
+      };
+      if(en && !dejaConnu(en) && vars.length < 20){ vars.push(en); dessinerPuces(); ajouts++; }
+
+      if(!ajouts){ direTmdb(t('jp_tmdb_rien_a_ajouter', nom)); return 'rien'; }
+      direTmdb(t('jp_tmdb_ok', [nom, film.annee || '']));
+      return enregistrer().then(function(x){ return (x && x.ok) ? 'ok' : 'erreur'; });
+    }, function(e){
+      tmdbEnVol = null;
+      // Une panne ne condamne pas la fiche : on le dit, et on oublie le
+      // couple pour que la tentative suivante reparte vraiment.
+      dernierTmdb = '';
+      direTmdb(t('jp_tmdb_erreur'));
+      console.warn('photogramme : TMDB injoignable', e);
+      return 'erreur';
+    });
+    return tmdbEnVol;
+  }
+  f.jpTmdb = completerViaTmdb;
+
   // L'ENREGISTREMENT AUTOMATIQUE. A la sortie de la fiche, et non a la
   // frappe : ecrire a chaque touche ferait trente requetes par titre, et un
   // demi-titre dans la base entre deux. On ne renvoie que si quelque chose a
@@ -1153,6 +1485,11 @@ function jpFiche(p, i){
     // Un deplacement DANS la meme fiche ne vaut pas sortie.
     if(ev.relatedTarget && droite.contains(ev.relatedTarget)) return;
     if(!cTitre.value.trim()) return;      // une fiche vide n'est pas une erreur
+    // L'appoint TMDB est DEMANDE ici, mais on ne l'attend pas : un service
+    // exterieur ne doit jamais retarder l'enregistrement, qui est le filet
+    // de securite de toute la preparation. Quand TMDB repond et remplit
+    // quelque chose, il enregistre lui-meme.
+    completerViaTmdb(false);
     if(signature() === dernierEnvoi) return;
     enregistrer();
   });
@@ -2580,7 +2917,56 @@ function jpNoterTrouves(lignes){
     jpAnnoncer(r.titre ? t('jp_journal_ligne_titre', [r.nom, pos, r.titre])
                        : t('jp_journal_ligne', [r.nom, pos]));
   });
+  // Tout est-il tombe ? C'est le seul endroit qui le sache a coup sur : il
+  // est appele par le direct ET par le filet de securite des quinze
+  // secondes, donc meme un evenement perdu n'empeche pas la bascule.
+  jpVerifierToutTrouve();
 }
+// ── LA CLÔTURE AUTOMATIQUE ───────────────────────────────────
+// Le jeu est une course : un photogramme trouvé tombe pour tout le monde et
+// sort du jeu. Quand ils sont tous tombés, il ne reste donc RIEN à jouer —
+// et pourtant la partie continuait jusqu'à son heure de fin, ou jusqu'à ce
+// que le créateur pense à cliquer sur « Clore ».
+//
+// C'EST LA BASE QUI CLÔT, PAS CETTE PAGE. La fonction `jeu_repondre` le fait
+// au moment même où elle accepte la dernière réponse, et `jeu_arbitrer` de
+// même quand c'est un arbitrage qui complète la série (cf. le fichier SQL
+// livré avec cette version). Il faut qu'il en soit ainsi pour deux raisons :
+// la RLS n'autorise que le créateur à modifier la partie, et il n'est pas
+// forcément devant son écran ; et une clôture décidée par un navigateur
+// dépendrait de qui a l'onglet ouvert à cet instant.
+//
+// Ici, on se contente donc de RELIRE la partie dès qu'on constate que tout
+// est tombé. L'horloge (jpBoucleHorloge) voit alors « terminée » au
+// battement suivant et affiche les résultats — pour chacun, sans
+// rechargement. Si le fichier SQL n'a pas encore été exécuté, cette
+// relecture ne trouve rien de neuf : le jeu se comporte exactement comme
+// avant, à une requête près.
+//
+// L'état est tenu dans un objet, et non dans une variable nue : le linter du
+// projet signale une variable réaffectée après une attente réseau, et il a
+// raison de le faire — ici la propriété d'un objet dit la même chose sans
+// ajouter un avertissement de plus.
+var JP_CLOTURE = { relecture: false };
+
+function jpVerifierToutTrouve(){
+  if(!JP_PARTIE || JP_ETAT !== 'en_cours') return;
+  if(!JP_PHOTOS.length || JP_PARTIE.cloture_at) return;
+  if(JP_CLOTURE.relecture) return;
+  var reste = JP_PHOTOS.some(function(p){ return !JP_REVELE[p.position]; });
+  if(reste) return;
+  JP_CLOTURE.relecture = true;
+  var jeton = JP_JETON;
+  JP_SB.from('jeu_sessions').select(JP_COLONNES_PARTIE).eq('id', JP_PARTIE.id).single()
+    .then(function(r){
+      JP_CLOTURE.relecture = false;
+      if(jeton !== JP_JETON || !r || r.error || !r.data) return;
+      // On FUSIONNE au lieu de remplacer, comme partout ailleurs : la
+      // réponse ne porte que les colonnes demandées.
+      JP_PARTIE = Object.assign({}, JP_PARTIE, r.data);
+    }, function(){ JP_CLOTURE.relecture = false; });
+}
+
 
 function jpPhotoPosition(pos){
   for(var i = 0; i < JP_PHOTOS.length; i++){
@@ -3437,6 +3823,14 @@ function jpBrancher(){
   // UN SEUL bouton : il enregistre les reglages, les fiches, puis publie.
   jpEl('jp-btn-publier').addEventListener('click', jpCreerLaPartie);
   jpEl('jp-btn-supprimer').addEventListener('click', jpSupprimerPartie);
+  // L'appoint TMDB : un seul clic pour toutes les fiches de la partie.
+  // Ce bouton-ci est branche SOUS CONDITION, a la difference des autres :
+  // il arrive avec cette version, et les fichiers du site se remplacent un
+  // par un. Pendant la minute ou photogramme.js serait en ligne sans son
+  // photogramme.html, un branchement sec ferait tomber toute la page du jeu
+  // sur un element absent.
+  var btnTmdb = jpEl('jp-btn-tmdb');
+  if(btnTmdb) btnTmdb.addEventListener('click', jpTmdbToutCompleter);
   // La section « photogrammes » s'ouvre des que le titre tient debout.
   jpEl('jp-f-titre').addEventListener('input', jpMajVisibilitePhotos);
 

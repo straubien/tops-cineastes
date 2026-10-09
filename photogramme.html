@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://afbdrqrslgduomimkmyt.supabase.co; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://afbdrqrslgduomimkmyt.supabase.co; connect-src 'self' https://afbdrqrslgduomimkmyt.supabase.co wss://afbdrqrslgduomimkmyt.supabase.co https://api.themoviedb.org; base-uri 'self'; form-action 'self';">
 <script src="anti-cadre.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <title>TOPS/CINÉASTES — Jeu du photogramme</title>
 <meta name="description" content="Jeu du photogramme : reconnaître des films à une seule image, entre cinéphiles, en temps limité.">
@@ -148,6 +148,19 @@
         <input type="file" id="jp-fichiers" accept="image/jpeg,image/png,image/webp,image/bmp" multiple style="display:none" data-i18n-aria="jp_depot_aria" aria-label="Ajouter des photogrammes">
 
         <div id="jp-envois"></div>
+
+        <!-- L'APPOINT TMDB. N'apparait que si une cle API est renseignee dans
+             config.js (TC_TMDB_KEY) ET qu'il y a au moins une fiche. Sans
+             cle, le studio ne montre rien du tout et les titres se
+             saisissent a la main, exactement comme avant. -->
+        <div id="jp-tmdb-barre" style="display:none;margin-top:1.6rem">
+          <p class="jp-aide" id="jp-aide-tmdb" data-i18n="jp_aide_tmdb" style="margin:0 0 8px">Écrivez le titre français et le réalisateur : TMDB ajoute le titre original et le titre anglais, qui valent réponse exacte. Rien n'est jamais écrasé.</p>
+          <div class="jp-actions">
+            <button type="button" class="jp-btn jp-btn-petit" id="jp-btn-tmdb" data-i18n="jp_tmdb_tout">Compléter les titres via TMDB</button>
+            <span class="jp-aide" id="jp-tmdb-bilan"></span>
+          </div>
+        </div>
+
         <div id="jp-fiches" style="margin-top:1.6rem"></div>
       </div>
 

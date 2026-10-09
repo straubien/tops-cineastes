@@ -261,6 +261,8 @@ async function onLogin(user){
   }
 
   currentContributor = data;
+  // Une visite de plus au journal des connexions (cf. utils.js).
+  tcJournalConnexion(sb);
   try{ localStorage.setItem('tc-display-name', data.display_name); }catch(e){}
 
   // Afficher l'interface

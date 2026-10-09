@@ -25,3 +25,24 @@ function tcCreateClient(opts){
 var TC_AUTOCOMPLETE_MAX = 12;
 // Taille maximale pour l'upload d'avatar (2 Mo)
 var TC_AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+
+// ── CLE API TMDB (facultative) ─────────────────────────────────────────────
+// Elle sert a UNE chose : dans le studio du Jeu du photogramme, completer
+// tout seul le titre original et le titre anglais d'un film, a partir du
+// titre francais et du realisateur saisis par le createur. Jusqu'ici ces
+// titres se tapaient un par un, ce qui etait long sur une partie de trente
+// photogrammes.
+//
+// TANT QUE CETTE CHAINE EST VIDE, RIEN NE CHANGE : le studio ne montre pas
+// le bouton, ne tente aucun appel, et les titres se saisissent a la main
+// exactement comme avant. Aucune autre page du site ne la lit.
+//
+// Pour l'obtenir : compte gratuit sur themoviedb.org, puis Parametres > API.
+// C'est la « Cle API (v3 auth) », une chaine COURTE de 32 caracteres — pas
+// le « Read Access Token », bien plus long, qui commence par « eyJ ».
+//
+// Elle est ecrite ici en clair, et c'est sans danger — pour la meme raison
+// que la cle anon de Supabase juste au-dessus : une cle TMDB v3 ne donne
+// acces qu'EN LECTURE au catalogue public de TMDB. Elle ne permet pas
+// d'ecrire chez TMDB, et elle n'ouvre rien de ce site.
+var TC_TMDB_KEY = '';
