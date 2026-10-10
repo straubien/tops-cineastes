@@ -590,7 +590,7 @@ var TC_TRANSLATIONS = {
     jp_err_session: "Votre session a expiré. Reconnectez-vous.",
     // Avant le coup d'envoi
     jp_depart_dans: "Départ dans",
-    jp_avant_note: function(titre){ return "Restez sur cette page : « " + titre + " » s'ouvrira toute seule, à la seconde."; },
+    jp_avant_note: function(titre){ return "Restez sur cette page : « " + titre + " » s'ouvrira automatiquement"; },
     jp_preroll_note: "Les images se chargent. Tenez-vous prêt.",
     jp_images_arrivent: "Les images arrivent…",
     // Pendant la partie
@@ -1234,7 +1234,7 @@ var TC_TRANSLATIONS = {
     jp_err_session: "Your session has expired. Please log in again.",
     // Before kick-off
     jp_depart_dans: "Starts in",
-    jp_avant_note: function(titre){ return "Stay on this page: “" + titre + "” will open by itself, on the second."; },
+    jp_avant_note: function(titre){ return "Stay on this page: “" + titre + "” will open automatically"; },
     jp_preroll_note: "Images are loading. Get ready.",
     jp_images_arrivent: "Images on their way…",
     // During the game
