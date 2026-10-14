@@ -741,6 +741,19 @@ function renderFilmsLibre(films, listId, countId, warnId, maxFilms){
   } else { warnEl.style.display = 'none'; }
 }
 
+// ── LES SIX SAUVEGARDES DU PROFIL DEMANDENT `.select('id')`, PAS `.select()`
+//
+// `.select()` sans argument vaut `select=*` : Postgres renvoie TOUTES les
+// colonnes de contributors, dont `email`, sur laquelle le role `authenticated`
+// n'a deliberement aucun droit de lecture (les adresses des cinephiles ne
+// sortent pas de la base). L'UPDATE est alors refuse en bloc avec le code
+// 42501, que friendlyError traduit par « Action non autorisee. » — alors que
+// l'enregistrement lui-meme etait parfaitement autorise.
+//
+// `.select('id')` ne lit que la colonne `id` : la verification « la ligne a
+// bien ete ecrite » (res.data.length) fonctionne a l'identique, sans toucher
+// aux colonnes protegees. Ne jamais remettre `.select()` ici.
+
 // ── FILMS FAVORIS ─────────────────────────────────────────────
 document.getElementById('btn-save-films-fav').addEventListener('click', async function(){
   if(!currentContributor) return;
@@ -755,7 +768,7 @@ document.getElementById('btn-save-films-fav').addEventListener('click', async fu
     var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       film_coeur: films
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
@@ -783,7 +796,7 @@ document.getElementById('btn-save-autres-films').addEventListener('click', async
     var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       film_autres: films
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
@@ -811,7 +824,7 @@ document.getElementById('btn-submit-favoris').addEventListener('click', async fu
     var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       cineaste_coeur: cineastes
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
@@ -839,7 +852,7 @@ document.getElementById('btn-submit-autres').addEventListener('click', async fun
     var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       cineaste_autres: cineastes
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
@@ -932,7 +945,7 @@ document.getElementById('btn-submit-presentation').addEventListener('click', asy
     var contribId = currentContributor.id;
     var res = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       presentation: texte || null
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     btn.disabled = false; btn.textContent = t('sp_sauvegarder');
     if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('sp_err_save')+friendlyError(res.error)); return; }
     if(!res.data || !res.data.length){ alert(t('sp_err_rights')); return; }
@@ -1010,7 +1023,7 @@ document.getElementById('btn-upload-avatar').addEventListener('click', async fun
     var publicUrl = sb.storage.from('avatars').getPublicUrl(filename).data.publicUrl;
     var upd = await tcWithRetryTimeout(function(){ return sb.from('contributors').update({
       avatar_url: publicUrl
-    }).eq('id', contribId).select(); });
+    }).eq('id', contribId).select('id'); });
     if(upd.error){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert('Erreur enregistrement URL : '+friendlyError(upd.error)); return; }
     if(!upd.data || !upd.data.length){ btn.disabled = false; btn.textContent = t('sp_avatar_publish'); alert('La mise à jour de la photo de profil n\'a pas abouti — vérifiez les droits de la table contributors.'); return; }
     // Deconnecte pendant l'enregistrement : la donnee est bien ecrite en

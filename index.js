@@ -4892,7 +4892,10 @@ function openFicheThematique(themeNom){
         mtLoadPrevSubmissions();
       });
       delBtn.addEventListener('click', async function(){
-        if(!confirm(t('mt_confirm_del', cineaste))) return;
+        // « approved » = le top est publie dans la table `tops`, que cette
+        // suppression ne touche pas. Le message d'avertissement doit donc
+        // etre different : voir mt_confirm_del_publie dans i18n.js.
+        if(!confirm(t(s.status === 'approved' ? 'mt_confirm_del_publie' : 'mt_confirm_del', cineaste))) return;
         delBtn.disabled = true;
         var r;
         try {

@@ -1530,8 +1530,13 @@ function jpDeplacer(i, sens){
   var j = i + sens;
   if(j < 0 || j >= JP_PHOTOS.length) return;
   var a = JP_PHOTOS[i], b = JP_PHOTOS[j];
-  // Position de garage, hors de la plage reellement utilisee (1 a 30) mais
+  // Position de garage, hors de la plage reellement utilisee (1 a 100) mais
   // dans celle qu'autorise la contrainte (1 a 999).
+  //
+  // ATTENTION : c'est cette ligne qui fixe le plafond tenable. Avec 100
+  // photogrammes, i va de 0 a 99 et le garage monte a 999 — exactement la
+  // borne du CHECK. Relever JP_MAX_PHOTOGRAMMES au-dela de 100 demande donc
+  // d'abaisser cette base de 900, ou d'elargir le CHECK en base.
   var garage = 900 + i;
   JP_SB.from('jeu_photogrammes').update({ position: garage }).eq('id', a.id)
     .then(function(){ return JP_SB.from('jeu_photogrammes').update({ position: a.position }).eq('id', b.id); })
@@ -1733,9 +1738,23 @@ function jpDeposerFichiers(fichiers){
   });
 }
 
+// Nombre maximum de photogrammes dans une partie.
+//
+// Ce plafond est DOUBLE : ici pour l'interface (le lot depose est tronque a
+// cette valeur) et en base dans jeu_plafonne_photogrammes(), qui seule
+// protege vraiment la table. Changer l'un sans l'autre ne sert a rien :
+// relever le nombre ici ferait echouer les insertions au-dela du plafond de
+// la base, l'abaisser ici ne fermerait rien du tout.
+//
+// Les deux textes affiches (jp_depot_petit et jp_err_trop_images, dans
+// i18n.js, et le repli en dur dans photogramme.html) citent ce nombre.
+//
+// Maximum tenable : 100. Voir le commentaire de jpDeplacer() plus haut.
+var JP_MAX_PHOTOGRAMMES = 100;
+
 function jpEnvoyerFichiers(fichiers){
   if(!JP_BROUILLON){ jpAlerte('jp-studio-msg', t('jp_err_enregistrer_dabord')); return; }
-  var reste = 30 - JP_PHOTOS.length;
+  var reste = JP_MAX_PHOTOGRAMMES - JP_PHOTOS.length;
   var lot = Array.prototype.slice.call(fichiers, 0, Math.max(0, reste));
   if(!lot.length){ jpAlerte('jp-studio-msg', t('jp_err_trop_images')); return; }
 
