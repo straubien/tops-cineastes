@@ -60,6 +60,14 @@ var JP_PRECHARGE = false;
 var JP_JETON     = 0;      // invalide les chargements d'une partie quittee
 var JP_BROUILLON = null;   // la partie en cours de preparation dans le studio
 
+// LE STUDIO N'EST PAS TOUJOURS CELUI DE QUELQU'UN QUI PREPARE. Un
+// administrateur peut ouvrir la partie d'un autre pour la relire : images,
+// titres attendus, variantes, indices, reglages. Il voit tout, il ne touche a
+// rien. La base dit deja la meme chose — ses regles de securite laissent un
+// administrateur LIRE la partie d'un autre, pas l'ecrire — et ce drapeau
+// evite de lui montrer des boutons qui n'ecriraient rien.
+var JP_STUDIO_LECTURE = false;
+
 var JP_SMILEYS = ['😮', '😂', '🤯', '❤️',
                   '🎬', '👏', '🔥', '😭'];
 
@@ -214,6 +222,11 @@ function jpDepuisChamp(v){
 // ── 4. AUTHENTIFICATION ────────────────────────────────────────────────────
 
 function jpConnecte(){ return !!(JP_USER && JP_MOI); }
+
+// Administrateur du site (colonne `is_admin` de `contributors`, deja chargee
+// avec la fiche). C'est exactement la notion dont la base se sert, sous le
+// nom de `tc_est_admin()`, pour ouvrir la lecture des parties des autres.
+function jpSuisAdmin(){ return !!(JP_MOI && JP_MOI.is_admin); }
 
 function jpMajEntete(){
   var hu = jpEl('header-user'), bl = jpEl('btn-logout');
@@ -484,12 +497,15 @@ function jpCarte(p){
   el.appendChild(pied);
 
   // Le createur retrouve sa partie, quel que soit son etat : c'est le seul
-  // chemin vers le studio une fois la partie publiee.
-  if(JP_MOI && String(p.createur_id) === String(JP_MOI.id) && etat !== 'brouillon'){
+  // chemin vers le studio une fois la partie publiee. Un administrateur qui
+  // n'en est pas le createur emprunte le meme chemin, mais pour regarder : le
+  // libelle le dit avant le clic, et le studio s'ouvre en lecture seule.
+  var mienne = !!(JP_MOI && String(p.createur_id) === String(JP_MOI.id));
+  if((mienne || jpSuisAdmin()) && etat !== 'brouillon'){
     var ger = document.createElement('button');
     ger.type = 'button';
     ger.className = 'jp-btn jp-btn-petit';
-    ger.textContent = t('jp_gerer');
+    ger.textContent = t(mienne ? 'jp_gerer' : 'jp_consulter');
     // On arrete la propagation : sans cela, le clic (ou Entree) remonterait
     // jusqu'a la carte, qui ouvrirait la partie par-dessus le studio.
     ger.addEventListener('click', function(ev){ ev.stopPropagation(); jpAller('#studio/' + p.id); });
@@ -521,10 +537,15 @@ function jpOuvrirStudio(id){
 
   if(!id){
     JP_BROUILLON = null;
+    JP_STUDIO_LECTURE = false;
     JP_PHOTOS = [];
     JP_SECRETS = {};
     jpEl('jp-f-titre').value = '';
     jpEl('jp-f-desc').value  = '';
+    // Sortir de la partie d'un autre laissait ces deux champs desactives :
+    // on les rouvre ici, comme les champs de reglage un peu plus bas.
+    jpEl('jp-f-titre').disabled = false;
+    jpEl('jp-f-desc').disabled  = false;
     // Par defaut : ce soir a 20 h, pendant une demi-heure. Ces valeurs ne
     // sont plus qu'un point de depart : on ne les regle qu'a la toute fin,
     // une fois les photogrammes en place (cf. l'ordre des sections).
@@ -562,6 +583,14 @@ function jpOuvrirStudio(id){
     return JP_SB.from('jeu_sessions').select(JP_COLONNES_PARTIE).eq('id', id).single();
   }).then(function(r){
     if(r && r.error) throw tcSbError(r.error, 'jeu_sessions/studio');
+    // QUI ENTRE, ET POUR QUOI FAIRE. Le createur, chez lui, comme avant. Un
+    // administrateur, chez un autre : en lecture seule. N'importe qui
+    // d'autre : nulle part — les reglages et les titres attendus d'une partie
+    // ne le regardent pas, et la base refuserait de toute facon ses
+    // ecritures ; autant ne pas lui ouvrir un formulaire pour rien.
+    var sienne = !!(JP_MOI && String(r.data.createur_id) === String(JP_MOI.id));
+    if(!sienne && !jpSuisAdmin()){ jpAller('#parties'); return; }
+    JP_STUDIO_LECTURE = !sienne;
     JP_BROUILLON = r.data;
     jpRemplirStudio(JP_BROUILLON);
     return jpChargerPhotosStudio(JP_BROUILLON.id);
@@ -638,6 +667,9 @@ function jpSessionFraiche(){
 }
 
 function jpRemplirStudio(p){
+  // La partie d'un autre administrateur : elle se lit en entier, et c'est
+  // tout. Chaque ligne marquee « lecture » ci-dessous retire une prise.
+  var lecture = JP_STUDIO_LECTURE;
   jpEl('jp-f-titre').value     = p.titre || '';
   jpEl('jp-f-desc').value      = p.description || '';
   jpEl('jp-f-debut').value     = jpVersChamp(p.debut_at);
@@ -653,18 +685,25 @@ function jpRemplirStudio(p){
   // creees avant l'existence de cette colonne.
   jpEl('jp-f-indice-demi').checked = (p.indice_demi === undefined || p.indice_demi === null) ? true : !!p.indice_demi;
   jpEl('jp-studio-photos').style.display = '';
-  jpEl('jp-btn-supprimer').style.display = '';
+  jpEl('jp-btn-supprimer').style.display = lecture ? 'none' : '';
   // Le bouton ne disparait plus une fois la partie publiee : il reste le
   // seul moyen d'enregistrer une correction de titre. Seul son libelle
   // change — publier d'abord, enregistrer ensuite.
-  jpEl('jp-btn-publier').style.display = '';
+  jpEl('jp-btn-publier').style.display = lecture ? 'none' : '';
   jpEl('jp-btn-publier').textContent = p.publiee ? t('jp_enregistrer_modifs') : t('jp_creer_la_partie');
-  jpEl('jp-studio-etat').textContent = p.publiee ? t('jp_deja_publiee') : t('jp_brouillon_enregistre');
+  jpEl('jp-studio-etat').textContent = lecture ? ''
+    : (p.publiee ? t('jp_deja_publiee') : t('jp_brouillon_enregistre'));
+
+  // Le titre et la presentation sont les deux seuls champs hors de
+  // JP_CHAMPS_REGLAGES : ils restent modifiables jusqu'au bout — par le
+  // createur, et par lui seul.
+  jpEl('jp-f-titre').disabled = lecture;
+  jpEl('jp-f-desc').disabled  = lecture;
 
   // Une partie publiee et commencee ne se remanie plus : la base le refuse,
   // autant le dire ici plutot que de laisser cliquer dans le vide.
   var etatPartie = jpEtat(p);
-  var fige = p.publiee && etatPartie !== 'a_venir';
+  var fige = lecture || (p.publiee && etatPartie !== 'a_venir');
   JP_CHAMPS_REGLAGES.forEach(function(k){ if(jpEl(k)) jpEl(k).disabled = fige; });
   jpMajManuelle();
   jpEl('jp-depot').style.display = fige ? 'none' : '';
@@ -673,7 +712,9 @@ function jpRemplirStudio(p){
   // sur une partie deja jouee doit comprendre tout de suite pourquoi la
   // moitie des champs est grisee, plutot que de cliquer dans le vide en se
   // demandant si quelque chose est casse.
-  if(etatPartie === 'terminee' || etatPartie === 'annulee'){
+  if(lecture){
+    jpAlerte('jp-studio-etape', t('jp_etape_lecture'), 'info');
+  } else if(etatPartie === 'terminee' || etatPartie === 'annulee'){
     jpAlerte('jp-studio-etape', t('jp_etape_terminee'), 'info');
   } else if(fige){
     jpAlerte('jp-studio-etape', t('jp_etape_commencee'), 'info');
@@ -686,10 +727,13 @@ function jpRemplirStudio(p){
   // Une partie deja publiee ne se « prepare » plus et ne se publie plus :
   // les intitules suivent, sinon le studio raconte autre chose que ce qu'il
   // propose.
-  jpEl('jp-titre-studio').textContent = p.publiee ? t('jp_studio_titre_modif') : t('jp_studio_titre');
-  jpEl('jp-studio-sous').style.display = p.publiee ? 'none' : '';
-  jpEl('jp-studio-s3').textContent     = p.publiee ? t('jp_studio_s3_gerer') : t('jp_studio_s3');
-  jpEl('jp-aide-publier').style.display = p.publiee ? 'none' : '';
+  jpEl('jp-titre-studio').textContent = lecture ? t('jp_studio_titre_consulter')
+    : (p.publiee ? t('jp_studio_titre_modif') : t('jp_studio_titre'));
+  jpEl('jp-studio-sous').style.display = (lecture || p.publiee) ? 'none' : '';
+  // « Gerer » n'a plus de sens quand on ne fait que lire : la section
+  // retrouve alors son intitule d'origine, qui decrit ce qu'elle montre.
+  jpEl('jp-studio-s3').textContent     = (p.publiee && !lecture) ? t('jp_studio_s3_gerer') : t('jp_studio_s3');
+  jpEl('jp-aide-publier').style.display = (lecture || p.publiee) ? 'none' : '';
   var aidePhotos = jpEl('jp-aide-photos');
   if(aidePhotos) aidePhotos.style.display = fige ? 'none' : '';
 }
@@ -819,6 +863,7 @@ function jpRendreFiches(){
   // On repart de zero AVANT tout : sans cela, passer d'une partie a une autre
   // laisserait le bouton unique enregistrer les fiches de la precedente.
   JP_FICHES = [];
+  jpMajBarreOrdre();
   if(!JP_PHOTOS.length){
     var v = document.createElement('p');
     v.className = 'jp-vide';
@@ -1072,7 +1117,7 @@ function jpTmdbChercher(titre, real){
 function jpMajBarreTmdb(){
   var barre = jpEl('jp-tmdb-barre');
   if(!barre) return;
-  barre.style.display = (jpTmdbActif() && JP_FICHES.length) ? '' : 'none';
+  barre.style.display = (jpTmdbActif() && JP_FICHES.length && !JP_STUDIO_LECTURE) ? '' : 'none';
 }
 
 // « Compléter les titres via TMDB » : toutes les fiches d'un coup. C'est la
@@ -1110,7 +1155,12 @@ function jpTmdbToutCompleter(){
 
 function jpFiche(p, i){
   var sec = JP_SECRETS[String(p.id)] || { titre_attendu: '', realisateur: '', variantes: [], indices: [] };
-  var fige = JP_BROUILLON && JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir';
+  // Deux raisons distinctes de ne plus pouvoir remanier la fiche, et elles ne
+  // disent pas la meme chose : « lecture », c'est la fiche d'un autre, et rien
+  // n'y est modifiable ; « fige », c'est une partie commencee, ou l'ordre et
+  // les images ne bougent plus mais ou le createur corrige encore ses titres.
+  var lecture = JP_STUDIO_LECTURE;
+  var fige = lecture || (JP_BROUILLON && JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir');
 
   var f = document.createElement('div');
   f.className = 'jp-fiche';
@@ -1161,9 +1211,10 @@ function jpFiche(p, i){
     });
     gauche.appendChild(bRemp);
     gauche.appendChild(champImg);
-  } else {
+  } else if(!lecture){
     // Apres le depart, l'image est figee : la remplacer falsifierait ce que
-    // les joueurs ont vu, et le classement etabli dessus.
+    // les joueurs ont vu, et le classement etabli dessus. En lecture seule on
+    // ne dit rien : personne n'attendait de pouvoir la changer.
     etatImg.textContent = t('jp_image_figee');
   }
   gauche.appendChild(etatImg);
@@ -1395,7 +1446,10 @@ function jpFiche(p, i){
     });
     return enVol;
   }
-  f.jpEnregistrer = enregistrer;
+  // Pas d'enregistrement du tout quand on ne fait que lire : le bouton unique
+  // du bas de page ramasse les fiches par cette propriete, et une fiche qui ne
+  // la porte pas est hors de sa portee.
+  if(!lecture) f.jpEnregistrer = enregistrer;
 
   // ── L'APPOINT TMDB, FICHE PAR FICHE ───────────────────────────
   // Rend une promesse de code, que le bouton du haut compte :
@@ -1467,7 +1521,7 @@ function jpFiche(p, i){
     });
     return tmdbEnVol;
   }
-  f.jpTmdb = completerViaTmdb;
+  if(!lecture) f.jpTmdb = completerViaTmdb;
 
   // L'ENREGISTREMENT AUTOMATIQUE. A la sortie de la fiche, et non a la
   // frappe : ecrire a chaque touche ferait trente requetes par titre, et un
@@ -1478,6 +1532,9 @@ function jpFiche(p, i){
   // mais son titre attendu se corrige jusqu'a la fin — c'est meme la seule
   // chose qu'on puisse encore y faire.
   droite.addEventListener('focusout', function(ev){
+    // On consulte la fiche d'un autre : il n'y a rien a absorber, rien a
+    // comparer et surtout rien a envoyer.
+    if(lecture) return;
     // D'abord absorber la variante en cours, AVANT de comparer la signature :
     // selon le navigateur, ce focusout peut preceder le blur du champ d'ajout,
     // et la variante manquerait alors l'envoi qui part juste en dessous.
@@ -1496,6 +1553,13 @@ function jpFiche(p, i){
 
   barre.appendChild(etat);
   droite.appendChild(barre);
+  // LECTURE SEULE : on neutralise la colonne de saisie d'un seul geste, plutot
+  // que champ par champ. Un champ oublie dans une liste ecrite a la main, et la
+  // fiche d'un autre redeviendrait modifiable a l'ecran.
+  if(lecture){
+    var inertes = droite.querySelectorAll('input, button');
+    for(var q = 0; q < inertes.length; q++) inertes[q].disabled = true;
+  }
   f.appendChild(droite);
   return f;
 }
@@ -1546,6 +1610,97 @@ function jpDeplacer(i, sens){
       JP_PHOTOS.sort(function(x, y){ return x.position - y.position; });
       jpRendreFiches();
     }, function(e){ jpAlerte('jp-studio-msg', jpErreur(e)); });
+}
+
+// Le bouton « Melanger l'ordre » ne se montre qu'a bon escient : il faut au
+// moins deux photogrammes a permuter, un studio ou l'on ecrit (donc pas la
+// partie d'un autre), et une partie qui n'a pas commence — apres le depart,
+// la base refuse de changer une position, et l'ordre est de toute facon celui
+// que les joueurs ont deja sous les yeux.
+function jpMajBarreOrdre(){
+  var barre = jpEl('jp-barre-ordre');
+  if(!barre) return;
+  var fige = JP_BROUILLON && JP_BROUILLON.publiee && jpEtat(JP_BROUILLON) !== 'a_venir';
+  barre.style.display = (JP_PHOTOS.length > 1 && !JP_STUDIO_LECTURE && !fige) ? '' : 'none';
+}
+
+// ── MELANGER L'ORDRE DES PHOTOGRAMMES ─────────────────────────────────────
+// Les fleches de chaque fiche deplacent d'un cran. Sur une partie de trente
+// photogrammes deposes dans l'ordre du dossier, obtenir un ordre quelconque
+// demandait a peu pres autant de clics que de fiches ; ce bouton-ci rebat les
+// cartes d'un coup.
+//
+// POINT DELICAT, LE MEME QUE DANS jpDeplacer : deux photogrammes d'une meme
+// partie ne peuvent pas porter le meme numero, et un melange croise presque
+// toujours plusieurs numeros a la fois. On procede donc en deux temps. Tout
+// ce qui bouge part d'abord au garage — a partir de 900, hors de la plage
+// reellement utilisee (1 a 100) mais dans celle qu'autorise le CHECK (1 a
+// 999) —, puis redescend a sa place definitive. Un photogramme qui ne bouge
+// pas garde son numero du debut a la fin : personne d'autre ne le vise.
+function jpMelanger(){
+  if(JP_STUDIO_LECTURE) return Promise.resolve();
+  if(JP_PHOTOS.length < 2) return Promise.resolve();
+  if(!confirm(t('jp_confirme_melange'))) return Promise.resolve();
+
+  // Fisher-Yates, sur une copie. On retire quand le sort rend exactement
+  // l'ordre de depart : sur deux photogrammes cela arrive une fois sur deux,
+  // et un bouton qui ne fait rien a tout l'air d'un bouton casse.
+  var ordre = JP_PHOTOS.slice();
+  for(var essai = 0; essai < 8; essai++){
+    for(var i = ordre.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var g = ordre[i]; ordre[i] = ordre[j]; ordre[j] = g;
+    }
+    var change = false;
+    for(var k = 0; k < ordre.length; k++){
+      if(ordre[k].position !== k + 1){ change = true; break; }
+    }
+    if(change) break;
+  }
+
+  var mouvements = [];
+  ordre.forEach(function(ph, rang){
+    if(ph.position !== rang + 1) mouvements.push({ photo: ph, vise: rang + 1 });
+  });
+  if(!mouvements.length) return Promise.resolve();
+
+  var btn = jpEl('jp-btn-melanger');
+  if(btn) btn.disabled = true;
+  jpAlerte('jp-studio-msg', t('jp_melange_en_cours'), 'info');
+
+  function placer(photo, position){
+    return JP_SB.from('jeu_photogrammes').update({ position: position }).eq('id', photo.id).then(function(r){
+      if(r && r.error) throw tcSbError(r.error, 'jeu_photogrammes/melange');
+    });
+  }
+
+  // Une ecriture apres l'autre, comme pour la renumerotation : cent requetes
+  // lancees ensemble se genent, et c'est l'ordre des deux temps — tout au
+  // garage, puis tout a sa place — qui evite la collision de numeros.
+  var suite = Promise.resolve();
+  mouvements.forEach(function(m, rang){
+    suite = suite.then(function(){ return placer(m.photo, 900 + rang); });
+  });
+  mouvements.forEach(function(m){
+    suite = suite.then(function(){
+      return placer(m.photo, m.vise).then(function(){ m.photo.position = m.vise; });
+    });
+  });
+
+  return suite.then(function(){
+    if(btn) btn.disabled = false;
+    JP_PHOTOS.sort(function(x, y){ return x.position - y.position; });
+    jpRendreFiches();
+    jpAlerte('jp-studio-msg', t('jp_melange_fait'), 'ok');
+    jpAnnoncer(t('jp_melange_fait'));
+  }, function(e){
+    if(btn) btn.disabled = false;
+    // Arrete a mi-chemin, la base porte un ordre que l'ecran ne connait pas,
+    // et peut-etre encore des numeros de garage. On relit ce qu'elle contient
+    // reellement plutot que de laisser croire a un ordre qui n'existe pas.
+    jpAlerte('jp-studio-msg', jpErreur(e));
+    if(JP_BROUILLON) jpChargerPhotosStudio(JP_BROUILLON.id).catch(function(){});
+  });
 }
 
 function jpRetirerPhoto(p){
@@ -1835,6 +1990,10 @@ function jpEnvoyerFichiers(fichiers){
 // le titre.
 function jpCreerLaPartie(){
   if(!jpExigeConnexion()) return;
+  // Le bouton est masque quand on consulte la partie d'un autre ; ce verrou-ci
+  // est la pour le raccourci clavier et pour le jour ou l'on deplacera le
+  // bouton sans y penser.
+  if(JP_STUDIO_LECTURE) return;
   var btn = jpEl('jp-btn-publier');
   var etatEl = jpEl('jp-studio-etat');
   var dejaPubliee = !!(JP_BROUILLON && JP_BROUILLON.publiee);
@@ -1895,7 +2054,7 @@ function jpCreerLaPartie(){
 }
 
 function jpSupprimerPartie(){
-  if(!JP_BROUILLON) return;
+  if(!JP_BROUILLON || JP_STUDIO_LECTURE) return;
   // Une partie jamais publiee ne coute rien a personne. Une partie jouee
   // emporte avec elle les reponses et LE CLASSEMENT PUBLIC : on ne demande
   // pas la meme chose dans les deux cas.
@@ -3850,6 +4009,11 @@ function jpBrancher(){
   // sur un element absent.
   var btnTmdb = jpEl('jp-btn-tmdb');
   if(btnTmdb) btnTmdb.addEventListener('click', jpTmdbToutCompleter);
+  // Le melange de l'ordre, branche sous condition pour la meme raison que le
+  // bouton ci-dessus : il arrive avec cette version, et les fichiers du site
+  // se remplacent un par un.
+  var btnMelanger = jpEl('jp-btn-melanger');
+  if(btnMelanger) btnMelanger.addEventListener('click', jpMelanger);
   // La section « photogrammes » s'ouvre des que le titre tient debout.
   jpEl('jp-f-titre').addEventListener('input', jpMajVisibilitePhotos);
 

@@ -161,6 +161,15 @@
           </div>
         </div>
 
+        <!-- L'ORDRE DES PHOTOGRAMMES. Les flèches de chaque fiche déplacent
+             d'un cran ; ce bouton-ci tire un ordre au hasard d'un seul coup.
+             Il reste caché tant qu'il n'y a pas deux photogrammes à permuter,
+             et disparaît dès que la partie a commencé. -->
+        <div class="jp-actions" id="jp-barre-ordre" style="display:none;margin-top:1.6rem">
+          <button type="button" class="jp-btn jp-btn-petit" id="jp-btn-melanger" data-i18n="jp_melanger">Mélanger l'ordre</button>
+          <span class="jp-aide" data-i18n="jp_aide_melanger">Tire au hasard un nouvel ordre pour les photogrammes ci-dessous.</span>
+        </div>
+
         <div id="jp-fiches" style="margin-top:1.6rem"></div>
       </div>
 
