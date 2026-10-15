@@ -2139,6 +2139,25 @@ function jpSuisCreateur(){
   return !!(JP_MOI && JP_PARTIE && String(JP_PARTIE.createur_id) === String(JP_MOI.id));
 }
 
+// LE BOUTON QUI MENE AU STUDIO DEPUIS UNE PARTIE OUVERTE. Le createur y
+// modifie la sienne ; un autre administrateur va seulement y lire la fiche
+// de chaque photogramme. Les deux empruntent le meme bouton, et son libelle
+// dit lequel des deux on est avant meme de cliquer. Personne d'autre ne le
+// voit.
+//
+// On change aussi `data-i18n`, et pas seulement le texte : sans cela, passer
+// du francais a l'anglais rendrait au bouton son libelle d'origine — celui
+// du createur — alors qu'on ne fait que consulter.
+function jpMajBoutonStudio(id){
+  var b = jpEl(id);
+  if(!b) return;
+  var createur = jpSuisCreateur();
+  b.style.display = (createur || jpSuisAdmin()) ? '' : 'none';
+  var clef = createur ? 'jp_modifier_partie' : 'jp_consulter_partie';
+  b.setAttribute('data-i18n', clef);
+  b.textContent = t(clef);
+}
+
 function jpDemarrerPartie(jeton){
   var etat = jpEtat(JP_PARTIE);
   jpEl('jp-avant-titre').textContent = JP_PARTIE.titre;
@@ -2167,7 +2186,7 @@ function jpBasculerEtat(jeton, etat){
     jpEl('jp-avant').style.display = '';
     jpEl('jp-pendant').style.display = 'none';
     jpEl('jp-avant-note').textContent = t('jp_avant_note', JP_PARTIE.titre);
-    jpEl('jp-gerer-avant').style.display = jpSuisCreateur() ? '' : 'none';
+    jpMajBoutonStudio('jp-gerer-avant');
     return;
   }
 
@@ -3716,7 +3735,7 @@ function jpMontrerResultats(jeton){
   // La discussion descend avec nous : c'est souvent apres coup qu'on a le
   // plus a se dire, et jusqu'ici le panneau disparaissait avec la partie.
   jpChatVers('jp-res-chat');
-  jpEl('jp-gerer-resultats').style.display = jpSuisCreateur() ? '' : 'none';
+  jpMajBoutonStudio('jp-gerer-resultats');
   jpEl('jp-res-titre').textContent = JP_PARTIE.titre;
   var g = JP_GENS[String(JP_PARTIE.createur_id)];
   jpEl('jp-res-sous').textContent =
