@@ -2167,7 +2167,7 @@ function tcLibellePage(page){
   }
   var cles = { 'index':'nav_index', 'actualites':'nav_actualites',
     'contributeurs':'nav_contributeurs', 'statistiques':'nav_statistiques',
-    'mes-tops':'nav_mes_tops', 'thematiques':'nav_thematiques',
+    'mes-tops':'nav_mes_tops', 'thematiques':'page_thematiques_h',
     'comparaison':'page_comparaison_h' };
   return cles[page] ? t(cles[page]) : '';
 }
@@ -2874,16 +2874,82 @@ function tcCourantTypeFromName(nomFr){
 // clics sur les filtres (Tout/Tops/Courants/Cinéastes) se contentent de
 // refiltrer/réafficher sans re-solliciter Supabase.
 var _actuItemsCache=null;
+
+// ── Lecture du fil : abrégé par défaut, intégral sur demande ─────────────
+// PostgREST plafonne CHAQUE réponse à db.max_rows (~1000 lignes, cf. la note
+// de tcLoadAllApprovedSubmissions) : le `.limit(2000)` qui régnait ici ne
+// ramenait donc jamais 2000 lignes, il coupait en silence. Le fil était
+// tronqué sans que personne le sache.
+// On lit maintenant page par page quand le visiteur réclame l'intégralité —
+// plus rien ne se perd — et seulement les ACTU_LOT dernières lignes de
+// chaque source le reste du temps, pour que l'ouverture de la page reste
+// courte. Le bouton « tout afficher » fait passer de l'un à l'autre.
+var ACTU_LOT=200;         // lignes lues par source tant que l'intégralité n'est pas demandée
+var ACTU_AFFICHES=50;     // actualités déposées d'emblée dans le document
+var ACTU_COMPLET=false;   // le visiteur a-t-il réclamé l'intégralité ?
+var _actuTronque=false;   // une source a-t-elle été coupée faute de place ?
+
+// Lit une source en entier, page par page, jusqu'à la dernière ligne.
+function tcActuLireTout(construire,offset,pageSize){
+  offset=offset||0;
+  pageSize=pageSize||1000;
+  return tcWithRetryTimeout(function(){
+    return construire().range(offset,offset+pageSize-1);
+  }).then(function(res){
+    if(res&&res.error)throw res.error;
+    var rows=(res&&res.data)||[];
+    if(rows.length<pageSize)return rows;
+    return tcActuLireTout(construire,offset+pageSize,pageSize).then(function(suite){
+      return rows.concat(suite);
+    });
+  });
+}
+
+// `construire` rend la requête SANS plafond ni plage : on la rappelle à
+// chaque tentative (un constructeur Supabase ne se consomme qu'une fois) et
+// c'est ici qu'on décide de la lire en entier ou par lot.
+function tcActuLire(construire){
+  if(ACTU_COMPLET)return tcActuLireTout(construire,0,1000).catch(function(){return[];});
+  return tcWithRetryTimeout(function(){
+    return construire().limit(ACTU_LOT);
+  }).then(function(res){
+    if(res&&res.error)throw res.error;
+    var rows=(res&&res.data)||[];
+    // Le lot revient plein : il reste presque surement des lignes derrière.
+    if(rows.length>=ACTU_LOT)_actuTronque=true;
+    return rows;
+  }).catch(function(){return[];});
+}
+
+// Le bouton ne s'affiche que là où il sert : sur l'onglet Fil, tant que
+// l'intégralité n'a pas été demandée, et seulement si une source a bel et
+// bien été coupée. Sur un fil déjà entier, il ne ferait rien.
+function tcActuMajBouton(){
+  var wrap=document.getElementById('actu-plus-wrap');
+  if(!wrap)return;
+  wrap.style.display=(ACTU_TAB_SELECTED==='fil'&&!ACTU_COMPLET&&_actuTronque)?'':'none';
+}
+
+// Le visiteur réclame tout : on relit les sources sans plafond et on déplie
+// le fil en entier. Le choix tient jusqu'au rechargement de la page.
+function tcActuToutAfficher(){
+  if(ACTU_COMPLET)return;
+  ACTU_COMPLET=true;
+  renderActualites();
+}
+
 function renderActualites(){
   var feed=document.getElementById('actu-feed');
   feed.innerHTML='<div class="empty-msg">'+t('actu_chargement')+'</div>';
+  _actuTronque=false;
+  tcActuMajBouton();
   Promise.all([
-    tcWithRetryTimeout(function(){ return TC_SB.from('cineaste_proposals').select('*').in('status',['pending','approved']).order('submitted_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
+    tcActuLire(function(){ return TC_SB.from('cineaste_proposals').select('*').in('status',['pending','approved']).order('submitted_at',{ascending:false}); }),
     tcLoadAllApprovedSubmissions('id,contributor_id,status,submitted_at,reviewed_at,parsed_json,contributors(display_name)').then(function(r){return r.data||[];}).catch(function(){return[];}),
-    tcWithRetryTimeout(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
+    tcActuLire(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}); }),
     tcActuLoadLegacyTopsKeys(0,1000).catch(function(){return[];}),
-    tcWithRetryTimeout(function(){ return TC_SB.from('courant_proposals').select('*, contributors(display_name)').eq('status','approved').order('reviewed_at',{ascending:false}).limit(2000); }).then(function(r){return r.data||[];}).catch(function(){return[];}),
-    tcWithRetryTimeout(function(){ return TC_SB.from('json_updates').select('*').eq('announce',true).order('created_at',{ascending:false}).limit(50); }).then(function(r){return r.data||[];}).catch(function(){return[];})
+    tcActuLire(function(){ return TC_SB.from('courant_proposals').select('*, contributors(display_name)').eq('status','approved').order('reviewed_at',{ascending:false}); }),
+    tcActuLire(function(){ return TC_SB.from('json_updates').select('*').eq('announce',true).order('created_at',{ascending:false}); })
   ]).then(function(results){
     var props=results[0],subs=results[1],coms=results[2],legacyKeys=new Set(results[3]),courantProps=results[4],jsonUpdates=results[5];
     var items=[];
@@ -2931,10 +2997,12 @@ function renderActualites(){
       items.push({date:u.created_at,html:tcActuAvatarHtml(cid,dn)+' '+t('actu_top_json_update',escapeHtml(dn)),type:'tops'});
     });
     items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-    _actuItemsCache=items.slice(0,2000);
+    _actuItemsCache=items;
     applyActuFilterSelection();
   }).catch(function(){
     _actuItemsCache=null;
+    _actuTronque=false;
+    tcActuMajBouton();
     feed.innerHTML='<div class="empty-msg">'+t('actu_erreur')+'</div>';
   });
 }
@@ -2954,6 +3022,7 @@ function applyActuTabSelection(){
   if(feed)feed.style.display=(ACTU_TAB_SELECTED==='fil')?'':'none';
   if(diapo)diapo.style.display=(ACTU_TAB_SELECTED==='hommages')?'':'none';
   if(filters)filters.style.display=(ACTU_TAB_SELECTED==='fil')?'':'none';
+  tcActuMajBouton();
   if(ACTU_TAB_SELECTED==='hommages')renderHommages();
 }
 
@@ -2969,13 +3038,18 @@ function applyActuFilterSelection(){
   var feed=document.getElementById('actu-feed');
   if(!feed||!_actuItemsCache)return;
   var items=(ACTU_FILTER_SELECTED==='all')?_actuItemsCache:_actuItemsCache.filter(function(it){return it.type===ACTU_FILTER_SELECTED;});
-  if(!items.length){feed.innerHTML='<div class="empty-msg">'+t('actu_vide')+'</div>';return;}
-  feed.innerHTML=items.map(function(it){
+  if(!items.length){feed.innerHTML='<div class="empty-msg">'+t('actu_vide')+'</div>';tcActuMajBouton();return;}
+  // Déposer des milliers de lignes d'un coup dans le document rendait
+  // l'arrivée sur la page interminable : on n'en met que les premières, et
+  // le bouton déplie le reste quand on le lui demande.
+  var montres=ACTU_COMPLET?items:items.slice(0,ACTU_AFFICHES);
+  feed.innerHTML=montres.map(function(it){
     var clickable=it.cineaste&&getLetterData(it.cineaste.charAt(0).toUpperCase()).some(function(c){return c.nom.toLowerCase()===it.cineaste.toLowerCase();});
     var cls=clickable?' actu-item-clickable':'';
     var attr=clickable?' data-action="tc-actu-open" data-cineaste="'+escapeHtml(it.cineaste)+'"':'';
     return'<div class="actu-item'+cls+'"'+attr+'><div class="actu-text">'+it.html+'</div><div class="actu-date">'+tcActuFormatDate(it.date)+'</div></div>';
   }).join('');
+  tcActuMajBouton();
 }
 
 // ── Hommages — diaporama des cinéastes décédés dans l'année sélectionnée ──
@@ -3962,6 +4036,9 @@ document.addEventListener('click',function(e){
     case 'actu-filter-select':
       ACTU_FILTER_SELECTED=el.getAttribute('data-actu-filter')||'all';
       applyActuFilterSelection();
+      break;
+    case 'actu-tout-afficher':
+      tcActuToutAfficher();
       break;
     case 'hommages-open':
       tcHommagesOpenCurrent();

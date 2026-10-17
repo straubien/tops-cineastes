@@ -3049,6 +3049,19 @@ a { text-decoration: none; color: inherit; }
 }
 .actu-filter-btn:hover { border-color: var(--rouge); color: var(--rouge-texte); }
 .actu-filter-btn.active { background: var(--rouge); border-color: var(--rouge); color: #fff; }
+.actu-plus-wrap { display: flex; justify-content: center; margin-top: 1.4rem; }
+.actu-voir-tout {
+  font-family: var(--font);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--rouge-texte);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  transition: opacity 0.15s;
+}
+.actu-voir-tout:hover { opacity: 0.7; }
 
 /* Hommages — diaporama des cinéastes décédés dans l'année en cours */
 .hommages-slide {

@@ -109,6 +109,7 @@ var TC_TRANSLATIONS = {
     actu_chargement: "Chargement…",
     actu_vide: "Aucune actualité pour le moment.",
     actu_erreur: "Erreur de chargement des actualités.",
+    actu_voir_tout: "Afficher toutes les actualités ↓",
     hommages_chargement: "Chargement…",
     hommages_vide: "Aucun hommage cette année.",
     hommages_prev: "Précédent",
@@ -387,7 +388,7 @@ var TC_TRANSLATIONS = {
     adm_flags_countries: "Pays actuels (ISO)",
     adm_flags_historic: "Pays / entités historiques",
     // Nav — thématiques
-    nav_thematiques: "Tops thématiques",
+    nav_thematiques: "Thèmes",
     // Nav — comparaison de cinéphiles
     page_comparaison_h: "Affinités entre cinéphiles",
     compare_hint: "Comparez deux cinéphiles à partir de leurs cinéastes et films favoris/appréciés (indépendamment de leurs tops).",
@@ -772,6 +773,7 @@ var TC_TRANSLATIONS = {
     actu_chargement: "Loading…",
     actu_vide: "No news for now.",
     actu_erreur: "Error loading news.",
+    actu_voir_tout: "Show all news ↓",
     hommages_chargement: "Loading…",
     hommages_vide: "No tributes this year.",
     hommages_prev: "Previous",

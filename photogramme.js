@@ -4095,6 +4095,20 @@ window.tcAfterLangChange = function(){
     if(p){ jpRendreIndices(p); jpRendreVerdictCourant(p); }
     jpRendreClassement('jp-rangs');
   }
+
+  // L'ecran d'attente (« Départ dans ») n'ecrit sa phrase qu'au moment ou
+  // l'etat de la partie change : `jpBasculerEtat` renonce des que l'etat est
+  // deja le bon. Un simple changement de langue ne passant pas par la, la
+  // phrase restait dans l'ancienne langue tant que le compte a rebours
+  // tournait. On ne peut pas s'appuyer sur JP_PHOTOS : les images n'arrivent
+  // qu'au prechargement, et l'attente les precede.
+  if(JP_VUE === 'jeu' && JP_PARTIE){
+    var note = jpEl('jp-avant-note');
+    if(note){
+      if(JP_ETAT === 'a_venir')      note.textContent = t('jp_avant_note', JP_PARTIE.titre);
+      else if(JP_ETAT === 'preroll') note.textContent = t('jp_preroll_note');
+    }
+  }
 };
 
 JP_SB.auth.onAuthStateChange(function(evenement, session){
