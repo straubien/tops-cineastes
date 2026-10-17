@@ -2372,6 +2372,28 @@ function jpPremierNonTrouve(){
   return JP_IDX;
 }
 
+// Ou aller APRES une trouvaille. Cette fonction-la ne repart pas du debut de
+// la pellicule : c'etait le defaut signale — trouver le photogramme n°7
+// renvoyait au n°1 tant que celui-ci n'etait pas tombe, et le joueur perdait
+// le fil. On avance donc vers la droite depuis le photogramme courant, et
+// l'on ne revient au premier qu'apres avoir passe le dernier : la
+// progression suit la pellicule et aucun photogramme n'est oublie.
+//
+// jpPremierNonTrouve reste en place pour l'ARRIVEE dans la partie (ouverture
+// de la page, reprise en cours de jeu), ou commencer au premier photogramme
+// encore en jeu est le bon comportement.
+function jpProchainNonTrouve(){
+  var n = JP_PHOTOS.length;
+  for(var k = 1; k <= n; k++){
+    var i = (JP_IDX + k) % n;
+    var m = JP_MES[String(JP_PHOTOS[i].id)];
+    // Ni trouve par moi, ni tombe par un autre : c'est la qu'il faut aller.
+    if((!m || m.statut !== 'accepte') && !JP_REVELE[JP_PHOTOS[i].position]) return i;
+  }
+  // Plus rien a jouer : on reste sur place plutot que de sauter au hasard.
+  return JP_IDX;
+}
+
 function jpRendrePellicule(){
   var pel = jpEl('jp-pellicule');
   jpVider(pel);
@@ -2645,7 +2667,7 @@ function jpRepondre(){
       // On enchaine : le joueur n'a pas a chercher lui-meme l'image
       // suivante. 850 ms, le temps de voir le vert.
       setTimeout(function(){
-        if(JP_PHOTOS[JP_IDX] && String(JP_PHOTOS[JP_IDX].id) === k) jpAllerPhoto(jpPremierNonTrouve());
+        if(JP_PHOTOS[JP_IDX] && String(JP_PHOTOS[JP_IDX].id) === k) jpAllerPhoto(jpProchainNonTrouve());
       }, 850);
     } else if(d.statut === 'en_attente'){
       v.classList.add('jp-verdict-attente');
