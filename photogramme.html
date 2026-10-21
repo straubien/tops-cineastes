@@ -313,6 +313,17 @@
             </div>
           </div>
 
+          <!-- Les propositions refusées de TOUS les joueurs (point 4). Ce ne
+               sont que des titres FAUX : rien ici ne dévoile une solution, et
+               personne ne perd son tour à chercher ce que trois autres ont
+               déjà tenté. Les réponses en attente d'arbitrage, elles, n'y
+               figurent jamais : elles peuvent être justes.
+
+               HORS du bloc de saisie, et c'est voulu : sur téléphone, ce
+               bloc-là se colle en bas de l'écran, et une liste qui s'allonge
+               y mangerait l'image. -->
+          <div class="jp-refus" id="jp-refus" hidden></div>
+
           <div class="jp-pellicule" id="jp-pellicule" role="tablist" data-i18n-aria="jp_pellicule_aria" aria-label="Les photogrammes de la partie"></div>
 
         </div>
@@ -374,6 +385,10 @@
 
             <div id="jp-indices-commandes"></div>
             <div class="jp-actions" style="margin:12px 0 0">
+              <!-- Une mauvaise réponse validée par erreur : le point est
+                   retiré et le photogramme sort du jeu, son titre ayant
+                   été dévoilé. Porte sur le photogramme AFFICHÉ. -->
+              <button class="jp-btn jp-btn-petit jp-btn-annuler" id="jp-btn-annuler-photo" data-i18n="jp_annuler_photo">Annuler ce photogramme</button>
               <button class="jp-btn jp-btn-petit" id="jp-btn-clore" data-i18n="jp_clore">Clore la partie</button>
               <button class="jp-btn jp-btn-petit" id="jp-gerer-jeu" data-i18n="jp_modifier_partie">Modifier cette partie</button>
             </div>

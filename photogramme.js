@@ -68,8 +68,23 @@ var JP_BROUILLON = null;   // la partie en cours de preparation dans le studio
 // evite de lui montrer des boutons qui n'ecriraient rien.
 var JP_STUDIO_LECTURE = false;
 
-var JP_SMILEYS = ['😮', '😂', '🤯', '❤️',
-                  '🎬', '👏', '🔥', '😭'];
+// ── CE QUE LA BASE SAIT FAIRE, OU NE SAIT PAS ENCORE ──────────────────────
+// Le fichier SQL n° 8 apporte quatre choses : le titre anglais d'un
+// photogramme, l'annulation d'un photogramme, la liste des propositions
+// refusées et deux colonnes de plus dans « jeu_trouves ». Tant qu'il n'est
+// pas passé dans Supabase, le jeu doit se comporter EXACTEMENT comme avant :
+// on regarde donc une fois, au démarrage, ce qui existe, et chaque
+// fonctionnalité nouvelle se tait d'elle-même si sa colonne manque.
+var JP_SANS_TITRE_EN   = false;   // jeu_photogrammes_secret.titre_en
+var JP_SANS_ANNULATION = false;   // jeu_photogrammes.annule_at
+var JP_SANS_REFUS      = false;   // fonction jeu_refus()
+
+var JP_REFUS      = {};   // photogramme_id -> [ { nom, texte } ]  (point 4)
+var JP_SOLUTIONS  = [];   // les solutions de la partie terminée (point 3)
+var JP_STATS      = {};   // ses statistiques, par photogramme
+
+var JP_SMILEYS = ['🙂', '😮', '😂', '🤯',
+                  '❤️', '👏', '🔥', '😭'];
 
 // Un seul <img> pour toute la partie : on ne fait que changer sa source.
 // Creer une nouvelle balise a chaque photogramme provoquerait un recalcul de
@@ -135,6 +150,26 @@ function jpChrono(ms){
   var m = Math.floor(s / 60);
   var r = s % 60;
   return m + ' ' + t('jp_u_min') + ' ' + (r < 10 ? '0' : '') + r;
+}
+
+// ── LA LANGUE DU VISITEUR, ET LE TITRE QU'ELLE APPELLE ────────────────────
+// Un cinéphile qui lit le site en anglais n'a rien à faire du titre français
+// d'un film qu'il connaît sous son titre anglais. Dès que la fiche porte un
+// titre anglais — rempli à la main dans le studio, ou par TMDB — c'est
+// celui-là qui s'affiche, partout : la bande sous l'image, l'agrandissement,
+// le journal des films trouvés et les solutions de fin de partie.
+//
+// En français, et partout où la fiche n'a pas de titre anglais, rien ne
+// change : c'est le titre attendu qui s'affiche, comme avant.
+function jpLangue(){
+  try{ return localStorage.getItem('tc-lang') === 'en' ? 'en' : 'fr'; }
+  catch(e){ return 'fr'; }
+}
+
+function jpTitre(fr, en){
+  var a = (fr || '').trim();
+  var b = (en || '').trim();
+  return (jpLangue() === 'en' && b) ? b : a;
 }
 
 function jpAlerte(id, msg, genre){
@@ -353,6 +388,16 @@ var JP_SANS_CLOTURE_MANUELLE = false;
 // Meme precaution pour « indice_demi », qui arrive avec le fichier SQL n° 7.
 var JP_SANS_INDICE_DEMI = false;
 
+// Les colonnes lues sur une fiche de photogramme. « titre_en » arrive avec
+// le fichier SQL n° 8 : on la retire de la liste si la base ne l'a pas,
+// faute de quoi CHAQUE lecture de fiche echouerait.
+var JP_COLONNES_SECRET =
+  'photogramme_id,titre_attendu,titre_original,titre_en,realisateur,variantes,indices';
+// Pendant la partie, l'animateur n'a besoin que de ceci : le titre attendu
+// pour arbitrer, le titre anglais pour la bande, les indices pour ses
+// boutons. On ne descend pas les variantes, qui ne servent qu'au studio.
+var JP_COLONNES_SECRET_JEU = 'photogramme_id,titre_attendu,titre_en,realisateur,indices';
+
 function jpVerifierColonnes(){
   return Promise.all([
     JP_SB.from('jeu_sessions').select('cloture_manuelle').limit(1).then(function(r){
@@ -376,6 +421,24 @@ function jpVerifierColonnes(){
       console.warn('photogramme : la colonne « indice_demi » est absente de la base. '
         + 'Passez le fichier A-FAIRE-DANS-SUPABASE-7.sql dans Supabase pour activer le '
         + 'demi-point apres un indice. Message de la base : ' + (r.error.message || ''));
+    }, function(){}),
+    JP_SB.from('jeu_photogrammes_secret').select('titre_en').limit(1).then(function(r){
+      if(!r || !r.error) return;
+      JP_SANS_TITRE_EN = true;
+      JP_COLONNES_SECRET     = JP_COLONNES_SECRET.replace('titre_en,', '');
+      JP_COLONNES_SECRET_JEU = JP_COLONNES_SECRET_JEU.replace('titre_en,', '');
+      console.warn('photogramme : la colonne « titre_en » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-8.sql dans Supabase pour que les '
+        + 'titres s\'affichent en anglais sur la version anglaise du site. '
+        + 'Message de la base : ' + (r.error.message || ''));
+    }, function(){}),
+    JP_SB.from('jeu_photogrammes').select('annule_at').limit(1).then(function(r){
+      if(!r || !r.error) return;
+      JP_SANS_ANNULATION = true;
+      console.warn('photogramme : la colonne « annule_at » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-8.sql dans Supabase pour pouvoir '
+        + 'annuler un photogramme validé par erreur. Message de la base : '
+        + (r.error.message || ''));
     }, function(){})
   ]);
 }
@@ -837,7 +900,7 @@ function jpEnregistrerReglages(){
 function jpChargerPhotosStudio(sid){
   return Promise.all([
     JP_SB.from('jeu_photogrammes').select('id,session_id,position,image_path').eq('session_id', sid).order('position'),
-    JP_SB.from('jeu_photogrammes_secret').select('photogramme_id,titre_attendu,titre_original,realisateur,variantes,indices').eq('session_id', sid)
+    JP_SB.from('jeu_photogrammes_secret').select(JP_COLONNES_SECRET).eq('session_id', sid)
   ]).then(function(res){
     if(res[0] && res[0].error) throw tcSbError(res[0].error, 'jeu_photogrammes');
     JP_PHOTOS = (res[0] && res[0].data) || [];
@@ -1245,10 +1308,28 @@ function jpFiche(p, i){
   cVO.style.maxWidth = '330px';
   droite.appendChild(cVO);
 
+  // LE TITRE ANGLAIS. Il ne sert pas à RECONNAÎTRE une réponse — les
+  // variantes le font déjà, et bien mieux — mais à AFFICHER : un cinéphile
+  // qui lit le site en anglais voit ce titre-là sous l'image, dans le
+  // journal des films trouvés et dans les solutions, au lieu d'un titre
+  // français qui ne lui dit rien. TMDB le remplit tout seul dès qu'il
+  // reconnaît le film ; on peut le corriger à la main, ou le laisser vide,
+  // et c'est alors le titre attendu qui s'affiche, comme avant.
+  var cEN = null;
+  if(!JP_SANS_TITRE_EN){
+    var lblEN = document.createElement('div');
+    lblEN.className = 'jp-label';
+    lblEN.textContent = t('jp_l_titre_en');
+    droite.appendChild(lblEN);
+    cEN = jpChamp('text', t('jp_ph_titre_en'), sec.titre_en || '', 200);
+    cEN.style.maxWidth = '330px';
+    droite.appendChild(cEN);
+  }
+
   // Ce que TMDB a trouve, ou pourquoi il n'a rien rempli. La ligne vit sous
-  // le champ du titre original parce que c'est celui-la qu'il remplit. Vide,
-  // elle ne prend aucune place : la marge du bas est celle que portait le
-  // champ avant.
+  // les champs de titres, parce que ce sont eux qu'il remplit. Vide, elle ne
+  // prend aucune place : la marge du bas est celle que portait le champ
+  // avant.
   var etatTmdb = document.createElement('div');
   etatTmdb.className = 'jp-aide';
   etatTmdb.style.margin = '0 0 12px';
@@ -1378,7 +1459,7 @@ function jpFiche(p, i){
   // fois la meme fiche a chaque sortie de champ.
   function signature(){
     return JSON.stringify([
-      cTitre.value.trim(), cVO.value.trim(), cReal.value.trim(),
+      cTitre.value.trim(), cVO.value.trim(), cEN ? cEN.value.trim() : '', cReal.value.trim(),
       vars,
       inds.filter(function(x){ return x.texte && x.texte.trim(); })
           .map(function(x){ return [x.texte.trim(), Math.max(0, x.apres || 0)]; })
@@ -1419,6 +1500,10 @@ function jpFiche(p, i){
       indices: inds.filter(function(x){ return x.texte && x.texte.trim(); })
                    .map(function(x){ return { texte: x.texte.trim(), apres: Math.max(0, x.apres || 0) }; })
     };
+    // La colonne n'existe qu'apres le fichier SQL n° 8 : on ne l'envoie que
+    // si elle est la, faute de quoi CHAQUE enregistrement de fiche
+    // echouerait sur une base qui ne l'a pas encore recu.
+    if(cEN) charge.titre_en = cEN.value.trim() || null;
     var envoye = signature();
     // Le jeton d'abord : une preparation qui dure une heure se heurtait a
     // son expiration, et l'envoi partait pour rien.
@@ -1471,7 +1556,7 @@ function jpFiche(p, i){
     if(!titre) return Promise.resolve('rien');
     // Rien à compléter : le titre original est là ET il y a déjà des
     // variantes. Inutile de déranger TMDB.
-    if(cVO.value.trim() && vars.length) return Promise.resolve('rien');
+    if(cVO.value.trim() && vars.length && (!cEN || cEN.value.trim())) return Promise.resolve('rien');
     if(!real){ direTmdb(t('jp_tmdb_sans_real')); return Promise.resolve('sans_real'); }
     var clef = jpTmdbNorm(titre) + '|' + jpTmdbNorm(real);
     if(!forcer && clef === dernierTmdb) return Promise.resolve('rien');
@@ -1505,6 +1590,11 @@ function jpFiche(p, i){
         if(!nx || nx === nTitre || nx === nVO) return true;
         return vars.some(function(v){ return jpTmdbNorm(v) === nx; });
       };
+      // Le titre anglais va a DEUX endroits, et ce n'est pas un doublon :
+      // dans son champ, ou il sert a AFFICHER (version anglaise du site), et
+      // dans les variantes, ou il sert a RECONNAITRE une reponse ecrite en
+      // anglais. L'un ne remplace pas l'autre.
+      if(en && cEN && !cEN.value.trim()){ cEN.value = en; ajouts++; }
       if(en && !dejaConnu(en) && vars.length < 20){ vars.push(en); dessinerPuces(); ajouts++; }
 
       if(!ajouts){ direTmdb(t('jp_tmdb_rien_a_ajouter', nom)); return 'rien'; }
@@ -2081,6 +2171,9 @@ function jpQuitterPartie(){
   JP_MESSAGES = [];
   JP_CHAT_CHARGE = false;
   JP_REVELE = {};
+  JP_REFUS = {};
+  JP_SOLUTIONS = [];
+  JP_STATS = {};
   JP_TROUVES_EN_VOL = false;
   JP_TROUVES_A_REFAIRE = false;
   JP_JETON++;
@@ -2233,20 +2326,88 @@ function jpBoucleHorloge(jeton){
 
 // ── 12. CHARGER LE JEU ─────────────────────────────────────────────────────
 
+// ── MES RÉPONSES À MOI ────────────────────────────────────────────────────
+// `JP_MES` dit, photogramme par photogramme, où j'en suis. C'est de là que
+// sortent la coche verte des pastilles de la pellicule, le verdict sous la
+// saisie, et le compteur du bandeau noir.
+//
+// POURQUOI CETTE LECTURE EST MAINTENANT UNE FONCTION À PART. Elle vivait
+// dans jpChargerJeu, qui ne tourne QU'UNE SEULE FOIS par partie (le drapeau
+// JP_PRECHARGE l'interdit ensuite). Elle n'était donc rattrapable par rien.
+function jpChargerMesReponses(){
+  if(!JP_PARTIE || !jpConnecte()) return Promise.resolve();
+  var jeton = JP_JETON;
+  return JP_SB.from('jeu_reponses')
+    .select('id,photogramme_id,texte,statut,points,elapsed_ms,submitted_at')
+    .eq('session_id', JP_PARTIE.id).eq('contributor_id', JP_MOI.id)
+    .then(function(r){
+      if(jeton !== JP_JETON || !r || r.error) return;
+      jpNoterMesReponses(r.data || []);
+    }, function(){ /* le filet repassera */ });
+}
+
+function jpNoterMesReponses(lignes){
+  JP_MES = {};
+  (lignes || []).forEach(function(r){
+    var k = String(r.photogramme_id);
+    // On garde l'etat le plus avance : accepte > en attente > refuse.
+    var a = JP_MES[k];
+    if(!a || r.statut === 'accepte' || (a.statut === 'refuse' && r.statut === 'en_attente')){
+      JP_MES[k] = { statut: r.statut, texte: r.texte, points: r.points, elapsed_ms: r.elapsed_ms };
+    }
+  });
+  JP_PHOTOS.forEach(function(p){ jpMajVignette(p.id); });
+  jpMajScoreBandeau();
+  var p = JP_PHOTOS[JP_IDX];
+  if(p){ jpRendreVerdictCourant(p); jpMajSaisie(p, false); }
+}
+
+// Les titres attendus de l'animateur, relus à part pour la même raison que
+// mes réponses : si sa fiche de cinéphile arrive après jpChargerJeu, il
+// arbitrerait toute la partie sans voir un seul titre attendu.
+function jpChargerSecretsJeu(){
+  if(!JP_PARTIE || !jpSuisCreateur()) return Promise.resolve();
+  var jeton = JP_JETON;
+  return JP_SB.from('jeu_photogrammes_secret').select(JP_COLONNES_SECRET_JEU)
+    .eq('session_id', JP_PARTIE.id)
+    .then(function(r){
+      if(jeton !== JP_JETON || !r || r.error) return;
+      JP_SECRETS = {};
+      (r.data || []).forEach(function(s){ JP_SECRETS[String(s.photogramme_id)] = s; });
+      var p = JP_PHOTOS[JP_IDX];
+      if(p) jpRendreTrouve(p);
+      // Le plateau d'arbitrage était déjà dessiné, mais sans les titres
+      // attendus : on le refait.
+      jpChargerArbitrage();
+    }, function(){});
+}
+
 function jpChargerJeu(jeton){
+  // ON FIGE LES DEUX DRAPEAUX ICI, ET ON NE LES REDEMANDE PLUS.
+  //
+  // C'ÉTAIT LE DÉFAUT DU COMPTEUR. Les requêtes sont empilées maintenant ;
+  // leurs réponses sont lues APRÈS un aller-retour réseau. Or la fiche du
+  // cinéphile (JP_MOI) arrive par une requête parallèle, et rien ne garantit
+  // qu'elle soit là avant. Si elle arrivait ENTRE les deux, `jpConnecte()`
+  // répondait faux au moment d'empiler et vrai au moment de lire : le
+  // tableau des réponses était lu AVEC UN CRAN DE DÉCALAGE. `JP_MES` restait
+  // vide pour toute la partie, le bandeau noir affichait « 0/30 » sans jamais
+  // bouger, et les pastilles de la pellicule n'avaient pas de coche.
+  var connecte = jpConnecte();
+  var createur = jpSuisCreateur();
   var requetes = [
     JP_SB.from('jeu_photogrammes').select('id,session_id,position,image_path,largeur,hauteur')
       .eq('session_id', JP_PARTIE.id).order('position'),
     JP_SB.rpc('jeu_indices', { p_session_id: JP_PARTIE.id })
   ];
-  if(jpConnecte()){
+  if(connecte){
     requetes.push(JP_SB.from('jeu_reponses')
       .select('id,photogramme_id,texte,statut,points,elapsed_ms,submitted_at')
       .eq('session_id', JP_PARTIE.id).eq('contributor_id', JP_MOI.id));
   }
-  if(jpSuisCreateur()){
+  if(createur){
     requetes.push(JP_SB.from('jeu_photogrammes_secret')
-      .select('photogramme_id,titre_attendu,realisateur,indices')
+      .select(JP_COLONNES_SECRET_JEU)
       .eq('session_id', JP_PARTIE.id));
   }
 
@@ -2263,25 +2424,24 @@ function jpChargerJeu(jeton){
     });
 
     var i = 2;
-    if(jpConnecte()){
-      JP_MES = {};
-      ((res[i] && res[i].data) || []).forEach(function(r){
-        var k = String(r.photogramme_id);
-        // On garde l'etat le plus avance : accepte > en attente > refuse.
-        var a = JP_MES[k];
-        if(!a || r.statut === 'accepte' || (a.statut === 'refuse' && r.statut === 'en_attente')){
-          JP_MES[k] = { statut: r.statut, texte: r.texte, points: r.points, elapsed_ms: r.elapsed_ms };
-        }
-      });
+    if(connecte){
+      jpNoterMesReponses((res[i] && res[i].data) || []);
       i++;
     }
-    if(jpSuisCreateur()){
+    if(createur){
       JP_SECRETS = {};
       ((res[i] && res[i].data) || []).forEach(function(s){ JP_SECRETS[String(s.photogramme_id)] = s; });
     }
 
+    // La fiche du cinéphile est-elle arrivée pendant ce temps ? Alors la
+    // requête de mes réponses n'a pas été envoyée : on la rattrape ici, au
+    // lieu de jouer toute la partie avec un bandeau à zéro.
+    if(!connecte && jpConnecte()) jpChargerMesReponses();
+    if(!createur && jpSuisCreateur()) jpChargerSecretsJeu();
+
     jpPrecharger();
     jpChargerScores();
+    jpChargerRefus();
     if(jpSuisCreateur()) jpChargerArbitrage();
     if(JP_ETAT === 'en_cours') jpPreparerJeu();
     // Ce qui est deja tombe, pour qui arrive en cours de partie ou recharge
@@ -2454,13 +2614,16 @@ function jpAllerPhoto(i){
 
   jpRendreIndices(p);
   jpRendreVerdictCourant(p);
+  jpRendreRefus(p);
   jpRendreTrouve(p);
   jpMajPlein();
 
   jpMajSaisie(p, true);
   // Le champ « un indice, tout de suite » vise le photogramme affiché : son
-  // libellé doit suivre la flèche, sinon on écrit pour le précédent.
+  // libellé doit suivre la flèche, sinon on écrit pour le précédent. Le
+  // bouton d'annulation vise le même, et pour la même raison.
   jpMajLibelleIndiceVif();
+  jpMajBoutonAnnuler();
   jpAnnoncer(t('jp_photogramme_n', p.position));
 }
 
@@ -2515,7 +2678,8 @@ function jpRendrePleinBande(p){
   jpVider(bande);
   var r = p && JP_REVELE[p.position];
   var sec = p && JP_SECRETS[String(p.id)];
-  var titre = r ? r.titre : (jpSuisCreateur() && sec ? sec.titre_attendu : '');
+  var titre = r ? jpTitre(r.titre, r.titre_en)
+                : (jpSuisCreateur() && sec ? jpTitre(sec.titre_attendu, sec.titre_en) : '');
   if(!titre){ bande.hidden = true; return; }
   bande.hidden = false;
   var t1 = document.createElement('span');
@@ -2525,7 +2689,8 @@ function jpRendrePleinBande(p){
   var t2 = document.createElement('span');
   t2.className = 'jp-trouve-par';
   t2.textContent = r
-    ? (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom))
+    ? (r.annule ? t('jp_bande_annule')
+                : (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom)))
     : t('jp_bande_attendu');
   bande.appendChild(t2);
 }
@@ -2547,19 +2712,24 @@ function jpRendreTrouve(p){
   // L'animateur voit le titre attendu des le debut : c'est lui qui arbitre.
   // Tant que personne n'a trouve, la bande le dit ainsi ; des qu'un joueur
   // trouve, elle devient la bande de tout le monde.
-  var titre = r ? r.titre : (jpSuisCreateur() && sec ? sec.titre_attendu : '');
+  var titre = r ? jpTitre(r.titre, r.titre_en)
+                : (jpSuisCreateur() && sec ? jpTitre(sec.titre_attendu, sec.titre_en) : '');
   if(!titre){ bande.hidden = true; return; }
 
   bande.hidden = false;
-  bande.className = 'jp-trouve' + (r ? '' : ' jp-trouve-attendu');
+  bande.className = 'jp-trouve' + (r ? '' : ' jp-trouve-attendu')
+                  + (r && r.annule ? ' jp-trouve-annule' : '');
   var t1 = document.createElement('span');
   t1.className = 'jp-trouve-titre';
   t1.textContent = titre;
   bande.appendChild(t1);
   var t2 = document.createElement('span');
   t2.className = 'jp-trouve-par';
+  // Un photogramme annulé n'a plus de vainqueur : la bande le dit, et le
+  // titre reste affiché — il a été dévoilé, on ne peut plus le reprendre.
   t2.textContent = r
-    ? (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom))
+    ? (r.annule ? t('jp_bande_annule')
+                : (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom)))
     : t('jp_bande_attendu');
   bande.appendChild(t2);
 }
@@ -2578,6 +2748,82 @@ function jpRendreIndices(p){
     txt.textContent = i.texte;
     d.appendChild(txt);
     zone.appendChild(d);
+  });
+}
+
+// ── LES PROPOSITIONS REFUSÉES, DE TOUT LE MONDE (point 4) ─────────────────
+// Un joueur ne voyait que SA dernière proposition refusée. Il cherchait donc
+// souvent un titre que trois autres avaient déjà tenté, et ne voyait rien
+// de la partie des autres tant que personne ne trouvait.
+//
+// POURQUOI UNE FONCTION DE LA BASE, ET PAS UNE LECTURE DE TABLE. La règle de
+// sécurité de `jeu_reponses` ne laisse lire à un joueur que ses propres
+// réponses — et c'est très bien ainsi : les réponses EN ATTENTE d'arbitrage
+// peuvent être justes, et les voir serait voir la solution. `jeu_refus` ne
+// rend donc que ce qui a été REFUSÉ : des titres faux, qui n'apprennent la
+// solution à personne.
+//
+// Pas de direct non plus, pour la même raison : les refus des autres
+// n'arrivent pas par Realtime, puisque la RLS les en écarte. On relit donc
+// avec le filet des quinze secondes, ce qui est très suffisant pour une
+// information qui n'est pas une course.
+function jpChargerRefus(){
+  if(!JP_PARTIE || JP_SANS_REFUS) return Promise.resolve();
+  var jeton = JP_JETON;
+  return JP_SB.rpc('jeu_refus', { p_session_id: JP_PARTIE.id }).then(function(r){
+    if(r && r.error){
+      // La fonction n'est pas encore passée dans Supabase : on cesse de la
+      // demander, et le jeu se comporte comme avant.
+      JP_SANS_REFUS = true;
+      console.warn('photogramme : la fonction « jeu_refus » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-8.sql dans Supabase pour afficher '
+        + 'les propositions refusées de tous les joueurs. Message de la base : '
+        + (r.error.message || ''));
+      return;
+    }
+    if(jeton !== JP_JETON) return;
+    JP_REFUS = {};
+    (r.data || []).forEach(function(x){
+      var k = String(x.photogramme_id);
+      (JP_REFUS[k] = JP_REFUS[k] || []).push({
+        nom: x.nom ? formatContribNamePlain(x.nom) : '',
+        texte: x.texte || ''
+      });
+    });
+    var p = JP_PHOTOS[JP_IDX];
+    if(p) jpRendreRefus(p);
+  }, function(){ /* le filet repassera */ });
+}
+
+function jpRendreRefus(p){
+  var zone = jpEl('jp-refus');
+  if(!zone) return;
+  jpVider(zone);
+  var lot = (p && JP_REFUS[String(p.id)]) || [];
+  if(!lot.length){ zone.hidden = true; return; }
+  zone.hidden = false;
+
+  var titre = document.createElement('span');
+  titre.className = 'jp-refus-etiq';
+  titre.textContent = t('jp_refus_titre');
+  zone.appendChild(titre);
+
+  // Les plus récentes d'abord — c'est l'ordre dans lequel la base les rend.
+  // On en montre vingt au plus : au-delà, la liste chasse l'image de l'écran.
+  lot.slice(0, 20).forEach(function(x){
+    var s = document.createElement('span');
+    s.className = 'jp-refus-item';
+    var txt = document.createElement('span');
+    txt.className = 'jp-refus-texte';
+    txt.textContent = x.texte;
+    s.appendChild(txt);
+    if(x.nom){
+      var qui = document.createElement('span');
+      qui.className = 'jp-refus-qui';
+      qui.textContent = x.nom;
+      s.appendChild(qui);
+    }
+    zone.appendChild(s);
   });
 }
 
@@ -2646,7 +2892,15 @@ function jpRepondre(){
   }, { timeoutMs: 12000 }).then(function(r){
     if(r && r.error) throw tcSbError(r.error, 'jeu_repondre');
     var d = r.data || {};
-    if(d.statut === 'deja') return;
+    // « deja » : la base a deja une reponse acceptee de ma part sur ce
+    // photogramme, et cette page ne le savait pas (un arbitrage dont
+    // l'evenement s'est perdu, un envoi parti deux fois). On se remet
+    // d'aplomb au lieu de rester sur « Envoi… » avec un compteur en retard.
+    if(d.statut === 'deja'){
+      if(!JP_MES[k] || JP_MES[k].statut !== 'accepte') jpChargerMesReponses();
+      jpRendreVerdictCourant(p);
+      return;
+    }
 
     var ancien = JP_MES[k] || {};
     JP_MES[k] = {
@@ -2677,6 +2931,14 @@ function jpRepondre(){
       v.classList.add('jp-verdict-non');
       txt.textContent = t('jp_pas_ca');
       jpAnnoncer(txt.textContent);
+      // Ma proposition refusée rejoint tout de suite la liste commune : la
+      // relecture suivante la confirmera, mais on ne l'attend pas.
+      var kr = String(p.id);
+      (JP_REFUS[kr] = JP_REFUS[kr] || []).unshift({
+        nom: JP_MOI ? formatContribNamePlain(JP_MOI.display_name) : '',
+        texte: texte
+      });
+      jpRendreRefus(p);
     }
     ess.textContent = (d.essais_restants === null || d.essais_restants === undefined)
       ? '' : t('jp_essais_restants', d.essais_restants);
@@ -2694,46 +2956,47 @@ function jpRepondre(){
 // Le compteur du bandeau.
 //
 // Pour un joueur : SES trouvailles. Pour l'animateur, qui ne joue pas, ce
-// chiffre valait toujours zero — c'etait le defaut signale. Il voit desormais
-// ce qui a ete trouve A LA TABLE, c'est-a-dire le nombre de photogrammes
-// tombes, qui est la seule chose qui l'interesse pendant la partie.
+// qui a ete trouve A LA TABLE — le nombre de photogrammes tombes, la seule
+// chose qui l'interesse pendant la partie.
+//
+// UNE SEULE SOURCE, ET ELLE PEUT REDESCENDRE. Le compteur prenait jusqu'ici
+// le plus grand de deux nombres : celui calcule sur mes reponses, et celui
+// de ma ligne de `jeu_scores`. Deux defauts en un :
+//
+//   * un maximum ne redescend jamais. Des qu'un point etait retire — un
+//     photogramme annule par l'animateur, une reponse re-arbitree — le
+//     compteur gardait l'ancien chiffre jusqu'a la fin de la partie ;
+//   * il masquait le vrai probleme au lieu de le corriger. Quand `JP_MES`
+//     etait vide (cf. jpChargerJeu), le filet affichait quand meme le bon
+//     nombre, mais les pastilles de la pellicule, elles, restaient sans
+//     coche : le bandeau disait « 7 » et la pellicule n'en montrait aucun.
+//
+// `JP_MES` est desormais relu a la demande (jpChargerMesReponses), y compris
+// par le filet des quinze secondes : il n'a plus besoin d'etre double.
 function jpMajScoreBandeau(){
-  var total = JP_PHOTOS.length;
+  var cible = jpEl('jp-score-trouves');
+  if(!cible) return;
+  var total = jpEnJeu();
 
   if(jpSuisCreateur()){
     var tombes = 0;
-    JP_PHOTOS.forEach(function(p){ if(JP_REVELE[p.position]) tombes++; });
-    var ce = jpEl('jp-score-trouves');
-    if(ce) ce.textContent = tombes + '/' + total;
+    JP_PHOTOS.forEach(function(p){
+      var r = JP_REVELE[p.position];
+      if(r && !r.annule) tombes++;
+    });
+    cible.textContent = tombes + '/' + total;
     return;
   }
 
-  var local = 0;
+  var trouves = 0;
   JP_PHOTOS.forEach(function(p){
     var m = JP_MES[String(p.id)];
-    if(m && m.statut === 'accepte') local++;
+    var r = JP_REVELE[p.position];
+    // Un photogramme annule ne compte plus pour personne : le point a ete
+    // retire en base, le compteur doit le dire aussi.
+    if(m && m.statut === 'accepte' && !(r && r.annule)) trouves++;
   });
-
-  // Ma ligne de `jeu_scores` sert de filet : elle rattrape un evenement
-  // perdu, par exemple un arbitrage. Mais elle est relue toutes les quinze
-  // secondes seulement : juste apres une bonne reponse, elle est en retard
-  // d'un cran. Prendre le plus grand des deux, c'est afficher la trouvaille
-  // a l'instant ou elle a lieu, sans rien perdre de la correction du
-  // serveur — c'etait le defaut signale : le compteur restait sur l'ancien
-  // chiffre jusqu'a la relecture suivante.
-  var trouves = local;
-  if(JP_MOI){
-    for(var i = 0; i < JP_SCORES.length; i++){
-      if(String(JP_SCORES[i].contributor_id) === String(JP_MOI.id)){
-        if(typeof JP_SCORES[i].trouves === 'number'){
-          trouves = Math.max(local, JP_SCORES[i].trouves);
-        }
-        break;
-      }
-    }
-  }
-  var a = jpEl('jp-score-trouves');
-  if(a) a.textContent = trouves + '/' + total;
+  cible.textContent = trouves + '/' + total;
 }
 
 
@@ -3082,8 +3345,18 @@ function jpChargerTrouves(){
     }
   };
   return JP_SB.rpc('jeu_trouves', { p_session_id: JP_PARTIE.id }).then(function(r){
-    if(jeton === JP_JETON && r && !r.error) jpNoterTrouves(r.data || []);
+    // ON RELÂCHE LE VERROU AVANT DE DESSINER, et non après.
+    //
+    // Dessiner, ici, c'est refaire le journal, les pastilles, la bande sous
+    // l'image, le verdict, l'agrandissement et les annonces aux lecteurs
+    // d'écran. Si l'une de ces lignes venait à échouer, `fini()` n'était
+    // jamais appelé : le verrou restait levé POUR TOUJOURS, et plus une
+    // seule relecture ne partait. Le compteur, le journal et les pastilles
+    // se figeaient pour le reste de la partie — pendant que le classement,
+    // qui passe par un autre chemin, continuait d'avancer.
+    var lot = (r && !r.error) ? (r.data || []) : null;
     fini();
+    if(jeton === JP_JETON && lot) jpNoterTrouves(lot);
   }, fini);
 }
 
@@ -3095,7 +3368,12 @@ function jpNoterTrouves(lignes){
     if(!JP_REVELE[pos]) neuves.push(pos);
     JP_REVELE[pos] = {
       nom: x.nom ? formatContribNamePlain(x.nom) : '',
-      titre: x.titre || ''
+      titre: x.titre || '',
+      // Le titre anglais et l'annulation arrivent avec le fichier SQL n° 8.
+      // Sur une base qui ne l'a pas encore reçu, ils valent simplement vide
+      // et faux : le jeu se comporte comme avant.
+      titre_en: x.titre_en || '',
+      annule: !!x.annule
     };
   });
   jpRendreTrouves();
@@ -3107,15 +3385,18 @@ function jpNoterTrouves(lignes){
     jpRendreTrouve(courant);
     jpMajSaisie(courant, false);
   }
+  jpMajBoutonAnnuler();
   jpMajPlein();
   // Pour qui ne voit pas l'ecran : on annonce ce qui vient de tomber, sauf
   // ce que l'on vient de trouver soi-meme (deja annonce par le verdict).
   neuves.forEach(function(pos){
     var ph = jpPhotoPosition(pos);
-    if(ph && jpTrouveParMoi(ph)) return;
     var r = JP_REVELE[pos];
-    jpAnnoncer(r.titre ? t('jp_journal_ligne_titre', [r.nom, pos, r.titre])
-                       : t('jp_journal_ligne', [r.nom, pos]));
+    if(r.annule){ jpAnnoncer(t('jp_annonce_annule', pos)); return; }
+    if(ph && jpTrouveParMoi(ph)) return;
+    var ti = jpTitre(r.titre, r.titre_en);
+    jpAnnoncer(ti ? t('jp_journal_ligne_titre', [r.nom, pos, ti])
+                  : t('jp_journal_ligne', [r.nom, pos]));
   });
   // Tout est-il tombe ? C'est le seul endroit qui le sache a coup sur : il
   // est appele par le direct ET par le filet de securite des quinze
@@ -3216,8 +3497,28 @@ function jpMajSaisie(p, replacerLeCurseur){
 function jpTombeParUnAutre(p){
   var r = p && JP_REVELE[p.position];
   if(!r) return null;
+  // Annulé : hors jeu pour TOUT LE MONDE, y compris celui dont la réponse
+  // venait d'être acceptée — son titre a été dévoilé, il ne se rejoue pas.
+  if(r.annule) return r;
   if(jpTrouveParMoi(p)) return null;   // c'est moi qui l'ai trouve
   return r;
+}
+
+// Combien de photogrammes sont encore en jeu dans cette partie ? Un
+// photogramme annulé sort du compte : il n'est plus à trouver, et le laisser
+// au dénominateur donnerait un « 29/30 » que personne ne peut compléter.
+function jpEnJeu(){
+  // Deux sources selon l'écran : « jeu_trouves » pendant la partie,
+  // « jeu_solutions » sur les résultats. Les deux disent la même chose.
+  var hors = {};
+  JP_SOLUTIONS.forEach(function(s){ if(s && s.annule) hors[Number(s.pos)] = 1; });
+  var n = 0;
+  JP_PHOTOS.forEach(function(p){
+    var r = JP_REVELE[p.position];
+    if((r && r.annule) || hors[p.position]) return;
+    n++;
+  });
+  return n;
 }
 
 // Le panneau de droite : les films trouves, dans l'ordre des photogrammes
@@ -3233,7 +3534,9 @@ function jpRendreTrouves(){
     if(!r) return;
     n++;
     var li = document.createElement('li');
-    li.className = 'jp-journal-ligne' + (jpTrouveParMoi(p) ? ' jp-journal-moi' : '');
+    li.className = 'jp-journal-ligne'
+                 + (jpTrouveParMoi(p) && !r.annule ? ' jp-journal-moi' : '')
+                 + (r.annule ? ' jp-journal-annule' : '');
     // La pastille porte le numero pour l'oeil ; elle ne dit rien a un lecteur
     // d'ecran, qui recevrait « 3 » sans savoir de quoi il s'agit. On la lui
     // cache, et on lui donne la phrase entiere dans un texte invisible.
@@ -3251,18 +3554,23 @@ function jpRendreTrouves(){
     corps.setAttribute('aria-hidden', 'true');
     var ti = document.createElement('span');
     ti.className = 'jp-journal-titre';
-    ti.textContent = r.titre || t('jp_journal_sans_titre');
+    var titreAff = jpTitre(r.titre, r.titre_en);
+    ti.textContent = titreAff || t('jp_journal_sans_titre');
     corps.appendChild(ti);
     var par = document.createElement('span');
     par.className = 'jp-journal-par';
-    par.textContent = jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom);
+    par.textContent = r.annule
+      ? t('jp_bande_annule')
+      : (jpTrouveParMoi(p) ? t('jp_par_vous') : t('jp_par_nom', r.nom));
     corps.appendChild(par);
     li.appendChild(corps);
 
     var lu = document.createElement('span');
     lu.className = 'jp-lu-seulement';
-    lu.textContent = r.titre ? t('jp_journal_ligne_titre', [r.nom, p.position, r.titre])
-                             : t('jp_journal_ligne', [r.nom, p.position]);
+    lu.textContent = r.annule
+      ? t('jp_annonce_annule', p.position)
+      : (titreAff ? t('jp_journal_ligne_titre', [r.nom, p.position, titreAff])
+                  : t('jp_journal_ligne', [r.nom, p.position]));
     li.appendChild(lu);
     ul.appendChild(li);
   });
@@ -3330,7 +3638,15 @@ function jpSurReponse(ligne, type){
   if(JP_MOI && String(ligne.contributor_id) === String(JP_MOI.id)){
     var k = String(ligne.photogramme_id);
     var avant = JP_MES[k];
-    if(!avant || avant.statut !== 'accepte' || ligne.statut === 'accepte'){
+    if(avant && avant.statut === 'accepte' && ligne.statut === 'refuse'){
+      // MON POINT VIENT D'ÊTRE RETIRÉ : l'animateur a annulé le photogramme,
+      // ou refait son arbitrage. Le garde-fou juste en dessous refuse les
+      // retours en arrière — il protège contre deux événements arrivés dans
+      // le mauvais ordre — et laisserait donc une coche verte et un point
+      // fantôme à l'écran. Ici, on ne devine pas : on relit.
+      jpChargerMesReponses();
+      jpChargerTrouves();
+    } else if(!avant || avant.statut !== 'accepte' || ligne.statut === 'accepte'){
       JP_MES[k] = { statut: ligne.statut, texte: ligne.texte, points: ligne.points, elapsed_ms: ligne.elapsed_ms };
       jpMajVignette(ligne.photogramme_id);
       jpMajScoreBandeau();
@@ -3346,6 +3662,9 @@ function jpSurReponse(ligne, type){
   }
   if(jpSuisCreateur() && type !== 'DELETE'){
     jpChargerArbitrage();
+    // L'animateur recoit toutes les reponses en direct : un refus qu'il vient
+    // de prononcer rejoint la liste commune sans attendre la relecture.
+    if(ligne.statut === 'refuse') jpChargerRefus();
     // L'animateur voit passer toutes les reponses : si celle-ci est bonne,
     // un photogramme vient de tomber, et son compteur doit le dire tout de
     // suite plutot qu'a la relecture suivante.
@@ -3387,6 +3706,11 @@ setInterval(function(){
     jpMajScoreBandeau();
   }, function(){});
   jpChargerTrouves();
+  // Mes reponses font partie du filet, desormais : elles portent le compteur
+  // du bandeau ET les pastilles de la pellicule, qu'aucune autre lecture ne
+  // rattrapait.
+  jpChargerMesReponses();
+  jpChargerRefus();
 }, 15000);
 
 // Le retour d'un onglet mis en veille : le navigateur a pu couper le direct
@@ -3401,6 +3725,8 @@ document.addEventListener('visibilitychange', function(){
     jpMajScoreBandeau();
   }, function(){});
   jpChargerTrouves();
+  jpChargerMesReponses();
+  jpChargerRefus();
 });
 
 
@@ -3439,6 +3765,34 @@ function jpPoints(v){
   try{ lang = localStorage.getItem('tc-lang') || 'fr'; }catch(e){}
   return (Math.round(n * 100) / 100).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR',
     { maximumFractionDigits: 2 });
+}
+
+// ── LES EX ÆQUO (point 2) ───────────────────────────────────
+// Deux cinéphiles à égalité de points PARTAGENT leur place : 1, 1, 3 — et
+// non 1, 2, 3 départagés en coulisse par un chronomètre.
+//
+// POURQUOI LES POINTS SEULS FONT LE RANG. Le tri, lui, continue d'utiliser
+// le temps total puis le nombre de trouvailles : il faut bien un ordre
+// d'affichage, et il doit être stable. Mais ces deux critères ne créent plus
+// de place. Sur la partie « Photogramme 17 Octobre », deux joueurs à 19
+// points étaient séparés par leur temps total, et le second se voyait
+// deuxième alors qu'il avait marqué exactement autant — avec, en plus, trois
+// films trouvés de mieux.
+function jpRangs(lot){
+  function pts(x){ var n = typeof x === 'number' ? x : parseFloat(x); return isFinite(n) ? n : 0; }
+  var rangs = [];
+  for(var i = 0; i < lot.length; i++){
+    rangs[i] = (i > 0 && pts(lot[i].points) === pts(lot[i - 1].points)) ? rangs[i - 1] : (i + 1);
+  }
+  return rangs;
+}
+
+// Cette place est-elle partagée avec quelqu'un d'autre ?
+function jpRangPartage(rangs, i){
+  for(var k = 0; k < rangs.length; k++){
+    if(k !== i && rangs[k] === rangs[i]) return true;
+  }
+  return false;
 }
 
 // ── LE DOUBLON DU CLASSEMENT ───────────────────────────────────────────────
@@ -3482,24 +3836,43 @@ function jpRendreClassement(cible, idAnime){
   if(vide2 && cible === 'jp-res-rangs') vide2.style.display = 'none';
 
   var redondant = jpClassementRedondant(lot);
+  var rangs = jpRangs(lot);
+  var enJeu = jpEnJeu();
 
   lot.forEach(function(s, i){
     var g = JP_GENS[String(s.contributor_id)] || {};
     var li = document.createElement('li');
-    li.className = 'jp-rang jp-rang-' + (i + 1);
+    li.className = 'jp-rang jp-rang-' + rangs[i];
     if(JP_MOI && String(s.contributor_id) === String(JP_MOI.id)) li.classList.add('jp-rang-moi');
     if(idAnime && String(s.contributor_id) === idAnime) li.classList.add('jp-rang-neuf');
 
     var pos = document.createElement('span');
     pos.className = 'jp-rang-pos';
-    pos.textContent = (i + 1);
+    pos.textContent = rangs[i];
     li.appendChild(pos);
 
     li.appendChild(jpPastille(g));
 
+    // La case du nom porte deux choses : le nom, qui se coupe par des points
+    // de suspension s'il est trop long, et la mention « ex æquo », qui ne
+    // doit JAMAIS se faire couper — c'est elle qui explique le doublon. D'où
+    // le nom dans son propre élément, et la case en « flex ».
     var nom = document.createElement('span');
     nom.className = 'jp-rang-nom';
-    nom.textContent = formatContribNamePlain(g.display_name || '…');
+    var nomTxt = document.createElement('span');
+    nomTxt.className = 'jp-rang-nom-txt';
+    nomTxt.textContent = formatContribNamePlain(g.display_name || '…');
+    nom.appendChild(nomTxt);
+    // À égalité de points, la place est partagée, et on l'écrit : deux lignes
+    // qui portent le même « 1 » sans un mot ressembleraient à une erreur. La
+    // mention va dans la case du nom : la ligne de classement est une grille
+    // de quatre colonnes fixes, une cinquième case la déformerait.
+    if(jpRangPartage(rangs, i)){
+      var ex = document.createElement('span');
+      ex.className = 'jp-rang-ex';
+      ex.textContent = t('jp_ex_aequo');
+      nom.appendChild(ex);
+    }
     li.appendChild(nom);
 
     var pts = document.createElement('span');
@@ -3507,12 +3880,12 @@ function jpRendreClassement(cible, idAnime){
     if(redondant){
       // Un seul nombre : « 2 / 3 ». Les points le répétaient mot pour mot.
       pts.classList.add('jp-rang-pts-simple');
-      pts.textContent = s.trouves + (JP_PHOTOS.length ? '/' + JP_PHOTOS.length : '');
+      pts.textContent = s.trouves + (enJeu ? '/' + enJeu : '');
     } else {
       pts.textContent = jpPoints(s.points);
       var det = document.createElement('span');
       det.className = 'jp-rang-detail';
-      det.textContent = s.trouves + (JP_PHOTOS.length ? '/' + JP_PHOTOS.length : '');
+      det.textContent = s.trouves + (enJeu ? '/' + enJeu : '');
       pts.appendChild(det);
     }
     li.appendChild(pts);
@@ -3613,6 +3986,12 @@ function jpArbitrer(id, accepte, variante, li){
     if(r && r.error) throw tcSbError(r.error, 'jeu_arbitrer');
     if(li.parentNode) li.parentNode.removeChild(li);
     jpChargerArbitrage();
+    // Un arbitrage fait tomber un photogramme, et deplace le classement. On
+    // ne s'en remet pas au seul echo du direct : c'est lui qui manquait
+    // quand le compteur de l'animateur restait en arriere d'un cran — et
+    // « Accepter et retenir » peut en faire tomber plusieurs d'un coup.
+    jpChargerTrouves();
+    jpChargerScores();
   }).catch(function(e){
     li.style.opacity = '';
     li.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
@@ -3648,7 +4027,7 @@ function jpAjouterIndiceVif(){
     // On relit depuis la base plutot que d'inscrire l'indice de memoire :
     // c'est elle qui decide de ce qui est devoile, pour tout le monde.
     JP_SB.from('jeu_photogrammes_secret')
-      .select('photogramme_id,titre_attendu,realisateur,indices')
+      .select(JP_COLONNES_SECRET_JEU)
       .eq('session_id', JP_PARTIE.id).then(function(res){
         if(res && res.data){
           JP_SECRETS = {};
@@ -3721,6 +4100,55 @@ function jpRendreCommandesCreateur(){
   }
 }
 
+// ── ANNULER UN PHOTOGRAMME (point 1) ────────────────────────────
+// L'animateur arbitre d'un clic, et parfois d'un clic de trop : une réponse
+// fausse acceptée par erreur donne un point qui ne se reprend pas, et
+// dévoile le titre à toute la table.
+//
+// On ne peut pas effacer ce qui a été dit — le titre est sur la bande, sous
+// l'image, chez tout le monde. On peut en revanche faire les deux seules
+// choses qui réparent : RETIRER LE POINT, et SORTIR le photogramme du jeu,
+// puisque sa solution est connue et qu'il n'y a plus rien à y chercher.
+//
+// C'est la base qui fait les deux, en une fois (`jeu_annuler_photogramme`) :
+// les réponses de ce photogramme repassent en refusées — le déclencheur
+// `jeu_maj_scores` recalcule alors le classement tout seul — et le
+// photogramme reçoit sa date d'annulation, qui interdit toute réponse de
+// plus. Rien de cela ne pourrait se faire ici : la règle de sécurité
+// n'autorise pas ce navigateur à écrire dans les réponses des autres.
+function jpAnnulerPhotogramme(photoId, position, apres){
+  if(!photoId || JP_SANS_ANNULATION) return;
+  if(!confirm(t('jp_confirme_annuler', position))) return;
+  JP_SB.rpc('jeu_annuler_photogramme', { p_photogramme_id: photoId }).then(function(r){
+    if(r && r.error){ alert(jpErreur(r.error)); return; }
+    jpAnnoncer(t('jp_annonce_annule', position));
+    // La même annonce que pour une trouvaille : elle ne dit rien d'autre que
+    // « ce photogramme a changé, relisez », et c'est exactement ce qu'il faut
+    // ici pour que les autres écrans se mettent à jour sans attendre le
+    // filet des quinze secondes.
+    jpAnnoncerTrouvaille(position);
+    jpChargerScores();
+    jpChargerArbitrage();
+    if(typeof apres === 'function') apres();
+  }, function(e){ alert(jpErreur(e)); });
+}
+
+// Le bouton porte sur le PHOTOGRAMME AFFICHÉ, comme l'indice à chaud :
+// l'animateur regarde l'image dont il vient de valider une mauvaise réponse,
+// et c'est celle-là qu'il annule. Le bouton ne s'allume que s'il y a
+// quelque chose à annuler.
+function jpMajBoutonAnnuler(){
+  var b = jpEl('jp-btn-annuler-photo');
+  if(!b) return;
+  if(JP_SANS_ANNULATION){ b.style.display = 'none'; return; }
+  var p = JP_PHOTOS[JP_IDX];
+  var r = p && JP_REVELE[p.position];
+  b.style.display = '';
+  b.textContent = p ? t('jp_annuler_photo_n', p.position) : t('jp_annuler_photo');
+  b.disabled = !(r && !r.annule);
+  b.title = b.disabled ? t('jp_annuler_aide_rien') : t('jp_annuler_aide');
+}
+
 function jpClore(){
   if(!JP_PARTIE || !confirm(t('jp_confirme_clore'))) return;
   JP_SB.from('jeu_sessions').update({ cloture_at: new Date(jpMaintenant()).toISOString() })
@@ -3733,6 +4161,31 @@ function jpClore(){
 
 // ── 18. LES RÉSULTATS ──────────────────────────────────────────────────────
 
+// La ligne sous le titre : « Une partie de X — 17 oct. 2026 à 20:00 ». Sortie
+// de jpMontrerResultats pour pouvoir être réécrite à un changement de langue.
+function jpRendreResSous(){
+  var el = jpEl('jp-res-sous');
+  if(!el || !JP_PARTIE) return;
+  var g = JP_GENS[String(JP_PARTIE.createur_id)];
+  el.textContent =
+    t('jp_res_sous', [g ? formatContribNamePlain(g.display_name) : '…', tcDateHeure(JP_PARTIE.debut_at)]);
+}
+
+// TOUT CE QUI SE DESSINE SUR L'ÉCRAN DES RÉSULTATS, EN UN SEUL ENDROIT.
+//
+// C'était le défaut signalé sur la version anglaise : podium, classement et
+// solutions étaient écrits à l'intérieur de la promesse de jpMontrerResultats,
+// avec des données que plus personne ne tenait ensuite. Un changement de
+// langue ne pouvait donc rien réécrire, et la moitié de l'écran — « Une
+// partie de », « 3 trouvés sur 5 », « Trouvé par », « Vous : manqué » —
+// restait en français jusqu'au prochain rechargement complet de la page.
+function jpRendreResultats(){
+  jpRendreResSous();
+  jpRendrePodium();
+  jpRendreClassement('jp-res-rangs');
+  jpRendreSolutions();
+}
+
 function jpMontrerResultats(jeton){
   jpAfficher('resultats');
   // La discussion descend avec nous : c'est souvent apres coup qu'on a le
@@ -3740,9 +4193,7 @@ function jpMontrerResultats(jeton){
   jpChatVers('jp-res-chat');
   jpEl('jp-gerer-resultats').style.display = jpSuisCreateur() ? '' : 'none';
   jpEl('jp-res-titre').textContent = JP_PARTIE.titre;
-  var g = JP_GENS[String(JP_PARTIE.createur_id)];
-  jpEl('jp-res-sous').textContent =
-    t('jp_res_sous', [g ? formatContribNamePlain(g.display_name) : '…', tcDateHeure(JP_PARTIE.debut_at)]);
+  jpRendreResSous();
 
   Promise.all([
     JP_SB.from('jeu_scores').select('session_id,contributor_id,trouves,points,temps_total_ms,dernier_at')
@@ -3757,9 +4208,9 @@ function jpMontrerResultats(jeton){
   ]).then(function(res){
     if(jeton !== JP_JETON) return;
     JP_SCORES = (res[0] && res[0].data) || [];
-    var solutions = (res[1] && res[1].data) || [];
-    var stats = {};
-    ((res[2] && res[2].data) || []).forEach(function(s){ stats[String(s.photogramme_id)] = s; });
+    JP_SOLUTIONS = (res[1] && res[1].data) || [];
+    JP_STATS = {};
+    ((res[2] && res[2].data) || []).forEach(function(s){ JP_STATS[String(s.photogramme_id)] = s; });
     JP_PHOTOS = (res[3] && res[3].data) || [];
     JP_PHOTOS.forEach(function(p){ JP_URLS[String(p.id)] = jpUrlImage(p.image_path); });
     JP_MES = {};
@@ -3770,9 +4221,7 @@ function jpMontrerResultats(jeton){
 
     return jpChargerGens(JP_SCORES.map(function(s){ return s.contributor_id; })).then(function(){
       if(jeton !== JP_JETON) return;
-      jpRendrePodium();
-      jpRendreClassement('jp-res-rangs');
-      jpRendreSolutions(solutions, stats);
+      jpRendreResultats();
     });
   }).catch(function(e){
     if(jeton !== JP_JETON) return;
@@ -3783,32 +4232,60 @@ function jpMontrerResultats(jeton){
 function jpRendrePodium(){
   var zone = jpEl('jp-podium');
   jpVider(zone);
-  var lot = jpTrier().slice(0, 3);
+  var tout = jpTrier();
+  var tousRangs = jpRangs(tout);
+  // MONTENT SUR LE PODIUM LES TROIS PREMIERS RANGS, et non les trois
+  // premiers joueurs : deux vainqueurs à égalité font un podium de quatre
+  // marches, et c'est bien ce qu'il faut voir. On s'arrête à six pour qu'une
+  // partie où tout le monde fait le même score ne déroule pas la liste
+  // entière ici — le classement juste en dessous la donne.
+  var lot = [], rangs = [];
+  for(var k = 0; k < tout.length && lot.length < 6; k++){
+    if(tousRangs[k] > 3) break;
+    lot.push(tout[k]);
+    rangs.push(tousRangs[k]);
+  }
   if(lot.length < 1){ zone.style.display = 'none'; return; }
   zone.style.display = '';
+  // La grille du podium a trois colonnes. Deux vainqueurs à égalité en font
+  // quatre marches : on le dit au CSS plutôt que de laisser la quatrième
+  // tomber à la ligne toute seule.
+  zone.classList.toggle('jp-podium-large', lot.length > 3);
+  zone.style.setProperty('--jp-marches', String(lot.length));
   // Ordre d'affichage : 2, 1, 3 — le vainqueur au milieu, surélevé, comme
   // un vrai podium. À deux, on s'en tient à l'ordre naturel : le vainqueur
-  // à droite d'un second surprendrait plus qu'autre chose.
-  var ordre = lot.length >= 3 ? [1, 0, 2] : (lot.length === 2 ? [0, 1] : [0]);
+  // à droite d'un second surprendrait plus qu'autre chose. Dès qu'une place
+  // est partagée, même chose : deux premiers côte à côte se lisent tout
+  // seuls, un vainqueur encadré par son égal ne se lirait pas.
+  var trois = (rangs.length === 3 && rangs[0] === 1 && rangs[1] === 2 && rangs[2] === 3);
+  var ordre = trois ? [1, 0, 2] : lot.map(function(x, i){ return i; });
   // Même doublon qu'au classement : « 2 pts » au-dessus de « 2 trouvés sur 3 »
   // ne dit qu'une seule chose. On ne garde alors que la seconde ligne.
-  var redondant = jpClassementRedondant(jpTrier());
+  var redondant = jpClassementRedondant(tout);
+  var enJeu = jpEnJeu();
   ordre.forEach(function(i){
     var s = lot[i];
     if(!s) return;
+    var rang = rangs[i];
     var g = JP_GENS[String(s.contributor_id)] || {};
     var d = document.createElement('div');
-    d.className = 'jp-marche jp-marche-' + (i + 1);
-    d.appendChild(jpCoupe(i + 1));
+    d.className = 'jp-marche jp-marche-' + rang;
+    d.appendChild(jpCoupe(rang));
     var place = document.createElement('span');
     place.className = 'jp-lu-seulement';
-    place.textContent = t('jp_place', i + 1);
+    place.textContent = t('jp_place', rang);
     d.appendChild(place);
     d.appendChild(jpPastille(g, 54));
     var nom = document.createElement('div');
     nom.className = 'jp-marche-nom';
     nom.textContent = formatContribNamePlain(g.display_name || '…');
     d.appendChild(nom);
+    if(jpRangPartage(rangs, i)){
+      var ex = document.createElement('div');
+      ex.className = 'jp-marche-ex';
+      ex.textContent = t('jp_ex_aequo');
+      d.appendChild(ex);
+    }
     if(!redondant){
       var pts = document.createElement('div');
       pts.className = 'jp-marche-pts';
@@ -3817,7 +4294,7 @@ function jpRendrePodium(){
     }
     var det = document.createElement('div');
     det.className = 'jp-marche-det' + (redondant ? ' jp-marche-det-seule' : '');
-    det.textContent = t('jp_trouves_sur', [s.trouves, JP_PHOTOS.length]);
+    det.textContent = t('jp_trouves_sur', [s.trouves, enJeu]);
     d.appendChild(det);
     zone.appendChild(d);
   });
@@ -3859,19 +4336,22 @@ function jpListeNoms(noms){
   return noms.slice(0, -1).join(', ') + ' ' + t('jp_et') + ' ' + noms[noms.length - 1];
 }
 
-function jpRendreSolutions(solutions, stats){
+function jpRendreSolutions(){
   var zone = jpEl('jp-solutions');
+  if(!zone) return;
   jpVider(zone);
   var joueurs = JP_SCORES.length;
-  solutions.forEach(function(s){
+  var stats = JP_STATS;
+  JP_SOLUTIONS.forEach(function(s){
     var k = String(s.photogramme_id);
+    var titreAff = jpTitre(s.titre, s.titre_en);
     var d = document.createElement('div');
-    d.className = 'jp-solution';
+    d.className = 'jp-solution' + (s.annule ? ' jp-solution-annulee' : '');
 
     var img = document.createElement('img');
     img.className = 'jp-solution-img';
     img.src = JP_URLS[k] || '';
-    img.alt = s.titre;
+    img.alt = titreAff;
     img.loading = 'lazy';
     d.appendChild(img);
 
@@ -3883,7 +4363,7 @@ function jpRendreSolutions(solutions, stats){
     corps.appendChild(num);
     var ti = document.createElement('div');
     ti.className = 'jp-solution-titre';
-    ti.textContent = s.titre;
+    ti.textContent = titreAff;
     corps.appendChild(ti);
     if(s.realisateur){
       var me = document.createElement('div');
@@ -3908,13 +4388,38 @@ function jpRendreSolutions(solutions, stats){
       corps.appendChild(ligne);
     }
     var mien = JP_MES[k];
-    if(mien){
+    if(mien && !s.annule){
       var b = document.createElement('span');
       b.className = 'jp-etat jp-solution-perso' + (mien.statut === 'accepte' ? '' : ' jp-solution-perso-rate');
       b.textContent = mien.statut === 'accepte'
         ? t('jp_vous_trouve', jpChrono(mien.elapsed_ms || 0))
         : t('jp_vous_rate');
       corps.appendChild(b);
+    }
+    // Un photogramme annulé le dit ici : c'est la seule page qui les montre
+    // tous, et c'est donc là qu'on va voir ce qui a été annulé, et pourquoi
+    // le classement ne compte pas ce film.
+    if(s.annule){
+      var an = document.createElement('span');
+      an.className = 'jp-etat jp-solution-annule';
+      an.textContent = t('jp_solution_annulee');
+      corps.appendChild(an);
+    } else if(jpSuisCreateur() && !JP_SANS_ANNULATION){
+      // L'erreur d'arbitrage se voit souvent ici, en relisant les réponses :
+      // le bouton est donc là aussi, et pas seulement pendant la partie.
+      var ba = document.createElement('button');
+      ba.type = 'button';
+      ba.className = 'jp-btn jp-btn-petit jp-solution-annuler';
+      ba.textContent = t('jp_annuler_photo');
+      ba.addEventListener('click', function(){
+        jpAnnulerPhotogramme(s.photogramme_id, s.pos, function(){
+          // On relit les solutions et le classement : le point retiré change
+          // les deux. Redemander la page entière plutôt que la rafistoler :
+          // une annulation n'arrive pas deux fois par minute.
+          jpMontrerResultats(JP_JETON);
+        });
+      });
+      corps.appendChild(ba);
     }
     d.appendChild(corps);
     zone.appendChild(d);
@@ -4088,6 +4593,11 @@ function jpBrancher(){
   });
   jpEl('jp-btn-quitter').addEventListener('click', function(){ jpAller('#parties'); });
   jpEl('jp-btn-clore').addEventListener('click', jpClore);
+  var bAnnuler = jpEl('jp-btn-annuler-photo');
+  if(bAnnuler) bAnnuler.addEventListener('click', function(){
+    var p = JP_PHOTOS[JP_IDX];
+    if(p) jpAnnulerPhotogramme(p.id, p.position);
+  });
 
   jpProtegerImages();
   document.addEventListener('keydown', jpClavier);
@@ -4114,9 +4624,21 @@ window.tcAfterLangChange = function(){
   else if(JP_VUE === 'jeu' && JP_PHOTOS.length){
     jpRendrePellicule();
     var p = JP_PHOTOS[JP_IDX];
-    if(p){ jpRendreIndices(p); jpRendreVerdictCourant(p); }
+    if(p){
+      jpRendreIndices(p);
+      jpRendreVerdictCourant(p);
+      jpRendreRefus(p);
+      // La bande sous l'image porte un titre, et ce titre a une version
+      // anglaise : elle change de langue avec le reste.
+      jpRendreTrouve(p);
+      jpMajPlein();
+    }
+    jpRendreTrouves();
+    jpMajBoutonAnnuler();
     jpRendreClassement('jp-rangs');
   }
+  // L'écran d'une partie terminée : podium, classement final et solutions.
+  else if(JP_VUE === 'resultats' && JP_PARTIE) jpRendreResultats();
 
   // L'ecran d'attente (« Départ dans ») n'ecrit sa phrase qu'au moment ou
   // l'etat de la partie change : `jpBasculerEtat` renonce des que l'etat est
@@ -4154,6 +4676,15 @@ JP_SB.auth.onAuthStateChange(function(evenement, session){
         jpAller(vers);
       } else if(JP_VUE === 'parties'){
         jpRendreParties();
+      } else if(JP_VUE === 'jeu' && JP_PARTIE){
+        // LA FICHE DU CINÉPHILE ARRIVE APRÈS L'OUVERTURE DE LA PARTIE.
+        // Tout ce qui dépend de son identité — ses réponses, donc le compteur
+        // du bandeau et les pastilles ; les titres attendus s'il anime ; le
+        // champ de saisie lui-même — avait été lu sans elle, et rien ne
+        // revenait jamais dessus : on jouait la partie entière en visiteur.
+        jpChargerMesReponses();
+        jpChargerSecretsJeu();
+        if(JP_ETAT === 'en_cours') jpPreparerJeu();
       }
     });
   } else if(evenement === 'SIGNED_OUT'){

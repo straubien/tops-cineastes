@@ -127,6 +127,7 @@
 .jp-btn-petit { font-size: 12px; padding: 7px 13px; min-height: 36px; letter-spacing: 0.1em; }
 .jp-btn-oui { border-color: var(--vert); color: var(--vert); }
 .jp-btn-oui:hover:not(:disabled) { background: var(--vert); border-color: var(--vert); color: var(--bg); }
+.jp-btn-annuler { border-style: dashed; }
 .jp-btn-non { border-color: var(--rouge); color: var(--rouge-texte); }
 .jp-btn-non:hover:not(:disabled) { background: var(--rouge); border-color: var(--rouge); color: #f7f3ec; }
 .jp-btn-nu {
@@ -340,6 +341,11 @@
    pas encore une trouvaille. On le dit en retrait. */
 .jp-trouve-attendu .jp-trouve-titre { color: rgba(247, 243, 236, 0.78); }
 .jp-trouve-attendu .jp-trouve-par { color: rgba(247, 243, 236, 0.5); }
+/* Photogramme annulé par l'animateur : le titre reste à l'écran — il a été
+   dévoilé, on ne peut plus le reprendre — mais il n'est plus une trouvaille
+   de personne, et la bande ne doit plus en avoir l'air. */
+.jp-trouve-annule .jp-trouve-titre { color: rgba(247, 243, 236, 0.62); text-decoration: line-through; }
+.jp-trouve-annule .jp-trouve-par { color: rgba(247, 243, 236, 0.55); }
 
 .jp-plein-trouve {
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -411,6 +417,41 @@
   100% { transform: translateY(0)   scale(1); }
 }
 .jp-essais { font-size: 14px; opacity: 0.75; margin-left: auto; white-space: nowrap; }
+
+/* ── Les propositions refusées de tous les joueurs (point 4) ───────────
+   Des titres faux, et rien de plus : ils ne doivent donc rien coûter à l'œil.
+   Une seule ligne qui se replie, en petit, en retrait — on les lit si on les
+   cherche, on ne les voit pas si on cherche le film. */
+.jp-refus {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+  margin-top: 10px;
+  font-family: var(--font); font-size: 13px;
+  color: var(--brun-pale);
+}
+.jp-refus[hidden] { display: none; }
+.jp-refus-etiq {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--brun-pale);
+  flex: 0 0 auto;
+}
+.jp-refus-item {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  background: var(--tag-bg);
+  max-width: 100%;
+}
+.jp-refus-texte {
+  text-decoration: line-through;
+  text-decoration-color: var(--rouge);
+  color: var(--text-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.jp-refus-qui {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--brun-pale); flex: 0 0 auto;
+}
 
 /* ── La pellicule de vignettes ──────────────────────────────────────────── */
 .jp-pellicule {
@@ -530,13 +571,21 @@
   text-align: right; font-variant-numeric: tabular-nums;
 }
 .jp-rang-1 .jp-rang-pos { color: var(--rouge-texte); font-weight: 700; }
-.jp-rang-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp-rang-nom { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; }
+.jp-rang-nom-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jp-rang-pts {
   font-family: var(--font-names); font-size: 17px;
   font-variant-numeric: tabular-nums; color: var(--text);
   white-space: nowrap;
 }
 .jp-rang-detail { font-size: 13px; color: var(--brun-pale); margin-left: 5px; }
+/* « ex æquo » : la mention vit dans la case du nom, en petites capitales, et
+   ne doit jamais pousser le nom hors de sa case. */
+.jp-rang-ex {
+  font-family: var(--font); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--rouge-texte); white-space: nowrap;
+}
 /* Quand le barème ne distingue pas « points » et « trouvés », la ligne
    n'affiche plus qu'un seul nombre : « 2/3 ». Il prend alors la place et la
    couleur qu'occupaient les points, pour que le classement garde son relief. */
@@ -559,6 +608,10 @@
 
 /* Podium de la page de resultats */
 .jp-podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 2rem; }
+/* Deux premiers ex æquo font un podium de quatre marches : la grille suit le
+   nombre de marches plutôt que de laisser la dernière tomber à la ligne.
+   (Sur téléphone, la règle d'une seule colonne, plus bas, reprend la main.) */
+.jp-podium-large { grid-template-columns: repeat(var(--jp-marches, 3), minmax(0, 1fr)); }
 .jp-marche {
   background: var(--bg-card); border: 1px solid var(--border);
   padding: 20px 14px; text-align: center;
@@ -580,6 +633,11 @@
 .jp-marche-nom { font-family: var(--font-names); font-size: 19px; color: var(--text); line-height: 1.3; }
 .jp-marche-pts { font-family: var(--font-names); font-size: 26px; color: var(--rouge-texte); margin-top: 5px; }
 .jp-marche-det { font-family: var(--font); font-size: 14px; color: var(--brun-pale); margin-top: 3px; }
+.jp-marche-ex {
+  font-family: var(--font); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--rouge-texte); margin-top: 4px;
+}
 /* Même règle qu'au classement : privée de la ligne des points, qui disait la
    même chose, celle-ci reprend sa taille et sa couleur. */
 .jp-marche-det-seule {
@@ -604,6 +662,17 @@
   background: var(--vert); color: #f7f3ec;
 }
 .jp-solution-perso-rate { background: var(--tag-bg); color: var(--brun-pale); }
+/* Un photogramme annulé, sur la page des réponses : il garde sa place et son
+   titre — c'est la seule page qui les montre tous — mais il ne compte pas. */
+.jp-solution-annulee { opacity: 0.72; }
+.jp-solution-annulee .jp-solution-img { filter: grayscale(1); }
+.jp-solution-annulee .jp-solution-titre { text-decoration: line-through; }
+.jp-solution-annule {
+  display: inline-flex; margin-top: 8px;
+  background: none; color: var(--brun-pale);
+  border: 1px dashed var(--border);
+}
+.jp-solution-annuler { margin-top: 10px; }
 
 /* ── Le studio du createur ──────────────────────────────────────────────── */
 .jp-studio { max-width: 820px; }
@@ -922,6 +991,8 @@
 }
 .jp-journal-ligne:last-child { border-bottom: 0; }
 .jp-journal-moi .jp-journal-titre { font-weight: 700; }
+.jp-journal-annule .jp-journal-titre { text-decoration: line-through; color: var(--brun-pale); }
+.jp-journal-annule .jp-journal-num { background: var(--brun-pale); }
 .jp-journal-num {
   flex: 0 0 auto;
   min-width: 22px;
