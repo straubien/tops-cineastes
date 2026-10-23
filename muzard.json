@@ -1,6 +1,6 @@
 {
   "contributeur": "MATHIEU MUZARD",
-  "version": "7.7",
+  "version": "7.8",
   "tops": [
     {
       "cineaste": "ABULADZE, Tengiz",
@@ -9,7 +9,7 @@
           "rang": 1,
           "titre": "L'âne de Magdalena",
           "annee": 1955,
-          "note": "co-réal. Rezo Chkheidze"
+          "note": "co-réal. Revaz Chkheidze"
         },
         {
           "rang": 2,
@@ -45,6 +45,16 @@
           "rang": 2,
           "titre": "Dernière séance",
           "annee": 2011
+        }
+      ]
+    },
+    {
+      "cineaste": "ADACHI, Masao",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Prière d'extase",
+          "annee": 1971
         }
       ]
     },
@@ -6762,6 +6772,16 @@
       ]
     },
     {
+      "cineaste": "CAVARA, Paolo",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "La tarentule au ventre noir",
+          "annee": 1971
+        }
+      ]
+    },
+    {
       "cineaste": "CAYATTE, André",
       "films": [
         {
@@ -6893,6 +6913,17 @@
           "rang": 3,
           "titre": "Durian Durian",
           "annee": 2000
+        }
+      ]
+    },
+    {
+      "cineaste": "CHANG, Yi",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "In our time",
+          "annee": 1982,
+          "note": "co-réal. Tao Te-chen, Edward Yang & Ko I-chen"
         }
       ]
     },
@@ -7519,6 +7550,16 @@
           "rang": 8,
           "titre": "Soleil",
           "annee": 1988
+        }
+      ]
+    },
+    {
+      "cineaste": "CLINE, Edward F.",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Mines de rien",
+          "annee": 1940
         }
       ]
     },
@@ -8648,11 +8689,16 @@
         },
         {
           "rang": 20,
+          "titre": "Fast company",
+          "annee": 1979
+        },
+        {
+          "rang": 21,
           "titre": "Les crimes du futur",
           "annee": 2022
         },
         {
-          "rang": 21,
+          "rang": 22,
           "titre": "Cosmopolis",
           "annee": 2012
         }
@@ -14320,6 +14366,16 @@
       ]
     },
     {
+      "cineaste": "FOSTER, Norman",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Voyage au pays de la peur",
+          "annee": 1943
+        }
+      ]
+    },
+    {
       "cineaste": "FOUCHARD & ROUHI",
       "films": [
         {
@@ -17239,6 +17295,76 @@
       ]
     },
     {
+      "cineaste": "GUERSTEIN, Armand Elias",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Jusqu’aux frontières de la solitude",
+          "annee": 1989
+        },
+        {
+          "rang": 2,
+          "titre": "Dépression",
+          "annee": 1983
+        },
+        {
+          "rang": 3,
+          "titre": "Dans les tréfonds",
+          "annee": 1981
+        },
+        {
+          "rang": 4,
+          "titre": "L’existence du monde",
+          "annee": 1982
+        },
+        {
+          "rang": 5,
+          "titre": "Après la catastrophe",
+          "annee": 1979
+        },
+        {
+          "rang": 6,
+          "titre": "En mémoire d’Hégésias",
+          "annee": 1986
+        },
+        {
+          "rang": 7,
+          "titre": "Suicide",
+          "annee": 1984
+        },
+        {
+          "rang": 8,
+          "titre": "Diptyque",
+          "annee": 1990
+        },
+        {
+          "rang": 9,
+          "titre": "La mort à l’œuvre",
+          "annee": 1991
+        },
+        {
+          "rang": 10,
+          "titre": "Nous étions suspendus dans le néant",
+          "annee": 1992
+        },
+        {
+          "rang": 11,
+          "titre": "La désillusion existentielle",
+          "annee": 1978
+        },
+        {
+          "rang": 12,
+          "titre": "L’anomalie",
+          "annee": 1980
+        },
+        {
+          "rang": 13,
+          "titre": "Dernière étreinte",
+          "annee": 1977
+        }
+      ]
+    },
+    {
       "cineaste": "GUEST, Val",
       "films": [
         {
@@ -18614,11 +18740,17 @@
       "films": [
         {
           "rang": 1,
+          "titre": "Les guerriers de la nuit",
+          "annee": 1979,
+          "note": "theatrical version"
+        },
+        {
+          "rang": 2,
           "titre": "Driver",
           "annee": 1978
         },
         {
-          "rang": 2,
+          "rang": 3,
           "titre": "Le bagarreur",
           "annee": 1975
         }
@@ -19721,31 +19853,36 @@
         },
         {
           "rang": 2,
+          "titre": "La créature",
+          "annee": 1977
+        },
+        {
+          "rang": 3,
           "titre": "Le député",
           "annee": 1978
         },
         {
-          "rang": 3,
+          "rang": 4,
           "titre": "Personne n'a entendu crier",
           "annee": 1973
         },
         {
-          "rang": 4,
+          "rang": 5,
           "titre": "Colegas",
           "annee": 1982
         },
         {
-          "rang": 5,
+          "rang": 6,
           "titre": "Navajeros",
           "annee": 1980
         },
         {
-          "rang": 6,
+          "rang": 7,
           "titre": "El pico",
           "annee": 1983
         },
         {
-          "rang": 7,
+          "rang": 8,
           "titre": "El pico 2",
           "annee": 1984
         }
@@ -21277,6 +21414,16 @@
       ]
     },
     {
+      "cineaste": "KASARAVALLI, Girish",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Le rituel",
+          "annee": 1977
+        }
+      ]
+    },
+    {
       "cineaste": "KASDAN, Lawrence",
       "films": [
         {
@@ -21487,13 +21634,9 @@
         {
           "rang": 3,
           "titre": "La forêt de Mogari",
-          "annee": 2007
-        }
-      ]
-    },
-    {
-      "cineaste": "KAWASHIMA, Yûzô",
-      "films": [
+          "annee": 2007,
+          "note": "KAWASHIMA, Yûzô"
+        },
         {
           "rang": 1,
           "titre": "Les femmes naissent deux fois",
@@ -22778,6 +22921,17 @@
           "rang": 12,
           "titre": "Le grand désordre",
           "annee": 1971
+        }
+      ]
+    },
+    {
+      "cineaste": "KO, I-chen",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "In our time",
+          "annee": 1982,
+          "note": "co-réal. Tao Te-chen, Edward Yang & Chang Yi"
         }
       ]
     },
@@ -30007,6 +30161,16 @@
       ]
     },
     {
+      "cineaste": "MOSJOUKINE, Ivan",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Le brasier ardent",
+          "annee": 1923
+        }
+      ]
+    },
+    {
       "cineaste": "MOULLET, Luc",
       "films": [
         {
@@ -30143,16 +30307,6 @@
           "rang": 1,
           "titre": "Ogroff",
           "annee": 1983
-        }
-      ]
-    },
-    {
-      "cineaste": "MOSJOUKINE, Ivan",
-      "films": [
-        {
-          "rang": 1,
-          "titre": "Le brasier ardent",
-          "annee": 1923
         }
       ]
     },
@@ -32413,6 +32567,36 @@
           "rang": 4,
           "titre": "Achik Kerib",
           "annee": 1988
+        }
+      ]
+    },
+    {
+      "cineaste": "PARAVEL & CASTAING-TAYLOR",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Leviathan",
+          "annee": 2012
+        },
+        {
+          "rang": 2,
+          "titre": "De humani corporis fabrica",
+          "annee": 2022
+        },
+        {
+          "rang": 3,
+          "titre": "Somniloquies",
+          "annee": 2017
+        },
+        {
+          "rang": 4,
+          "titre": "Caniba",
+          "annee": 2017
+        },
+        {
+          "rang": 5,
+          "titre": "Still life",
+          "annee": 2013
         }
       ]
     },
@@ -37970,6 +38154,11 @@
       "films": [
         {
           "rang": 1,
+          "titre": "La Paloma",
+          "annee": 1974
+        },
+        {
+          "rang": 2,
           "titre": "Visage écrit",
           "annee": 1995
         }
@@ -38830,7 +39019,7 @@
         },
         {
           "rang": 3,
-          "titre": "L'invasion des profanateurs de sépultures",
+          "titre": "Invasion of the body snatchers",
           "annee": 1956
         },
         {
@@ -41071,62 +41260,72 @@
       "films": [
         {
           "rang": 1,
+          "titre": "La guerre sans nom",
+          "annee": 1992
+        },
+        {
+          "rang": 2,
           "titre": "L'horloger de Saint-Paul",
           "annee": 1974
         },
         {
-          "rang": 2,
+          "rang": 3,
           "titre": "Que la fête commence...",
           "annee": 1975
         },
         {
-          "rang": 3,
+          "rang": 4,
           "titre": "Le juge et l'assassin",
           "annee": 1976
         },
         {
-          "rang": 4,
+          "rang": 5,
           "titre": "Une semaine de vacances",
           "annee": 1980
         },
         {
-          "rang": 5,
+          "rang": 6,
           "titre": "Des enfants gâtés",
           "annee": 1977
         },
         {
-          "rang": 6,
+          "rang": 7,
           "titre": "Autour de minuit",
           "annee": 1986
         },
         {
-          "rang": 7,
+          "rang": 8,
           "titre": "Mississippi blues",
           "annee": 1983,
           "note": "co-réal. Robert Parrish"
         },
         {
-          "rang": 8,
+          "rang": 9,
           "titre": "Coup de torchon",
           "annee": 1981
         },
         {
-          "rang": 9,
+          "rang": 10,
           "titre": "La mort en direct",
           "annee": 1980
         },
         {
-          "rang": 10,
+          "rang": 11,
           "titre": "Un dimanche à la campagne",
           "annee": 1984
         },
         {
-          "rang": 11,
+          "rang": 12,
           "titre": "La vie et rien d'autre",
           "annee": 1989
         },
         {
-          "rang": 12,
+          "rang": 13,
+          "titre": "L.627",
+          "annee": 1992
+        },
+        {
+          "rang": 14,
           "titre": "Daddy nostalgie",
           "annee": 1990
         }
@@ -45381,6 +45580,12 @@
           "rang": 4,
           "titre": "Yi yi",
           "annee": 2000
+        },
+        {
+          "rang": 5,
+          "titre": "In our time",
+          "annee": 1982,
+          "note": "co-réal. Tao Te-chen, Ko I-chen & Chang Yi"
         }
       ]
     },
@@ -45406,6 +45611,16 @@
           "rang": 4,
           "titre": "L'oeil du témoin",
           "annee": 1981
+        }
+      ]
+    },
+    {
+      "cineaste": "YEDAYA, Keren",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Mon trésor",
+          "annee": 2004
         }
       ]
     },
