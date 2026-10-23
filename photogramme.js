@@ -122,6 +122,26 @@ function jpEl(id){ return document.getElementById(id); }
 
 function jpVider(el){ while(el && el.firstChild) el.removeChild(el.firstChild); }
 
+// ── REJOUER UNE ANIMATION SUR UN ELEMENT QUI EXISTE DEJA ───────────────────
+// Une animation CSS ne se rejoue pas si sa classe est deja posee : le chrono
+// qui a battu a la seconde precedente ne rebattrait plus jamais. On la
+// retire, on force le navigateur a en prendre acte, on la repose.
+//
+// `offsetWidth` est lu pour cela, et pour cela seulement : c'est la lecture
+// qui oblige le navigateur a vider sa file de styles en attente. Elle coute
+// un recalcul sur UN element — jamais plus d'une fois par seconde, et sur un
+// element qui ne contient que du texte.
+//
+// Rien n'est teste ici sur « prefers-reduced-motion » : les classes posees
+// portent aussi des teintes et des etats, et c'est la feuille de style qui
+// decide, dans son bloc dedie, de retirer le seul mouvement.
+function jpRejouer(el, classe){
+  if(!el) return;
+  el.classList.remove(classe);
+  void el.offsetWidth;
+  el.classList.add(classe);
+}
+
 // Ecrit du texte dans la zone lue par les lecteurs d'ecran. Tout ce qui se
 // voit dans ce jeu doit aussi s'entendre : le verdict, le chrono qui
 // s'epuise, un indice qui tombe.
@@ -2191,6 +2211,28 @@ function jpQuitterPartie(){
   JP_SECRETS = {};
   JP_PRECHARGE = false;
   JP_ETAT = '';
+
+  // ── CE QUE LES ANIMATIONS SE RAPPELLENT ──────────────────────────────────
+  // Toutes les animations de cette page reposent sur une seule question :
+  // « est-ce que cela vient d'arriver ? » Elles tiennent donc des registres
+  // de ce qu'elles ont deja vu, et ces registres appartiennent a UNE partie.
+  // Sans cette remise a zero, ouvrir une seconde partie n'aurait annonce
+  // aucune trouvaille (tout aurait semble deja vu) et le classement aurait
+  // cru que chacun venait de changer de place.
+  JP_INDICES_VUS = {};
+  JP_INDICES_CONNUS = {};
+  JP_INDICES_AMORCE = false;
+  JP_TROUVES_AMORCE = false;
+  JP_PRESENTS_VUS = {};
+  JP_RANGS_PRECEDENTS = {};
+  JP_RES_ANIME = false;
+  JP_PREMIERE_IMAGE = true;
+  JP_FILET_N = -1;
+  JP_FILET_PLEIN = -1;
+  // Un bandeau fugitif de l'ancienne partie n'a rien a dire dans la nouvelle.
+  if(JP_FLASH_MINUTEUR){ clearTimeout(JP_FLASH_MINUTEUR); JP_FLASH_MINUTEUR = null; }
+  var zf = jpEl('jp-flash');
+  if(zf){ zf.hidden = true; zf.className = 'jp-flash'; jpVider(zf); }
 }
 
 function jpOuvrirPartie(code){
@@ -2274,6 +2316,11 @@ function jpBasculerEtat(jeton, etat){
     jpEl('jp-pendant').style.display = '';
     jpChatVers(null);          // la discussion reprend sa place dans la colonne
     jpPreparerJeu();
+    // A4 · LE LEVER DE RIDEAU. Le decompte disparaissait et le plateau
+    // apparaissait d'un coup : rien ne disait que la partie venait de
+    // commencer. 350 ms, et le depart se voit. Pose APRES jpPreparerJeu,
+    // pour que le plateau monte une fois rempli et non pendant.
+    jpRejouer(jpEl('jp-pendant'), 'jp-rideau');
     return;
   }
 
@@ -2290,7 +2337,21 @@ function jpBoucleHorloge(jeton){
     var n = jpMaintenant();
     if(etat === 'a_venir' || etat === 'preroll'){
       var av = jpEl('jp-avant-chrono');
-      if(av) av.textContent = jpDuree(Date.parse(JP_PARTIE.debut_at) - n);
+      // LE DECOMPTE NE S'ECRIT QUE QUAND IL CHANGE. Il etait reecrit quatre
+      // fois par seconde avec la meme valeur : c'est ce qui l'empechait de
+      // battre — une animation ne se rejoue pas sur une classe deja posee —
+      // et c'etaient trois ecritures sur quatre pour rien.
+      if(av){
+        var attente = jpDuree(Date.parse(JP_PARTIE.debut_at) - n);
+        if(av.textContent !== attente){
+          av.textContent = attente;
+          // Les dix dernieres secondes : le nombre passe au rouge et bat
+          // plus fort. C'est le seul moment ou l'attente devient un depart.
+          av.classList.toggle('jp-avant-chrono-urgent',
+                              Date.parse(JP_PARTIE.debut_at) - n < 10500);
+          jpRejouer(av, 'jp-avant-bat');
+        }
+      }
     } else if(etat === 'en_cours'){
       var ch = jpEl('jp-chrono');
       if(!ch) return;
@@ -2305,14 +2366,24 @@ function jpBoucleHorloge(jeton){
         }
         return;
       }
-      var reste = Date.parse(JP_PARTIE.cloture_at || JP_PARTIE.fin_at) - n;
+      var fin = Date.parse(JP_PARTIE.cloture_at || JP_PARTIE.fin_at);
+      var reste = fin - n;
+      // LE FILET DU TEMPS, en haut du bandeau. Repose a chaque battement
+      // plutot qu'a chaque seconde : c'est ce qui le rend continu, et cela ne
+      // coute qu'un `transform` — aucune ligne de la page n'est recalculee.
+      jpMajFiletTemps(reste, fin - Date.parse(JP_PARTIE.debut_at));
       var txt = jpDuree(reste);
       if(ch.textContent !== txt){
         ch.textContent = txt;
         ch.classList.toggle('jp-chrono-urgent', reste < 60000);
         // Les dernieres minutes sont annoncees, pas seulement affichees.
         var s = Math.round(reste / 1000);
-        if(s === 60 || s === 30 || s === 10) jpAnnoncer(t('jp_reste', txt));
+        if(s === 60 || s === 30 || s === 10){
+          jpAnnoncer(t('jp_reste', txt));
+          // Les trois memes seuils se voient desormais aussi : un battement
+          // plus ample, une fois, sur le chrono.
+          jpRejouer(ch, 'jp-chrono-seuil');
+        }
       }
     }
   }
@@ -2483,6 +2554,8 @@ function jpPreparerJeu(){
 
   jpRendrePellicule();
   jpRendreEmojis();
+  // Le premier photogramme affiche ne se fond pas : on arrive, il est la.
+  JP_PREMIERE_IMAGE = true;
   jpAllerPhoto(jpPremierNonTrouve());
 
   var createur = jpSuisCreateur();
@@ -2500,6 +2573,9 @@ function jpPreparerJeu(){
     etiqR.setAttribute('data-i18n', jpSansFin() ? 'jp_depuis' : 'jp_restant');
     etiqR.textContent = t(jpSansFin() ? 'jp_depuis' : 'jp_restant');
   }
+  // AVANT le compteur : jpMajScoreBandeau met le filet de progression a jour,
+  // et il faut donc qu'il ait ete remis a zero pour cette partie-ci.
+  jpInitFilets();
   jpMajScoreBandeau();
   jpEl('jp-panneau-arbitrage').style.display = createur ? '' : 'none';
   jpEl('jp-panneau-createur').style.display  = createur ? '' : 'none';
@@ -2591,6 +2667,11 @@ function jpMajVignette(phId){
   else { b.classList.add('jp-vignette-non'); if(et) et.textContent = '✕'; }
 }
 
+// B8 · Le PREMIER photogramme de la partie ne s'annonce pas : il est la,
+// simplement. Ce n'est qu'a partir du deuxieme qu'un change d'image devient
+// un mouvement, donc quelque chose a montrer.
+var JP_PREMIERE_IMAGE = true;
+
 function jpAllerPhoto(i){
   if(i < 0) i = JP_PHOTOS.length - 1;
   if(i >= JP_PHOTOS.length) i = 0;
@@ -2601,10 +2682,25 @@ function jpAllerPhoto(i){
   // On ne touche qu'a la source : l'image est deja en cache, l'echange est
   // immediat et ne redessine rien d'autre.
   if(JP_IMG){
-    JP_IMG.src = JP_URLS[String(p.id)] || '';
+    var urlNeuve = JP_URLS[String(p.id)] || '';
+    // `getAttribute` et non `.src` : le second rend une adresse absolue, et
+    // la comparaison serait toujours fausse.
+    var change = JP_IMG.getAttribute('src') !== urlNeuve;
+    JP_IMG.src = urlNeuve;
     JP_IMG.alt = t('jp_photogramme_n', p.position);
+    // B8 · FONDU ENTRANT SEULEMENT. Un fondu croise classique assombrit
+    // l'image un instant : dans une course ou la vitesse se paie, ce serait
+    // un handicap. L'image neuve monte de 55 % a 100 % en 140 ms, et
+    // l'echange lui-meme reste instantane — rien n'est retarde.
+    if(change && !JP_PREMIERE_IMAGE) jpRejouer(JP_IMG, 'jp-image-entre');
+    JP_PREMIERE_IMAGE = false;
   }
-  jpEl('jp-scene-num').textContent = p.position;
+  var num = jpEl('jp-scene-num');
+  if(num){
+    var change2 = num.textContent !== String(p.position);
+    num.textContent = p.position;
+    if(change2) jpRejouer(num, 'jp-scene-num-tourne');
+  }
 
   document.querySelectorAll('.jp-vignette').forEach(function(b){
     b.setAttribute('aria-current', b.getAttribute('data-ph') === String(p.id) ? 'true' : 'false');
@@ -2705,6 +2801,12 @@ function jpRendrePleinBande(p){
 function jpRendreTrouve(p){
   var bande = jpEl('jp-trouve');
   if(!bande) return;
+  // B7 · La bande MONTE du bas de l'image, mais seulement quand elle
+  // apparait : cette fonction est rappelee a chaque relecture (quinze
+  // secondes au plus tard), et une bande deja a l'ecran ne doit pas se
+  // remettre en mouvement toute seule. La scene est en `overflow: hidden` :
+  // la bande part donc de sous le cadre, sans jamais depasser.
+  var etaitCachee = bande.hidden;
   jpVider(bande);
   var r = p && JP_REVELE[p.position];
   var sec = p && JP_SECRETS[String(p.id)];
@@ -2718,7 +2820,11 @@ function jpRendreTrouve(p){
 
   bande.hidden = false;
   bande.className = 'jp-trouve' + (r ? '' : ' jp-trouve-attendu')
-                  + (r && r.annule ? ' jp-trouve-annule' : '');
+                  + (r && r.annule ? ' jp-trouve-annule' : '')
+                  // Une trouvaille, pas un titre attendu que l'animateur a
+                  // sous les yeux depuis le debut, et pas un photogramme
+                  // annule : ceux-la ne sont pas des moments.
+                  + (etaitCachee && r && !r.annule ? ' jp-trouve-entre' : '');
   var t1 = document.createElement('span');
   t1.className = 'jp-trouve-titre';
   t1.textContent = titre;
@@ -2734,12 +2840,38 @@ function jpRendreTrouve(p){
   bande.appendChild(t2);
 }
 
+// ── C14 · L'INDICE VRAIMENT NOUVEAU ────────────────────────────────────────
+//
+// L'apparition etait ecrite dans `.jp-indice`, donc dans le style de TOUS les
+// indices. Or cette fonction reconstruit la zone a CHAQUE changement de
+// photogramme : un indice vieux de dix minutes rejouait son entree a chaque
+// coup de fleche, et l'oeil croyait a un indice neuf. Elle a ete deplacee
+// dans `.jp-indice-neuf`, qui ne se pose que sur celui qu'on n'a pas encore
+// vu passer a l'ecran.
+//
+// Une cle plutot qu'un index : la liste est relue entiere toutes les vingt
+// secondes, et un indice doit rester reconnaissable d'une relecture a
+// l'autre. L'identifiant de la base s'il existe, le texte sinon.
+var JP_INDICES_VUS = {};
+
+function jpCleIndice(i){
+  if(!i) return '';
+  if(i.id !== undefined && i.id !== null) return 'id:' + i.id;
+  return 'tx:' + String(i.photogramme_id) + '|' + String(i.texte || '');
+}
+
 function jpRendreIndices(p){
   var zone = jpEl('jp-indices');
   jpVider(zone);
   (JP_INDICES[String(p.id)] || []).forEach(function(i){
+    var cle = jpCleIndice(i);
+    var neuf = !!cle && !JP_INDICES_VUS[cle];
+    if(cle) JP_INDICES_VUS[cle] = 1;
     var d = document.createElement('div');
-    d.className = 'jp-indice';
+    // Un indice divise les points par deux : celui qu'on decouvre prend un
+    // halo ambre, le temps qu'on le lise. Les autres sont redessines a
+    // l'identique, et doivent le rester.
+    d.className = 'jp-indice' + (neuf ? ' jp-indice-neuf' : '');
     var puce = document.createElement('span');
     puce.className = 'jp-indice-puce';
     puce.textContent = '💡';
@@ -2911,12 +3043,15 @@ function jpRepondre(){
     jpMajVignette(p.id);
     jpMajScoreBandeau();
 
-    var ess = jpEl('jp-essais');
     v.className = 'jp-verdict jp-verdict-anime';
     if(d.statut === 'accepte'){
       v.classList.add('jp-verdict-ok');
       txt.textContent = t('jp_bravo', jpPoints(d.points));
       jpAnnoncer(t('jp_bravo', jpPoints(d.points)));
+      // B7 · LE TEMPS FORT DU JEU, et il etait muet. Un lisere vert sur la
+      // scene, le temps de voir ce qu'on vient de trouver. La bande du titre,
+      // elle, monte du bas de l'image (cf. jpRendreTrouve).
+      jpRejouer(jpEl('jp-scene'), 'jp-scene-eclat');
       jpAnnoncerTrouvaille(p.position);
       // On enchaine : le joueur n'a pas a chercher lui-meme l'image
       // suivante. 850 ms, le temps de voir le vert.
@@ -2931,6 +3066,11 @@ function jpRepondre(){
       v.classList.add('jp-verdict-non');
       txt.textContent = t('jp_pas_ca');
       jpAnnoncer(txt.textContent);
+      // B6 · LA SECOUSSE EST POSEE SUR LE CADRE, PAS SUR LE TEXTE. Les
+      // essais sont le plus souvent illimites : une mauvaise reponse ne coute
+      // rien d'autre que du temps, et le seul signal utile est « non,
+      // recommence ». Il va donc la ou se trouve la main.
+      jpRejouer(document.querySelector('.jp-saisie'), 'jp-saisie-secoue');
       // Ma proposition refusée rejoint tout de suite la liste commune : la
       // relecture suivante la confirmera, mais on ne l'attend pas.
       var kr = String(p.id);
@@ -2940,8 +3080,10 @@ function jpRepondre(){
       });
       jpRendreRefus(p);
     }
-    ess.textContent = (d.essais_restants === null || d.essais_restants === undefined)
-      ? '' : t('jp_essais_restants', d.essais_restants);
+    // B9 · Le chiffre devient des pastilles quand le createur a limite les
+    // essais — et reste une case vide quand il ne les a pas limites, ce qui
+    // est le cas ordinaire.
+    jpRendreEssais(d.essais_restants);
     jpEl('jp-reponse').focus();
   }).catch(function(e){
     v.className = 'jp-verdict jp-verdict-non';
@@ -2976,6 +3118,10 @@ function jpRepondre(){
 function jpMajScoreBandeau(){
   var cible = jpEl('jp-score-trouves');
   if(!cible) return;
+  // Le filet de progression dit la meme chose que ce compteur, sans qu'on
+  // ait a le lire : il se met donc a jour au meme endroit, et pour les deux
+  // roles — l'animateur comme les joueurs voient avancer la partie.
+  jpMajFiletProgres();
   var total = jpEnJeu();
 
   if(jpSuisCreateur()){
@@ -2997,6 +3143,192 @@ function jpMajScoreBandeau(){
     if(m && m.statut === 'accepte' && !(r && r.annule)) trouves++;
   });
   cible.textContent = trouves + '/' + total;
+}
+
+
+// ── A1 · LES DEUX FILETS DU BANDEAU ────────────────────────────────────────
+//
+// POURQUOI DEUX, ET POURQUOI CELUI-LA EST LE PRINCIPAL. Un createur coche le
+// plus souvent « Je cloturerai la partie moi-meme » : il n'y a alors AUCUNE
+// duree totale connue, donc rien a diviser, et une jauge de temps serait
+// impossible. Ce qui rythme une telle partie, c'est le nombre de
+// photogrammes encore debout — la partie se clot d'elle-meme quand il n'en
+// reste plus (cf. jpVerifierToutTrouve).
+//
+// D'ou une barre graduee EN BAS du bandeau, toujours presente : une encoche
+// par photogramme en jeu, qui s'allume quand il tombe. Elle avance par
+// sauts, et c'est sa vertu — chaque saut est un evenement.
+//
+// Et, EN HAUT seulement si une heure de fin a ete saisie, un filet de 2 px
+// qui se vide. Deux bords, deux metiers, aucune confusion possible.
+
+var JP_FILET_N = -1;        // encoches actuellement dessinees
+var JP_FILET_PLEIN = -1;    // encoches allumees au dernier passage
+
+// Remet les deux filets a zero a l'ouverture d'une partie. Les elements, eux,
+// vivent dans la page : ce sont leurs enfants et leurs classes qu'il faut
+// reprendre, sans quoi une seconde partie heriterait des encoches de la
+// premiere.
+function jpInitFilets(){
+  JP_FILET_N = -1;
+  JP_FILET_PLEIN = -1;
+  var zone = jpEl('jp-filet-temps');
+  if(zone){
+    zone.hidden = jpSansFin();
+    zone.classList.remove('jp-filet-temps-tiede', 'jp-filet-temps-chaud');
+  }
+  var jauge = jpEl('jp-filet-temps-jauge');
+  if(jauge) jauge.style.transform = 'scaleX(1)';
+  jpMajFiletProgres();
+}
+
+function jpMajFiletProgres(){
+  var zone = jpEl('jp-filet-progres');
+  if(!zone) return;
+  var total = jpEnJeu();
+  var plein = 0;
+  JP_PHOTOS.forEach(function(p){
+    var r = JP_REVELE[p.position];
+    if(r && !r.annule) plein++;
+  });
+  if(plein > total) plein = total;
+
+  // LE NOMBRE D'ENCOCHES NE CHANGE QU'A L'ANNULATION D'UN PHOTOGRAMME. On ne
+  // reconstruit donc le filet que dans ce cas-la : tout le reste du temps on
+  // ne fait que basculer des classes, ce qui ne coute rien.
+  if(total !== JP_FILET_N){
+    jpVider(zone);
+    // Au-dela d'une quarantaine, l'ecart entre les encoches mangerait les
+    // encoches : on les colle, et le filet redevient une barre graduee.
+    zone.classList.toggle('jp-filet-serre', total > 40);
+    for(var i = 0; i < total; i++){
+      var s = document.createElement('span');
+      s.className = 'jp-segment';
+      zone.appendChild(s);
+    }
+    JP_FILET_N = total;
+    // -1, et non `plein` : on veut que le passage suivant allume les
+    // encoches, mais SANS les faire sauter. Arriver en cours de partie n'est
+    // pas un evenement.
+    JP_FILET_PLEIN = -1;
+  }
+
+  var ancien = JP_FILET_PLEIN;
+  if(plein === ancien) return;
+  var cases = zone.children;
+  for(var k = 0; k < cases.length; k++){
+    var allume = k < plein;
+    cases[k].classList.toggle('jp-segment-plein', allume);
+    // Seules les encoches qui viennent REELLEMENT de s'allumer se detendent.
+    if(allume && ancien >= 0 && k >= ancien) jpRejouer(cases[k], 'jp-segment-neuf');
+    else cases[k].classList.remove('jp-segment-neuf');
+  }
+  JP_FILET_PLEIN = plein;
+}
+
+// Le filet du temps. La valeur est posee en ligne parce qu'elle est continue
+// — il n'existe pas de classe pour « 37,2 % » —, mais c'est un `transform`
+// sur un seul element : le navigateur le traite sur la carte graphique, et
+// aucune ligne de la page n'est recalculee.
+function jpMajFiletTemps(reste, duree){
+  var zone = jpEl('jp-filet-temps');
+  var jauge = jpEl('jp-filet-temps-jauge');
+  if(!zone || !jauge || zone.hidden || !duree || duree <= 0) return;
+  var part = reste / duree;
+  if(part < 0) part = 0;
+  if(part > 1) part = 1;
+  jauge.style.transform = 'scaleX(' + part.toFixed(4) + ')';
+  zone.classList.toggle('jp-filet-temps-tiede', part <= 0.25 && reste >= 60000);
+  zone.classList.toggle('jp-filet-temps-chaud', reste < 60000);
+}
+
+
+// ── C11 · LE BANDEAU FUGITIF ───────────────────────────────────────────────
+//
+// Un joueur qui fixe son image n'apprenait qu'un autre avait trouve qu'en
+// allant lire la colonne de droite, ou en naviguant jusqu'au photogramme
+// concerne. Une ligne en haut de la scene, deux secondes et demie, et il le
+// sait sans quitter son image des yeux.
+//
+// LES ANNONCES SE REMPLACENT, ELLES NE S'EMPILENT PAS. Trois trouvailles coup
+// sur coup ne doivent pas faire trois bandeaux les uns sous les autres :
+// c'est la derniere qui compte, et l'image doit rester visible. Un seul
+// minuteur, remplace a chaque fois.
+//
+// Rien n'est annonce ici aux lecteurs d'ecran : tout ce qui passe par ce
+// bandeau est deja ecrit dans la zone « jp-annonce » par jpAnnoncer(), et le
+// dire deux fois ferait begayer.
+var JP_FLASH_MINUTEUR = null;
+
+function jpFlash(message, genre){
+  var zone = jpEl('jp-flash');
+  if(!zone || !message) return;
+  jpVider(zone);
+  zone.className = 'jp-flash' + (genre ? ' jp-flash-' + genre : '');
+  var txt = document.createElement('span');
+  txt.className = 'jp-flash-texte';
+  txt.textContent = message;
+  zone.appendChild(txt);
+  zone.hidden = false;
+  jpRejouer(zone, 'jp-flash-passe');
+  if(JP_FLASH_MINUTEUR) clearTimeout(JP_FLASH_MINUTEUR);
+  // 2 600 ms : la duree exacte de l'animation. Le bandeau est cache APRES
+  // s'etre efface, et non pendant.
+  JP_FLASH_MINUTEUR = setTimeout(function(){
+    JP_FLASH_MINUTEUR = null;
+    var z = jpEl('jp-flash');
+    if(!z) return;
+    z.hidden = true;
+    z.classList.remove('jp-flash-passe');
+    jpVider(z);
+  }, 2600);
+}
+
+
+// ── B9 · LES ESSAIS RESTANTS ───────────────────────────────────────────────
+//
+// Les essais sont le plus souvent illimites : la base ne renvoie alors aucun
+// nombre, et la case reste vide — exactement comme avant. Quand le createur
+// les a VRAIMENT limites, le chiffre en 14 px a 0,75 d'opacite portait
+// pourtant l'information la plus importante de l'ecran. Des pastilles qui
+// s'eteignent une a une se lisent sans etre lues.
+//
+// Au-dela de huit essais, on en reste au chiffre : quinze pastilles ne se
+// comptent pas d'un coup d'oeil, un nombre si.
+function jpRendreEssais(restants){
+  var ess = jpEl('jp-essais');
+  if(!ess) return;
+  jpVider(ess);
+  ess.className = 'jp-essais';
+  if(restants === null || restants === undefined) return;
+
+  var max = (JP_PARTIE && JP_PARTIE.essais_max) || 0;
+  var phrase = t('jp_essais_restants', restants);
+  if(max < 1 || max > 8){ ess.textContent = phrase; return; }
+
+  if(restants <= 1) ess.classList.add('jp-essais-dernier');
+  else if(restants <= 2) ess.classList.add('jp-essais-bas');
+
+  var rangee = document.createElement('span');
+  rangee.className = 'jp-pastilles-essais';
+  rangee.setAttribute('aria-hidden', 'true');
+  for(var i = 0; i < max; i++){
+    var pt = document.createElement('span');
+    pt.className = 'jp-pastille-essai' + (i < restants ? '' : ' jp-pastille-essai-vide');
+    // La pastille qui vient de s'eteindre est la premiere des vides : elle
+    // le dit une fois, pour qu'on voie ce qu'on vient de depenser.
+    if(i === restants) pt.classList.add('jp-essais-brule');
+    rangee.appendChild(pt);
+  }
+  ess.appendChild(rangee);
+
+  // La phrase reste, pour les lecteurs d'ecran : la couleur et le compte des
+  // pastilles sont l'information, et ni l'une ni l'autre ne se lit a voix
+  // haute.
+  var lu = document.createElement('span');
+  lu.className = 'jp-lu-seulement';
+  lu.textContent = phrase;
+  ess.appendChild(lu);
 }
 
 
@@ -3360,12 +3692,23 @@ function jpChargerTrouves(){
   }, fini);
 }
 
+// Le premier passage ne fait rien voir : il remplit `JP_REVELE` avec tout ce
+// qui etait deja tombe AVANT qu'on arrive. Annoncer cela reviendrait a
+// saluer dix trouvailles a l'ouverture de la page.
+var JP_TROUVES_AMORCE = false;
+
 function jpNoterTrouves(lignes){
   var neuves = [];
+  var annulees = [];
   (lignes || []).forEach(function(x){
     var pos = Number(x && x.pos);
     if(!pos) return;
-    if(!JP_REVELE[pos]) neuves.push(pos);
+    var avant = JP_REVELE[pos];
+    if(!avant) neuves.push(pos);
+    // Une annulation ne cree pas de ligne : elle en modifie une. Sans cette
+    // comparaison, le seul geste de l'animateur qui RETIRE un point passait
+    // inapercu de ceux qui regardaient un autre photogramme.
+    else if(!avant.annule && !!x.annule) annulees.push(pos);
     JP_REVELE[pos] = {
       nom: x.nom ? formatContribNamePlain(x.nom) : '',
       titre: x.titre || '',
@@ -3376,7 +3719,10 @@ function jpNoterTrouves(lignes){
       annule: !!x.annule
     };
   });
-  jpRendreTrouves();
+  // C12 · Seule la ligne qui vient d'arriver glisse et s'eclaire : la liste
+  // entiere est refaite a chaque relecture, et les autres doivent etre
+  // redessinees a l'identique.
+  jpRendreTrouves(JP_TROUVES_AMORCE ? neuves : null);
   jpMajVignettesRevelees();
   jpMajScoreBandeau();
   var courant = JP_PHOTOS[JP_IDX];
@@ -3389,15 +3735,34 @@ function jpNoterTrouves(lignes){
   jpMajPlein();
   // Pour qui ne voit pas l'ecran : on annonce ce qui vient de tomber, sauf
   // ce que l'on vient de trouver soi-meme (deja annonce par le verdict).
+  // LE DERNIER ARRIVE, pour le bandeau fugitif. Les bandeaux se remplacent :
+  // trois trouvailles coup sur coup ne doivent pas faire trois lignes
+  // empilees par-dessus l'image, c'est la derniere qui compte.
+  var aAnnoncer = null;
   neuves.forEach(function(pos){
     var ph = jpPhotoPosition(pos);
     var r = JP_REVELE[pos];
+    // C13 · LA VIGNETTE QUI VIENT DE TOMBER. On voyait qu'un photogramme
+    // etait tombe, jamais LEQUEL venait de tomber.
+    if(JP_TROUVES_AMORCE && ph){
+      var vig = document.querySelector('.jp-vignette[data-ph="' + ph.id + '"]');
+      if(vig) jpRejouer(vig, 'jp-vignette-chute');
+    }
     if(r.annule){ jpAnnoncer(t('jp_annonce_annule', pos)); return; }
     if(ph && jpTrouveParMoi(ph)) return;
     var ti = jpTitre(r.titre, r.titre_en);
     jpAnnoncer(ti ? t('jp_journal_ligne_titre', [r.nom, pos, ti])
                   : t('jp_journal_ligne', [r.nom, pos]));
+    // Ma propre trouvaille est deja dite par le verdict et par la bande sous
+    // l'image : ce bandeau-ci ne sert qu'a apprendre ce que font LES AUTRES.
+    if(JP_TROUVES_AMORCE) aAnnoncer = { nom: r.nom, pos: pos };
   });
+  if(aAnnoncer) jpFlash(t('jp_flash_trouve', [aAnnoncer.nom, aAnnoncer.pos]), null);
+  else if(JP_TROUVES_AMORCE && annulees.length){
+    jpFlash(t('jp_flash_annule', annulees[annulees.length - 1]), 'annule');
+  }
+  // A partir d'ici, tout ce qui arrive est un evenement de la partie.
+  JP_TROUVES_AMORCE = true;
   // Tout est-il tombe ? C'est le seul endroit qui le sache a coup sur : il
   // est appele par le direct ET par le filet de securite des quinze
   // secondes, donc meme un evenement perdu n'empeche pas la bascule.
@@ -3523,10 +3888,16 @@ function jpEnJeu(){
 
 // Le panneau de droite : les films trouves, dans l'ordre des photogrammes
 // (et non dans l'ordre des decouvertes), avec le titre ATTENDU.
-function jpRendreTrouves(){
+// `neuves` : les positions qui viennent d'arriver, et elles seules, prennent
+// l'entree glissee. Le parametre est facultatif — un appel sans lui (un
+// changement de langue, une relecture de filet) redessine la liste sans rien
+// animer, ce qui est exactement ce qu'il faut.
+function jpRendreTrouves(neuves){
   var ul = jpEl('jp-journal');
   var vide = jpEl('jp-journal-vide');
   if(!ul) return;
+  var estNeuve = {};
+  (neuves || []).forEach(function(pos){ estNeuve[pos] = 1; });
   jpVider(ul);
   var n = 0;
   JP_PHOTOS.forEach(function(p){
@@ -3536,7 +3907,8 @@ function jpRendreTrouves(){
     var li = document.createElement('li');
     li.className = 'jp-journal-ligne'
                  + (jpTrouveParMoi(p) && !r.annule ? ' jp-journal-moi' : '')
-                 + (r.annule ? ' jp-journal-annule' : '');
+                 + (r.annule ? ' jp-journal-annule' : '')
+                 + (estNeuve[p.position] ? ' jp-journal-neuf' : '');
     // La pastille porte le numero pour l'oeil ; elle ne dit rien a un lecteur
     // d'ecran, qui recevrait « 3 » sans savoir de quoi il s'agit. On la lui
     // cache, et on lui donne la phrase entiere dans un texte invisible.
@@ -3600,12 +3972,23 @@ function jpRendrePresents(){
   }
   gens.forEach(function(g){
     var s = document.createElement('span');
-    s.className = 'jp-present';
+    // C15 · Meme precaution que partout ailleurs : cette liste est refaite a
+    // chaque evenement de presence — et il en arrive a chaque onglet ouvert
+    // ou ferme —, donc seul celui qu'on n'avait pas encore vu s'annonce.
+    // Sans ce registre, toute la table clignotait chaque fois que quelqu'un
+    // rafraichissait sa page.
+    var cle = String(g.id);
+    var neuf = !JP_PRESENTS_VUS[cle];
+    JP_PRESENTS_VUS[cle] = 1;
+    s.className = 'jp-present' + (neuf ? ' jp-present-neuf' : '');
     s.appendChild(jpPastille({ display_name: g.nom, avatar_url: g.avatar }));
     s.appendChild(document.createTextNode(g.nom || '?'));
     zone.appendChild(s);
   });
 }
+
+// Qui a deja ete vu a la table. Remis a zero en quittant la partie.
+var JP_PRESENTS_VUS = {};
 
 function jpSurScore(ligne, type){
   if(!ligne || !ligne.contributor_id) return;
@@ -3672,17 +4055,43 @@ function jpSurReponse(ligne, type){
   }
 }
 
+// Les indices CONNUS, qui ne sont pas les indices VUS : un indice peut
+// exister sur un photogramme qu'on ne regarde pas. C'est ce registre-ci qui
+// permet d'annoncer son arrivee a toute la table, et le premier passage
+// n'annonce rien — arriver dans une partie qui a deja trois indices n'est
+// pas un evenement.
+var JP_INDICES_CONNUS = {};
+var JP_INDICES_AMORCE = false;
+
 function jpRafraichirIndices(){
   if(!JP_PARTIE) return;
   JP_SB.rpc('jeu_indices', { p_session_id: JP_PARTIE.id }).then(function(r){
     if(!r || r.error) return;
     JP_INDICES = {};
+    var neufs = [];
     (r.data || []).forEach(function(i){
       var k = String(i.photogramme_id);
       (JP_INDICES[k] = JP_INDICES[k] || []).push(i);
+      var cle = jpCleIndice(i);
+      if(cle && !JP_INDICES_CONNUS[cle]){
+        JP_INDICES_CONNUS[cle] = 1;
+        if(JP_INDICES_AMORCE) neufs.push(i);
+      }
     });
+    JP_INDICES_AMORCE = true;
     var p = JP_PHOTOS[JP_IDX];
     if(p) jpRendreIndices(p);
+    // C11 · Un indice vaut la moitie des points du photogramme : il doit se
+    // voir, y compris par qui regarde ailleurs. On annonce le dernier arrive
+    // — les bandeaux se remplacent, ils ne s'empilent pas.
+    if(neufs.length){
+      var dernier = neufs[neufs.length - 1];
+      var ph = null;
+      for(var j = 0; j < JP_PHOTOS.length; j++){
+        if(String(JP_PHOTOS[j].id) === String(dernier.photogramme_id)){ ph = JP_PHOTOS[j]; break; }
+      }
+      if(ph) jpFlash(t('jp_flash_indice', ph.position), 'indice');
+    }
   }, function(){});
 }
 
@@ -3814,9 +4223,44 @@ function jpClassementRedondant(lot){
   return true;
 }
 
+// ── C10 · LE CLASSEMENT QUI BOUGE ──────────────────────────────────────────
+//
+// `.jp-rang` portait bien une transition sur `transform`, et cette fonction
+// reconstruit la liste de zero a chaque evenement de score. Or une transition
+// ne s'applique PAS a un element qui vient de naitre : autrement dit,
+// personne n'avait jamais vu personne changer de place. Le classement
+// sautait, et le seul signal qui restait etait l'eclair de `jp-rang-neuf`.
+//
+// La parade est un « FLIP » : on releve la position de chaque ligne AVANT de
+// reconstruire la liste (First), on reconstruit (Last), on repose chaque
+// ligne a son ancienne place par une translation (Invert), et on la relache a
+// la frame suivante (Play). Le navigateur fait le reste sur la carte
+// graphique : `transform` seulement, aucune ligne de la page recalculee.
+//
+// Les positions sont lues en une seule passe, avant la moindre ecriture :
+// c'est ce qui evite de faire recalculer la mise en page vingt fois de suite.
+//
+// La translation est la SEULE valeur posee en ligne dans tout ce fichier.
+// Elle ne peut pas etre une classe — il n'en existe pas pour « 37 pixels
+// vers le haut » —, et elle est effacee des que le mouvement est fini.
+var JP_RANGS_PRECEDENTS = {};
+
 function jpRendreClassement(cible, idAnime){
   var ol = jpEl(cible);
   if(!ol) return;
+
+  // Le classement final, lui, est dessine une fois : il n'a aucune ancienne
+  // place a quitter, et rien ne bouge apres la fin de la partie.
+  var vif = (cible === 'jp-rangs');
+  var avant = {};
+  if(vif){
+    var vieilles = ol.children;
+    for(var q = 0; q < vieilles.length; q++){
+      var quiQ = vieilles[q].getAttribute && vieilles[q].getAttribute('data-qui');
+      if(quiQ) avant[quiQ] = vieilles[q].offsetTop;
+    }
+  }
+
   var lot = jpTrier();
   jpVider(ol);
   if(!lot.length){
@@ -3843,6 +4287,9 @@ function jpRendreClassement(cible, idAnime){
     var g = JP_GENS[String(s.contributor_id)] || {};
     var li = document.createElement('li');
     li.className = 'jp-rang jp-rang-' + rangs[i];
+    // C'est par cet attribut qu'on retrouve, d'un rendu a l'autre, la ligne
+    // d'un meme joueur — et donc la place qu'elle vient de quitter.
+    li.setAttribute('data-qui', String(s.contributor_id));
     if(JP_MOI && String(s.contributor_id) === String(JP_MOI.id)) li.classList.add('jp-rang-moi');
     if(idAnime && String(s.contributor_id) === idAnime) li.classList.add('jp-rang-neuf');
 
@@ -3873,6 +4320,27 @@ function jpRendreClassement(cible, idAnime){
       ex.textContent = t('jp_ex_aequo');
       nom.appendChild(ex);
     }
+    // CELUI QUI VIENT DE GAGNER UNE PLACE. Le mouvement dit qu'une ligne a
+    // bouge ; ce signe-ci dit dans quel sens, et il reste le temps qu'on
+    // revienne au classement. Dans la case du nom, qui est en « flex » et
+    // accueille deja la mention « ex aequo » : la grille de la ligne garde
+    // ses quatre colonnes, rien ne se deforme.
+    //
+    // Le dessin est masque aux lecteurs d'ecran et double d'un texte : un
+    // « aria-label » sur un <span> sans role n'est pas permis, et un
+    // triangle lu tel quel n'apprend rien a personne.
+    var ancienRang = vif ? JP_RANGS_PRECEDENTS[String(s.contributor_id)] : undefined;
+    if(ancienRang !== undefined && rangs[i] < ancienRang){
+      var fleche = document.createElement('span');
+      fleche.className = 'jp-rang-monte';
+      fleche.setAttribute('aria-hidden', 'true');
+      fleche.textContent = '▲';
+      nom.appendChild(fleche);
+      var luMonte = document.createElement('span');
+      luMonte.className = 'jp-lu-seulement';
+      luMonte.textContent = t('jp_rang_monte');
+      nom.appendChild(luMonte);
+    }
     li.appendChild(nom);
 
     var pts = document.createElement('span');
@@ -3892,6 +4360,42 @@ function jpRendreClassement(cible, idAnime){
 
     ol.appendChild(li);
   });
+
+  if(!vif) return;
+
+  // ── « INVERT » PUIS « PLAY » ─────────────────────────────────────────────
+  // Chaque ligne qui a change de hauteur est reposee a son ancienne place,
+  // transition coupee, puis relachee a la frame suivante. Le relacher dans le
+  // meme battement ne produirait aucun mouvement : le navigateur n'aurait
+  // jamais vu la ligne ailleurs.
+  var aBouger = [];
+  var neuves2 = ol.children;
+  for(var w = 0; w < neuves2.length; w++){
+    var quiW = neuves2[w].getAttribute('data-qui');
+    if(!quiW || avant[quiW] === undefined) continue;
+    var ecart = avant[quiW] - neuves2[w].offsetTop;
+    // Un pixel d'ecart n'est pas un changement de place : c'est un arrondi.
+    if(ecart > 1 || ecart < -1){
+      neuves2[w].classList.add('jp-rang-pose');
+      neuves2[w].style.transform = 'translateY(' + ecart + 'px)';
+      aBouger.push(neuves2[w]);
+    }
+  }
+  if(aBouger.length){
+    requestAnimationFrame(function(){
+      aBouger.forEach(function(el){
+        el.classList.remove('jp-rang-pose');
+        el.classList.add('jp-rang-bouge');
+        el.style.transform = '';
+      });
+    });
+  }
+
+  // La memoire des places, pour le ▲ du prochain rendu. Elle est refaite
+  // entierement : un joueur qui disparait du classement ne doit pas laisser
+  // une ancienne place derriere lui.
+  JP_RANGS_PRECEDENTS = {};
+  lot.forEach(function(s, i){ JP_RANGS_PRECEDENTS[String(s.contributor_id)] = rangs[i]; });
 }
 
 
@@ -4179,15 +4683,25 @@ function jpRendreResSous(){
 // langue ne pouvait donc rien réécrire, et la moitié de l'écran — « Une
 // partie de », « 3 trouvés sur 5 », « Trouvé par », « Vous : manqué » —
 // restait en français jusqu'au prochain rechargement complet de la page.
+// D16 et D17 · LA CEREMONIE N'A LIEU QU'UNE FOIS. Cette fonction est aussi
+// rappelee a chaque changement de langue : sans ce drapeau, passer en anglais
+// rejouerait le podium et rederoulerait les cent solutions.
+var JP_RES_ANIME = false;
+
 function jpRendreResultats(){
   jpRendreResSous();
   jpRendrePodium();
   jpRendreClassement('jp-res-rangs');
   jpRendreSolutions();
+  JP_RES_ANIME = true;
 }
 
 function jpMontrerResultats(jeton){
   jpAfficher('resultats');
+  // A4 · Le meme lever de rideau qu'au depart. La bascule etait un `display`
+  // sec : le plateau disparaissait, les resultats etaient la. Trois cent
+  // cinquante millisecondes, et la fin de partie devient un moment.
+  jpRejouer(jpEl('jp-vue-resultats'), 'jp-rideau');
   // La discussion descend avec nous : c'est souvent apres coup qu'on a le
   // plus a se dire, et jusqu'ici le panneau disparaissait avec la partie.
   jpChatVers('jp-res-chat');
@@ -4252,6 +4766,9 @@ function jpRendrePodium(){
   // tomber à la ligne toute seule.
   zone.classList.toggle('jp-podium-large', lot.length > 3);
   zone.style.setProperty('--jp-marches', String(lot.length));
+  // D16 · Les marches montent 3e, 2e, puis 1re — les retards sont portes par
+  // les classes de rang, qui existent deja : il n'y a rien a calculer ici.
+  zone.classList.toggle('jp-podium-anime', !JP_RES_ANIME);
   // Ordre d'affichage : 2, 1, 3 — le vainqueur au milieu, surélevé, comme
   // un vrai podium. À deux, on s'en tient à l'ordre naturel : le vainqueur
   // à droite d'un second surprendrait plus qu'autre chose. Dès qu'une place
@@ -4340,13 +4857,22 @@ function jpRendreSolutions(){
   var zone = jpEl('jp-solutions');
   if(!zone) return;
   jpVider(zone);
+  // D17 · La cascade, au premier rendu seulement (cf. JP_RES_ANIME).
+  zone.classList.toggle('jp-solutions-anime', !JP_RES_ANIME);
   var joueurs = JP_SCORES.length;
   var stats = JP_STATS;
+  var rang = 0;
   JP_SOLUTIONS.forEach(function(s){
     var k = String(s.photogramme_id);
     var titreAff = jpTitre(s.titre, s.titre_en);
     var d = document.createElement('div');
     d.className = 'jp-solution' + (s.annule ? ' jp-solution-annulee' : '');
+    // LE RETARD EST PLAFONNE A DOUZE CARTES. Une partie de cent
+    // photogrammes se devoilerait sinon pendant quatre secondes et demie, et
+    // la page paraitrait bloquee. Au-dela, tout le bas de la grille arrive
+    // ensemble — ce qui est de toute facon hors de l'ecran.
+    if(!JP_RES_ANIME) d.style.setProperty('--jp-i', String(Math.min(rang, 12)));
+    rang++;
 
     var img = document.createElement('img');
     img.className = 'jp-solution-img';

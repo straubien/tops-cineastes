@@ -642,6 +642,14 @@ var TC_TRANSLATIONS = {
     jp_connectez_vous_pour_jouer: "Connectez-vous pour jouer.",
     jp_a_trouve: function(nom){ return nom + " vient de trouver un photogramme."; },
     jp_reste: function(txt){ return "Il reste " + txt; },
+    // Le bandeau fugitif posé en haut de la scène : ce qui vient de se
+    // passer à la table, pour qui ne quitte pas son image des yeux. Les
+    // phrases y sont volontairement plus courtes que celles du journal —
+    // elles passent en deux secondes et demie, sur une seule ligne.
+    jp_flash_trouve: function(a){ return a[0] + " a trouvé le n° " + a[1]; },
+    jp_flash_indice: function(n){ return "Un indice pour le n° " + n; },
+    jp_flash_annule: function(n){ return "Le n° " + n + " est annulé"; },
+    jp_rang_monte: "en hausse",
     // Les panneaux de côté
     jp_classement: "Classement",
     jp_classement_vide: "Personne n'a encore marqué.",
@@ -1308,6 +1316,14 @@ var TC_TRANSLATIONS = {
     jp_connectez_vous_pour_jouer: "Log in to play.",
     jp_a_trouve: function(nom){ return nom + " has just got one."; },
     jp_reste: function(txt){ return txt + " left"; },
+    // The fleeting strip at the top of the stage: what has just happened at
+    // the table, for whoever never takes their eyes off their still. The
+    // wording is shorter than the log's on purpose — it goes by in two and
+    // a half seconds, on a single line.
+    jp_flash_trouve: function(a){ return a[0] + " found still " + a[1]; },
+    jp_flash_indice: function(n){ return "A hint for still " + n; },
+    jp_flash_annule: function(n){ return "Still " + n + " has been cancelled"; },
+    jp_rang_monte: "moving up",
     // The side panels
     jp_classement: "Leaderboard",
     jp_classement_vide: "Nobody has scored yet.",

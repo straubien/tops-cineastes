@@ -364,7 +364,12 @@
   background: var(--bg-subtle);
   border-left: 3px solid var(--ambre);
   padding: 10px 15px;
-  animation: jp-apparait 0.3s ease-out;
+  /* L'APPARITION A ETE RETIREE D'ICI, et confiee a « .jp-indice-neuf ».
+     jpRendreIndices() reconstruit la zone a CHAQUE changement de
+     photogramme : un indice vieux de dix minutes rejouait donc son entree
+     a chaque coup de fleche, et l'oeil croyait a un indice neuf. Desormais
+     seul l'indice reellement nouveau s'annonce (cf. la section des
+     animations, en fin de fichier). */
 }
 .jp-indice-puce { flex: 0 0 auto; font-size: 15px; }
 
@@ -1289,4 +1294,474 @@
   margin-top: 1.4rem;
   padding-top: 1.1rem;
   border-top: 1px solid var(--border);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LE RYTHME DE LA PARTIE
+   ════════════════════════════════════════════════════════════════════════
+   Tout ce qui suit sert une seule chose : qu'un joueur sache, sans avoir a
+   lire, ou en est la partie et ce qui vient de s'y passer.
+
+   Les deux regles de ce fichier tiennent, et c'est pourquoi cette section
+   est longue plutot que subtile :
+
+     * on n'anime que `opacity` et `transform`. Les trois exceptions sont
+       des teintes qui s'effacent sur UN element (une ligne de journal, un
+       indice, une vignette), sur le modele de `jp-eclair` qui le faisait
+       deja pour le classement. Aucune ne touche a la mise en page.
+     * les etats sont des classes. Une seule valeur est posee en ligne par
+       le JavaScript — la translation du classement qui se reordonne — parce
+       qu'elle est par definition propre a chaque ligne ; elle est effacee
+       des que le mouvement est fini.
+
+   Et une troisieme, ajoutee ici : UNE ANIMATION SE JOUE SUR UN EVENEMENT,
+   JAMAIS SUR UN RE-RENDU. Le journal, le classement, les indices et les
+   presents sont reconstruits de zero a chaque relecture — quinze secondes
+   au plus tard. Une animation « au rendu » rejouerait donc en boucle, et
+   l'oeil ne saurait plus ce qui est neuf. Chaque classe en « -neuf » n'est
+   posee que sur ce qui vient reellement d'arriver.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── A1 · LES DEUX FILETS DU BANDEAU ──────────────────────────────────────
+   Le bandeau est `position: sticky`, donc deja positionne : ses deux filets
+   s'y ancrent sans qu'il ait une ligne a changer, et sortis du flux ils ne
+   deplacent rien.
+
+   EN BAS, LA PROGRESSION — une encoche par photogramme. C'est le filet
+   principal, et le seul qui vaille dans une partie close a la main : sans
+   heure de fin, il n'y a aucune duree a diviser, mais il y a toujours des
+   photogrammes qui tombent, et la partie se clot d'elle-meme quand il n'en
+   reste plus. Il avance par sauts, et c'est sa vertu : chaque saut est un
+   evenement. */
+/* IL N'AJOUTE AUCUNE BARRE : IL HABITE CELLE QUI EXISTE DEJA. Le bandeau
+   porte un liseré rouge de 3 px ; pose par-dessus (`bottom: -3px`), le filet
+   s'en sert de piste. Ce qui reste a trouver est donc le rouge du bandeau,
+   tel quel, et ce qui est tombe s'y inscrit en creme. Une partie qui n'a
+   pas commence ressemble exactement a ce qu'elle etait avant — aucun bruit
+   graphique tant qu'il n'y a rien a dire.
+   (Empile AU-DESSUS du liseré, l'ensemble faisait deux barres rouges et
+   sombres l'une sur l'autre : illisible.) */
+.jp-filet-progres {
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 3px;
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+}
+/* Au-dela d'une quarantaine de photogrammes, l'ecart entre les encoches
+   mangerait les encoches. On les colle, et le filet redevient une barre
+   graduee — ce qui est exactement ce qu'il faut a cette densite. */
+.jp-filet-progres.jp-filet-serre { gap: 0; }
+.jp-segment {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--jp-sur-noir);
+  /* L'encoche eteinte est TRANSPARENTE : c'est le liseré rouge du bandeau
+     qu'on voit a travers. Une seule teinte a tenir dans les deux modes
+     d'affichage, et rien a dessiner tant que rien n'est tombe. */
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+.jp-segment-plein { opacity: 1; }
+/* L'encoche qui vient de s'allumer : elle se detend, une fois. C'est le
+   battement de la partie. */
+.jp-segment-neuf { animation: jp-segment-saut 0.36s ease-out; }
+@keyframes jp-segment-saut {
+  0%   { transform: scaleY(1);   }
+  40%  { transform: scaleY(2);   }
+  100% { transform: scaleY(1);   }
+}
+
+/* EN HAUT, LE TEMPS RESTANT — et seulement si une heure de fin a ete saisie.
+   `jpBoucleHorloge` le cache autrement : un filet de temps sans fin connue
+   ne pourrait que mentir. */
+.jp-filet-temps {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.jp-filet-temps[hidden] { display: none; }
+.jp-filet-temps-jauge {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--jp-sur-noir);
+  opacity: 0.5;
+  /* `scaleX` depuis la gauche : le filet se vide vers la droite sans qu'une
+     seule ligne de la page soit recalculee. Pas de transition — il est
+     repose quatre fois par seconde par le battement de l'horloge, et une
+     transition de 250 ms sur une valeur rafraichie toutes les 250 ms ne
+     ferait qu'ajouter du retard. */
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+.jp-filet-temps-tiede .jp-filet-temps-jauge { background: var(--ambre); opacity: 0.9; }
+.jp-filet-temps-chaud .jp-filet-temps-jauge { background: #ff8a73; opacity: 1; }
+
+/* ── A2 · LE CHRONO DANS LA DERNIERE MINUTE ───────────────────────────────
+   `.jp-chrono-urgent` ne changeait que la couleur. Il bat, desormais — mais
+   seulement quand il y a vraiment une fin : en cloture manuelle, le chrono
+   compte vers le haut et `jpBoucleHorloge` ne lui pose jamais cette classe.
+   Un compteur de temps ECOULE qui palpite serait un mensonge. */
+.jp-chrono { display: inline-block; transform-origin: left center; }
+.jp-chrono-urgent { animation: jp-chrono-bat 1s ease-in-out infinite; }
+@keyframes jp-chrono-bat {
+  0%, 100% { transform: scale(1);    }
+  18%      { transform: scale(1.05); }
+  36%      { transform: scale(1);    }
+}
+/* Les trois seuils — 60, 30 et 10 secondes — sont ceux que le jeu annonce
+   deja aux lecteurs d'ecran. Ils se voient maintenant aussi. */
+.jp-chrono-seuil { animation: jp-chrono-seuil 0.5s ease-out; }
+@keyframes jp-chrono-seuil {
+  0%   { transform: scale(1);    }
+  30%  { transform: scale(1.18); }
+  100% { transform: scale(1);    }
+}
+
+/* ── A3 · LE DECOMPTE D'AVANT-PARTIE ──────────────────────────────────────
+   96 px qui changeaient sans un frémissement. Un cran a chaque seconde, et
+   sous les dix dernieres, le nombre passe au rouge et bat plus fort. */
+.jp-avant-chrono { display: inline-block; transform-origin: center; }
+.jp-avant-bat { animation: jp-avant-bat 0.42s ease-out; }
+@keyframes jp-avant-bat {
+  0%   { transform: scale(1);    opacity: 0.72; }
+  28%  { transform: scale(1.03); opacity: 1;    }
+  100% { transform: scale(1);    opacity: 1;    }
+}
+.jp-avant-chrono-urgent { color: var(--rouge); }
+.jp-avant-chrono-urgent.jp-avant-bat { animation-name: jp-avant-bat-fort; }
+@keyframes jp-avant-bat-fort {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  24%  { transform: scale(1.09); opacity: 1;   }
+  100% { transform: scale(1);    opacity: 1;   }
+}
+
+/* ── A4 · LE LEVER DE RIDEAU ──────────────────────────────────────────────
+   Le passage du decompte au plateau, et celui du plateau aux resultats,
+   etaient deux `display` secs. Trois cent cinquante millisecondes, et le
+   depart se voit. */
+.jp-rideau { animation: jp-rideau 0.35s ease-out; }
+@keyframes jp-rideau {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── B5 · LE VERDICT EN PASTILLE ──────────────────────────────────────────
+   Du texte colore sur fond de page se lisait mal, surtout en 15 px sur
+   telephone. La meme forme que `.jp-alerte` — un filet a gauche, un fond
+   en retrait —, et la couleur du verdict prise telle quelle par
+   `currentColor` : quatre etats, une seule regle, aucune teinte nouvelle a
+   tenir dans les deux modes d'affichage.
+
+   HAUTEUR FIXE, et c'est tout l'interet de styler le texte plutot que sa
+   ligne : 26 px dans une ligne qui en reserve 30, donc jamais un pixel de
+   decalage pour la pellicule en dessous. */
+.jp-verdict-ok      #jp-verdict-txt,
+.jp-verdict-attente #jp-verdict-txt,
+.jp-verdict-non     #jp-verdict-txt,
+.jp-verdict-tombe   #jp-verdict-txt {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 11px;
+  background: var(--bg-subtle);
+  border-left: 3px solid currentColor;
+}
+
+/* ── B6 · LA SECOUSSE DU CADRE DE SAISIE ──────────────────────────────────
+   Les essais sont le plus souvent illimites : une mauvaise reponse ne coute
+   rien d'autre que du temps, et le seul signal utile est « non, recommence ».
+   Il est donc pose la ou se trouve la main — sur le cadre, pas sur le texte.
+   Cent quatre-vingts millisecondes, deux allers-retours de 4 px : on le sent
+   plus qu'on ne le voit. */
+.jp-saisie-secoue { animation: jp-secousse 0.18s ease-in-out; }
+@keyframes jp-secousse {
+  0%, 100% { transform: translateX(0);    }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px);  }
+}
+
+/* ── B7 · LE MOMENT DE LA TROUVAILLE ──────────────────────────────────────
+   Le temps fort du jeu, et il etait muet. La bande du titre monte du bas de
+   l'image au lieu d'y apparaitre, et la scene prend un lisere vert, bref.
+   La scene est en `overflow: hidden` : la bande part donc de sous le cadre,
+   sans jamais depasser. */
+.jp-trouve-entre { animation: jp-bande-monte 0.28s ease-out; }
+@keyframes jp-bande-monte {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+/* Le lisere : un calque par-dessus l'image, inerte et transparent au repos.
+   `pointer-events: none` pour qu'il ne prenne jamais un clic destine a la
+   loupe ou aux fleches. */
+.jp-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: inset 0 0 0 3px var(--vert);
+}
+.jp-scene-eclat::after { animation: jp-scene-eclat 0.62s ease-out; }
+@keyframes jp-scene-eclat {
+  0%   { opacity: 0; }
+  16%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── B8 · LE CHANGE DE PHOTOGRAMME ────────────────────────────────────────
+   FONDU ENTRANT SEULEMENT. Un fondu croise classique assombrit l'image un
+   instant : dans une course ou la vitesse se paie, ce serait un handicap.
+   L'image neuve monte donc de 55 % a 100 % en 140 ms — elle n'est jamais
+   moins lisible que cela, et le premier affichage de la partie n'est pas
+   anime du tout (cf. JP_PREMIERE_IMAGE dans le JavaScript).
+
+   Une image cle et non une transition : le JavaScript ne fait que poser une
+   classe, il ne pose aucune valeur en ligne, et le bloc « mouvement reduit »
+   la retire d'un mot. */
+.jp-image-entre { animation: jp-image-entre 0.14s linear; }
+@keyframes jp-image-entre {
+  from { opacity: 0.55; }
+  to   { opacity: 1;    }
+}
+/* Le numero de la scene suit la fleche d'un cran. */
+.jp-scene-num-tourne { animation: jp-num-tourne 0.26s ease-out; }
+@keyframes jp-num-tourne {
+  0%   { opacity: 0; transform: translateY(-5px); }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── B9 · LES ESSAIS RESTANTS, EN PASTILLES ───────────────────────────────
+   Suggestion volontairement discrete : les essais sont le plus souvent
+   illimites, et la base ne renvoie alors aucun nombre — la case reste vide,
+   comme avant. Quand le createur a VRAIMENT limite les essais, le chiffre en
+   14 px a 0,75 d'opacite portait pourtant l'information la plus importante
+   de l'ecran. Des pastilles qui s'eteignent une a une se lisent sans etre
+   lues, et elles ne prennent pas plus de place. */
+.jp-pastilles-essais { display: inline-flex; align-items: center; gap: 4px; }
+.jp-pastille-essai {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+.jp-pastille-essai-vide { background: none; box-shadow: inset 0 0 0 1px var(--border); opacity: 1; }
+.jp-essais-bas    .jp-pastille-essai { background: var(--ambre); }
+.jp-essais-dernier .jp-pastille-essai { background: var(--rouge); }
+/* La pastille qui vient de s'eteindre le dit une fois. */
+.jp-essais-brule { animation: jp-essais-brule 0.4s ease-out; }
+@keyframes jp-essais-brule {
+  0%   { transform: scale(1);    }
+  35%  { transform: scale(1.35); }
+  100% { transform: scale(1);    }
+}
+
+/* ── C10 · LE CLASSEMENT QUI BOUGE ────────────────────────────────────────
+   `.jp-rang` portait bien une transition sur `transform` — mais la liste est
+   reconstruite de zero a chaque evenement de score, et une transition ne
+   s'applique pas a un element qui vient de naitre. Autrement dit : personne
+   n'avait jamais vu personne changer de place.
+
+   Le JavaScript releve donc la position de chaque ligne AVANT de reconstruire
+   la liste, puis repose la ligne a son ancienne place et la relache a la
+   frame suivante — un « FLIP ». La translation est posee en ligne parce
+   qu'elle est propre a chaque joueur ; elle est effacee des que le mouvement
+   est fini. `transform` seulement : aucune ligne de la page n'est recalculee. */
+.jp-rang-pose  { transition: none; }
+.jp-rang-bouge { transition: transform 0.34s cubic-bezier(0.22, 0.68, 0.3, 1); }
+/* Celui qui vient de gagner une place. Dans la case du nom, qui est en
+   « flex » et accueille deja la mention « ex aequo » : la grille de la ligne
+   garde ses quatre colonnes, rien ne se deforme. */
+.jp-rang-monte {
+  flex: 0 0 auto;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--rouge-texte);
+  animation: jp-rang-monte 2.6s ease-out forwards;
+}
+@keyframes jp-rang-monte {
+  0%, 58% { opacity: 1; transform: translateY(0);    }
+  100%    { opacity: 0; transform: translateY(-3px); }
+}
+
+/* ── C11 · LE BANDEAU FUGITIF ─────────────────────────────────────────────
+   En haut de la scene, deux secondes et demie, une seule ligne. C'etait le
+   plus gros manque de lisibilite du jeu : un joueur qui fixait son image
+   n'apprenait rien de ce qui se passait a la table.
+
+   Reserve de 58 px a gauche : le numero rouge de la scene occupe ce coin. */
+.jp-flash {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  /* 58 px des DEUX cotes : le numero rouge de la scene occupe le coin
+     gauche, et une reserve d'un seul cote ferait pencher le bandeau a
+     droite au lieu de le centrer sur l'image. */
+  padding: 9px 58px;
+  pointer-events: none;
+}
+.jp-flash[hidden] { display: none; }
+.jp-flash-texte {
+  max-width: 100%;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f7f3ec;
+  background: rgba(10, 8, 6, 0.82);
+  border-left: 3px solid var(--rouge);
+  padding: 7px 14px;
+  /* Un nom long ne pousse pas le bandeau hors de l'image. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jp-flash-indice .jp-flash-texte { border-left-color: var(--ambre); }
+.jp-flash-annule .jp-flash-texte { border-left-color: var(--brun-pale); }
+.jp-flash-passe .jp-flash-texte { animation: jp-flash 2.6s ease-out; }
+@keyframes jp-flash {
+  0%   { opacity: 0; transform: translateY(-10px); }
+  7%   { opacity: 1; transform: translateY(0);     }
+  84%  { opacity: 1; transform: translateY(0);     }
+  100% { opacity: 0; transform: translateY(-6px);  }
+}
+
+/* ── C12 · LA LIGNE NEUVE DU JOURNAL ──────────────────────────────────────
+   Seule la ligne qui vient d'arriver glisse et s'eclaire. Les autres sont
+   reconstruites a l'identique, et doivent le rester. */
+.jp-journal-neuf { animation: jp-journal-neuf 0.95s ease-out; }
+@keyframes jp-journal-neuf {
+  0%   { opacity: 0; transform: translateY(-6px); background: var(--rouge-glow); }
+  32%  { opacity: 1; transform: translateY(0);                                   }
+  100% { background: transparent;                                                }
+}
+
+/* ── C13 · LA VIGNETTE QUI TOMBE ──────────────────────────────────────────
+   `.jp-vignette-tombe` posait son opacite et ses hachures d'un coup : on
+   voyait qu'un photogramme etait tombe, jamais LEQUEL venait de tomber.
+   (La transition d'opacite, elle, existait deja sur `.jp-vignette`.) */
+.jp-vignette-chute { animation: jp-vignette-chute 0.7s ease-out; }
+@keyframes jp-vignette-chute {
+  0%   { border-color: var(--ambre);  transform: scale(1);    }
+  32%  { border-color: var(--ambre);  transform: scale(0.93); }
+  100% { border-color: transparent;   transform: scale(1);    }
+}
+
+/* ── C14 · L'INDICE VRAIMENT NOUVEAU ──────────────────────────────────────
+   Un indice divise les points par deux : il doit se voir. L'apparition a ete
+   retiree de `.jp-indice` (cf. plus haut) pour qu'elle ne rejoue plus a
+   chaque coup de fleche, et le halo ambre ne se pose que sur celui qui vient
+   d'arriver. */
+.jp-indice-neuf { animation: jp-indice-neuf 2.2s ease-out; }
+@keyframes jp-indice-neuf {
+  0%   { opacity: 0; transform: translateY(-5px); box-shadow: 0 0 0 0 rgba(190, 140, 50, 0);    }
+  13%  { opacity: 1; transform: translateY(0);    box-shadow: 0 0 0 4px rgba(190, 140, 50, 0.4); }
+  100% {                                          box-shadow: 0 0 0 4px rgba(190, 140, 50, 0);  }
+}
+
+/* ── C15 · UN ARRIVANT A LA TABLE ─────────────────────────────────────────
+   Meme precaution : la liste des presents est refaite a chaque evenement de
+   presence, et seul celui qu'on n'avait pas encore vu s'annonce. On reprend
+   l'apparition deja definie plus haut dans le fichier. */
+.jp-present-neuf { animation: jp-apparait 0.3s ease-out; }
+
+/* ── D16 · LE PODIUM EN TROIS TEMPS ───────────────────────────────────────
+   3e, 2e, puis 1re : la fin de partie a une chute. Les marches sont deja
+   portees par leur classe de rang, il n'y a donc rien a calculer — et la
+   classe `jp-podium-anime` n'est posee qu'au PREMIER rendu, pour qu'un
+   simple changement de langue ne rejoue pas la ceremonie. */
+.jp-podium-anime .jp-marche   { animation: jp-marche-monte 0.44s ease-out backwards; }
+.jp-podium-anime .jp-marche-3 { animation-delay: 0s;    }
+.jp-podium-anime .jp-marche-2 { animation-delay: 0.11s; }
+.jp-podium-anime .jp-marche-1 { animation-delay: 0.22s; }
+@keyframes jp-marche-monte {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── D17 · LES SOLUTIONS EN CASCADE ───────────────────────────────────────
+   Quarante-cinq millisecondes par carte, plafonnees par le JavaScript : une
+   partie de cent photogrammes ne doit pas se devoiler pendant cinq secondes. */
+.jp-solutions-anime .jp-solution {
+  animation: jp-solution-entre 0.42s ease-out backwards;
+  animation-delay: calc(var(--jp-i, 0) * 45ms);
+}
+@keyframes jp-solution-entre {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Sur telephone ────────────────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  /* La ligne de verdict n'y reserve que 24 px : la pastille s'y adapte
+     plutot que de la faire grandir — et le decalage reste a zero. */
+  .jp-verdict-ok      #jp-verdict-txt,
+  .jp-verdict-attente #jp-verdict-txt,
+  .jp-verdict-non     #jp-verdict-txt,
+  .jp-verdict-tombe   #jp-verdict-txt { min-height: 22px; padding: 0 9px; }
+  /* Les fleches de la scene y sont toujours visibles (opacite 1) et le
+     bandeau fugitif ne doit pas leur passer dessus. */
+  .jp-flash { padding: 7px 52px; }
+  .jp-flash-texte { font-size: 11px; letter-spacing: 0.08em; padding: 5px 10px; }
+}
+
+/* ── Mouvement reduit ─────────────────────────────────────────────────────
+   On garde TOUTE l'information — les filets, les pastilles, les pastilles
+   d'essai, le bandeau fugitif et son texte, les teintes — et l'on retire le
+   seul mouvement. Le bandeau fugitif, lui, ne peut pas se passer d'une duree
+   de vie : son animation est conservee, reduite a une apparition et une
+   disparition nettes, sans translation. */
+@media (prefers-reduced-motion: reduce) {
+  .jp-segment-neuf,
+  .jp-chrono-urgent,
+  .jp-chrono-seuil,
+  .jp-avant-bat,
+  /* Les dix dernieres secondes du decompte sont decrites par une regle a
+     DEUX classes : sans la reprendre telle quelle ici, elle l'emporterait
+     en specificite et le gros chiffre continuerait de battre. */
+  .jp-avant-chrono-urgent.jp-avant-bat,
+  .jp-rideau,
+  .jp-saisie-secoue,
+  .jp-trouve-entre,
+  .jp-scene-eclat::after,
+  .jp-image-entre,
+  .jp-scene-num-tourne,
+  .jp-essais-brule,
+  .jp-rang-monte,
+  .jp-journal-neuf,
+  .jp-vignette-chute,
+  .jp-indice-neuf,
+  .jp-present-neuf,
+  .jp-podium-anime .jp-marche,
+  .jp-solutions-anime .jp-solution { animation: none; }
+
+  .jp-segment,
+  .jp-rang-bouge { transition: none; }
+
+  /* Le ▲ du classement n'a plus d'animation pour l'effacer : il reste donc
+     a l'ecran jusqu'au prochain rendu, ce qui est le comportement voulu. */
+  .jp-rang-monte { opacity: 1; }
+
+  .jp-flash-passe .jp-flash-texte { animation: jp-flash-net 2.6s steps(1, end); }
+  @keyframes jp-flash-net {
+    0%, 96% { opacity: 1; }
+    100%    { opacity: 0; }
+  }
+}
+
+/* ── Impression ───────────────────────────────────────────────────────────── */
+@media print {
+  .jp-flash, .jp-filet-temps, .jp-filet-progres { display: none !important; }
+  .jp-podium-anime .jp-marche,
+  .jp-solutions-anime .jp-solution { animation: none; }
 }

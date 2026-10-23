@@ -267,6 +267,24 @@
 
     <div id="jp-pendant" style="display:none">
       <div class="jp-bandeau">
+        <!-- LES DEUX FILETS DU BANDEAU. Deux metiers, deux bords, aucune
+             confusion possible.
+
+             EN HAUT, le temps restant — et seulement si une heure de fin a
+             ete saisie. Dans une partie close a la main, il n'y a aucune
+             duree totale connue : rien a diviser, donc rien a montrer, et
+             ce filet-la reste cache.
+
+             EN BAS, la progression de la partie : une encoche par
+             photogramme, qui s'allume quand il tombe. C'est le seul rythme
+             dont on dispose a coup sur, puisque la partie se clot d'elle-meme
+             quand tout est tombe. Il avance par sauts, et c'est sa vertu :
+             chaque saut est un evenement.
+
+             Les deux sont `aria-hidden` : le chrono et le compteur
+             « Trouves », juste a cote, disent la meme chose en clair. -->
+        <div class="jp-filet-temps" id="jp-filet-temps" hidden aria-hidden="true"><span class="jp-filet-temps-jauge" id="jp-filet-temps-jauge"></span></div>
+        <div class="jp-filet-progres" id="jp-filet-progres" aria-hidden="true"></div>
         <div class="jp-bandeau-bloc">
           <span class="jp-bandeau-etiq" id="jp-restant-etiq" data-i18n="jp_restant">Restant</span>
           <span class="jp-chrono" id="jp-chrono">—</span>
@@ -296,6 +314,17 @@
             <!-- La bande du film trouvé (point 1) : titre attendu + nom de
                  celui qui l'a donné, posée au bas de l'image. -->
             <div class="jp-trouve" id="jp-trouve" hidden></div>
+            <!-- LE BANDEAU FUGITIF. Un joueur qui fixe son image n'apprenait
+                 qu'un autre avait trouve qu'en allant lire la colonne de
+                 droite, ou en naviguant jusqu'au photogramme concerne. Une
+                 seule ligne, deux secondes et demie, en haut de la scene :
+                 elle dit ce qui vient de se passer a la table. Les annonces
+                 se remplacent, elles ne s'empilent pas.
+
+                 `aria-hidden` : tout ce qui passe ici est deja annonce dans
+                 la zone « jp-annonce » par jpAnnoncer(), et le dire deux fois
+                 ferait begayer les lecteurs d'ecran. -->
+            <div class="jp-flash" id="jp-flash" hidden aria-hidden="true"></div>
             <button class="jp-scene-loupe" id="jp-loupe" type="button" data-i18n-aria="jp_agrandir" aria-label="Agrandir le photogramme" data-i18n-title="jp_agrandir" title="Agrandir le photogramme">&#9974;</button>
           </div>
 
