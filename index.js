@@ -498,8 +498,64 @@ setInterval(function(){
   var page=document.getElementById('page-index');
   if(!page||!page.classList.contains('visible'))return;
   tcRenderIndexPresence();
+  tcRenderJeuBandeau();
   if(CONTRIB_DATA.length&&Date.now()-tcLastSeenReloadAt>TC_LAST_SEEN_RELOAD_MS)tcReloadLastSeen();
 },TC_PRESENCE_TICK_MS);
+
+// ── BANDEAU « UNE PARTIE EST À VENIR » (JEU DU PHOTOGRAMME) ─────
+// Une partie programmée mais pas encore commencée ne se voyait nulle part
+// depuis l'Index : seule l'icône « clap de cinéma » de la barre de navigation
+// menait au jeu, sans rien annoncer. On lit donc la prochaine partie publiée
+// — une requête, quatre colonnes, au chargement de la page — et on l'annonce
+// en haut de l'Index.
+//
+// Lecture VOLONTAIREMENT isolée du chargement des données, comme celle du
+// lien Facebook d'une fiche : si la table du jeu est inaccessible, le bandeau
+// reste simplement caché et l'Index est exactement celui d'avant.
+var TC_JEU_A_VENIR=null;
+
+// Le clap de la barre de navigation, repris à l'identique : le bandeau doit
+// montrer le pictogramme sur lequel il demande de cliquer.
+function tcClapIconSvg(){
+  return '<svg class="jeu-bandeau-clap" width="22" height="22" viewBox="0 0 18 18" fill="currentColor" fill-rule="evenodd" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">'
+    +'<path d="M1.3 4.6 16.3 2.3 16.7 6.4 1.7 8.7Z M5.6 4.0 3.5 7.6 5.9 7.25 8.0 3.65Z M11.3 3.1 9.2 6.7 11.6 6.35 13.7 2.75Z"/>'
+    +'<path d="M1.7 9.4h15v6h-15z"/></svg>';
+}
+
+function tcRenderJeuBandeau(){
+  var box=document.getElementById('index-jeu-bandeau');
+  if(!box)return;
+  // La partie a pu commencer depuis la lecture : le bandeau s'efface alors de
+  // lui-même au tick suivant, sans nouvelle requête.
+  if(TC_JEU_A_VENIR&&Date.parse(TC_JEU_A_VENIR.debut_at)<=Date.now())TC_JEU_A_VENIR=null;
+  if(!TC_JEU_A_VENIR){box.style.display='none';box.innerHTML='';return;}
+  var p=TC_JEU_A_VENIR;
+  box.innerHTML='<span class="jeu-bandeau-icone">'+tcClapIconSvg()+'</span>'
+    +'<span class="jeu-bandeau-texte">'
+      +'<span class="jeu-bandeau-titre">'+escapeHtml(t('jeu_bandeau_titre'))+'</span>'
+      +'<span class="jeu-bandeau-detail">'+escapeHtml(t('jeu_bandeau_detail',[p.titre||'',tcDateHeure(p.debut_at)]))+'</span>'
+      +'<span class="jeu-bandeau-appel">'+escapeHtml(t('jeu_bandeau_appel'))+'</span>'
+    +'</span>';
+  box.style.display='';
+}
+
+// `annulee` peut valoir false ou null selon les parties : on écarte donc les
+// parties annulées par « not.is.true » plutôt que par une égalité à false,
+// qui laisserait de côté celles dont la colonne est vide.
+function tcChargerJeuAVenir(){
+  if(typeof TC_SB==='undefined'||!TC_SB)return;
+  Promise.resolve(
+    TC_SB.from('jeu_sessions').select('id,code,titre,debut_at')
+      .eq('publiee',true).not('annulee','is',true)
+      .gt('debut_at',new Date().toISOString())
+      .order('debut_at',{ascending:true}).limit(1)
+  ).then(function(res){
+    if(!res||res.error||!res.data||!res.data.length)return;
+    TC_JEU_A_VENIR=res.data[0];
+    tcRenderJeuBandeau();
+  }).catch(function(){ /* sans bandeau, l'Index reste celui d'avant */ });
+}
+tcChargerJeuAVenir();
 
 function loadAllCineastes(offset,pageSize){
   return tcLoadAllCineastes(TC_SB,offset,pageSize);
@@ -1987,6 +2043,11 @@ function tcRemplirBlocsContributeurs(c,contribsDiv){
     }
     var ownerId=tcContribIdByName(t);
     if(ownerId&&hasFilms){
+      // Pictogramme « commentaires » juste après le nombre de films : la fiche
+      // dit désormais OÙ un message a été posté, sans avoir à déplier le top.
+      tcPoserIndicCm(nameEl,tcNbCommentaires(ownerId,c.nom));
+      block.setAttribute('data-cm-owner',String(ownerId));
+      block.setAttribute('data-cm-uid',blockId+'-cm');
       var cmWrap=document.createElement('div');
       cmWrap.className='tc-comments-wrap';
       cmWrap.innerHTML=tcCommentsToggleHtml(blockId+'-cm',ownerId,c.nom);
@@ -2059,6 +2120,9 @@ function openFiche(c){
   var inner=document.getElementById('contribs-inner');
   if(nb>0){
     inner.appendChild(contribsDiv);
+    // Combien de commentaires sous chacun de ces tops ? Les deux pictogrammes
+    // se posent dès que la réponse arrive.
+    tcChargerNbCommentaires(c, contribsDiv);
     // La fiche s'ouvre immediatement : les noms et le nombre de films de
     // chacun sont deja connus. Les listes elles-memes, qui sont repliees,
     // arrivent juste apres et le bloc se reconstruit alors tout seul.
@@ -2321,8 +2385,97 @@ function tcBubbleIconSvg(){
   return '<svg class="tc-cm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="11.5" rx="2"/><path d="M8.5 16l-1.8 3.6 4.6-3.6" stroke-linejoin="round"/></svg>';
 }
 
+// ── COMBIEN DE COMMENTAIRES SOUS CHAQUE TOP ? ──────────────────
+// Le bouton « Commentaires » sous un top n'affichait son compteur qu'une fois
+// les commentaires chargés, c'est-à-dire APRÈS un clic : rien n'indiquait donc
+// qu'un message y attendait. Le nombre de commentaires de chaque top d'un
+// cinéaste est désormais lu à l'ouverture de sa fiche — une requête, une
+// colonne — et alimente deux pictogrammes : celui de l'en-tête du top (juste
+// après son nombre de films) et celui du bouton sous le top.
+var TC_CM_COUNTS={};      // nom du cinéaste → { identifiant du cinéphile: nombre }
+var TC_CM_COUNTS_LUS={};  // cinéastes dont le décompte a déjà été lu
+
+function tcNbCommentaires(ownerId,cineasteNom){
+  var parTop=TC_CM_COUNTS[cineasteNom];
+  return (parTop&&parTop[String(ownerId)])||0;
+}
+
+// Le petit nombre accolé au pictogramme, dans le bouton comme dans l'en-tête.
+function tcCmCompteurHtml(n){
+  return n>0?('<span class="tc-cm-count">'+n+'</span>'):'';
+}
+
+function tcCmIndicHtml(n){
+  var label=t('tc_cm_nb',n);
+  return '<span class="fiche-contrib-cm" title="'+escapeHtml(label)+'">'+tcBubbleIconSvg()
+    +'<span class="fiche-contrib-cm-nb" aria-hidden="true">'+n+'</span>'
+    +'<span class="sr-only">'+escapeHtml(label)+'</span></span>';
+}
+
+// Pose, remplace ou retire le pictogramme de l'en-tête d'un top.
+function tcPoserIndicCm(nameEl,n){
+  if(!nameEl)return;
+  var ancien=nameEl.querySelector('.fiche-contrib-cm');
+  if(ancien)ancien.parentNode.removeChild(ancien);
+  if(n>0)nameEl.insertAdjacentHTML('beforeend',tcCmIndicHtml(n));
+}
+
+// Met les deux pictogrammes à jour sans reconstruire les blocs : un panneau de
+// commentaires déjà déplié reste déplié.
+function tcMajIndicCommentaires(c,contribsDiv){
+  if(!c||!contribsDiv||document.getElementById('fiche-contribs-blocs')!==contribsDiv)return;
+  contribsDiv.querySelectorAll('[data-cm-owner]').forEach(function(block){
+    var uid=block.getAttribute('data-cm-uid');
+    var n=tcNbCommentaires(block.getAttribute('data-cm-owner'),c.nom);
+    tcPoserIndicCm(block.querySelector('.fiche-contrib-name'),n);
+    var btn=document.getElementById(uid+'-btn');
+    var corps=document.getElementById(uid);
+    // Un panneau déjà déplié affiche le décompte qu'il a lui-même lu : on ne
+    // l'écrase pas avec celui, plus ancien, de cette requête.
+    if(btn&&(!corps||corps.getAttribute('data-loaded')!=='1')){
+      btn.innerHTML=tcBubbleIconSvg()+tcCmCompteurHtml(n);
+    }
+  });
+}
+
+// Recale le décompte d'un top après une publication ou une suppression.
+function tcMajNbCommentaires(ownerId,cineasteNom,n){
+  if(!ownerId||!cineasteNom)return;
+  if(!TC_CM_COUNTS[cineasteNom])TC_CM_COUNTS[cineasteNom]={};
+  TC_CM_COUNTS[cineasteNom][String(ownerId)]=n;
+  var blocs=document.getElementById('fiche-contribs-blocs');
+  if(!blocs)return;
+  blocs.querySelectorAll('[data-cm-owner]').forEach(function(block){
+    if(block.getAttribute('data-cm-owner')!==String(ownerId))return;
+    tcPoserIndicCm(block.querySelector('.fiche-contrib-name'),n);
+  });
+}
+
+// Les décomptes des tops de CE cinéaste, en une requête. Échec silencieux
+// assumé : sans décompte, la fiche reste exactement celle d'avant.
+function tcChargerNbCommentaires(c,contribsDiv){
+  if(!c)return;
+  if(TC_CM_COUNTS_LUS[c.nom]){tcMajIndicCommentaires(c,contribsDiv);return;}
+  Promise.resolve(
+    TC_SB.from('comments').select('top_contributor_id').eq('cineaste_nom',c.nom)
+  ).then(function(res){
+    if(!res||res.error||!res.data)return;
+    var parTop={};
+    res.data.forEach(function(r){
+      if(!r.top_contributor_id)return;
+      var k=String(r.top_contributor_id);
+      parTop[k]=(parTop[k]||0)+1;
+    });
+    // Remplacement, et non addition : une seconde lecture ne doit pas doubler
+    // les nombres affichés.
+    TC_CM_COUNTS[c.nom]=parTop;
+    TC_CM_COUNTS_LUS[c.nom]=true;
+    tcMajIndicCommentaires(c,contribsDiv);
+  }).catch(function(){ /* la fiche reste lisible sans ses décomptes */ });
+}
+
 function tcCommentsToggleHtml(uid,ownerId,cineasteNom){
-  return '<button type="button" class="tc-cm-toggle-btn" title="'+t('tc_cm_voir')+'" aria-label="'+t('tc_cm_voir')+'" data-action="tc-toggle-comments" data-uid="'+uid+'" data-owner-id="'+ownerId+'" data-cineaste="'+escapeHtml(cineasteNom)+'" id="'+uid+'-btn">'+tcBubbleIconSvg()+'</button>'
+  return '<button type="button" class="tc-cm-toggle-btn" title="'+t('tc_cm_voir')+'" aria-label="'+t('tc_cm_voir')+'" data-action="tc-toggle-comments" data-uid="'+uid+'" data-owner-id="'+ownerId+'" data-cineaste="'+escapeHtml(cineasteNom)+'" id="'+uid+'-btn">'+tcBubbleIconSvg()+tcCmCompteurHtml(tcNbCommentaires(ownerId,cineasteNom))+'</button>'
     +'<div class="tc-cm-body" id="'+uid+'" data-loaded="0"></div>';
 }
 
@@ -2359,7 +2512,8 @@ function tcRenderComments(uid){
   var body=document.getElementById(uid);
   if(!st||!body)return;
   var btn=document.getElementById(uid+'-btn');
-  if(btn)btn.innerHTML=tcBubbleIconSvg()+(st.rows.length?'<span class="tc-cm-count">'+st.rows.length+'</span>':'');
+  if(btn)btn.innerHTML=tcBubbleIconSvg()+tcCmCompteurHtml(st.rows.length);
+  tcMajNbCommentaires(st.ownerId,st.cineasteNom,st.rows.length);
   var topLevel=st.rows.filter(function(r){return !r.parent_comment_id;});
   var byParent={};
   st.rows.forEach(function(r){
@@ -3437,6 +3591,12 @@ function renderStatistiques(){
   // plus qu'à compter chaque famille dans le bandeau de synthèse.
   var courCatKeys=courKeys.concat(catKeys).sort(function(a,b){
     var ra=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[a],rb=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[b];
+    // Premier critère : une entrée sans année de fin — une catégorie
+    // intemporelle, un courant « depuis 1958 » — passe devant toutes les
+    // périodes refermées. Les règles suivantes sont inchangées.
+    var fa=(ra&&ra.annee_fin)?1:0;
+    var fb=(rb&&rb.annee_fin)?1:0;
+    if(fa!==fb)return fa-fb;
     var ya=(ra&&ra.annee_debut)||Infinity;
     var yb=(rb&&rb.annee_debut)||Infinity;
     if(ya!==yb)return ya-yb;
@@ -3596,7 +3756,7 @@ window.addEventListener('scroll',function(){
 // ── Re-render dynamique après changement de langue ───────────
 window.tcAfterLangChange = function(){
   var p=sessionStorage.getItem('tc-page')||'index';
-  if(p==='index'){tcRenderIndexPresence();if(document.getElementById('search-input').value.trim()){filterList();}else{selectLetter(currentLetter);}}
+  if(p==='index'){tcRenderIndexPresence();tcRenderJeuBandeau();if(document.getElementById('search-input').value.trim()){filterList();}else{selectLetter(currentLetter);}}
   else if(p==='contributeurs'){renderContributeurs();}
   else if(p==='statistiques'){renderStatistiques();}
   else if(p==='actualites'){renderActualites();applyActuTabSelection();}

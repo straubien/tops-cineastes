@@ -21,6 +21,11 @@ var TC_TRANSLATIONS = {
     presence_ago_min: function(n){ return "il y a " + n + " min"; },
     presence_ago_hour: function(n){ return "il y a " + n + " h"; },
     presence_ago_day: function(n){ return n > 1 ? "il y a " + n + " jours" : "il y a 1 jour"; },
+    // Bandeau « une partie du jeu du photogramme est à venir » (haut de l'Index)
+    jeu_bandeau_aria: "Jeu du photogramme : une partie est à venir",
+    jeu_bandeau_titre: "Une partie du jeu du photogramme est à venir",
+    jeu_bandeau_detail: function(a){ return "« " + a[0] + " » — début le " + a[1]; },
+    jeu_bandeau_appel: "Cliquez sur ce bandeau, ou sur le pictogramme « clap de cinéma » en haut de page, pour rejoindre le jeu.",
     // Notifications
     notif_title: "Notifications",
     notif_empty: "Aucune notification pour le moment.",
@@ -187,6 +192,7 @@ var TC_TRANSLATIONS = {
     liste_des_tops: "Liste des tops",
     // Commentaires sous les tops
     tc_cm_voir: "Commentaires",
+    tc_cm_nb: function(n){ return n > 1 ? n + " commentaires" : n + " commentaire"; },
     tc_cm_chargement: "Chargement des commentaires…",
     tc_cm_erreur_chargement: "Impossible de charger les commentaires.",
     tc_cm_aucun: "Aucun commentaire pour l'instant.",
@@ -714,6 +720,11 @@ var TC_TRANSLATIONS = {
     presence_ago_min: function(n){ return n + " min ago"; },
     presence_ago_hour: function(n){ return n + " h ago"; },
     presence_ago_day: function(n){ return n > 1 ? n + " days ago" : "1 day ago"; },
+    // "Upcoming game" banner for the photogram game (top of the Index page)
+    jeu_bandeau_aria: "Guess the movie challenge: a game is coming up",
+    jeu_bandeau_titre: "A guess the movie challenge is coming up",
+    jeu_bandeau_detail: function(a){ return "“" + a[0] + "” — starts on " + a[1]; },
+    jeu_bandeau_appel: "Click this banner, or the “clapperboard” icon at the top of the page, to join the game.",
     // Notifications
     notif_title: "Notifications",
     notif_empty: "No notifications yet.",
@@ -871,6 +882,7 @@ var TC_TRANSLATIONS = {
     liste_des_tops: "Tops list",
     // Comments under tops
     tc_cm_voir: "Comments",
+    tc_cm_nb: function(n){ return n > 1 ? n + " comments" : n + " comment"; },
     tc_cm_chargement: "Loading comments…",
     tc_cm_erreur_chargement: "Could not load comments.",
     tc_cm_aucun: "No comments yet.",
