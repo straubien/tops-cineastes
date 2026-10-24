@@ -425,23 +425,32 @@
 
 /* ── Les propositions refusées de tous les joueurs (point 4) ───────────
    Des titres faux, et rien de plus : ils ne doivent donc rien coûter à l'œil.
-   Une seule ligne qui se replie, en petit, en retrait — on les lit si on les
-   cherche, on ne les voit pas si on cherche le film. */
+   Une seule ligne qui se replie, en retrait — on les lit si on les cherche,
+   on ne les voit pas si on cherche le film.
+
+   MAIS ON DOIT POUVOIR LES LIRE. Treize pixels barres de rouge, sur un brun
+   pale, demandaient qu'on s'en approche : c'est le contraire du service rendu
+   par cette liste, qui est d'eviter a chacun de retenter ce que trois autres
+   ont deja tente. Le corps passe donc a 15 px, l'etiquette et le nom de
+   l'auteur a 12 px, et le titre refuse prend la couleur du texte ordinaire —
+   la rature suffit a dire qu'il est faux. Rien n'est devenu voyant pour
+   autant : la liste reste en bas, sans fond ni cadre marque. */
 .jp-refus {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
-  margin-top: 10px;
-  font-family: var(--font); font-size: 13px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px;
+  margin-top: 12px;
+  font-family: var(--font); font-size: 15px;
+  line-height: 1.5;
   color: var(--brun-pale);
 }
 .jp-refus[hidden] { display: none; }
 .jp-refus-etiq {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--brun-pale);
   flex: 0 0 auto;
 }
 .jp-refus-item {
-  display: inline-flex; align-items: baseline; gap: 5px;
-  padding: 2px 8px;
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 3px 9px;
   border: 1px solid var(--border-dim);
   border-radius: 3px;
   background: var(--tag-bg);
@@ -450,11 +459,11 @@
 .jp-refus-texte {
   text-decoration: line-through;
   text-decoration-color: var(--rouge);
-  color: var(--text-dim);
+  color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .jp-refus-qui {
-  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--brun-pale); flex: 0 0 auto;
 }
 
@@ -1515,21 +1524,12 @@
   100% { opacity: 0; }
 }
 
-/* ── B8 · LE CHANGE DE PHOTOGRAMME ────────────────────────────────────────
-   FONDU ENTRANT SEULEMENT. Un fondu croise classique assombrit l'image un
-   instant : dans une course ou la vitesse se paie, ce serait un handicap.
-   L'image neuve monte donc de 55 % a 100 % en 140 ms — elle n'est jamais
-   moins lisible que cela, et le premier affichage de la partie n'est pas
-   anime du tout (cf. JP_PREMIERE_IMAGE dans le JavaScript).
+/* ── B8 · LE CHANGE DE PHOTOGRAMME ──────────────────────────────
+   AUCUN FONDU. L'image neuve remplace l'ancienne, un point c'est tout : le
+   changement de photogramme est sec. Le fondu entrant qui se trouvait ici a
+   ete retire — la classe, son image cle, et la ligne du JavaScript qui la
+   posait. */
 
-   Une image cle et non une transition : le JavaScript ne fait que poser une
-   classe, il ne pose aucune valeur en ligne, et le bloc « mouvement reduit »
-   la retire d'un mot. */
-.jp-image-entre { animation: jp-image-entre 0.14s linear; }
-@keyframes jp-image-entre {
-  from { opacity: 0.55; }
-  to   { opacity: 1;    }
-}
 /* Le numero de la scene suit la fleche d'un cran. */
 .jp-scene-num-tourne { animation: jp-num-tourne 0.26s ease-out; }
 @keyframes jp-num-tourne {
@@ -1734,7 +1734,6 @@
   .jp-saisie-secoue,
   .jp-trouve-entre,
   .jp-scene-eclat::after,
-  .jp-image-entre,
   .jp-scene-num-tourne,
   .jp-essais-brule,
   .jp-rang-monte,

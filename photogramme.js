@@ -57,6 +57,10 @@ var JP_CANAL     = null;   // le canal Realtime de la partie
 var JP_HORLOGE   = null;   // le minuteur d'affichage du chrono
 var JP_ETAT      = '';     // etat de la partie tel qu'affiche
 var JP_PRECHARGE = false;
+// Le plateau de jeu est-il deja monte pour cette partie ? Ce drapeau dit a
+// jpPreparerJeu si elle travaille pour une ARRIVEE (placer le joueur sur un
+// photogramme, lui donner le clavier) ou pour une simple remise a jour.
+var JP_PLATEAU_PRET = false;
 var JP_JETON     = 0;      // invalide les chargements d'une partie quittee
 var JP_BROUILLON = null;   // la partie en cours de preparation dans le studio
 
@@ -121,6 +125,18 @@ document.addEventListener('visibilitychange', function(){
 function jpEl(id){ return document.getElementById(id); }
 
 function jpVider(el){ while(el && el.firstChild) el.removeChild(el.firstChild); }
+
+// ── DONNER LE CLAVIER SANS FAIRE GLISSER LA PAGE ───────────────────────────
+// Le navigateur amene de lui-meme dans la vue l'element qui prend le focus.
+// Le champ de reponse etant SOUS l'image, chaque changement de photogramme
+// faisait descendre la page d'un cran : on defilait la pellicule, et c'est
+// toute la page qui glissait. « preventScroll » le lui interdit ; les rares
+// navigateurs qui ignorent l'option retombent sur l'ancien comportement.
+function jpFocus(el){
+  if(!el) return;
+  try{ el.focus({ preventScroll: true }); }
+  catch(e){ el.focus(); }
+}
 
 // ── REJOUER UNE ANIMATION SUR UN ELEMENT QUI EXISTE DEJA ───────────────────
 // Une animation CSS ne se rejoue pas si sa classe est deja posee : le chrono
@@ -2210,6 +2226,7 @@ function jpQuitterPartie(){
   JP_SCORES = [];
   JP_SECRETS = {};
   JP_PRECHARGE = false;
+  JP_PLATEAU_PRET = false;
   JP_ETAT = '';
 
   // ── CE QUE LES ANIMATIONS SE RAPPELLENT ──────────────────────────────────
@@ -2226,7 +2243,6 @@ function jpQuitterPartie(){
   JP_PRESENTS_VUS = {};
   JP_RANGS_PRECEDENTS = {};
   JP_RES_ANIME = false;
-  JP_PREMIERE_IMAGE = true;
   JP_FILET_N = -1;
   JP_FILET_PLEIN = -1;
   // Un bandeau fugitif de l'ancienne partie n'a rien a dire dans la nouvelle.
@@ -2554,9 +2570,22 @@ function jpPreparerJeu(){
 
   jpRendrePellicule();
   jpRendreEmojis();
-  // Le premier photogramme affiche ne se fond pas : on arrive, il est la.
-  JP_PREMIERE_IMAGE = true;
-  jpAllerPhoto(jpPremierNonTrouve());
+
+  // ── ON NE REPLACE LE JOUEUR QU'A SON ARRIVEE ─────────────────────────────
+  // Cette fonction n'est pas appelee qu'au depart de la partie. La fiche du
+  // cinephile arrive par une requete parallele et la rappelle des qu'elle est
+  // la — et la bibliotheque d'authentification redonne cette fiche a CHAQUE
+  // retour sur l'onglet, puisqu'elle en profite pour verifier son jeton.
+  //
+  // C'ETAIT LE DEFAUT SIGNALE : changer de fenetre, puis revenir, et le jeu
+  // vous replacait sur le premier photogramme encore en jeu. On perdait celui
+  // qu'on etait en train de chercher pour avoir simplement regarde ailleurs.
+  //
+  // Le plateau se refait donc entierement — il doit suivre le role et l'etat
+  // de la partie —, mais le photogramme regarde, lui, ne bouge pas.
+  var arrivee = !JP_PLATEAU_PRET;
+  JP_PLATEAU_PRET = true;
+  jpAllerPhoto(arrivee ? jpPremierNonTrouve() : JP_IDX, !arrivee);
 
   var createur = jpSuisCreateur();
 
@@ -2588,8 +2617,11 @@ function jpPreparerJeu(){
     jpRendreCommandesCreateur();
   } else if(!jpConnecte()){
     jpEl('jp-verdict-txt').textContent = t('jp_connectez_vous_pour_jouer');
-  } else {
-    jpEl('jp-reponse').focus();
+  } else if(arrivee){
+    // A L'ARRIVEE SEULEMENT. Reprendre le clavier a chaque retour sur
+    // l'onglet arrachait le curseur au titre que le joueur etait en train
+    // d'ecrire. Et sans faire glisser la page (cf. jpFocus).
+    jpFocus(jpEl('jp-reponse'));
   }
 
   var masque = !JP_PARTIE.classement_live && !createur;
@@ -2667,12 +2699,35 @@ function jpMajVignette(phId){
   else { b.classList.add('jp-vignette-non'); if(et) et.textContent = '✕'; }
 }
 
-// B8 · Le PREMIER photogramme de la partie ne s'annonce pas : il est la,
-// simplement. Ce n'est qu'a partir du deuxieme qu'un change d'image devient
-// un mouvement, donc quelque chose a montrer.
-var JP_PREMIERE_IMAGE = true;
+// ── LA PELLICULE DEFILE, LA PAGE NE BOUGE PAS ──────────────────────────────
+// `scrollIntoView` ne se contente pas de faire defiler la pellicule : il
+// remonte TOUS ses parents jusqu'au document. La bande de vignettes etant
+// sous l'image et sous le champ de reponse, la page descendait d'un cran a
+// chaque fleche pour l'amener dans la vue — ce qui etait tres genant.
+//
+// On deplace donc nous-memes l'ascenseur HORIZONTAL de la seule pellicule.
+// Aucun autre defilement n'est touche, et celui de la page encore moins.
+function jpCentrerPellicule(){
+  var pel = jpEl('jp-pellicule');
+  if(!pel) return;
+  var active = pel.querySelector('.jp-vignette[aria-current="true"]');
+  if(!active) return;
+  var max = pel.scrollWidth - pel.clientWidth;
+  if(max <= 0) return;                 // tout tient dans la largeur : rien a faire
+  // Les rectangles plutot que `offsetLeft` : la vignette est positionnee en
+  // relatif, son `offsetParent` n'est donc pas forcement la pellicule.
+  var rp = pel.getBoundingClientRect();
+  var rv = active.getBoundingClientRect();
+  var dans = (rv.left - rp.left) + pel.scrollLeft;   // sa place dans le contenu
+  var vise = dans - (pel.clientWidth - rv.width) / 2; // ... amenee au milieu
+  pel.scrollLeft = Math.max(0, Math.min(max, vise));
+}
 
-function jpAllerPhoto(i){
+// `garderLaSaisie` : redessiner le plateau SANS vider le champ de reponse ni
+// y replacer le curseur. On ne s'en sert que quand le photogramme ne change
+// pas (cf. jpPreparerJeu, appelee de nouveau quand la fiche du cinephile
+// arrive) : sinon, un titre a moitie ecrit disparaissait sous les doigts.
+function jpAllerPhoto(i, garderLaSaisie){
   if(i < 0) i = JP_PHOTOS.length - 1;
   if(i >= JP_PHOTOS.length) i = 0;
   JP_IDX = i;
@@ -2681,19 +2736,12 @@ function jpAllerPhoto(i){
 
   // On ne touche qu'a la source : l'image est deja en cache, l'echange est
   // immediat et ne redessine rien d'autre.
+  //
+  // AUCUN FONDU. L'image neuve remplace l'ancienne, un point c'est tout : le
+  // changement de photogramme est sec, et c'est ce qui est demande.
   if(JP_IMG){
-    var urlNeuve = JP_URLS[String(p.id)] || '';
-    // `getAttribute` et non `.src` : le second rend une adresse absolue, et
-    // la comparaison serait toujours fausse.
-    var change = JP_IMG.getAttribute('src') !== urlNeuve;
-    JP_IMG.src = urlNeuve;
+    JP_IMG.src = JP_URLS[String(p.id)] || '';
     JP_IMG.alt = t('jp_photogramme_n', p.position);
-    // B8 · FONDU ENTRANT SEULEMENT. Un fondu croise classique assombrit
-    // l'image un instant : dans une course ou la vitesse se paie, ce serait
-    // un handicap. L'image neuve monte de 55 % a 100 % en 140 ms, et
-    // l'echange lui-meme reste instantane — rien n'est retarde.
-    if(change && !JP_PREMIERE_IMAGE) jpRejouer(JP_IMG, 'jp-image-entre');
-    JP_PREMIERE_IMAGE = false;
   }
   var num = jpEl('jp-scene-num');
   if(num){
@@ -2705,8 +2753,7 @@ function jpAllerPhoto(i){
   document.querySelectorAll('.jp-vignette').forEach(function(b){
     b.setAttribute('aria-current', b.getAttribute('data-ph') === String(p.id) ? 'true' : 'false');
   });
-  var active = document.querySelector('.jp-vignette[aria-current="true"]');
-  if(active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest', inline: 'center' });
+  jpCentrerPellicule();
 
   jpRendreIndices(p);
   jpRendreVerdictCourant(p);
@@ -2714,7 +2761,7 @@ function jpAllerPhoto(i){
   jpRendreTrouve(p);
   jpMajPlein();
 
-  jpMajSaisie(p, true);
+  jpMajSaisie(p, !garderLaSaisie);
   // Le champ « un indice, tout de suite » vise le photogramme affiché : son
   // libellé doit suivre la flèche, sinon on écrit pour le précédent. Le
   // bouton d'annulation vise le même, et pour la même raison.
@@ -2740,7 +2787,7 @@ function jpOuvrirPlein(){
   JP_PLEIN = true;
   jpRendrePleinBande(p);
   var fermer = jpEl('jp-plein-fermer');
-  if(fermer) fermer.focus();
+  jpFocus(fermer);
   jpAnnoncer(t('jp_agrandi', p.position));
 }
 
@@ -2750,7 +2797,7 @@ function jpFermerPlein(){
   voile.hidden = true;
   JP_PLEIN = false;
   var loupe = jpEl('jp-loupe');
-  if(loupe) loupe.focus();
+  jpFocus(loupe);
 }
 
 function jpBasculerPlein(){
@@ -3084,14 +3131,14 @@ function jpRepondre(){
     // essais — et reste une case vide quand il ne les a pas limites, ce qui
     // est le cas ordinaire.
     jpRendreEssais(d.essais_restants);
-    jpEl('jp-reponse').focus();
+    jpFocus(jpEl('jp-reponse'));
   }).catch(function(e){
     v.className = 'jp-verdict jp-verdict-non';
     txt.textContent = jpErreur(e);
     // Le texte est rendu : la frappe d'un joueur ne se perd pas sur une
     // coupure reseau.
     if(!saisie.value) saisie.value = texte;
-    saisie.focus();
+    jpFocus(saisie);
   });
 }
 
@@ -3382,13 +3429,17 @@ var JP_CHAT_CHARGE = false;
 
 function jpChargerChat(){
   if(!JP_PARTIE) return Promise.resolve();
+  // Le jeton, comme pour les scores et mes reponses : cette lecture est
+  // desormais relancee toutes les vingt secondes, et une reponse qui revient
+  // apres qu'on a quitte la partie ne doit pas repeupler la discussion.
+  var jeton = JP_JETON;
   return JP_SB.from('jeu_messages')
     .select('id,session_id,contributor_id,texte,created_at')
     .eq('session_id', JP_PARTIE.id)
     .order('created_at', { ascending: false })
     .limit(100)
     .then(function(r){
-      if(!r || r.error) return;
+      if(jeton !== JP_JETON || !r || r.error) return;
       JP_MESSAGES = (r.data || []).slice().reverse();
       JP_CHAT_CHARGE = true;
       var manquants = JP_MESSAGES.map(function(m){ return m.contributor_id; })
@@ -3562,10 +3613,16 @@ function jpDire(){
 
 // ── 15. LE DIRECT (Realtime) ───────────────────────────────────────────────
 
+// Le canal a-t-il ete ouvert sans que l'on sache encore qui regarde ? Dans ce
+// cas il ne porte pas le jeton du cinephile, et il faudra le rouvrir des que
+// sa fiche arrivera (cf. jpRebrancherDirect).
+var JP_CANAL_ANONYME = false;
+
 function jpAbonner(){
   if(JP_CANAL || !JP_PARTIE) return;
   var sid = JP_PARTIE.id;
   var moi = JP_MOI ? String(JP_MOI.id) : 'visiteur-' + jpAlea().slice(0, 8);
+  JP_CANAL_ANONYME = !jpConnecte();
 
   JP_CANAL = JP_SB.channel('jeu:' + sid, {
     config: { presence: { key: moi }, broadcast: { self: false } }
@@ -3615,16 +3672,50 @@ function jpAbonner(){
     // (ou non connecte, qui ne s'annonce pas) resterait devant un panneau
     // vide, sans meme le « personne pour l'instant ».
     jpRendrePresents();
-    if(jpConnecte()){
-      try{
-        JP_CANAL.track({
-          id: String(JP_MOI.id),
-          nom: formatContribNamePlain(JP_MOI.display_name),
-          avatar: JP_MOI.avatar_url || null
-        });
-      }catch(e){}
-    }
+    jpSAnnoncer();
   });
+}
+
+// ── S'ANNONCER A LA TABLE ──────────────────────────────────────────────────
+// Mise a part pour etre appelee de trois endroits : a la souscription, quand
+// la fiche du cinephile arrive apres elle, et au retour sur l'onglet — un
+// canal qui s'est reconnecte pendant la veille a pu perdre notre presence, et
+// nous aurions disparu de la liste des autres sans le savoir.
+function jpSAnnoncer(){
+  if(!JP_CANAL || !jpConnecte()) return;
+  try{
+    JP_CANAL.track({
+      id: String(JP_MOI.id),
+      nom: formatContribNamePlain(JP_MOI.display_name),
+      avatar: JP_MOI.avatar_url || null
+    });
+  }catch(e){}
+}
+
+// ── LE DIRECT OUVERT AVANT QUE L'ON SACHE QUI REGARDE ──────────────────────
+// C'ETAIT LE DEFAUT DES MESSAGES ET DES PARTICIPANTS, qui n'apparaissaient
+// qu'apres avoir actualise la page.
+//
+// L'adresse « #partie/… » ouvre la partie immediatement, tandis que la fiche
+// du cinephile arrive par une requete parallele : rien ne garantit laquelle
+// des deux gagne. Quand c'est l'ouverture qui gagne, le canal est souscrit en
+// VISITEUR, et deux choses sont alors perdues pour toute la partie :
+//
+//   * on ne s'annonce pas a la table — `track` ne part que si l'on est
+//     connecte, et la souscription ne passe qu'une fois ;
+//   * le serveur applique la regle de securite au jeton porte par la
+//     connexion : sans jeton, il cesse de pousser les lignes protegees, et
+//     les nouveaux messages n'arrivaient jamais.
+//
+// Des que l'identite est connue, on rouvre donc le canal — une seule fois, et
+// seulement s'il avait ete ouvert sans elle.
+function jpRebrancherDirect(){
+  if(!JP_PARTIE || !JP_CANAL || !JP_CANAL_ANONYME || !jpConnecte()) return;
+  try{ JP_SB.removeChannel(JP_CANAL); }catch(e){}
+  JP_CANAL = null;
+  jpAbonner();
+  // Ce qui a pu se dire pendant ce temps : on le relit, on ne l'attend pas.
+  jpChargerChat();
 }
 
 // ── LES FILMS TROUVÉS (points 1, 3 et 7) ────────────────────────
@@ -3855,7 +3946,7 @@ function jpMajSaisie(p, replacerLeCurseur){
     saisie.disabled = false;
     if(valider) valider.disabled = false;
   }
-  if(replacerLeCurseur && !saisie.disabled){ saisie.value = ''; saisie.focus(); }
+  if(replacerLeCurseur && !saisie.disabled){ saisie.value = ''; jpFocus(saisie); }
 }
 
 // Le photogramme affiche est-il hors jeu pour moi ? (tombe par un autre)
@@ -4122,12 +4213,31 @@ setInterval(function(){
   jpChargerRefus();
 }, 15000);
 
+// LE MEME FILET POUR LA DISCUSSION, qui n'en avait aucun. Un message n'a que
+// le direct pour voie : un evenement perdu — onglet endormi, reseau qui
+// hoquette, canal rouvert — et la conversation restait muette jusqu'au
+// rechargement de la page. On la relit donc de temps en temps. Cent lignes au
+// plus toutes les vingt secondes : le poids d'une seule vignette.
+//
+// Pas de condition sur l'etat : on parle aussi avant le depart et apres la
+// fin, et le panneau suit la partie jusque dans ses resultats.
+setInterval(function(){
+  if(!JP_PARTIE || document.visibilityState !== 'visible') return;
+  jpChargerChat();
+}, 20000);
+
 // Le retour d'un onglet mis en veille : le navigateur a pu couper le direct
 // pendant tout ce temps. On remet les compteurs d'aplomb sans attendre le
 // prochain quart de minute.
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState !== 'visible') return;
-  if(!JP_PARTIE || JP_ETAT !== 'en_cours') return;
+  if(!JP_PARTIE) return;
+  // La discussion et la table d'abord : elles vivent a tous les etats de la
+  // partie, et ce sont elles qu'un onglet endormi manque le plus surement.
+  jpChargerChat();
+  jpSAnnoncer();
+  jpRendrePresents();
+  if(JP_ETAT !== 'en_cours') return;
   jpRafraichirIndices();
   jpChargerScores().then(function(){
     jpRendreClassement('jp-rangs');
@@ -5192,10 +5302,25 @@ JP_SB.auth.onAuthStateChange(function(evenement, session){
     return;
   }
   if(evenement === 'INITIAL_SESSION' || evenement === 'SIGNED_IN'){
+    // ── LE MEME COMPTE QU'IL Y A UN INSTANT : IL N'Y A RIEN A REFAIRE ──────
+    // La bibliotheque reemet « SIGNED_IN » a CHAQUE retour sur l'onglet : elle
+    // en profite pour verifier son jeton. On rechargeait alors la fiche du
+    // cinephile et, avec elle, tout le plateau de jeu — ce qui replacait le
+    // joueur sur un autre photogramme et lui reprenait le clavier. Changer de
+    // fenetre suffisait donc a perdre le photogramme qu'on regardait.
+    //
+    // Seul le jeton du direct a besoin d'etre rafraichi dans ce cas, et c'est
+    // deja fait juste au-dessous.
+    var avant = JP_USER ? String(JP_USER.id) : '';
+    var apres = (session && session.user) ? String(session.user.id) : '';
     JP_USER = session ? session.user : null;
     jpAuthRealtime(session);
+    if(apres && apres === avant && JP_MOI) return;
     jpChargerMoi().then(function(){
       jpMajEntete();
+      // Le canal a-t-il ete souscrit avant que l'on sache qui regarde ? Alors
+      // ni les messages ni les participants n'arrivaient : on le rouvre.
+      jpRebrancherDirect();
       if(evenement === 'SIGNED_IN' && JP_VUE === 'connexion'){
         var vers = JP_RETOUR || '#parties';
         JP_RETOUR = '';
