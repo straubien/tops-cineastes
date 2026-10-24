@@ -3591,16 +3591,16 @@ function renderStatistiques(){
   // plus qu'à compter chaque famille dans le bandeau de synthèse.
   var courCatKeys=courKeys.concat(catKeys).sort(function(a,b){
     var ra=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[a],rb=_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[b];
-    // Premier critère : une entrée sans année de fin — une catégorie
-    // intemporelle, un courant « depuis 1958 » — passe devant toutes les
-    // périodes refermées. Les règles suivantes sont inchangées.
-    var fa=(ra&&ra.annee_fin)?1:0;
-    var fb=(rb&&rb.annee_fin)?1:0;
-    if(fa!==fb)return fa-fb;
     var ya=(ra&&ra.annee_debut)||Infinity;
     var yb=(rb&&rb.annee_debut)||Infinity;
     if(ya!==yb)return ya-yb;
-    // À année de début égale, l'entrée la plus courte passe en premier.
+    // À année de début égale, une entrée sans année de fin — une catégorie
+    // intemporelle, un courant « depuis 1958 » — passe devant les périodes
+    // refermées de la même année.
+    var fa=(ra&&ra.annee_fin)?1:0;
+    var fb=(rb&&rb.annee_fin)?1:0;
+    if(fa!==fb)return fa-fb;
+    // Puis, entre deux périodes refermées, la plus courte passe en premier.
     var da=(ra&&ra.annee_debut&&ra.annee_fin)?(ra.annee_fin-ra.annee_debut):Infinity;
     var db=(rb&&rb.annee_debut&&rb.annee_fin)?(rb.annee_fin-rb.annee_debut):Infinity;
     return da-db;
