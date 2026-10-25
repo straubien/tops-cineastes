@@ -302,6 +302,27 @@
 .jp-scene-fleche-g { left: 0; }
 .jp-scene-fleche-d { right: 0; }
 
+/* ── SUR UN ECRAN TACTILE, LES FLECHES SONT TOUJOURS LA ────────────────
+   Elles n'apparaissaient qu'au survol de la scene. Or un doigt ne survole
+   rien : sur une tablette, il ne restait que les petites vignettes de la
+   pellicule pour changer de photogramme — la regle qui les rend visibles
+   etait limitee aux telephones (max-width: 680px), et un iPad en portrait
+   fait 768 px de large.
+
+   On les laisse donc visibles des que le pointeur est grossier, et on leur
+   donne la taille d'une vraie cible tactile. Le fond est allege : la fleche
+   se voit sans manger l'image. Le glissement du doigt fait le meme travail
+   (cf. jpBrancherGeste dans le JavaScript) ; ces fleches restent pour qui
+   prefere viser, et pour les lecteurs d'ecran qui les annoncent. */
+@media (pointer: coarse) {
+  .jp-scene-fleche {
+    opacity: 1;
+    background: rgba(13, 13, 13, 0.4);
+    width: 52px; height: 76px;
+    font-size: 26px;
+  }
+}
+
 /* Voile de resultat pose sur l'image : trouve / epuise */
 /* ── LA BANDE DU FILM TROUVÉ (point 1) ─────────────────────────────────── */
 /* Une bande au bas de l'image, pas un voile par-dessus : on veut lire le

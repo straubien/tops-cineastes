@@ -138,6 +138,34 @@ function jpFocus(el){
   catch(e){ el.focus(); }
 }
 
+// ── TACTILE OU NON ? ───────────────────────────────────────────────────────
+// « pointer: coarse » est la question exacte : l'appareil designe-t-il avec
+// quelque chose d'imprecis — un doigt — plutot qu'avec une souris ? C'est la
+// meme question que posent deja deux blocs de photogramme.css, et c'est elle
+// qui distingue une tablette d'un portable a ecran tactile : sur celui-ci, le
+// pointeur principal reste la souris, donc « fine ».
+//
+// Interrogee a chaque appel, et non retenue une fois pour toutes : une
+// tablette branchee sur un ecran peut changer d'avis en cours de partie.
+function jpTactile(){
+  try{
+    return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  }catch(e){ return false; }
+}
+
+// ── LE CLAVIER NE SE LEVE PLUS TOUT SEUL ───────────────────────────────────
+// Sur tablette, le clavier virtuel occupe la moitie de l'ecran : le lever a
+// l'ouverture de la partie et de nouveau a CHAQUE photogramme recouvrait
+// justement l'image qu'il faut reconnaitre. Sur un appareil tactile, on
+// attend donc que le joueur touche le champ lui-meme.
+//
+// Rien ne change a la souris : le champ prend le clavier comme avant, et
+// c'est ce qui permet de taper un titre des l'arrivee sans viser.
+function jpFocusReponse(){
+  if(jpTactile()) return;
+  jpFocus(jpEl('jp-reponse'));
+}
+
 // ── REJOUER UNE ANIMATION SUR UN ELEMENT QUI EXISTE DEJA ───────────────────
 // Une animation CSS ne se rejoue pas si sa classe est deja posee : le chrono
 // qui a battu a la seconde precedente ne rebattrait plus jamais. On la
@@ -2620,8 +2648,9 @@ function jpPreparerJeu(){
   } else if(arrivee){
     // A L'ARRIVEE SEULEMENT. Reprendre le clavier a chaque retour sur
     // l'onglet arrachait le curseur au titre que le joueur etait en train
-    // d'ecrire. Et sans faire glisser la page (cf. jpFocus).
-    jpFocus(jpEl('jp-reponse'));
+    // d'ecrire. Sans faire glisser la page (cf. jpFocus), et sans lever le
+    // clavier virtuel d'une tablette (cf. jpFocusReponse).
+    jpFocusReponse();
   }
 
   var masque = !JP_PARTIE.classement_live && !createur;
@@ -3100,6 +3129,13 @@ function jpRepondre(){
       // elle, monte du bas de l'image (cf. jpRendreTrouve).
       jpRejouer(jpEl('jp-scene'), 'jp-scene-eclat');
       jpAnnoncerTrouvaille(p.position);
+      // SUR TABLETTE, ON REND L'ECRAN. Le clavier virtuel est ouvert — c'est
+      // le joueur qui l'a ouvert pour ecrire —, et le jeu va enchainer sur le
+      // photogramme suivant dans 850 ms. Sans ce relachement, l'image neuve
+      // arrivait sous le clavier. On ne le fait que sur une reponse ACCEPTEE :
+      // apres un refus, le joueur veut retenter tout de suite, et lui fermer
+      // le clavier au nez serait pire que le defaut corrige.
+      if(jpTactile()) saisie.blur();
       // On enchaine : le joueur n'a pas a chercher lui-meme l'image
       // suivante. 850 ms, le temps de voir le vert.
       setTimeout(function(){
@@ -3131,14 +3167,14 @@ function jpRepondre(){
     // essais — et reste une case vide quand il ne les a pas limites, ce qui
     // est le cas ordinaire.
     jpRendreEssais(d.essais_restants);
-    jpFocus(jpEl('jp-reponse'));
+    jpFocusReponse();
   }).catch(function(e){
     v.className = 'jp-verdict jp-verdict-non';
     txt.textContent = jpErreur(e);
     // Le texte est rendu : la frappe d'un joueur ne se perd pas sur une
     // coupure reseau.
     if(!saisie.value) saisie.value = texte;
-    jpFocus(saisie);
+    jpFocusReponse();
   });
 }
 
@@ -3946,7 +3982,7 @@ function jpMajSaisie(p, replacerLeCurseur){
     saisie.disabled = false;
     if(valider) valider.disabled = false;
   }
-  if(replacerLeCurseur && !saisie.disabled){ saisie.value = ''; jpFocus(saisie); }
+  if(replacerLeCurseur && !saisie.disabled){ saisie.value = ''; jpFocusReponse(); }
 }
 
 // Le photogramme affiche est-il hors jeu pour moi ? (tombe par un autre)
@@ -5094,6 +5130,77 @@ function jpClavier(ev){
 }
 
 
+// ── LE GESTE, SUR UN ECRAN TACTILE ─────────────────────────────────────────
+// Glisser le doigt sur l'image change de photogramme : c'est le geste qu'on
+// attend d'une pellicule, et il remplace les fleches, trop petites et trop
+// loin du pouce sur une tablette.
+//
+// TROIS PRECAUTIONS, ET ELLES COMPTENT TOUTES LES TROIS :
+//
+//  1. ON N'APPELLE JAMAIS `preventDefault` SUR LE TOUCHER, et on le declare
+//     au navigateur (`{ passive: true }`). Le defilement vertical de la page
+//     et le pincement pour zoomer restent donc intacts — or zoomer sur un
+//     photogramme pour y chercher un detail est exactement ce qu'on vient
+//     faire ici. Un ecouteur non passif aurait suffi a rendre le defilement
+//     saccade sur toute la page.
+//
+//  2. UN GLISSEMENT N'EST UN GESTE QUE S'IL EST FRANC : au moins 45 px, et
+//     deux fois plus long en largeur qu'en hauteur. En dessous, c'est une
+//     tape ; au-dessus en hauteur, c'est un defilement de page. Deux doigts :
+//     c'est un pincement, on s'en retire.
+//
+//  3. UN GESTE SE TERMINE PAR UN « CLICK » SYNTHETIQUE sur la plupart des
+//     navigateurs tactiles. Sans le barrage pose plus bas, un glissement sur
+//     l'image aurait ouvert l'agrandissement par-dessus le photogramme qu'il
+//     venait d'amener — et, dans l'agrandissement, l'aurait referme.
+var JP_GESTE = null;     // le toucher en cours : { x, y, t }
+var JP_GESTE_FAIT = 0;   // quand le dernier glissement a ete reconnu
+
+function jpGesteRecent(){ return Date.now() - JP_GESTE_FAIT < 600; }
+
+function jpBrancherGeste(el){
+  if(!el) return;
+
+  el.addEventListener('touchstart', function(ev){
+    if(!ev.touches || ev.touches.length !== 1){ JP_GESTE = null; return; }
+    JP_GESTE = { x: ev.touches[0].clientX, y: ev.touches[0].clientY, t: Date.now() };
+  }, { passive: true });
+
+  // Un deuxieme doigt en route : pincement, on abandonne le geste.
+  el.addEventListener('touchmove', function(ev){
+    if(ev.touches && ev.touches.length !== 1) JP_GESTE = null;
+  }, { passive: true });
+
+  el.addEventListener('touchend', function(ev){
+    var d = JP_GESTE;
+    JP_GESTE = null;
+    if(!d || !ev.changedTouches || ev.changedTouches.length !== 1) return;
+    if(JP_VUE !== 'jeu' || !JP_PHOTOS.length) return;
+    var dx = ev.changedTouches[0].clientX - d.x;
+    var dy = ev.changedTouches[0].clientY - d.y;
+    if(Date.now() - d.t > 800) return;                  // un appui long n'est pas un geste
+    if(Math.abs(dx) < 45) return;                       // trop court : c'est une tape
+    if(Math.abs(dx) < Math.abs(dy) * 2) return;          // trop oblique : c'est un defilement
+    JP_GESTE_FAIT = Date.now();
+    // La pellicule suit le doigt : glisser vers la gauche amene la suivante.
+    jpAllerPhoto(dx < 0 ? JP_IDX + 1 : JP_IDX - 1);
+  }, { passive: true });
+
+  el.addEventListener('touchcancel', function(){ JP_GESTE = null; }, { passive: true });
+
+  // Le barrage du « click » synthetique (precaution 3). En phase de CAPTURE,
+  // donc avant tout autre ecouteur de la zone, les siens comme ceux de ses
+  // enfants : l'image, le voile, les fleches et la loupe sont couverts d'un
+  // coup, et un vrai clic de souris n'est jamais concerne — il n'y a pas eu
+  // de glissement.
+  el.addEventListener('click', function(ev){
+    if(!jpGesteRecent()) return;
+    ev.stopPropagation();
+    ev.preventDefault();
+  }, true);
+}
+
+
 // ── 20. DÉMARRAGE ──────────────────────────────────────────────────────────
 
 // ── LES IMAGES NE SE PRENNENT PAS (point 5) ──────────────────────
@@ -5234,6 +5341,10 @@ function jpBrancher(){
     var p = JP_PHOTOS[JP_IDX];
     if(p) jpAnnulerPhotogramme(p.id, p.position);
   });
+
+  // Le glissement du doigt, sur l'image comme sur son agrandissement.
+  jpBrancherGeste(jpEl('jp-scene'));
+  jpBrancherGeste(jpEl('jp-plein'));
 
   jpProtegerImages();
   document.addEventListener('keydown', jpClavier);
