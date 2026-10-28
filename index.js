@@ -895,7 +895,7 @@ function loadData(){
   // Détection des mises à jour JSON pour Actualités : tâche de fond purement
   // accessoire, donc placée APRÈS le rendu des données, pour qu'un incident
   // ici ne puisse jamais empêcher l'affichage du site.
-  tcCheckJsonUpdate('muzard',muzard&&muzard.version);
+  tcCheckJsonUpdate('muzard',muzard&&muzard.version,muzard);
   // cnudde.json est maintenu par le mainteneur du site, et non par la
   // personne dont il porte le nom. L'annonce « ... a mis a jour ses tops »
   // serait donc inexacte : la detection n'est jamais declenchee pour ce
@@ -915,7 +915,7 @@ loadData();
 // qu'un seul événement dans Actualités, même si plusieurs visiteurs la
 // détectent en même temps ou si un aléa de cache la fait détecter plusieurs
 // fois : l'insertion en doublon échoue simplement, sans rien afficher de plus.
-function tcCheckJsonUpdate(source,version){
+function tcCheckJsonUpdate(source,version,donnees){
   if(!version)return;
   try{
     // Le builder Supabase est un « thenable » et n'expose pas .catch() : on
@@ -929,6 +929,54 @@ function tcCheckJsonUpdate(source,version){
     Promise.resolve(
       TC_SB.from('json_updates').upsert(
         {source:source, version:String(version)},
+        {onConflict:'source,version', ignoreDuplicates:true}
+      ).select('id')
+    ).then(function(res){
+      // « ON CONFLICT DO NOTHING » ne rend aucune ligne quand la version
+      // etait deja connue : .select('id') ne rapporte donc quelque chose
+      // qu'au tout premier chargement de page qui decouvre cette version.
+      // C'est le seul moment ou l'empreinte merite d'etre enregistree —
+      // sans ce test, elle repartirait a chaque chargement pour rien.
+      if(res&&!res.error&&res.data&&res.data.length)tcEnregistrerEmpreinte(source,version,donnees);
+    }).catch(function(){});
+  }catch(e){}
+}
+
+// ── EMPREINTE D'UNE VERSION DE TOPS (Actualités → « ce qui a changé ») ──
+// Le fichier de tops ne dit pas ce qui a bougé d'une version à l'autre, et
+// le site n'en garde aucune copie. On enregistre donc, à chaque nouvelle
+// version annoncée, un condensé : un cinéaste, une signature de son top.
+// Comparer deux condensés suffit alors à dire qui a été ajouté et quels
+// tops ont été retouchés, sans jamais stocker les tops eux-mêmes.
+function tcSignatureFilms(films){
+  var txt=(films||[]).map(function(f){
+    return [f&&f.rang,f&&f.titre,f&&f.annee,f&&f.note].join('\u0001');
+  }).join('\u0002');
+  // FNV-1a sur 32 bits : court, stable d'une version à l'autre, et sans
+  // aucune bibliothèque à charger.
+  var h=0x811c9dc5;
+  for(var i=0;i<txt.length;i++){
+    h^=txt.charCodeAt(i);
+    h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0;
+  }
+  return h.toString(36);
+}
+function tcEmpreinteTops(donnees){
+  var emp={};
+  ((donnees&&donnees.tops)||[]).forEach(function(top){
+    if(top&&typeof top.cineaste==='string')emp[top.cineaste]=tcSignatureFilms(top.films);
+  });
+  return emp;
+}
+// Tâche accessoire, comme l'annonce elle-même : son échec ne doit rien
+// empêcher. Tant que la table json_empreintes n'existe pas, l'écriture
+// échoue en silence et l'actualité s'affiche simplement sans détail.
+function tcEnregistrerEmpreinte(source,version,donnees){
+  if(!donnees||!donnees.tops)return;
+  try{
+    Promise.resolve(
+      TC_SB.from('json_empreintes').upsert(
+        {source:source, version:String(version), empreinte:tcEmpreinteTops(donnees)},
         {onConflict:'source,version', ignoreDuplicates:true}
       )
     ).catch(function(){});
@@ -981,8 +1029,34 @@ function formatNom(nom,noBold){
   if(nom.includes(',')){var i=nom.indexOf(',');return noBold?escapeHtml(nom):'<b>'+escapeHtml(nom.slice(0,i))+'</b>'+escapeHtml(nom.slice(i));}
   return noBold?escapeHtml(nom):'<b>'+escapeHtml(nom)+'</b>';
 }
+// ── Décès sans date connue : « après 1986 » ───────────────────────
+// La colonne « deces » de la table cineastes est un jsonb : elle accepte donc,
+// à la place d'une année, un texte — pour un cinéaste dont on sait seulement
+// qu'il vivait encore à telle date. Les graphies « après 1986 »,
+// « apres 1986 », « after 1986 » et « >1986 » sont reconnues — ce qu'on
+// écrit en base reste lisible par un humain — et l'affichage suit ensuite la
+// langue du site. Pour un duo, « deces » est un tableau : chaque membre est
+// traité séparément, exactement comme pour les années.
+// Deux conséquences, voulues : ces cinéastes ne remontent jamais dans les
+// Hommages (la diapositive retient « deces === année choisie », qu'un texte
+// ne peut pas satisfaire), et le comptage « en activité / disparus »
+// continue de ne lire que « vivant » — c'est donc cette colonne, et elle
+// seule, qui dit où ranger le cinéaste.
+function tcDecesApres(d){
+  if(typeof d!=='string')return null;
+  var m=d.trim().match(/^(?:apr[eè]s|after|>)\s*(\d{3,4})$/i);
+  return m?m[1]:null;
+}
+// Valeur de décès prête à être insérée dans la page. Un texte venu de la base
+// est échappé : c'est la seule de ces trois valeurs qui soit libre, les
+// années restant des nombres.
+function tcFormatDeces(d){
+  var apres=tcDecesApres(d);
+  if(apres)return escapeHtml(t('date_deces_apres',apres));
+  return (typeof d==='string')?escapeHtml(d):String(d);
+}
 function formatDateSimple(n,d,v){
-  if(!n)return '';if(d)return n+'\u2013'+d;if(v)return String(n);return String(n);
+  if(!n)return '';if(d)return n+'\u2013'+tcFormatDeces(d);if(v)return String(n);return String(n);
 }
 function formatDates(c){
   if(c.duo&&Array.isArray(c.naissance)){
@@ -3103,9 +3177,19 @@ function renderActualites(){
     tcActuLire(function(){ return TC_SB.from('comments').select('*').is('parent_comment_id',null).order('created_at',{ascending:false}); }),
     tcActuLoadLegacyTopsKeys(0,1000).catch(function(){return[];}),
     tcActuLire(function(){ return TC_SB.from('courant_proposals').select('*, contributors(display_name)').eq('status','approved').order('reviewed_at',{ascending:false}); }),
-    tcActuLire(function(){ return TC_SB.from('json_updates').select('*').eq('announce',true).order('created_at',{ascending:false}); })
+    tcActuLire(function(){ return TC_SB.from('json_updates').select('*').eq('announce',true).order('created_at',{ascending:false}); }),
+    // Les empreintes connues, de la plus récente à la plus ancienne. On ne
+    // lit ici que (source, version) : le condensé lui-même, bien plus lourd,
+    // n'est chargé que si le visiteur ouvre le détail d'une mise à jour.
+    // Lecture directe plutôt que tcActuLire : cette source n'alimente pas le
+    // fil, et n'a donc pas à déclencher le bouton « tout afficher ».
+    // Table absente (script d'évolution de la base pas encore passé) : la
+    // lecture rend une liste vide et le fil s'affiche comme avant.
+    tcWithRetryTimeout(function(){
+      return TC_SB.from('json_empreintes').select('source,version').order('created_at',{ascending:false}).limit(200);
+    }).then(function(res){ return (res&&!res.error&&res.data)||[]; }).catch(function(){return[];})
   ]).then(function(results){
-    var props=results[0],subs=results[1],coms=results[2],legacyKeys=new Set(results[3]),courantProps=results[4],jsonUpdates=results[5];
+    var props=results[0],subs=results[1],coms=results[2],legacyKeys=new Set(results[3]),courantProps=results[4],jsonUpdates=results[5],empreintes=results[6];
     var items=[];
     props.forEach(function(p){
       var nomComplet=((p.prenom?p.prenom+' ':'')+p.nom).trim();
@@ -3144,11 +3228,24 @@ function renderActualites(){
       var actuKey=tcCourantTypeFromName(p.courant||'')==='categorie'?'actu_categorie_valide':'actu_courant_valide';
       items.push({date:p.reviewed_at||p.submitted_at,html:'<span class="actu-icon">🏷️</span> '+t(actuKey,[escapeHtml(dn),formatNom(p.cineaste_nom||''),'<span class="actu-courant-name">'+escapeHtml(tcCourantLabelFromName(p.courant||''))+'</span>']),cineaste:p.cineaste_nom,type:'courants'});
     });
+    // Versions dont on possède une empreinte, par source, de la plus
+    // récente à la plus ancienne : une mise à jour n'a de détail à montrer
+    // que si SA version est là et qu'une version antérieure l'est aussi,
+    // faute de quoi il n'y a rien à comparer.
+    var empreintesParSource={};
+    (empreintes||[]).forEach(function(e){
+      if(!e||!e.source)return;
+      (empreintesParSource[e.source]=empreintesParSource[e.source]||[]).push(String(e.version));
+    });
     jsonUpdates.forEach(function(u){
-      var jsonName=u.source==='muzard'?'MATHIEU MUZARD':'KARINE CNUDDE';
-      var cid=tcContribIdByName(jsonName);
-      var dn=cid?tcAuthorLabel(cid):(u.source==='muzard'?'Mathieu Muzard':'Karine Cnudde');
-      items.push({date:u.created_at,html:tcActuAvatarHtml(cid,dn)+' '+t('actu_top_json_update',escapeHtml(dn)),type:'tops'});
+      var aut=tcMajAuteur(u.source);
+      var item={date:u.created_at,html:tcActuAvatarHtml(aut.id,aut.nom)+' '+t('actu_top_json_update',escapeHtml(aut.nom)),type:'tops'};
+      var versions=empreintesParSource[u.source]||[];
+      var rang=versions.indexOf(String(u.version));
+      if(rang!==-1&&versions[rang+1]){
+        item.maj={source:u.source,version:String(u.version),precedente:versions[rang+1]};
+      }
+      items.push(item);
     });
     items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
     _actuItemsCache=items;
@@ -3158,6 +3255,109 @@ function renderActualites(){
     _actuTronque=false;
     tcActuMajBouton();
     feed.innerHTML='<div class="empty-msg">'+t('actu_erreur')+'</div>';
+  });
+}
+
+// ── DÉTAIL D'UNE MISE À JOUR DE TOPS PAR FICHIER EXTERNE ────────────
+// « Mathieu Muzard a mis à jour ses tops » ne disait pas lesquels. Cliquer
+// sur l'actualité ouvre désormais la liste de ce qui a changé : les
+// cinéastes dont le top vient d'entrer dans le fichier, et ceux dont le top
+// a été retouché. La comparaison se fait entre l'empreinte de la version
+// annoncée et celle de la version précédente (cf. tcEmpreinteTops).
+// Les deux empreintes ne sont lues qu'ICI, à l'ouverture du détail : le fil
+// d'actualités n'a pas à les télécharger pour rien.
+
+// Le cinéphile derrière un fichier de tops : son profil quand il en a un,
+// son nom écrit sinon.
+function tcMajAuteur(source){
+  var jsonName=source==='muzard'?'MATHIEU MUZARD':'KARINE CNUDDE';
+  var cid=tcContribIdByName(jsonName);
+  return {id:cid, nom:cid?tcAuthorLabel(cid):(source==='muzard'?'Mathieu Muzard':'Karine Cnudde')};
+}
+
+function tcLireEmpreinte(source,version){
+  return tcWithRetryTimeout(function(){
+    return TC_SB.from('json_empreintes').select('empreinte').eq('source',source).eq('version',version).maybeSingle();
+  }).then(function(res){
+    if(res&&res.error)throw res.error;
+    return (res&&res.data&&res.data.empreinte)||null;
+  });
+}
+
+// Ajouté = cinéaste absent de la version précédente. Modifié = cinéaste
+// déjà présent dont la signature du top a changé. Un top retiré du fichier
+// n'est pas listé : l'actualité annonce une mise à jour, pas un ménage.
+function tcMajCalculerChangements(avant,apres){
+  var ajouts=[],modifies=[];
+  Object.keys(apres||{}).forEach(function(nom){
+    if(!avant||!Object.prototype.hasOwnProperty.call(avant,nom))ajouts.push(nom);
+    else if(avant[nom]!==apres[nom])modifies.push(nom);
+  });
+  ajouts.sort(function(a,b){return a.localeCompare(b,'fr');});
+  modifies.sort(function(a,b){return a.localeCompare(b,'fr');});
+  return {ajouts:ajouts,modifies:modifies};
+}
+
+function tcMajListeCineastes(noms){
+  var listDiv=document.createElement('div');
+  listDiv.className='cineaste-list';
+  listDiv.style.marginTop='0.6rem';
+  noms.forEach(function(nom){
+    var c=(DATA&&DATA.cineastes)?DATA.cineastes.find(function(x){
+      return typeof x.nom==='string'&&x.nom.toLowerCase()===nom.toLowerCase();
+    }):null;
+    var dates=c?formatDates(c):'';
+    var row=document.createElement('div');
+    row.className='cineaste-row';
+    row.innerHTML='<div class="c-bar"></div>'
+      +'<div class="c-info"><span class="c-name">'+formatNom(nom)+'</span>'
+      +(dates?'<span class="c-dates">'+dates+'</span>':'')+'</div>';
+    // Le nom vient du fichier de tops : il n'a pas toujours de fiche en face
+    // (cinéaste renommé depuis, ou pas encore créé dans l'index). Sans fiche,
+    // la ligne reste affichée — simplement, elle ne mène nulle part.
+    if(c)tcRendreActivable(row,function(){closeFiche(true);openFiche(c);},nom);
+    listDiv.appendChild(row);
+  });
+  return listDiv;
+}
+
+function tcMajRendreSection(corps,cle,noms){
+  var titre=document.createElement('div');
+  titre.className='fiche-section';
+  titre.style.margin='1.2rem 0 0';
+  titre.textContent=t(cle,noms.length);
+  corps.appendChild(titre);
+  corps.appendChild(tcMajListeCineastes(noms));
+}
+
+function tcOuvrirMajDetail(source,version,precedente){
+  if(!source||!version||!precedente)return;
+  var aut=tcMajAuteur(source);
+  document.getElementById('fiche-content').innerHTML=
+    '<div class="fiche-header courant-fiche-header">'
+      +'<button class="profil-header-back" data-action="close-fiche" title="'+escapeHtml(tcTexte('retour_titre','Retour'))+'">&#8592;</button>'
+      +'<div class="fiche-name" style="font-size:30px">'+escapeHtml(t('actu_maj_titre'))+'</div>'
+      +'<div class="fiche-dates">'+escapeHtml(t('actu_maj_soustitre',[aut.nom,version]))+'</div>'
+    +'</div>'
+    +'<div id="maj-detail-corps" style="margin:1.2rem 1.8rem 1.8rem">'
+      +'<div class="empty-msg">'+escapeHtml(t('actu_chargement'))+'</div>'
+    +'</div>';
+  tcOuvrirOverlay(t('actu_maj_titre'), null, {t:'maj', c:source+'/'+version});
+
+  Promise.all([tcLireEmpreinte(source,precedente),tcLireEmpreinte(source,version)]).then(function(emp){
+    var corps=document.getElementById('maj-detail-corps');
+    if(!corps)return;   // le visiteur a refermé entre-temps
+    var ch=tcMajCalculerChangements(emp[0],emp[1]);
+    corps.innerHTML='';
+    if(!ch.ajouts.length&&!ch.modifies.length){
+      corps.innerHTML='<div class="empty-msg">'+escapeHtml(t('actu_maj_aucun'))+'</div>';
+      return;
+    }
+    if(ch.ajouts.length)tcMajRendreSection(corps,'actu_maj_ajoutes',ch.ajouts);
+    if(ch.modifies.length)tcMajRendreSection(corps,'actu_maj_modifies',ch.modifies);
+  }).catch(function(){
+    var corps=document.getElementById('maj-detail-corps');
+    if(corps)corps.innerHTML='<div class="empty-msg">'+escapeHtml(t('actu_maj_erreur'))+'</div>';
   });
 }
 
@@ -3201,6 +3401,12 @@ function applyActuFilterSelection(){
     var clickable=it.cineaste&&getLetterData(it.cineaste.charAt(0).toUpperCase()).some(function(c){return c.nom.toLowerCase()===it.cineaste.toLowerCase();});
     var cls=clickable?' actu-item-clickable':'';
     var attr=clickable?' data-action="tc-actu-open" data-cineaste="'+escapeHtml(it.cineaste)+'"':'';
+    // Une mise à jour de tops par fichier externe n'ouvre pas une fiche de
+    // cinéaste mais son propre détail : la liste de ce qui a changé.
+    if(it.maj){
+      cls=' actu-item-clickable';
+      attr=' data-action="tc-maj-open" data-source="'+escapeHtml(it.maj.source)+'" data-version="'+escapeHtml(it.maj.version)+'" data-precedente="'+escapeHtml(it.maj.precedente)+'"';
+    }
     return'<div class="actu-item'+cls+'"'+attr+'><div class="actu-text">'+it.html+'</div><div class="actu-date">'+tcActuFormatDate(it.date)+'</div></div>';
   }).join('');
   tcActuMajBouton();
@@ -3540,21 +3746,32 @@ function openCourantDetail(courantId){
 // La famille de chaque entrée se lit à la couleur du point — l'or des étiquettes
 // de courant sur les fiches, le rouge pour une catégorie — doublée d'un libellé
 // réservé aux lecteurs d'écran : l'information ne repose pas sur la seule couleur.
+//
+// FRISE EN MIROIR : l'axe passe au milieu, les courants se rangent à sa gauche
+// et les catégories à sa droite (classe « is-droite »), chaque côté portant sa
+// propre colonne d'années. Le tri reste celui du classement unique — une seule
+// chronologie commune, lue de haut en bas — et c'est la feuille de style qui
+// place les deux côtés ; sous 760 px, elle revient à une colonne unique.
+// « Une seule fois par groupe d'années identiques » se compte désormais PAR
+// CÔTÉ : deux colonnes voisines ne se masquent pas leurs années l'une l'autre,
+// sans quoi une entrée de droite se retrouverait sans date parce qu'une entrée
+// de gauche, dans une autre colonne, portait déjà la même.
 function renderCourantTimeline(el,keys){
   if(!el)return;
   el.innerHTML='';
-  el.className='courants-timeline';
-  var prevDebut=null;
+  el.className='courants-timeline is-miroir';
+  var prevDebut={courant:null,categorie:null};
   keys.forEach(function(k){
     var row=document.createElement('div');
-    row.className='courant-tl-item';
+    var estCategorie=tcCourantType(Number(k))==='categorie';
+    var cote=estCategorie?'categorie':'courant';
+    row.className='courant-tl-item'+(estCategorie?' is-droite':'');
     var flag=tcCourantFlagHtml(Number(k),'ranking-flag');
     var years=tcCourantYears(Number(k));
     var yearsHtml=years?'<span class="courant-tl-period">'+years+'</span>':'';
     var debut=(_TC_COURANTS_CACHE&&_TC_COURANTS_CACHE[k]&&_TC_COURANTS_CACHE[k].annee_debut)||'';
-    var debutHtml=(debut!==''&&debut===prevDebut)?'':debut;
-    prevDebut=debut;
-    var estCategorie=tcCourantType(Number(k))==='categorie';
+    var debutHtml=(debut!==''&&debut===prevDebut[cote])?'':debut;
+    prevDebut[cote]=debut;
     var famille=escapeHtml(t(estCategorie?'ranking_famille_categorie':'ranking_famille_courant'));
     row.innerHTML='<div class="courant-tl-year">'+debutHtml+'</div>'
       +'<div class="courant-tl-dot'+(estCategorie?'':' is-courant')+'" title="'+famille+'"></div>'
@@ -4176,6 +4393,9 @@ document.addEventListener('click',function(e){
       break;
     case 'tc-actu-open':
       tcActuOpenCineaste(el.getAttribute('data-cineaste'));
+      break;
+    case 'tc-maj-open':
+      tcOuvrirMajDetail(el.getAttribute('data-source'),el.getAttribute('data-version'),el.getAttribute('data-precedente'));
       break;
     case 'films-rank-mode':
       FILMS_RANK_MODE=el.getAttribute('data-mode')||'films';

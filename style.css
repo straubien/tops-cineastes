@@ -1969,6 +1969,50 @@ a { text-decoration: none; color: inherit; }
   .courant-tl-name { font-size: 18px; }
 }
 
+/* ── FRISE EN MIROIR : COURANTS A GAUCHE, CATEGORIES A DROITE ───
+   Meme frise et meme tri que ci-dessus : une seule chronologie, lue de
+   haut en bas. Seul le placement change — l'axe passe au milieu, les
+   courants (point or) se rangent a sa gauche, les categories (point
+   rouge, classe « is-droite » posee par renderCourantTimeline) a sa
+   droite, et CHAQUE COTE porte sa propre colonne d'annees, a
+   l'exterieur de l'entree.
+   En dessous de 760 px, aucune de ces regles ne s'applique : la frise
+   reprend la colonne unique definie plus haut, ou le point or ou rouge
+   et le libelle pour lecteurs d'ecran distinguent toujours les deux
+   familles. */
+@media (min-width: 761px) {
+  .courants-timeline.is-miroir::before { left: 50%; }
+  .courants-timeline.is-miroir .courant-tl-dot { left: 50%; }
+  /* La moitie opposee est reservee par un remplissage : chaque entree
+     n'occupe donc que son cote de l'axe. */
+  .courants-timeline.is-miroir .courant-tl-item { padding-right: 50%; }
+  .courants-timeline.is-miroir .courant-tl-year { width: 56px; padding-right: 14px; }
+  .courants-timeline.is-miroir .courant-tl-content {
+    margin-left: 0;
+    padding-right: 30px;
+    text-align: right;
+  }
+  .courants-timeline.is-miroir .courant-tl-name { justify-content: flex-end; }
+  /* Cote droit : la ligne s'inverse — l'annee part a l'exterieur, le nom
+     vient contre l'axe — et les textes se calent a gauche. */
+  .courants-timeline.is-miroir .courant-tl-item.is-droite {
+    flex-direction: row-reverse;
+    padding-right: 0;
+    padding-left: 50%;
+  }
+  .courants-timeline.is-miroir .courant-tl-item.is-droite .courant-tl-year {
+    padding-right: 0;
+    padding-left: 14px;
+    text-align: left;
+  }
+  .courants-timeline.is-miroir .courant-tl-item.is-droite .courant-tl-content {
+    padding-right: 0;
+    padding-left: 30px;
+    text-align: left;
+  }
+  .courants-timeline.is-miroir .courant-tl-item.is-droite .courant-tl-name { justify-content: flex-start; }
+}
+
 /* ── PAGE PROFIL CONTRIBUTEUR ────────────────────────────────── */
 .profil-header {
   background: linear-gradient(135deg, var(--noir) 0%, #262420 100%);

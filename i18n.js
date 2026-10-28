@@ -100,6 +100,10 @@ var TC_TRANSLATIONS = {
     sp_grp_presentation: "Présentation",
     // Liaison entre la date et l'heure : « 30 sept. 2026 a 14:05 »
     date_liaison: " \u00e0 ",
+    // Cinéaste dont la date de décès est inconnue : on sait seulement
+    // qu'il vivait encore à cette date (colonne « deces » de la base,
+    // cf. tcDecesApres dans index.js).
+    date_deces_apres: function(annee){ return "après " + annee; },
     alpha_lettre: function(l){ return "Lettre " + l; },
     alpha_barre: "Filtrer par lettre — utilisez les flèches",
     filter_sans_tops: "Cinéastes sans aucun top",
@@ -125,6 +129,14 @@ var TC_TRANSLATIONS = {
     actu_top_nouveau: function(a){ return a[0] + " a posté un nouveau top pour " + a[1] + "."; },
     actu_top_modifie: function(a){ return a[0] + " a modifié son top pour " + a[1] + "."; },
     actu_top_json_update: function(nom){ return nom + " a mis à jour ses tops via un fichier externe."; },
+    // Détail d'une mise à jour de tops par fichier externe : ce qui a changé
+    // entre la version annoncée et la précédente (cf. tcOuvrirMajDetail).
+    actu_maj_titre: "Mise à jour des tops",
+    actu_maj_soustitre: function(a){ return a[0] + " · version " + a[1]; },
+    actu_maj_ajoutes: function(n){ return n > 1 ? n + " cinéastes ajoutés" : "1 cinéaste ajouté"; },
+    actu_maj_modifies: function(n){ return n > 1 ? n + " tops mis à jour" : "1 top mis à jour"; },
+    actu_maj_aucun: "Aucun changement détecté entre les deux versions.",
+    actu_maj_erreur: "Le détail de cette mise à jour n’a pas pu être chargé.",
     actu_commentaire: function(a){ return a[0] + " a commenté le top \"" + a[1] + "\"."; },
     actu_courant_valide: function(a){ return "Le courant « " + a[2] + " » a été validé pour " + a[1] + "."; },
     actu_categorie_valide: function(a){ return "La catégorie « " + a[2] + " » a été validée pour " + a[1] + "."; },
@@ -740,6 +752,7 @@ var TC_TRANSLATIONS = {
     // Index
     search_placeholder: "Search for a filmmaker…",
     date_liaison: " at ",
+    date_deces_apres: function(annee){ return "after " + annee; },
     aria_comparer_a: "First film lover",
     aria_comparer_b: "Second film lover",
     aria_avatar: "Choose a profile picture",
@@ -815,6 +828,12 @@ var TC_TRANSLATIONS = {
     actu_top_nouveau: function(a){ return a[0] + " posted a new top for " + a[1] + "."; },
     actu_top_modifie: function(a){ return a[0] + " updated their top for " + a[1] + "."; },
     actu_top_json_update: function(nom){ return nom + " updated their tops via an external file."; },
+    actu_maj_titre: "Tops update",
+    actu_maj_soustitre: function(a){ return a[0] + " · version " + a[1]; },
+    actu_maj_ajoutes: function(n){ return n > 1 ? n + " filmmakers added" : "1 filmmaker added"; },
+    actu_maj_modifies: function(n){ return n > 1 ? n + " tops updated" : "1 top updated"; },
+    actu_maj_aucun: "No change detected between the two versions.",
+    actu_maj_erreur: "This update’s details could not be loaded.",
     actu_commentaire: function(a){ return a[0] + " commented on the top \"" + a[1] + "\"."; },
     actu_courant_valide: function(a){ return "The movement « " + a[2] + " » was approved for " + a[1] + "."; },
     actu_categorie_valide: function(a){ return "The category « " + a[2] + " » was approved for " + a[1] + "."; },
