@@ -3751,6 +3751,10 @@ function openCourantDetail(courantId){
       +courFlagsHtml
       +courYearsHtml
       +'<div class="fiche-dates">'+cin.length+' '+t('occurrences_in_ranking')+'</div>'
+      // Le texte de presentation arrive apres coup (voir juste en dessous) :
+      // la fiche ne l'attend pas pour s'ouvrir, et le bloc reste absent tant
+      // qu'il n'y a rien a y mettre. Jamais de cadre vide.
+      +'<p class="fiche-presentation" id="courant-presentation" data-courant="'+escapeHtml(String(courantId))+'" hidden></p>'
     +'</div>'
     +'<div class="fiche-section" style="margin:1.2rem 1.8rem 0.5rem">'+t('cin_classes')+'</div>'
     +'<div id="courant-detail-sort-toggle" class="ranking-toggle" style="margin:0 1.8rem 0.8rem">'
@@ -3760,7 +3764,29 @@ function openCourantDetail(courantId){
     +'<div id="contrib-detail-list"></div>';
 
   renderCourantDetailList();
+  tcRemplirPresentationCourant(courantId);
   tcOuvrirOverlay(courant, null, {t:'cour', c:courantId});
+}
+
+// LE TEXTE DE PRESENTATION DU COURANT, dans le header de sa fiche.
+// Il s'adresse aux visiteurs qui ne sont pas cinephiles : « Nouvelle Vague
+// tchecoslovaque » ne dit rien a qui ne connait pas, et la liste de noms qui
+// suit encore moins. Deux ou trois phrases suffisent a situer l'entree.
+//
+// Le texte vit dans la base (courants.description_fr / description_en) et se
+// modifie depuis « Admin > Gestion des courants ». Il est lu a l'ouverture de
+// la fiche, pas au chargement du site : cf. tcPresentationCourant (utils.js).
+function tcRemplirPresentationCourant(courantId){
+  if(typeof tcPresentationCourant!=='function')return;
+  tcPresentationCourant(TC_SB,courantId).then(function(texte){
+    var el=document.getElementById('courant-presentation');
+    // La fiche a pu etre refermee, ou une AUTRE fiche de courant ouverte
+    // entre-temps : on ne remplit que le bloc de la fiche qu'on a demandee.
+    if(!el||!texte)return;
+    if(el.getAttribute('data-courant')!==String(courantId))return;
+    el.textContent=texte;
+    el.hidden=false;
+  });
 }
 
 // Frise chronologique du classement unique "Courants & Catégories" :

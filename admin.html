@@ -376,17 +376,25 @@
          cinéphiles ont déjà un droit de retrait sur l'affichage public de leur
          simple présence (contributors.presence_publique).
 
-         Tout le contenu est construit par admin.js : le bandeau de tête, le
-         classement en barres empilées et le tableau de détail. ── -->
+         Tout le contenu est construit par admin.js : le bandeau de présence, la
+         frise semaine par semaine, le classement en barres empilées et le
+         tableau de détail. ── -->
     <div class="tab-panel" id="panel-activite">
       <div class="section-title">Activité des cinéphiles</div>
       <p class="act-intro">
-        Tout ce que le site sait de l'activité de chacun depuis sa création : les tops,
-        les propositions, le Jeu du photogramme, les commentaires et les connexions.
+        Qui vient sur le site, à quelle fréquence, et ce qu'il y fait : les connexions,
+        le Jeu du photogramme, les propositions et les commentaires.
+      </p>
+      <p class="act-intro">
+        <strong>Le nombre de tops n'entre pas dans le score</strong>, et c'est voulu : la
+        plupart ont été importés d'un seul bloc depuis Facebook, si bien qu'un contributeur
+        ne s'étant jamais connecté arrivait deuxième du « classement d'activité ». Les trois
+        colonnes de tops restent au tableau de détail, à part et en retrait, pour mémoire.
       </p>
       <p class="act-intro act-avertissement">
-        ⚠ La colonne « Connexions » ne compte qu'à partir de l'installation du journal
-        des connexions (fichier SQL n° 7). Avant lui, le site n'enregistrait que la
+        ⚠ Les colonnes « Jours » et « Visites » et la frise de présence ne comptent qu'à
+        partir de l'installation du journal des connexions (fichier SQL n° 7). Avant lui,
+        le site n'enregistrait que la
         <em>dernière</em> visite de chacun, en écrasant la précédente : cet historique-là
         n'existe nulle part et ne peut pas être reconstitué. Toutes les autres colonnes,
         elles, remontent bien à la création du site.

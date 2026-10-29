@@ -435,6 +435,26 @@ body {
 .courant-row-type {
   grid-template-columns: minmax(96px,0.9fr) minmax(150px,1.6fr) minmax(148px,1.3fr) minmax(92px,0.9fr) 72px 108px;
 }
+/* L'EN-TÊTE DES COLONNES DES TYPES.
+   Dans « Gestion des courants », le panneau déborde de .main et ses libellés
+   surmontent des champs larges : ils tiennent debout tout seuls. Ici le
+   panneau garde les 900 px de .main, et la première colonne n'est pas un
+   champ mais un simple texte : les cinq libellés flottaient au-dessus des
+   cartes sans rien pour les y rattacher, et la ligne paraissait oubliée.
+   On lui donne donc le cadre des lignes qu'elle annonce — même fond, même
+   bordure, mêmes 16 px de retrait, donc colonnes rigoureusement alignées —
+   et le filet noir épais des en-têtes du back-office pour la détacher du
+   formulaire qui la précède. */
+.courant-gestion-list-head-type {
+  align-items: center;
+  padding: 11px 16px;
+  margin-bottom: 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--noir);
+  color: var(--text-dim);
+  font-weight: 600;
+}
 /* La clé technique est un identifiant, pas une phrase : on la donne à lire
    comme telle, sinon « cinematheque » se confond avec un nom mal orthographié. */
 .courant-row-type .courant-type-cle { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
@@ -447,6 +467,47 @@ body {
 .courant-row .autocomplete-input, .courant-row .contrib-select { font-size: 15px; padding: 8px 10px; min-width: 0; width: 100%; box-sizing: border-box; }
 .courant-row-actions { display: flex; flex-direction: column; gap: 6px; justify-self: end; width: 100%; }
 .courant-row-actions .btn-primary, .courant-row-actions .btn-reject { padding: 7px 10px; font-size: 11px; letter-spacing: 0.08em; width: 100%; box-sizing: border-box; }
+/* ── LE TEXTE DE PRÉSENTATION DE LA FICHE PUBLIQUE ────────────────────── */
+/* Un paragraphe ne se compose pas dans une case de cent cinquante pixels :
+   les deux zones prennent toute la largeur de la carte, sur leur propre
+   ligne. Elles sont REPLIÉES par défaut — cent trente entrées dépliées
+   feraient un catalogue de plusieurs mètres — et le bouton « Présentation »
+   de la colonne d'actions les ouvre, ligne par ligne. */
+.courant-row-desc {
+  display: none;
+  grid-column: 1 / -1;
+  gap: 1rem;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.courant-row.desc-ouverte .courant-row-desc { display: grid; grid-template-columns: 1fr 1fr; }
+.courant-desc-wrap { margin-bottom: 0; min-width: 0; }
+.courant-row .courant-desc-champ {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 9px 11px;
+  resize: vertical;
+}
+.courant-desc-aide {
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--brun-pale);
+  margin-top: 5px;
+}
+/* Le bouton n'est pas une action destructrice : il emprunte le cadre de
+   .btn-reject mais pas son rouge, qui annoncerait une suppression. */
+.courant-row-actions .courant-row-desc-btn {
+  background: none;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.courant-row-actions .courant-row-desc-btn:hover { background: var(--bg-subtle); color: var(--text); }
+
 .courant-row-mobile-header { display: none; }
 @media (max-width: 900px) {
   .courant-gestion-fields { grid-template-columns: 1fr 1fr; }
@@ -479,6 +540,11 @@ body {
   .courant-row > *:not(.courant-row-mobile-header):last-child { padding-bottom: 16px; }
   .courant-row.expanded > *:not(.courant-row-mobile-header) { display: block; margin-top: 8px; }
   .courant-row.expanded .courant-row-actions { display: flex; }
+  /* Le repli des présentations reste commandé par son propre bouton, même
+     à l'intérieur d'une ligne dépliée : sans cette règle, déplier une ligne
+     sur téléphone ouvrirait aussi les deux pavés de texte. */
+  .courant-row:not(.desc-ouverte) > .courant-row-desc { display: none; }
+  .courant-row.expanded.desc-ouverte > .courant-row-desc { display: grid; grid-template-columns: 1fr; }
 }
 
 /* ── EMPLACEMENTS D'UNE FICHE CINÉASTE (courant / courant2 / courant3) ──
@@ -560,12 +626,26 @@ body {
   --act-jeu:   #2E62B0;   /* le bleu des étiquettes du back-office, éclairci */
   --act-props: #A8841E;   /* l'or des courants (--or, inchangé dans les 2 modes) */
   --act-ech:   #0E9384;
+  /* LES QUATRE PALIERS DE LA FRISE DE PRÉSENCE.
+     Une seule teinte — celle de la famille « Échanges & présence » — du fond
+     de page au plein. Une rampe d'une seule teinte se lit sans légende de
+     couleurs et reste lisible sous daltonisme : ce n'est plus une catégorie
+     qu'on distingue, c'est une intensité. Le palier 0 garde un filet pour
+     que la case vide reste une case, et non un trou. */
+  --act-p0: transparent;
+  --act-p1: #B6DCD6;
+  --act-p2: #58B2A6;
+  --act-p3: #0E9384;
 }
 .dark #panel-activite {
   --act-tops:  #CC6B55;
   --act-jeu:   #5B8FD6;
   --act-props: #A8841E;
   --act-ech:   #2BA594;
+  --act-p0: transparent;
+  --act-p1: #244F4A;
+  --act-p2: #2F8378;
+  --act-p3: #58C6B5;
 }
 
 .act-intro {
@@ -597,14 +677,15 @@ body {
   color: #f0ece3;
 }
 .dark .act-tete { color: #1a1714; }
+/* Le filet de droite reprend la rampe de la frise, puisque c'est de présence
+   que ce bandeau parle désormais. */
 .act-tete::after {
   content: '';
   position: absolute;
   top: 0; right: 0;
   width: 8px; height: 100%;
   background: linear-gradient(to bottom,
-    var(--act-tops)  0 25%,  var(--act-jeu)   25% 50%,
-    var(--act-props) 50% 75%, var(--act-ech)  75% 100%);
+    var(--act-p1) 0 33%, var(--act-p2) 33% 66%, var(--act-p3) 66% 100%);
 }
 .act-tete-sur {
   display: block;
@@ -641,6 +722,16 @@ body {
   text-transform: uppercase;
   opacity: 0.72;
   margin-left: 9px;
+}
+/* La ligne de lecture sous le grand chiffre : la même valeur, dite en
+   pourcentage. Un effectif seul ne se juge pas — 11 sur 24 ou sur 2 400, ce
+   n'est pas la même santé. */
+.act-tete-sous {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+  opacity: 0.88;
 }
 .act-kpis {
   flex: 1 1 420px;
@@ -729,6 +820,106 @@ body {
 .act-cle-props { background: var(--act-props); }
 .act-cle-ech   { background: var(--act-ech); }
 
+/* ── LA FRISE DE PRÉSENCE ─────────────────────────────────────────────── */
+/* Une ligne par cinéphile, rangée de la visite la plus récente à la plus
+   ancienne : vingt-six cases, une par semaine, sur les six derniers mois.
+   C'est ce que l'onglet ne montrait pas — il classait des points sans
+   jamais dire qui était encore là. */
+.act-presences { padding: 0.35rem 0 0.25rem; }
+.act-presence-ligne {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) minmax(170px, 1.9fr) 46px 54px 100px;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 1.5rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+.act-presence-ligne:last-child { border-bottom: none; }
+.act-presence-ligne:hover { background: var(--bg-subtle); }
+/* L'en-tête des colonnes : mêmes colonnes, même gouttière, donc chaque
+   libellé tombe exactement sur ce qu'il annonce. */
+.act-presence-tete {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+  padding-top: 2px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--noir);
+}
+.act-presence-tete:hover { background: none; }
+.act-presence-tete > span:nth-child(n+3) { text-align: right; }
+.act-presence-nom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+/* L'état est écrit, jamais seulement coloré : « Endormi » se lit, un gris
+   ne se lit pas. La pastille colorée n'est là que pour aller plus vite. */
+.act-badge {
+  font-family: system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.act-badge-actif   { color: var(--act-ech); }
+.act-badge-present { color: var(--or-texte); }
+.act-badge-dormant { color: var(--brun-pale); }
+.act-badge-jamais  { color: var(--rouge-texte); }
+.act-frise {
+  display: grid;
+  grid-template-columns: repeat(26, 1fr);
+  gap: 2px;
+  min-width: 0;
+}
+.act-case {
+  height: 14px;
+  background: var(--act-p0);
+  box-shadow: inset 0 0 0 1px var(--border-dim);
+}
+.act-case-1 { background: var(--act-p1); box-shadow: none; }
+.act-case-2 { background: var(--act-p2); box-shadow: none; }
+.act-case-3 { background: var(--act-p3); box-shadow: none; }
+/* L'échelle, dans l'en-tête de la carte : du vide au plein, avec ses deux
+   bouts écrits. */
+.act-echelle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.act-echelle .act-case { width: 14px; }
+.act-echelle-bout {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
+.act-echelle-bout:first-child { margin-right: 4px; }
+.act-echelle-bout:last-child { margin-left: 4px; }
+.act-presence-jours, .act-presence-visites {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.act-presence-jours { font-size: 16px; font-weight: 700; color: var(--text); }
+.act-presence-visites { font-size: 14px; color: var(--text-dim); }
+.act-presence-depuis {
+  font-family: var(--font);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--brun-pale);
+  text-align: right;
+}
+
 /* ── Le classement ── */
 .act-barres { padding: 0.35rem 0 0.25rem; }
 .act-barre-ligne {
@@ -794,6 +985,23 @@ body {
 }
 /* Arrondi du côté de la donnée, carré du côté de l'origine. */
 .act-seg:last-child { border-radius: 0 4px 4px 0; }
+/* LA MARQUE DE CASSURE. Quand un score sort de l'échelle (cf. actEchelle
+   dans admin.js), sa barre est coupée net : l'arrondi disparaît et un
+   chevron se pose à l'aplomb de la coupure. Sans lui, la barre paraîtrait
+   simplement pleine, et le lecteur croirait avoir lu un maximum. */
+.act-barre.est-cassee .act-seg:last-child { border-radius: 0; }
+.act-piste.est-cassee { position: relative; }
+.act-piste.est-cassee::after {
+  content: '⟩';
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  transform: translateY(-50%);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-dim);
+  pointer-events: none;
+}
 .act-seg-tops  { background: var(--act-tops); }
 .act-seg-jeu   { background: var(--act-jeu); }
 .act-seg-props { background: var(--act-props); }
@@ -915,10 +1123,26 @@ body {
   color: var(--brun-pale);
   border-bottom: 3px solid transparent;
 }
-.act-bande-tops  { border-bottom-color: var(--act-tops); }
+.act-bande-presence { border-bottom-color: var(--act-p3); }
 .act-bande-jeu   { border-bottom-color: var(--act-jeu); }
 .act-bande-props { border-bottom-color: var(--act-props); }
 .act-bande-ech   { border-bottom-color: var(--act-ech); }
+/* Les trois colonnes de tops ferment le tableau : elles ne sont comptées
+   nulle part, et doivent se voir comme telles — filet tireté plutôt que
+   plein, chiffres en retrait, et le titre de la bande le dit en toutes
+   lettres. C'est la seule façon honnête de garder la donnée visible sans
+   laisser croire qu'elle pèse dans le classement. */
+.act-bande-tops {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--act-tops);
+  color: var(--rouge-texte);
+}
+.act-table th.act-hors-score,
+.act-table td.act-hors-score { background: var(--bg-subtle); }
+.act-table td.act-hors-score { color: var(--brun-pale); }
+.act-table tbody tr:hover td.act-hors-score { background: var(--border-dim); }
+/* Le filet qui sépare le tableau compté de ce qui ne l'est pas. */
+.act-table .act-hors-score-debut { border-left: 2px dashed var(--border); }
 
 .act-tri {
   display: inline-flex;
@@ -947,26 +1171,71 @@ body {
   .act-barre-ligne { grid-template-columns: 24px minmax(90px, 1fr) minmax(60px, 2fr) 52px; gap: 9px; padding: 8px 1rem; }
   .act-tete-valeur { font-size: 40px; }
   .act-bloc-tete, .act-note { padding-left: 1rem; padding-right: 1rem; }
+  /* La frise passe sous le nom, pleine largeur : vingt-six cases de trois
+     pixels ne se lisent plus, et de toute façon les chiffres sont là. */
+  .act-presence-ligne {
+    grid-template-columns: 1fr 48px 52px;
+    grid-template-areas:
+      'nom jours visites'
+      'frise frise frise'
+      'depuis depuis depuis';
+    row-gap: 7px;
+    padding: 10px 1rem;
+  }
+  .act-presence-nom { grid-area: nom; }
+  .act-frise { grid-area: frise; }
+  .act-presence-jours { grid-area: jours; }
+  .act-presence-visites { grid-area: visites; }
+  .act-presence-depuis { grid-area: depuis; text-align: left; }
+  /* L'en-tête de colonnes n'a plus de colonnes à annoncer : les libellés
+     des chiffres passent dans leur infobulle, et la ligne disparaît. */
+  .act-presence-tete { display: none; }
+  .act-echelle { margin-left: 0; }
 }
 
 /* ── STATISTIQUES ── */
-/* Une seule carte : courants et catégories sont classés ensemble, la couleur de
-   la barre (or / rouge, comme les étiquettes des fiches publiques) et
-   l'étiquette sous le nom distinguant les deux.
-   Bandeau de synthèse avec les totaux, puis les barres, puis l'échelle et la
-   légende. Les lignes de barres et l'échelle partagent la même grille via
+/* Courants et catégories sont classés ensemble, la couleur de la barre
+   (or / rouge, comme les étiquettes des fiches publiques) et l'étiquette sous
+   le nom distinguant les deux.
+   TROIS CARTES, et non plus une seule : le bandeau de synthèse, le classement
+   des douze premières entrées, puis le catalogue entier en tableau. Les cent
+   trente barres d'autrefois faisaient une page de dix mille pixels où tout se
+   ressemblait ; le tableau en montre autant sur moins d'un cinquième de la
+   hauteur, et se cherche.
+   Les lignes de barres et l'échelle partagent la même grille via
    --stats-cols, pour que les graduations tombent exactement sous les barres. */
 .stats-chart {
   --stats-cols: 28px 30px minmax(130px, 1.15fr) minmax(110px, 2.2fr) 76px;
+}
+.stats-chart > .empty-state { padding: 1.5rem; }
+.stats-bloc {
   margin-bottom: 1.6rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   box-shadow: 4px 4px 0 var(--border-dim);
 }
-.stats-chart > .empty-state { padding: 1.5rem; }
+.stats-bloc-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.stats-bloc-titre {
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.stats-bloc-aide { font-size: 12px; font-style: italic; color: var(--brun-pale); }
+/* Les pastilles de famille sont poussées au bout de l'en-tête du classement. */
+.stats-bloc-tete .stats-legend-keys { margin: 0 0 0 auto; }
 
 /* Bandeau de synthèse — combien de cinéastes sont rattachés au total */
-.stats-summary { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.stats-summary { display: flex; flex-wrap: wrap; }
 .stats-summary-main {
   flex: 1 1 260px;
   padding: 1.3rem 1.5rem;
@@ -1073,7 +1342,7 @@ body {
   display: grid;
   grid-template-columns: var(--stats-cols);
   gap: 12px;
-  padding: 8px 1.5rem 0;
+  padding: 8px 1.5rem 0.9rem;
   border-top: 1px solid var(--border);
 }
 .stats-axis-scale {
@@ -1103,6 +1372,156 @@ body {
 .stats-legend-key.is-categorie i { background: var(--rouge); }
 .stats-legend-note { display: block; font-size: 13px; font-style: italic; color: var(--brun-pale); line-height: 1.4; }
 
+/* ── LE CATALOGUE EN TABLEAU ──────────────────────────────────────────── */
+/* La barre de filtres : une recherche, trois listes déroulantes, un bouton
+   de remise à zéro. Tout agit immédiatement, rien ne relit la base. */
+.stats-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+}
+/* Les champs du back-office sont en largeur pleine par défaut : ici on les
+   remet en ligne, sinon la barre de filtres fait quatre étages. */
+.stats-filtres .autocomplete-input,
+.stats-filtres .contrib-select {
+  width: auto;
+  min-width: 0;
+  font-size: 14px;
+  padding: 7px 10px;
+  box-sizing: border-box;
+}
+.stats-filtres .stats-filtre-q { flex: 1 1 140px; }
+.stats-filtres .stats-filtre-select { flex: 0 1 auto; }
+.stats-filtre-reset {
+  padding: 7px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  flex: 0 0 auto;
+}
+
+/* Le tableau. Six colonnes seulement : il tient sans défilement latéral
+   jusque dans les 900 px de .main, et n'a donc pas besoin d'une colonne de
+   noms collée à gauche comme celui de l'onglet Activité.
+   CENT TRENTE LIGNES DÉFILENT DANS LE TABLEAU, PAS DANS LA PAGE : sans ce
+   plafond, le catalogue rendait à lui seul quatre mille cinq cents pixels et
+   l'onglet redevenait le rouleau qu'on voulait lui éviter. L'en-tête reste
+   accroché en haut du cadre, pour qu'on sache toujours ce qu'on lit. */
+.stats-table-wrap {
+  overflow: auto;
+  max-height: min(620px, 70vh);
+  overscroll-behavior: contain;
+}
+.stats-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.stats-table th, .stats-table td {
+  padding: 7px 10px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-dim);
+  font-variant-numeric: tabular-nums;
+}
+.stats-table thead th {
+  vertical-align: bottom;
+  padding-top: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--noir);
+}
+.stats-table tbody tr:last-child td { border-bottom: none; }
+.stats-table tbody tr:hover td { background: var(--bg-subtle); }
+.stats-table .stats-gauche { text-align: left; white-space: normal; }
+.stats-col-rang {
+  width: 34px;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  color: var(--brun-pale);
+  text-align: right;
+}
+.stats-table-nom {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-names);
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.25;
+}
+.stats-table-flagcell { flex: none; display: flex; width: 22px; justify-content: center; }
+.stats-table-flag { width: 20px; height: 20px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.stats-table-flag-historic { width: auto; height: 20px; }
+/* Le type porte la couleur de sa famille — la même que celle des barres du
+   classement, et que celle des étiquettes des fiches publiques. */
+.stats-table-type {
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.stats-table tr.is-courant .stats-table-type { color: var(--or-texte); }
+.stats-table tr.is-categorie .stats-table-type { color: var(--rouge-texte); }
+.stats-table-annees { font-family: var(--font); font-size: 12px; font-style: italic; color: var(--brun-pale); }
+/* La colonne des effectifs porte sa propre micro-barre, calée à droite du
+   nombre : on compare d'un coup d'œil sans quitter la ligne. */
+.stats-table-count {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.stats-table-piste {
+  flex: 1 1 110px;
+  min-width: 48px;
+  height: 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-dim);
+}
+.stats-table-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--or);
+}
+.stats-table tr.is-categorie .stats-table-fill { background: var(--rouge); }
+.stats-table-n { flex: none; min-width: 34px; font-size: 15px; font-weight: 700; color: var(--text); }
+.stats-table-part { width: 58px; font-size: 12px; color: var(--brun-pale); }
+/* Un zéro s'écrit « · » et s'efface : ce qui doit sauter aux yeux, c'est ce
+   qui EST rattaché. La ligne reste lisible, simplement elle ne crie pas. */
+.stats-zero { color: var(--border); }
+.stats-table tr.is-zero .stats-table-nom { color: var(--brun-pale); }
+.stats-table tr.is-zero .stats-table-flag { filter: grayscale(1); opacity: 0.45; }
+.stats-table tr.is-zero .stats-table-type { opacity: 0.6; }
+
+.stats-tri {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
+.stats-tri:hover { color: var(--text); }
+.stats-tri-actif { color: var(--text); font-weight: 700; }
+.stats-fleche { font-size: 12px; }
+.stats-table-wrap + .stats-legend { border-top: 1px solid var(--border); }
+
 @media (max-width: 900px) {
   .stats-summary-main { padding: 1.1rem 1.2rem; }
   .stats-summary-value { font-size: 38px; }
@@ -1110,7 +1529,7 @@ body {
   .stats-summary-kpi { padding: 1rem 0.5rem; }
   .stats-summary-kpi-value { font-size: 21px; }
   .stats-bar-item { padding: 9px 1.2rem; gap: 10px; }
-  .stats-axis, .stats-legend { padding-left: 1.2rem; padding-right: 1.2rem; }
+  .stats-axis, .stats-legend, .stats-filtres, .stats-bloc-tete { padding-left: 1.2rem; padding-right: 1.2rem; }
   .stats-bar-label { font-size: 14px; }
 }
 /* Sous 700px la barre passe sur sa propre ligne, pleine largeur */
@@ -1134,6 +1553,15 @@ body {
   .stats-summary-kpis { flex-basis: 100%; grid-template-columns: repeat(2, 1fr); }
   .stats-summary-kpi:nth-child(odd) { border-left: none; }
   .stats-summary-kpi:nth-child(n+3) { border-top: 1px solid var(--border-dim); }
+  /* Le tableau du catalogue : la micro-barre et la part sautent les
+     premières. Le nom, le type et l'effectif suffisent à s'y retrouver sur
+     un téléphone, et les six colonnes tenaient mal dans 360 px. */
+  .stats-filtres .autocomplete-input, .stats-filtres .contrib-select { width: 100%; }
+  .stats-filtres .stats-filtre-select { flex: 1 1 140px; }
+  .stats-table-piste, .stats-table-part, .stats-table th:last-child { display: none; }
+  .stats-table th, .stats-table td { padding: 7px 6px; }
+  .stats-table-nom { font-size: 14px; }
+  .stats-table-wrap { max-height: min(520px, 65vh); }
 }
 
 .submission-header {

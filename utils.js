@@ -308,6 +308,48 @@ function tcCourantLabel(id){
   return (lang === 'en' && row.nom_en) ? row.nom_en : row.nom_fr;
 }
 
+// ── LE TEXTE DE PRÉSENTATION D'UNE ENTRÉE DU CATALOGUE ──────────────────
+// Deux colonnes de la table « courants » : description_fr et description_en.
+//
+// ELLES NE SONT PAS CHARGÉES AVEC LE CATALOGUE (tcLoadCourants), ET C'EST
+// VOLONTAIRE. À cent trente entrées de trois ou quatre phrases dans deux
+// langues, cela ferait une bonne centaine de kilo-octets transférés à CHAQUE
+// visite de N'IMPORTE QUELLE page, pour un texte qu'on ne lit qu'en ouvrant
+// une fiche de courant. Le lien Facebook d'un cinéaste avait exactement ce
+// défaut et a été sorti du catalogue pour la même raison (cf. le commentaire
+// de TC_CINEASTES_COLONNES plus haut, et tcChargerLienFacebook dans index.js).
+//
+// On lit donc le texte à l'ouverture de la fiche, et une seule fois par
+// entrée : le cache ci-dessous le garde pour le reste de la session.
+var _TC_PRESENTATIONS = {};
+
+// La bonne langue, avec repli sur l'autre : un texte en français vaut mieux
+// qu'un blanc pour un visiteur anglophone, et réciproquement.
+function tcPresentationLangue(row){
+  if(!row) return '';
+  var lang = 'fr';
+  try{ lang = localStorage.getItem('tc-lang') || 'fr'; }catch(e){}
+  var fr = (row.description_fr || '').trim();
+  var en = (row.description_en || '').trim();
+  return (lang === 'en') ? (en || fr) : (fr || en);
+}
+
+function tcPresentationCourant(sbClient, id){
+  if(!id) return Promise.resolve('');
+  if(_TC_PRESENTATIONS[id]) return Promise.resolve(tcPresentationLangue(_TC_PRESENTATIONS[id]));
+  return Promise.resolve(
+    sbClient.from('courants').select('description_fr, description_en').eq('id', id).maybeSingle()
+  ).then(function(res){
+    // Échec silencieux assumé, comme pour le lien Facebook : l'absence de ce
+    // paragraphe ne mérite ni bannière ni journalisation, et la fiche reste
+    // entièrement utilisable sans lui. On met tout de même la réponse vide en
+    // cache, pour ne pas redemander la base à chaque réouverture.
+    var row = (res && !res.error && res.data) ? res.data : { description_fr: null, description_en: null };
+    _TC_PRESENTATIONS[id] = row;
+    return tcPresentationLangue(row);
+  }).catch(function(){ return ''; });
+}
+
 // Retourne les id de courants renseignés pour un cinéaste (0 à 3), sans les vides.
 function tcCourantIds(c){
   return [c.courant, c.courant2, c.courant3].filter(function(v){ return v; });

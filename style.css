@@ -1524,6 +1524,27 @@ a { text-decoration: none; color: inherit; }
   position: relative;
   z-index: 1;
 }
+/* LE TEXTE DE PRESENTATION D'UN COURANT OU D'UNE CATEGORIE.
+   Dans le header noir de la fiche, sous le nom, les annees et le nombre de
+   cineastes. Il s'adresse aux visiteurs qui ne sont pas cinephiles : sans
+   lui, « Nouvelle Vague tchecoslovaque » n'etait qu'un titre suivi d'une
+   liste de noms inconnus.
+   Un filet rouge a gauche le detache du bloc de titre, et la mesure est
+   plafonnee a 62 caracteres : au-dela, l'oeil perd la ligne suivante. Le
+   corps est plus petit que celui des dates — c'est un texte a lire, pas un
+   titre a reconnaitre. */
+.fiche-presentation {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  color: #e6e0d4;
+  max-width: 62ch;
+  margin: 14px 0 2px;
+  padding-left: 12px;
+  border-left: 2px solid var(--rouge);
+  position: relative;
+  z-index: 1;
+}
 .fiche-body {
   display: grid;
   grid-template-columns: 120px 1fr;

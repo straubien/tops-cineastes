@@ -45,6 +45,10 @@ const globauxDuProjet = {
   tcCourantLabelFromName: 'readonly', tcCourantFlagHtml: 'readonly', tcCourantYears: 'readonly',
   tcCourantIds: 'readonly', tcCourantType: 'readonly', tcCourantTypeFromName: 'readonly',
   _TC_COURANTS_CACHE: 'writable',
+  // Texte de présentation d'une entrée du catalogue (colonnes
+  // courants.description_fr / description_en), lu fiche par fiche.
+  tcPresentationCourant: 'readonly', tcPresentationLangue: 'readonly',
+  _TC_PRESENTATIONS: 'writable',
   // Catalogue des TYPES d'entrée (table « courant_types »), défini dans utils.js
   TC_TYPES_DE_BASE: 'readonly', tcLoadCourantTypes: 'readonly',
   tcCourantTypesListe: 'readonly', tcCourantTypeLabel: 'readonly',

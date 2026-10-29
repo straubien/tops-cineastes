@@ -2583,7 +2583,12 @@ async function loadCourantCatalogue(){
   var res;
   try {
     res = await tcWithRetryTimeout(function(){
-      return sb.from('courants').select('id, nom_fr, nom_en, pays, annee_debut, annee_fin, type').order('nom_fr', { ascending: true });
+      // Les deux colonnes de présentation ne sont lues QUE par le
+      // back-office : le site public les demande fiche par fiche, à
+      // l'ouverture (cf. tcPresentationCourant, utils.js).
+      return sb.from('courants')
+        .select('id, nom_fr, nom_en, pays, annee_debut, annee_fin, type, description_fr, description_en')
+        .order('nom_fr', { ascending: true });
     });
   } catch(err){
     admErreur(errEl, err, 'chargement');
@@ -2604,6 +2609,41 @@ async function loadCourantCatalogue(){
   _TC_COURANTS_CACHE = cacheMap;
   renderCourantCatalogue(_courantCatalogueRows);
   if(_courantFicheSelected) renderCourantFicheResult(_courantFicheSelected);
+}
+
+// Une zone de saisie de présentation : son intitulé, son aide, sa valeur.
+// Renvoie l'enveloppe à poser dans la ligne et le champ lui-même, pour que
+// l'appelant puisse en relire la valeur au moment d'enregistrer.
+function courantDescChamp(etiquette, aide, valeur){
+  var wrap = document.createElement('div');
+  wrap.className = 'field-wrap courant-desc-wrap';
+  var label = document.createElement('div');
+  label.className = 'field-label';
+  label.textContent = etiquette;
+  var champ = document.createElement('textarea');
+  champ.className = 'autocomplete-input courant-desc-champ';
+  champ.rows = 3;
+  champ.value = valeur;
+  champ.placeholder = aide;
+  champ.setAttribute('aria-label', etiquette);
+  var note = document.createElement('div');
+  note.className = 'courant-desc-aide';
+  note.textContent = aide;
+  wrap.appendChild(label);
+  wrap.appendChild(champ);
+  wrap.appendChild(note);
+  return { wrap: wrap, champ: champ };
+}
+
+// L'intitulé du bouton dit l'état du texte sans qu'on ait à déplier : on
+// parcourt un catalogue de cent trente lignes pour repérer celles qui
+// manquent, pas pour ouvrir les cent trente.
+function courantDescEtiquette(row){
+  var fr = (row.description_fr || '').trim();
+  var en = (row.description_en || '').trim();
+  if(fr && en) return 'Présentation ✓';
+  if(fr || en) return 'Présentation ½';
+  return 'Présentation —';
 }
 
 function renderCourantCatalogue(rows){
@@ -2671,12 +2711,31 @@ function renderCourantCatalogue(rows){
     finInput.value = row.annee_fin || '';
     finInput.placeholder = 'Fin';
 
+    // ── LE TEXTE DE PRÉSENTATION, SUR SA PROPRE LIGNE ────────────────
+    // Deux zones de saisie qui occupent toute la largeur de la carte : un
+    // paragraphe ne se compose pas dans une case de cent cinquante pixels.
+    // Elles sont repliées par défaut — cent trente entrées dépliées feraient
+    // un catalogue de plusieurs mètres — et le bouton « Présentation » les
+    // ouvre. Le compteur dit si le texte existe déjà, sans avoir à déplier.
+    var descCell = document.createElement('div');
+    descCell.className = 'courant-row-desc';
+    var descFr = courantDescChamp('Présentation (français)',
+      'Deux ou trois phrases pour situer l’entrée, à destination d’un visiteur qui n’est pas cinéphile : ce que c’est, quand, où, et pourquoi cela compte.',
+      row.description_fr || '');
+    var descEn = courantDescChamp('Présentation (anglais)',
+      'La même chose en anglais. Si elle est vide, le site affiche le texte français aux visiteurs anglophones plutôt qu’un blanc.',
+      row.description_en || '');
+    descCell.appendChild(descFr.wrap);
+    descCell.appendChild(descEn.wrap);
+
     var actionsCell = document.createElement('div');
     actionsCell.className = 'courant-row-actions';
     var saveBtn = document.createElement('button');
     saveBtn.className = 'btn-primary';
     saveBtn.textContent = 'Enregistrer';
     saveBtn.addEventListener('click', function(){
+      var descriptionFr = descFr.champ.value.trim() || null;
+      var descriptionEn = descEn.champ.value.trim() || null;
       saveCourantEdits(row.id, {
         type: typeSel.value,
         nomFr: frInput.value.trim(),
@@ -2684,8 +2743,32 @@ function renderCourantCatalogue(rows){
         nomEn: enInput.value.trim(),
         pays: paysSel.value || null,
         anneeDebut: debutInput.value ? parseInt(debutInput.value, 10) : null,
-        anneeFin: finInput.value ? parseInt(finInput.value, 10) : null
-      }, saveBtn);
+        anneeFin: finInput.value ? parseInt(finInput.value, 10) : null,
+        // Une zone vidée doit pouvoir EFFACER le texte : on envoie null, pas
+        // la chaîne vide, pour que la colonne redevienne réellement vide.
+        descriptionFr: descriptionFr,
+        descriptionEn: descriptionEn
+      }, saveBtn).then(function(ok){
+        // L'intitulé du bouton suit l'état réel du texte — mais seulement si
+        // la base a dit oui : sur un échec, il doit continuer d'annoncer ce
+        // qui est enregistré, pas ce qui vient d'être tapé.
+        if(!ok) return;
+        row.description_fr = descriptionFr;
+        row.description_en = descriptionEn;
+        descBtn.textContent = courantDescEtiquette(row);
+      });
+    });
+
+    var descBtn = document.createElement('button');
+    descBtn.className = 'btn-reject courant-row-desc-btn';
+    descBtn.type = 'button';
+    descBtn.textContent = courantDescEtiquette(row);
+    descBtn.title = 'Afficher ou masquer le texte de présentation affiché sur la fiche publique.';
+    descBtn.setAttribute('aria-expanded', 'false');
+    descBtn.addEventListener('click', function(){
+      var ouvert = rowEl.classList.toggle('desc-ouverte');
+      descBtn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+      if(ouvert) descFr.champ.focus();
     });
     var delBtn = document.createElement('button');
     delBtn.className = 'btn-reject';
@@ -2696,6 +2779,7 @@ function renderCourantCatalogue(rows){
       });
     });
     actionsCell.appendChild(saveBtn);
+    actionsCell.appendChild(descBtn);
     actionsCell.appendChild(delBtn);
 
     paysSel.addEventListener('change', function(){
@@ -2736,6 +2820,7 @@ function renderCourantCatalogue(rows){
     rowEl.appendChild(debutInput);
     rowEl.appendChild(finInput);
     rowEl.appendChild(actionsCell);
+    rowEl.appendChild(descCell);
 
     listEl.appendChild(rowEl);
   });
@@ -2745,10 +2830,13 @@ function renderCourantCatalogue(rows){
 // notifications.data->>'courant'. Son renommage est propagé à ces deux tables,
 // côté base, par le trigger tc_courants_rename_cascade (tc-courants-cascade.sql) :
 // la cascade est donc garantie quelle que soit l'origine de la modification.
+// Elle répond `true` si la base a bien pris la modification : l'appelant
+// s'en sert pour remettre à jour la ligne qu'il a sous la main (l'intitulé
+// du bouton « Présentation », notamment) sans avoir à tout recharger.
 async function saveCourantEdits(id, edits, btn){
-  if(!edits.nomFr){ showAdminNotice('Le nom français ne peut pas être vide.', false); return; }
-  if(!edits.nomEn){ showAdminNotice('Le nom anglais ne peut pas être vide.', false); return; }
-  if(edits.anneeFin && edits.anneeDebut && edits.anneeFin < edits.anneeDebut){ showAdminNotice('L\'année de fin ne peut pas précéder l\'année de début.', false); return; }
+  if(!edits.nomFr){ showAdminNotice('Le nom français ne peut pas être vide.', false); return false; }
+  if(!edits.nomEn){ showAdminNotice('Le nom anglais ne peut pas être vide.', false); return false; }
+  if(edits.anneeFin && edits.anneeDebut && edits.anneeFin < edits.anneeDebut){ showAdminNotice('L\'année de fin ne peut pas précéder l\'année de début.', false); return false; }
   var renomme = edits.nomFr !== edits.nomFrAvant;
   if(btn) btn.disabled = true;
   var res;
@@ -2758,21 +2846,23 @@ async function saveCourantEdits(id, edits, btn){
         type: edits.type,
         nom_fr: edits.nomFr,
         nom_en: edits.nomEn,
+        description_fr: edits.descriptionFr,
+        description_en: edits.descriptionEn,
         pays: edits.pays,
         annee_debut: edits.anneeDebut,
         annee_fin: edits.anneeFin
       }).eq('id', id).select('id');
     });
-  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
+  } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return false; }
   if(res.error){
     console.error('[admin] enregistrement du courant : ' + (res.error.message || ''), res.error);
     showAdminNotice(/duplicate|unique/i.test(res.error.message || '')
       ? 'Un autre courant porte déjà ce nom français.'
       : friendlyError(res.error), false);
     if(btn) btn.disabled = false;
-    return;
+    return false;
   }
-  if(!res.data || !res.data.length){ showAdminNotice('La mise à jour n\'a pas abouti — vérifiez les droits de la table courants.', false); if(btn) btn.disabled = false; return; }
+  if(!res.data || !res.data.length){ showAdminNotice('La mise à jour n\'a pas abouti — vérifiez les droits de la table courants.', false); if(btn) btn.disabled = false; return false; }
   if(btn) btn.disabled = false;
   if(renomme){
     showAdminNotice('Renommé en « ' + edits.nomFr + ' » — propositions et notifications mises à jour en cascade.', true);
@@ -2781,6 +2871,7 @@ async function saveCourantEdits(id, edits, btn){
     showAdminNotice('Courant mis à jour.', true);
   }
   refreshStatsIfActive();
+  return true;
 }
 
 // Suppression bloquée si le courant est encore affecté à au moins une fiche
@@ -3128,17 +3219,20 @@ function refreshStatsIfActive(){
 // requête sinon : l'affichage n'est pas la barrière, il ne l'est jamais.
 //
 // ── CE QUE L'ONGLET MONTRE, ET DANS QUEL ORDRE ───────────────────────────
-//   1. un chiffre de tête : le cinéphile le plus actif ;
-//   2. quatre compteurs de cadrage (inscrits, vus ce mois, tops, propositions) ;
-//   3. le classement, en barres empilées : la LONGUEUR dit le volume, les
-//      SEGMENTS disent de quoi cette activité est faite ;
+//   1. un bandeau de présence : combien de cinéphiles sont venus récemment ;
+//   2. QUI VIENT, ET QUAND : une frise de six mois par cinéphile, semaine par
+//      semaine, triée par dernière visite ;
+//   3. CE QU'ILS FONT : le classement en barres empilées — la LONGUEUR dit le
+//      volume, les SEGMENTS disent de quoi cette activité est faite ;
 //   4. le détail chiffre par chiffre, triable.
 //
-// Le point 3 est le coeur. Un simple classement de scores dirait « Alice est
-// devant Bruno » et s'arrêterait là. Les segments disent POURQUOI : l'une
-// publie des tops, l'autre anime le Jeu du photogramme, une troisième
-// propose des cinéastes sans jamais jouer. C'est cette question-là qu'on se
-// pose en ouvrant cet onglet.
+// ⚠ LE NOMBRE DE TOPS N'ENTRE PLUS DANS LE SCORE, ET C'EST VOLONTAIRE.
+// Il le dominait entièrement : à dix points le top, un contributeur dont le
+// millier de tops a été importé depuis Facebook arrivait deuxième du
+// « classement d'activité » sans s'être jamais connecté une seule fois. Ce
+// que cet onglet doit mesurer, c'est la présence et l'activité SUR LE SITE ;
+// le volume de tops mesure un import, pas une vie. Les trois colonnes de
+// tops restent au tableau de détail, à part et en retrait, pour mémoire.
 
 // Le poids de chaque geste dans le score d'activité. Ils sont ici, en clair et
 // à un seul endroit, parce qu'il n'existe pas de bonne réponse : ce sont des
@@ -3146,9 +3240,6 @@ function refreshStatsIfActive(){
 // selon une formule cachée.
 var ACT_POIDS = {
   nb_connexions:        1,
-  tops_publies:        10,
-  tops_proposes:       10,
-  tops_thematiques:    10,
   prop_cineastes:       4,
   prop_courants:        2,
   commentaires:         3,
@@ -3157,22 +3248,21 @@ var ACT_POIDS = {
   jeu_bonnes_reponses:  1
 };
 
-// ── LES QUATRE FAMILLES DE GESTES ─────────────────────────────────────────
-// Dix compteurs, c'est trop pour une barre empilée : au-delà de cinq ou six
-// segments, plus personne ne distingue les couleurs. On les regroupe donc en
-// quatre familles qui ont un sens pour le site, et le tableau du bas garde
-// les dix chiffres exacts.
+// Les compteurs de tops : lus et affichés, jamais comptés. Ils sont tenus
+// à part de ACT_POIDS pour qu'aucune addition ne puisse les reprendre par
+// inadvertance — c'est la liste elle-même qui fait la règle.
+var ACT_TOPS_NON_COMPTES = ['tops_publies', 'tops_proposes', 'tops_thematiques'];
+
+// ── LES TROIS FAMILLES DE GESTES ──────────────────────────────────────────
+// Elles étaient quatre ; « Tops » est partie avec le score. Les trois qui
+// restent sont celles qui se passent réellement sur le site.
 //
 // ⚠ L'ORDRE DE CETTE LISTE EST L'ORDRE DE LA PILE, ET IL N'EST PAS LIBRE.
 // Dans une barre empilée, seuls les segments VOISINS se touchent : ce sont
-// donc les paires voisines qui doivent rester distinguables. Or le rouge et
-// l'or, côte à côte, ne se séparent pas assez en mode sombre pour un œil
-// daltonien (deutéranopie : écart de 5,9 là où il en faut 8). Le bleu est
-// glissé entre eux : chaque paire voisine passe alors les contrôles, dans
-// les deux modes. Ne remettez pas « Propositions » juste après « Tops ».
+// donc les paires voisines qui doivent rester distinguables. Le bleu reste
+// glissé entre l'or et le sarcelle : chaque paire voisine passe alors les
+// contrôles de daltonisme, dans les deux modes.
 var ACT_FAMILLES = [
-  { clef: 'tops',  nom: 'Tops',
-    compte: ['tops_publies', 'tops_proposes', 'tops_thematiques'] },
   { clef: 'jeu',   nom: 'Jeu du photogramme',
     compte: ['jeu_parties_creees', 'jeu_parties_jouees', 'jeu_bonnes_reponses'] },
   { clef: 'props', nom: 'Propositions',
@@ -3181,25 +3271,37 @@ var ACT_FAMILLES = [
     compte: ['commentaires', 'nb_connexions'] }
 ];
 
+// ── LES ÉTATS DE PRÉSENCE ─────────────────────────────────────────────────
+// Quatre groupes, lisibles d'un coup d'œil, plutôt qu'une date brute à
+// comparer de tête ligne après ligne. Les seuils sont ceux qu'on emploie
+// partout : la semaine, puis le mois.
+var ACT_ETATS = [
+  { clef: 'actif',   nom: 'Actif',       aide: 'Vu dans les 7 derniers jours.' },
+  { clef: 'present', nom: 'Présent',     aide: 'Vu dans les 30 derniers jours.' },
+  { clef: 'dormant', nom: 'Endormi',     aide: 'Plus d’un mois sans venir.' },
+  { clef: 'jamais',  nom: 'Jamais venu', aide: 'Aucune visite enregistrée depuis l’inscription.' }
+];
+
 // ── LES COLONNES DU TABLEAU DE DÉTAIL ─────────────────────────────────────
 // Elles suivent les familles ci-dessus, dans le même ordre : l'en-tête porte
 // une bande de la couleur de la famille, et le lecteur retrouve dans le
-// tableau ce qu'il vient de voir dans les barres.
+// tableau ce qu'il vient de voir dans les barres. Les trois colonnes de tops
+// ferment la marche, sous une bande qui dit en toutes lettres qu'elles ne
+// sont pas comptées.
 //   clef    la donnée rendue par la base, ou `score`, calculé ici
 //   fam     la famille d'appartenance (pour la bande de couleur de l'en-tête)
 //   texte   colonne de texte : alignée à gauche, triée alphabétiquement
 //   date    colonne de date : affichée en français, triée chronologiquement
+//   horsScore  colonne tenue à l'écart du score : affichée en retrait
 //   aide    l'infobulle de l'en-tête, quand le titre court ne suffit pas
 var ACT_COLONNES = [
   { clef: 'display_name', titre: 'Cinéphile', texte: true },
   { clef: 'score', titre: 'Activité', fort: true,
-    aide: 'Somme pondérée de tous les gestes, selon les poids annoncés sous le classement.' },
-  { clef: 'tops_publies', titre: 'Publiés', fam: 'tops',
-    aide: 'Tops en ligne, un par cinéaste (table « tops »).' },
-  { clef: 'tops_proposes', titre: 'Envoyés', fam: 'tops',
-    aide: 'Tops envoyés depuis l’espace contributeur, en attente ou validés. Une soumission modifiée est mise à jour sur place par le site : elle compte pour une, pas pour deux.' },
-  { clef: 'tops_thematiques', titre: 'Thémat.', fam: 'tops',
-    aide: 'Tops thématiques proposés.' },
+    aide: 'Somme pondérée des gestes faits sur le site, selon les poids annoncés sous le classement. Les tops n’y entrent pas.' },
+  { clef: 'jours_de_visite', titre: 'Jours', fam: 'presence',
+    aide: 'Nombre de journées différentes où le cinéphile est venu, depuis l’installation du journal des connexions.' },
+  { clef: 'nb_connexions', titre: 'Visites', fam: 'presence',
+    aide: 'Visites enregistrées depuis l’installation du journal des connexions (fichier SQL n° 7). Avant lui, rien n’était conservé.' },
   { clef: 'jeu_parties_creees', titre: 'Montées', fam: 'jeu',
     aide: 'Parties du Jeu du photogramme préparées et publiées.' },
   { clef: 'jeu_parties_jouees', titre: 'Jouées', fam: 'jeu',
@@ -3212,24 +3314,36 @@ var ACT_COLONNES = [
     aide: 'Propositions de courants et de catégories.' },
   { clef: 'commentaires', titre: 'Comm.', fam: 'ech',
     aide: 'Commentaires écrits sous les tops.' },
-  { clef: 'nb_connexions', titre: 'Connex.', fam: 'ech',
-    aide: 'Visites enregistrées depuis l’installation du journal des connexions (fichier SQL n° 7). Avant lui, rien n’était conservé.' },
   // Titres courts et dates à deux chiffres : à quatorze colonnes, « Membre
   // depuis » et « 02/06/2026 » poussaient les deux dernières hors de
   // l'écran. L'infobulle de l'en-tête dit ce que la colonne compte.
   { clef: 'inscrit_le', titre: 'Inscrit', date: true,
     aide: 'Date d’inscription du cinéphile.' },
   { clef: 'derniere_visite', titre: 'Vu le', date: true,
-    aide: 'contributors.last_seen_at : la dernière visite connue, écrasée à chaque passage.' }
+    aide: 'contributors.last_seen_at : la dernière visite connue, écrasée à chaque passage.' },
+  { clef: 'tops_publies', titre: 'Publiés', fam: 'tops', horsScore: true,
+    aide: 'Tops en ligne, un par cinéaste (table « tops »). NON COMPTÉ dans le score.' },
+  { clef: 'tops_proposes', titre: 'Envoyés', fam: 'tops', horsScore: true,
+    aide: 'Tops envoyés depuis l’espace contributeur, en attente ou validés. Une soumission modifiée est mise à jour sur place par le site : elle compte pour une, pas pour deux. NON COMPTÉ dans le score.' },
+  { clef: 'tops_thematiques', titre: 'Thémat.', fam: 'tops', horsScore: true,
+    aide: 'Tops thématiques proposés. NON COMPTÉ dans le score.' }
 ];
 
 // L'état de l'onglet. Un objet, et non des variables nues : le linter du
 // projet signale une variable réaffectée après une attente réseau, et il a
 // raison de le faire — la propriété d'un objet dit la même chose sans
 // ajouter un avertissement de plus.
-var ACT_ETAT = { ts: 0, enVol: false, lignes: null, tri: 'score', descendant: true };
+// `semaines` tient le journal jour par jour, replié en semaines : il vient
+// de la table « connexions », que seuls les administrateurs peuvent lire.
+var ACT_ETAT = { ts: 0, enVol: false, lignes: null, semaines: null, tri: 'score', descendant: true };
 
-var ACT_TRENTE_JOURS = 30 * 24 * 3600 * 1000;
+var ACT_JOUR = 24 * 3600 * 1000;
+var ACT_TRENTE_JOURS = 30 * ACT_JOUR;
+var ACT_SEPT_JOURS = 7 * ACT_JOUR;
+// Six mois de frise : c'est toute la durée de vie du journal des connexions,
+// et vingt-six cases tiennent dans la largeur d'une ligne sans se réduire à
+// des traits.
+var ACT_NB_SEMAINES = 26;
 
 // Les compteurs bruts de la base, plus ce qui se calcule ici : le total de
 // chaque famille, sa part pondérée dans le score, et le score lui-même.
@@ -3244,6 +3358,9 @@ function activiteNormaliser(brut){
       familles:        {}
     };
     Object.keys(ACT_POIDS).forEach(function(k){ o[k] = Number(r[k]) || 0; });
+    // Les tops sont recopiés comme les autres compteurs, mais depuis leur
+    // propre liste : ils s'affichent, ils ne s'additionnent pas.
+    ACT_TOPS_NON_COMPTES.forEach(function(k){ o[k] = Number(r[k]) || 0; });
     o.score = 0;
     ACT_FAMILLES.forEach(function(f){
       // Deux grandeurs par famille, et elles ne servent pas à la même chose :
@@ -3258,8 +3375,25 @@ function activiteNormaliser(brut){
       o.familles[f.clef] = { gestes: gestes, poids: poids };
       o.score += poids;
     });
+    o.etat = actEtatDe(o);
     return o;
   });
+}
+
+// L'état de présence d'un cinéphile, d'après sa dernière visite connue.
+function actEtatDe(r){
+  if(!r.derniere_visite) return 'jamais';
+  var ecart = Date.now() - Date.parse(r.derniere_visite);
+  if(ecart <= ACT_SEPT_JOURS) return 'actif';
+  if(ecart <= ACT_TRENTE_JOURS) return 'present';
+  return 'dormant';
+}
+
+function actEtatDef(clef){
+  for(var i = 0; i < ACT_ETATS.length; i++){
+    if(ACT_ETATS[i].clef === clef) return ACT_ETATS[i];
+  }
+  return ACT_ETATS[ACT_ETATS.length - 1];
 }
 
 // « 02/06/26 » plutôt que « 02/06/2026 » : deux colonnes de dates sur
@@ -3268,6 +3402,21 @@ function activiteNormaliser(brut){
 function actDateCourte(iso){
   return new Date(iso).toLocaleDateString('fr-FR',
     { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+// « il y a 3 jours », « hier », « aujourd'hui » : une date brute oblige le
+// lecteur à compter de tête, alors que la question qu'il se pose est
+// toujours « ça fait combien de temps ? ».
+function actDepuis(iso){
+  if(!iso) return 'jamais venu';
+  var jours = Math.floor((Date.now() - Date.parse(iso)) / ACT_JOUR);
+  if(jours <= 0) return 'aujourd’hui';
+  if(jours === 1) return 'hier';
+  if(jours < 31) return 'il y a ' + jours + ' jours';
+  var mois = Math.round(jours / 30.44);
+  if(mois < 12) return 'il y a ' + mois + ' mois';
+  var ans = Math.floor(jours / 365.25);
+  return 'il y a ' + ans + (ans > 1 ? ' ans' : ' an');
 }
 
 function actColonne(clef){
@@ -3315,10 +3464,19 @@ function renderActivite(forcer){
   if(errEl) errEl.style.display = 'none';
   if(!ACT_ETAT.lignes) hote.innerHTML = '<div class="empty-state">Chargement…</div>';
 
-  tcWithRetryTimeout(function(){ return sb.rpc('tc_activite_cinephiles'); }).then(function(res){
+  // Deux lectures, en parallèle : les compteurs déjà faits par la base, et le
+  // journal jour par jour qui alimente la frise de présence. La seconde peut
+  // échouer sans emporter la première — l'onglet s'affiche alors sans frise.
+  var compteurs = tcWithRetryTimeout(function(){ return sb.rpc('tc_activite_cinephiles'); });
+  var journal = tcWithRetryTimeout(function(){
+    return sb.from('connexions').select('contributor_id, jour, visites');
+  }).catch(function(){ return null; });
+
+  Promise.all([compteurs, journal]).then(function(res){
     ACT_ETAT.enVol = false;
-    if(res && res.error) throw tcSbError(res.error, 'tc_activite_cinephiles');
-    ACT_ETAT.lignes = activiteNormaliser(res && res.data);
+    if(res[0] && res[0].error) throw tcSbError(res[0].error, 'tc_activite_cinephiles');
+    ACT_ETAT.lignes = activiteNormaliser(res[0] && res[0].data);
+    ACT_ETAT.semaines = actReplierSemaines(res[1] && !res[1].error ? res[1].data : null);
     ACT_ETAT.ts = Date.now();
     rendreActivite();
   }).catch(function(err){
@@ -3338,6 +3496,66 @@ function renderActivite(forcer){
   });
 }
 
+// ── LA FRISE : DU JOURNAL AUX SEMAINES ────────────────────────────────────
+// La table « connexions » tient une ligne par cinéphile ET PAR JOUR. Vingt-six
+// cases par ligne, c'est une semaine par case : on replie donc le journal en
+// semaines, de la plus ancienne à la plus récente, la dernière étant celle
+// d'aujourd'hui.
+//
+// Le repère est le LUNDI : sans lui, la dernière case couvrirait un nombre de
+// jours variable selon l'heure d'ouverture de la page, et deux consultations
+// du même onglet ne donneraient pas la même frise.
+function actLundiDeLaSemaine(d){
+  var j = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // getDay() : 0 = dimanche. On ramène tout au lundi précédent.
+  var decalage = (j.getDay() + 6) % 7;
+  j.setDate(j.getDate() - decalage);
+  return j;
+}
+
+function actReplierSemaines(rows){
+  if(!rows || !rows.length) return null;
+  var lundiCourant = actLundiDeLaSemaine(new Date());
+  var premierLundi = new Date(lundiCourant.getTime());
+  premierLundi.setDate(premierLundi.getDate() - 7 * (ACT_NB_SEMAINES - 1));
+  var debut = premierLundi.getTime();
+
+  var parCinephile = {};
+  rows.forEach(function(r){
+    if(!r || !r.contributor_id || !r.jour) return;
+    // « 2026-06-02 » est lu comme une date locale, et non UTC : en UTC, un
+    // fuseau à l'est ferait basculer la journée dans la semaine précédente.
+    var bouts = String(r.jour).slice(0, 10).split('-');
+    var jour = new Date(Number(bouts[0]), Number(bouts[1]) - 1, Number(bouts[2]));
+    var index = Math.floor((actLundiDeLaSemaine(jour).getTime() - debut) / (7 * ACT_JOUR));
+    if(index < 0 || index >= ACT_NB_SEMAINES) return;   // hors de la fenêtre affichée
+    var serie = parCinephile[r.contributor_id];
+    if(!serie){
+      serie = parCinephile[r.contributor_id] = new Array(ACT_NB_SEMAINES);
+      for(var i = 0; i < ACT_NB_SEMAINES; i++) serie[i] = 0;
+    }
+    serie[index] += Number(r.visites) || 0;
+  });
+  return { debut: debut, par: parCinephile };
+}
+
+// Quatre paliers, et pas un de plus : au-delà, l'œil ne sépare plus les
+// nuances, et le chiffre exact est de toute façon dans l'infobulle.
+function actPalier(visites){
+  if(!visites) return 0;
+  if(visites <= 2) return 1;
+  if(visites <= 5) return 2;
+  return 3;
+}
+
+// Le libellé d'une case : « semaine du 6 octobre — 4 visites ».
+function actLibelleSemaine(debut, index, visites){
+  var d = new Date(debut + index * 7 * ACT_JOUR);
+  var quand = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  if(!visites) return 'Semaine du ' + quand + ' — aucune visite';
+  return 'Semaine du ' + quand + ' — ' + visites + (visites > 1 ? ' visites' : ' visite');
+}
+
 // ── LE RENDU ──────────────────────────────────────────────────────────────
 
 function rendreActivite(){
@@ -3349,6 +3567,7 @@ function rendreActivite(){
     return;
   }
   hote.appendChild(actBandeau());
+  hote.appendChild(actPresence());
   hote.appendChild(actClassement());
   hote.appendChild(actTableau());
 }
@@ -3362,35 +3581,41 @@ function actEl(balise, classe, texte){
   return e;
 }
 
-// ── 1 & 2. LE CHIFFRE DE TÊTE ET LES COMPTEURS DE CADRAGE ─────────────────
-// Le plus actif n'est pas une barre d'un pixel de plus que la suivante : c'est
-// le chiffre que l'on vient chercher, il a droit à sa place et à sa taille.
+// ── 1. LE BANDEAU DE PRÉSENCE ─────────────────────────────────────────────
+// Le chiffre de tête n'est plus « le plus actif » : un palmarès individuel ne
+// disait rien de la santé du site, et celui qu'il désignait devait sa place à
+// un import de tops. La question qu'on se pose en ouvrant l'onglet, c'est
+// « est-ce que les gens viennent ? ».
 function actBandeau(){
   var lignes = ACT_ETAT.lignes;
-  var tete = actTriees('score', true)[0];
+  var compterEtat = function(clef){
+    return lignes.filter(function(r){ return r.etat === clef; }).length;
+  };
   var somme = function(clef){
     return lignes.reduce(function(s, r){ return s + (r[clef] || 0); }, 0);
   };
-  var limite = Date.now() - ACT_TRENTE_JOURS;
-  var vus = lignes.filter(function(r){
-    return r.derniere_visite && Date.parse(r.derniere_visite) >= limite;
-  }).length;
+  var vus30 = compterEtat('actif') + compterEtat('present');
 
   var carte = actEl('div', 'act-bandeau');
 
   var gauche = actEl('div', 'act-tete');
-  gauche.appendChild(actEl('span', 'act-tete-sur', 'Le plus actif'));
-  gauche.appendChild(actEl('span', 'act-tete-nom', tete.display_name));
-  var chiffre = actEl('span', 'act-tete-valeur', statsFmtNb(tete.score));
-  chiffre.appendChild(actEl('span', 'act-tete-unite', 'points'));
+  gauche.appendChild(actEl('span', 'act-tete-sur', 'Venus ces 30 jours'));
+  var chiffre = actEl('span', 'act-tete-valeur', statsFmtNb(vus30));
+  chiffre.appendChild(actEl('span', 'act-tete-unite',
+    'sur ' + statsFmtNb(lignes.length) + ' inscrits'));
   gauche.appendChild(chiffre);
+  gauche.appendChild(actEl('span', 'act-tete-sous',
+    lignes.length ? statsFmtPct(vus30 / lignes.length) + ' des cinéphiles inscrits' : '—'));
   carte.appendChild(gauche);
 
   var kpis = actEl('div', 'act-kpis');
-  [ { v: lignes.length, l: 'Cinéphiles inscrits' },
-    { v: vus,           l: 'Vus ces 30 jours' },
-    { v: somme('tops_publies'), l: 'Tops en ligne' },
-    { v: somme('prop_cineastes') + somme('prop_courants'), l: 'Propositions reçues' }
+  // Quatre compteurs de cadrage, pas cinq : au-delà, la grille du bandeau
+  // repasse à la ligne et le cinquième chiffre se retrouve seul, énorme et
+  // centré, à faire croire qu'il est le plus important.
+  [ { v: compterEtat('actif'),   l: 'Vus cette semaine' },
+    { v: compterEtat('dormant'), l: 'Endormis' },
+    { v: compterEtat('jamais'),  l: 'Jamais venus' },
+    { v: somme('nb_connexions'), l: 'Visites enregistrées' }
   ].forEach(function(k){
     var c = actEl('div', 'act-kpi');
     c.appendChild(actEl('span', 'act-kpi-valeur', statsFmtNb(k.v)));
@@ -3401,11 +3626,107 @@ function actBandeau(){
   return carte;
 }
 
+// ── 2. QUI VIENT, ET QUAND ────────────────────────────────────────────────
+// Une ligne par cinéphile, rangée de la visite la plus récente à la plus
+// ancienne, avec six mois de présence semaine par semaine. C'est la vue que
+// l'onglet n'avait pas : elle répond d'un coup d'œil à « qui est encore là ».
+function actPresence(){
+  var bloc = actEl('div', 'act-bloc');
+  var tete = actEl('div', 'act-bloc-tete');
+  tete.appendChild(actEl('h3', 'act-bloc-titre', 'Qui vient, et quand'));
+  tete.appendChild(actEl('span', 'act-bloc-aide',
+    'Une case par semaine, sur les six derniers mois ; la plus à droite est la semaine en cours.'));
+
+  // L'échelle de la frise, toujours affichée : une couleur seule ne dit rien
+  // si l'on n'annonce pas ce qu'elle mesure.
+  var echelle = actEl('div', 'act-echelle');
+  echelle.appendChild(actEl('span', 'act-echelle-bout', 'aucune visite'));
+  [0, 1, 2, 3].forEach(function(n){
+    var c = actEl('span', 'act-case act-case-' + n);
+    c.setAttribute('aria-hidden', 'true');
+    echelle.appendChild(c);
+  });
+  echelle.appendChild(actEl('span', 'act-echelle-bout', '6 et plus'));
+  tete.appendChild(echelle);
+  bloc.appendChild(tete);
+
+  // Tri par récence : la date de dernière visite, les jamais venus en dernier.
+  var lignes = (ACT_ETAT.lignes || []).slice().sort(function(a, b){
+    var x = a.derniere_visite ? Date.parse(a.derniere_visite) : -1;
+    var y = b.derniere_visite ? Date.parse(b.derniere_visite) : -1;
+    if(x !== y) return y - x;
+    return String(a.display_name).localeCompare(String(b.display_name), 'fr');
+  });
+
+  // L'en-tête des colonnes, dans le cadre de la carte et aligné sur les
+  // lignes : cinq chiffres côte à côte sans libellé ne se devinent pas.
+  var enTete = actEl('div', 'act-presence-ligne act-presence-tete');
+  [['Cinéphile', ''], ['Les six derniers mois', ''],
+   ['Jours', 'Journées différentes où ce cinéphile est venu.'],
+   ['Visites', 'Visites enregistrées.'],
+   ['Dernière visite', '']].forEach(function(col){
+    var cell = actEl('span', null, col[0]);
+    if(col[1]) cell.title = col[1];
+    enTete.appendChild(cell);
+  });
+
+  var liste = actEl('div', 'act-presences');
+  liste.appendChild(enTete);
+  lignes.forEach(function(r){ liste.appendChild(actLignePresence(r)); });
+  bloc.appendChild(liste);
+
+  if(!ACT_ETAT.semaines){
+    bloc.appendChild(actEl('p', 'act-note',
+      'La frise reste vide : le journal des connexions (table « connexions ») n’a pas pu '
+      + 'être lu. Les colonnes « Jours » et « Visites » du tableau de détail, elles, '
+      + 'viennent de la fonction de la base et restent justes.'));
+  }
+  return bloc;
+}
+
+function actLignePresence(r){
+  var ligne = actEl('div', 'act-presence-ligne');
+  var etat = actEtatDef(r.etat);
+
+  var nom = actEl('div', 'act-presence-nom');
+  nom.appendChild(actEl('span', 'act-nom', r.display_name));
+  var badge = actEl('span', 'act-badge act-badge-' + etat.clef, etat.nom);
+  badge.title = etat.aide;
+  nom.appendChild(badge);
+  ligne.appendChild(nom);
+
+  var serie = (ACT_ETAT.semaines && ACT_ETAT.semaines.par[r.contributor_id]) || null;
+  var frise = actEl('div', 'act-frise');
+  frise.setAttribute('role', 'img');
+  frise.setAttribute('aria-label', r.display_name + ' : ' + r.jours_de_visite
+    + (r.jours_de_visite > 1 ? ' jours de visite, ' : ' jour de visite, ')
+    + statsFmtNb(r.nb_connexions) + (r.nb_connexions > 1 ? ' visites. ' : ' visite. ')
+    + 'Dernière visite ' + actDepuis(r.derniere_visite) + '.');
+  for(var i = 0; i < ACT_NB_SEMAINES; i++){
+    var n = serie ? serie[i] : 0;
+    var c = actEl('span', 'act-case act-case-' + actPalier(n));
+    if(ACT_ETAT.semaines) c.title = actLibelleSemaine(ACT_ETAT.semaines.debut, i, n);
+    frise.appendChild(c);
+  }
+  ligne.appendChild(frise);
+
+  var jours = actEl('span', 'act-presence-jours', r.jours_de_visite ? statsFmtNb(r.jours_de_visite) : '·');
+  if(!r.jours_de_visite) jours.classList.add('act-zero');
+  ligne.appendChild(jours);
+
+  var visites = actEl('span', 'act-presence-visites', r.nb_connexions ? statsFmtNb(r.nb_connexions) : '·');
+  if(!r.nb_connexions) visites.classList.add('act-zero');
+  ligne.appendChild(visites);
+
+  ligne.appendChild(actEl('span', 'act-presence-depuis', actDepuis(r.derniere_visite)));
+  return ligne;
+}
+
 // ── 3. LE CLASSEMENT EN BARRES EMPILÉES ───────────────────────────────────
 function actClassement(){
   var bloc = actEl('div', 'act-bloc');
   var tete = actEl('div', 'act-bloc-tete');
-  tete.appendChild(actEl('h3', 'act-bloc-titre', 'Qui fait quoi'));
+  tete.appendChild(actEl('h3', 'act-bloc-titre', 'Ce qu’ils font sur le site'));
 
   // La légende est TOUJOURS là. C'est le canal d'identité fiable : jamais la
   // couleur seule, qui laisserait de côté un lecteur daltonien sur douze.
@@ -3424,11 +3745,11 @@ function actClassement(){
   bloc.appendChild(tete);
 
   var lignes = actTriees('score', true);
-  var maxi = lignes.reduce(function(m, r){ return Math.max(m, r.score); }, 0) || 1;
+  var echelle = actEchelle(lignes);
 
   var liste = actEl('div', 'act-barres');
   lignes.forEach(function(r, i){
-    liste.appendChild(actBarre(r, i + 1, maxi));
+    liste.appendChild(actBarre(r, i + 1, echelle));
   });
   bloc.appendChild(liste);
 
@@ -3441,7 +3762,6 @@ function actClassement(){
   // légende qui raconte autre chose.
   note.appendChild(actEl('strong', null,
     'une partie montée ' + ACT_POIDS.jeu_parties_creees
-    + ', un top publié ou envoyé ' + ACT_POIDS.tops_publies
     + ', une partie jouée ' + ACT_POIDS.jeu_parties_jouees
     + ', une proposition de cinéaste ' + ACT_POIDS.prop_cineastes
     + ', un commentaire ' + ACT_POIDS.commentaires
@@ -3449,13 +3769,47 @@ function actClassement(){
     + ', un photogramme trouvé ' + ACT_POIDS.jeu_bonnes_reponses
     + ', une connexion ' + ACT_POIDS.nb_connexions + '.'));
   note.appendChild(document.createTextNode(
-    ' Ce sont des choix, pas une vérité : ils se changent en un seul endroit '
-    + '(ACT_POIDS, dans admin.js).'));
+    ' Le nombre de tops n’entre PAS dans ce score : il mesurerait un import, pas une '
+    + 'activité sur le site — les trois colonnes de tops du tableau ci-dessous sont là '
+    + 'pour mémoire, à part et en retrait. Ces poids sont des choix, pas une vérité : '
+    + 'ils se changent en un seul endroit (ACT_POIDS, dans admin.js).'));
+  // La note ne parle de la cassure que lorsqu'il y en a une : une échelle
+  // qu'on explique alors qu'elle est normale ne fait qu'inquiéter.
+  if(echelle.cassee){
+    note.appendChild(document.createTextNode(' '));
+    note.appendChild(actEl('strong', null,
+      'Le graphique est calé sur le deuxième score (' + statsFmtNb(echelle.haut) + ' points)'));
+    note.appendChild(document.createTextNode(
+      ' : le premier le dépasse de trop loin pour que les autres restent comparables sur '
+      + 'la même échelle. Sa barre est donc coupée et porte la marque ⟩ ; son chiffre '
+      + 'exact reste écrit au bout de sa ligne.'));
+  }
   bloc.appendChild(note);
   return bloc;
 }
 
-function actBarre(r, rang, maxi){
+// ── LE HAUT DE L'ÉCHELLE, ET POURQUOI CE N'EST PAS TOUJOURS LE MAXIMUM ───
+// Caler le graphique sur le plus grand score marche tant qu'il n'y a pas
+// d'écart démesuré. Ici il y en a un : l'administrateur du site, qui a saisi
+// à lui seul le catalogue des courants, totalise une trentaine de fois le
+// score du deuxième. Sur une échelle calée sur lui, les vingt-trois autres
+// barres deviennent un trait de deux pixels — exactement le défaut que les
+// tops produisaient avant d'être sortis du score.
+//
+// On cale donc l'échelle sur le DEUXIÈME score dès que le premier en vaut
+// plus du triple. La barre du premier est alors coupée net et porte une
+// marque de cassure : le lecteur voit qu'elle sort du cadre, le chiffre
+// exact reste écrit au bout de sa ligne, et les vingt-trois autres
+// redeviennent comparables entre elles.
+function actEchelle(lignes){
+  var scores = lignes.map(function(r){ return r.score; }).sort(function(a, b){ return b - a; });
+  var premier = scores[0] || 0;
+  var second = scores[1] || 0;
+  if(second > 0 && premier > 3 * second) return { haut: second, cassee: true };
+  return { haut: premier || 1, cassee: false };
+}
+
+function actBarre(r, rang, echelle){
   var ligne = actEl('div', 'act-barre-ligne');
 
   ligne.appendChild(actEl('span', 'act-rang', rang));
@@ -3463,18 +3817,25 @@ function actBarre(r, rang, maxi){
 
   var piste = actEl('div', 'act-piste');
   // La barre entière est le point d'arrêt clavier, et non chacun de ses
-  // quatre segments : avec vingt-quatre cinéphiles, segmenter la tabulation
-  // ferait quatre-vingt-seize arrêts pour lire un classement. Au survol
-  // comme au clavier, l'infobulle donne les quatre familles d'un coup.
+  // trois segments : avec vingt-quatre cinéphiles, segmenter la tabulation
+  // ferait soixante-douze arrêts pour lire un classement. Au survol
+  // comme au clavier, l'infobulle donne les trois familles d'un coup.
   piste.tabIndex = 0;
   piste.setAttribute('role', 'img');
   piste.setAttribute('aria-label', actResume(r));
 
   var barre = actEl('div', 'act-barre');
-  // La barre la plus longue occupe toute la largeur ; les autres s'y
-  // rapportent. C'est une comparaison entre pairs, il n'y a pas d'échelle
-  // absolue à respecter.
-  barre.style.width = (r.score > 0 ? Math.max(1.2, (r.score / maxi) * 100) : 0) + '%';
+  // La barre se rapporte au haut de l'échelle, qui n'est pas forcément le
+  // plus grand score : voir actEchelle. Au-delà, elle est coupée et porte la
+  // marque de cassure ; le chiffre exact reste au bout de la ligne.
+  var part = echelle.haut > 0 ? (r.score / echelle.haut) * 100 : 0;
+  barre.style.width = (r.score > 0 ? Math.min(100, Math.max(1.2, part)) : 0) + '%';
+  if(r.score > echelle.haut){
+    barre.classList.add('est-cassee');
+    piste.classList.add('est-cassee');
+    piste.title = r.display_name + ' sort de l’échelle : ' + statsFmtNb(r.score)
+      + ' points, soit ' + Math.round(r.score / echelle.haut) + ' fois le haut du graphique.';
+  }
 
   ACT_FAMILLES.forEach(function(f){
     var part = r.familles[f.clef];
@@ -3569,8 +3930,8 @@ function actBulleCacher(){
 }
 
 // ── 4. LE DÉTAIL, CHIFFRE PAR CHIFFRE ─────────────────────────────────────
-// Dix compteurs qui portent tous du sens : au-delà de sept classes, c'est un
-// tableau qu'il faut, pas des couleurs en plus. Il sert aussi de repli
+// Quinze colonnes qui portent toutes du sens : au-delà de sept classes, c'est
+// un tableau qu'il faut, pas des couleurs en plus. Il sert aussi de repli
 // accessible au classement : aucune valeur n'est visible au seul survol.
 // Remplace le tableau sur place, puis rend le focus à l'en-tête sur lequel
 // on vient de cliquer : sans cela, trier au clavier renvoie le focus au
@@ -3582,6 +3943,16 @@ function actRemplacerTableau(clefFocus){
   vieux.parentNode.replaceChild(neuf, vieux);
   var cible = neuf.querySelector('[data-col="' + clefFocus + '"]');
   if(cible) cible.focus();
+}
+
+// Le titre de la bande qui coiffe un groupe de colonnes. « Présence » et
+// « Tops » ne sont pas des familles de gestes : la première n'a pas de
+// segment dans les barres, la seconde n'entre dans aucun score.
+function actBandeTitre(fam){
+  if(fam === 'presence') return 'Présence';
+  if(fam === 'tops') return 'Tops — non comptés dans le score';
+  var f = ACT_FAMILLES.filter(function(x){ return x.clef === fam; })[0];
+  return f ? f.nom : '';
 }
 
 function actTableau(){
@@ -3609,10 +3980,7 @@ function actTableau(){
     var th = actEl('th', 'act-bande-cell' + (fam ? ' act-bande-' + fam : ''));
     th.colSpan = largeur;
     th.setAttribute('scope', 'colgroup');
-    if(fam){
-      var f = ACT_FAMILLES.filter(function(x){ return x.clef === fam; })[0];
-      th.textContent = f ? f.nom : '';
-    }
+    if(fam) th.textContent = actBandeTitre(fam);
     bande.appendChild(th);
     i += largeur;
   }
@@ -3620,7 +3988,9 @@ function actTableau(){
 
   var trh = actEl('tr');
   ACT_COLONNES.forEach(function(c){
-    var th = actEl('th', c.texte ? 'act-gauche' : null);
+    var th = actEl('th', (c.texte ? 'act-gauche' : '')
+      + (c.horsScore ? ' act-hors-score' : '')
+      + (c.clef === ACT_TOPS_NON_COMPTES[0] ? ' act-hors-score-debut' : ''));
     th.setAttribute('scope', 'col');
     var actif = c.clef === ACT_ETAT.tri;
     if(actif) th.setAttribute('aria-sort', ACT_ETAT.descendant ? 'descending' : 'ascending');
@@ -3671,6 +4041,10 @@ function actTableau(){
         if(!n) td.classList.add('act-zero');
       }
       if(c.fort) td.classList.add('act-score');
+      if(c.horsScore) td.classList.add('act-hors-score');
+      // Le filet tireté qui sépare ce qui compte de ce qui ne compte pas
+      // tombe sur la première colonne de tops, en-tête comme cellules.
+      if(c.clef === ACT_TOPS_NON_COMPTES[0]) td.classList.add('act-hors-score-debut');
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -3748,12 +4122,80 @@ async function renderStats(){
   renderStatsChart(chartEl, items, totals, cineastes.length);
 }
 
+// ── LE CLASSEMENT, PUIS LE CATALOGUE ──────────────────────────────────────
+// Le catalogue compte cent trente entrées. Les donner toutes en barres
+// produisait une page de près de dix mille pixels, et surtout illisible :
+// l'entrée de tête (240 fiches) fixait l'échelle alors que la médiane est à
+// sept fiches, si bien que cent vingt barres n'étaient plus qu'un moignon de
+// deux pixels. Les entrées jamais rattachées, elles, se perdaient au milieu.
+//
+// L'onglet se lit désormais en trois temps :
+//   1. LE BANDEAU DE SYNTHÈSE, inchangé — les totaux, d'un coup d'œil ;
+//   2. LE CLASSEMENT : les douze premières entrées seulement, en barres.
+//      C'est la seule portion où la comparaison visuelle apprend quelque
+//      chose ; au-delà, toutes les barres se ressemblent ;
+//   3. TOUT LE CATALOGUE : un tableau dense, cherchable, filtrable par
+//      famille, par type et par rattachement, triable sur chaque colonne.
+//      Sa micro-barre se rapporte au maximum DU FILTRE EN COURS et non au
+//      maximum général : demander les écoles redonne une échelle lisible au
+//      lieu de dix traits écrasés contre la barre d'Hollywood.
+var STATS_PODIUM = 12;
+
+// Tout ce dont le tableau a besoin pour se redessiner sans relire la base :
+// les lignes, le total de fiches, l'état des filtres et celui du tri. Un
+// objet, et non des variables nues, pour la même raison que ACT_ETAT.
+var STATS_ETAT = {
+  items: [], totalFiches: 0,
+  q: '', famille: '', type: '', rattachement: '',
+  tri: 'count', descendant: true
+};
+
+// Les colonnes du tableau du catalogue.
+//   clef    la donnée sur laquelle la colonne trie
+//   titre   l'en-tête affiché
+//   texte   colonne de texte : alignée à gauche, triée alphabétiquement
+//   aide    l'infobulle de l'en-tête, quand le titre court ne suffit pas
+var STATS_COLONNES = [
+  { clef: 'rang',  titre: '',          fixe: true },
+  { clef: 'nom',   titre: 'Entrée',    texte: true },
+  { clef: 'type',  titre: 'Type',      texte: true },
+  { clef: 'debut', titre: 'Période',
+    aide: 'Trie par année de début. Les entrées sans année renseignée ferment la marche.' },
+  { clef: 'count', titre: 'Fiches',
+    aide: 'Nombre de fiches cinéaste où l’entrée est affectée (courant, courant 2 ou courant 3).' },
+  { clef: 'part',  titre: 'Part',
+    aide: 'Part des fiches cinéaste de l’index portant cette entrée.' }
+];
+
+// Rendu de l'onglet : le bandeau de synthèse, le classement des douze
+// premières, puis le catalogue complet en tableau.
+function renderStatsChart(containerEl, items, totals, totalFiches){
+  containerEl.innerHTML = '';
+  if(!items.length){
+    containerEl.innerHTML = '<div class="empty-state">Aucune entrée dans le catalogue.</div>';
+    return;
+  }
+  items.sort(function(a, b){ return b.count - a.count || a.nom.localeCompare(b.nom, 'fr'); });
+
+  STATS_ETAT.items = items;
+  STATS_ETAT.totalFiches = totalFiches;
+  // Les filtres repartent à zéro à chaque chargement : l'onglet se rouvre
+  // sur le catalogue entier, jamais sur un filtre oublié la fois d'avant.
+  STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = ''; STATS_ETAT.rattachement = '';
+  STATS_ETAT.tri = 'count'; STATS_ETAT.descendant = true;
+
+  containerEl.appendChild(buildStatsSummary(totals, totalFiches));
+  containerEl.appendChild(buildStatsPodium(items, totalFiches));
+  containerEl.appendChild(buildStatsCatalogue(items, totalFiches));
+  statsRemplirTable(null);
+}
+
 function statsFmtNb(n){ return (n || 0).toLocaleString('fr-FR'); }
 
 // Pourcentage à une décimale, espace insécable avant le signe (usage français).
 function statsFmtPct(ratio){
   if(!isFinite(ratio)) return '—';
-  return (ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + '\u00a0%';
+  return (ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %';
 }
 
 // "1958–1964", "depuis 1958", ou '' si aucune année renseignée au catalogue.
@@ -3762,73 +4204,75 @@ function statsAnnees(it){
   return it.fin ? it.debut + '–' + it.fin : 'depuis ' + it.debut;
 }
 
-// Rendu du graphique unique : bandeau de synthèse (totaux), classement commun
-// des courants et des catégories par nombre décroissant de fiches, puis
-// échelle et légende. Le type n'est plus une section mais une couleur.
-function renderStatsChart(containerEl, items, totals, totalFiches){
-  containerEl.innerHTML = '';
-  if(!items.length){
-    containerEl.innerHTML = '<div class="empty-state">Aucune entrée dans le catalogue.</div>';
-    return;
-  }
-  items.sort(function(a, b){ return b.count - a.count || a.nom.localeCompare(b.nom, 'fr'); });
-  var maxCount = Math.max.apply(null, items.map(function(it){ return it.count; })) || 1;
-  var utilises = items.filter(function(it){ return it.count > 0; }).length;
-
-  containerEl.appendChild(buildStatsSummary(totals, totalFiches));
-
-  var barsEl = document.createElement('div');
-  barsEl.className = 'stats-bars';
-  items.forEach(function(it, i){ barsEl.appendChild(buildStatsBar(it, i, maxCount, totalFiches)); });
-  containerEl.appendChild(barsEl);
-
-  containerEl.appendChild(buildStatsAxis(maxCount));
-  containerEl.appendChild(buildStatsLegend(maxCount, totalFiches, utilises, items.length));
+// Petite fabrique locale, sur le modèle d'actEl : un élément, sa classe, son
+// texte. textContent et jamais innerHTML — les noms viennent de la base.
+function statsEl(balise, classe, texte){
+  var e = document.createElement(balise);
+  if(classe) e.className = classe;
+  if(texte !== undefined && texte !== null) e.textContent = texte;
+  return e;
 }
 
 // Bandeau supérieur : le total demandé (cinéastes rattachés à au moins une
 // entrée du catalogue, courants et catégories confondus) mis en avant, puis sa
 // ventilation par famille et le nombre d'affectations.
 function buildStatsSummary(totals, totalFiches){
-  var wrap = document.createElement('div');
-  wrap.className = 'stats-summary';
+  var bloc = statsEl('div', 'stats-bloc');
+  var wrap = statsEl('div', 'stats-summary');
 
-  var main = document.createElement('div');
-  main.className = 'stats-summary-main';
-  var mainVal = document.createElement('span');
-  mainVal.className = 'stats-summary-value';
-  mainVal.textContent = statsFmtNb(totals.fiches);
-  var mainLbl = document.createElement('span');
-  mainLbl.className = 'stats-summary-label';
-  mainLbl.textContent = (totals.fiches > 1 ? 'cinéastes rattachés' : 'cinéaste rattaché')
-    + ' à au moins un courant ou une catégorie';
-  main.appendChild(mainVal);
-  main.appendChild(mainLbl);
+  var main = statsEl('div', 'stats-summary-main');
+  main.appendChild(statsEl('span', 'stats-summary-value', statsFmtNb(totals.fiches)));
+  main.appendChild(statsEl('span', 'stats-summary-label',
+    (totals.fiches > 1 ? 'cinéastes rattachés' : 'cinéaste rattaché')
+    + ' à au moins un courant ou une catégorie'));
   wrap.appendChild(main);
 
-  var kpis = document.createElement('div');
-  kpis.className = 'stats-summary-kpis';
+  var kpis = statsEl('div', 'stats-summary-kpis');
   [
     ['', totalFiches ? statsFmtPct(totals.fiches / totalFiches) : '—', 'des ' + statsFmtNb(totalFiches) + ' fiches'],
     ['is-courant', statsFmtNb(totals.fichesCourant), 'dont au moins un courant'],
     ['is-categorie', statsFmtNb(totals.fichesCategorie), 'dont au moins une catégorie'],
     ['', statsFmtNb(totals.affectations), 'affectations au total']
   ].forEach(function(kpiDef){
-    var kpi = document.createElement('div');
-    kpi.className = 'stats-summary-kpi' + (kpiDef[0] ? ' ' + kpiDef[0] : '');
-    var val = document.createElement('span');
-    val.className = 'stats-summary-kpi-value';
-    val.textContent = kpiDef[1];
-    var lbl = document.createElement('span');
-    lbl.className = 'stats-summary-kpi-label';
-    lbl.textContent = kpiDef[2];
-    kpi.appendChild(val);
-    kpi.appendChild(lbl);
+    var kpi = statsEl('div', 'stats-summary-kpi' + (kpiDef[0] ? ' ' + kpiDef[0] : ''));
+    kpi.appendChild(statsEl('span', 'stats-summary-kpi-value', kpiDef[1]));
+    kpi.appendChild(statsEl('span', 'stats-summary-kpi-label', kpiDef[2]));
     kpis.appendChild(kpi);
   });
   wrap.appendChild(kpis);
 
-  return wrap;
+  bloc.appendChild(wrap);
+  return bloc;
+}
+
+// ── 2. LE CLASSEMENT (les douze premières) ────────────────────────────────
+function buildStatsPodium(items, totalFiches){
+  var bloc = statsEl('div', 'stats-bloc');
+  var tete = statsEl('div', 'stats-bloc-tete');
+  tete.appendChild(statsEl('h3', 'stats-bloc-titre', 'Les entrées les plus représentées'));
+  tete.appendChild(statsEl('span', 'stats-bloc-aide',
+    'Les ' + STATS_PODIUM + ' premières ; le catalogue entier se lit dans le tableau ci-dessous.'));
+
+  // La légende est TOUJOURS là : la famille ne se lit jamais à la seule
+  // couleur de la barre, elle est aussi écrite sous chaque nom.
+  var keys = statsEl('div', 'stats-legend-keys');
+  [['is-courant', 'Courant cinématographique'], ['is-categorie', 'Catégorie']].forEach(function(keyDef){
+    var key = statsEl('span', 'stats-legend-key ' + keyDef[0]);
+    key.appendChild(document.createElement('i'));
+    key.appendChild(document.createTextNode(keyDef[1]));
+    keys.appendChild(key);
+  });
+  tete.appendChild(keys);
+  bloc.appendChild(tete);
+
+  var tete12 = items.slice(0, STATS_PODIUM);
+  var maxCount = Math.max.apply(null, tete12.map(function(it){ return it.count; })) || 1;
+
+  var barsEl = statsEl('div', 'stats-bars');
+  tete12.forEach(function(it, i){ barsEl.appendChild(buildStatsBar(it, i, maxCount, totalFiches)); });
+  bloc.appendChild(barsEl);
+  bloc.appendChild(buildStatsAxis(maxCount));
+  return bloc;
 }
 
 // Une ligne du classement : rang, drapeau du pays d'origine, nom surmontant sa
@@ -3841,51 +4285,30 @@ function buildStatsBar(it, index, maxCount, totalFiches){
   else if(index < 3) item.className += ' is-top';
   item.title = it.nom + ' — ' + statsFmtNb(it.count) + (it.count > 1 ? ' fiches cinéaste' : ' fiche cinéaste');
 
-  var rank = document.createElement('span');
-  rank.className = 'stats-bar-rank';
-  rank.textContent = it.count ? String(index + 1) : '—';
+  var rank = statsEl('span', 'stats-bar-rank', it.count ? String(index + 1) : '—');
 
-  var flagCell = document.createElement('span');
-  flagCell.className = 'stats-bar-flagcell';
+  var flagCell = statsEl('span', 'stats-bar-flagcell');
   flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-bar-flag') : '';
 
-  var label = document.createElement('span');
-  label.className = 'stats-bar-label';
-  label.textContent = it.nom;
-  var meta = document.createElement('span');
-  meta.className = 'stats-bar-meta';
-  var typeEl = document.createElement('span');
-  typeEl.className = 'stats-bar-type';
+  var label = statsEl('span', 'stats-bar-label', it.nom);
+  var meta = statsEl('span', 'stats-bar-meta');
   // Le libellé exact du type, avec repli sur la famille si le catalogue des
   // types n'a pas pu être lu.
-  typeEl.textContent = it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant');
-  meta.appendChild(typeEl);
+  meta.appendChild(statsEl('span', 'stats-bar-type',
+    it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant')));
   var annees = statsAnnees(it);
-  if(annees){
-    var yearsEl = document.createElement('span');
-    yearsEl.className = 'stats-bar-years';
-    yearsEl.textContent = annees;
-    meta.appendChild(yearsEl);
-  }
+  if(annees) meta.appendChild(statsEl('span', 'stats-bar-years', annees));
   label.appendChild(meta);
 
-  var track = document.createElement('div');
-  track.className = 'stats-bar-track';
-  var fill = document.createElement('div');
-  fill.className = 'stats-bar-fill';
+  var track = statsEl('div', 'stats-bar-track');
+  var fill = statsEl('div', 'stats-bar-fill');
   fill.style.width = (it.count / maxCount * 100).toFixed(2) + '%';
   track.appendChild(fill);
 
-  var count = document.createElement('span');
-  count.className = 'stats-bar-count';
-  var nb = document.createElement('strong');
-  nb.className = 'stats-bar-count-n';
-  nb.textContent = statsFmtNb(it.count);
-  var pct = document.createElement('span');
-  pct.className = 'stats-bar-count-pct';
-  pct.textContent = totalFiches ? statsFmtPct(it.count / totalFiches) : '—';
-  count.appendChild(nb);
-  count.appendChild(pct);
+  var count = statsEl('span', 'stats-bar-count');
+  count.appendChild(statsEl('strong', 'stats-bar-count-n', statsFmtNb(it.count)));
+  count.appendChild(statsEl('span', 'stats-bar-count-pct',
+    totalFiches ? statsFmtPct(it.count / totalFiches) : '—'));
 
   item.appendChild(rank);
   item.appendChild(flagCell);
@@ -3898,45 +4321,273 @@ function buildStatsBar(it, index, maxCount, totalFiches){
 // Graduations 0 / ¼ / ½ / ¾ / max, alignées sous la colonne des barres grâce
 // à la grille partagée --stats-cols.
 function buildStatsAxis(maxCount){
-  var axis = document.createElement('div');
-  axis.className = 'stats-axis';
-  var scale = document.createElement('div');
-  scale.className = 'stats-axis-scale';
+  var axis = statsEl('div', 'stats-axis');
+  var scale = statsEl('div', 'stats-axis-scale');
   [0, 0.25, 0.5, 0.75, 1].forEach(function(ratio){
-    var tick = document.createElement('span');
-    tick.textContent = statsFmtNb(Math.round(maxCount * ratio));
-    scale.appendChild(tick);
+    scale.appendChild(statsEl('span', null, statsFmtNb(Math.round(maxCount * ratio))));
   });
   axis.appendChild(scale);
   return axis;
 }
 
-// Pastilles de couleur des deux familles, puis note de lecture des barres.
-function buildStatsLegend(maxCount, totalFiches, utilises, catalogue){
-  var legend = document.createElement('div');
-  legend.className = 'stats-legend';
+// ── 3. TOUT LE CATALOGUE ──────────────────────────────────────────────────
+// La barre de filtres, puis le tableau. Le tableau lui-même est posé par
+// statsRemplirTable, qui le refait à chaque frappe, chaque filtre, chaque tri
+// sans jamais retoucher à la base.
+function buildStatsCatalogue(items, totalFiches){
+  var bloc = statsEl('div', 'stats-bloc');
+  bloc.id = 'stats-catalogue';
 
-  var keys = document.createElement('div');
-  keys.className = 'stats-legend-keys';
-  [['is-courant', 'Courant cinématographique'], ['is-categorie', 'Catégorie']].forEach(function(keyDef){
-    var key = document.createElement('span');
-    key.className = 'stats-legend-key ' + keyDef[0];
-    key.appendChild(document.createElement('i'));
-    key.appendChild(document.createTextNode(keyDef[1]));
-    keys.appendChild(key);
+  var tete = statsEl('div', 'stats-bloc-tete');
+  tete.appendChild(statsEl('h3', 'stats-bloc-titre', 'Tout le catalogue'));
+  var compteur = statsEl('span', 'stats-bloc-aide');
+  compteur.id = 'stats-compteur';
+  tete.appendChild(compteur);
+  bloc.appendChild(tete);
+
+  var filtres = statsEl('div', 'stats-filtres');
+
+  var recherche = document.createElement('input');
+  recherche.type = 'search';
+  recherche.className = 'autocomplete-input stats-filtre-q';
+  recherche.id = 'stats-filtre-q';
+  recherche.placeholder = 'Chercher une entrée…';
+  recherche.setAttribute('aria-label', 'Chercher une entrée du catalogue');
+  recherche.addEventListener('input', function(){
+    STATS_ETAT.q = recherche.value;
+    statsRemplirTable(null);
   });
-  legend.appendChild(keys);
+  filtres.appendChild(recherche);
 
-  var note = document.createElement('span');
-  note.className = 'stats-legend-note';
-  note.textContent = 'Longueur des barres proportionnelle au maximum du classement ('
-    + statsFmtNb(maxCount) + ' fiches) ; le pourcentage indique la part des '
-    + statsFmtNb(totalFiches) + ' fiches cinéaste portant l\'entrée. '
-    + statsFmtNb(utilises) + ' des ' + statsFmtNb(catalogue)
-    + (catalogue > 1 ? ' entrées du catalogue sont rattachées' : ' entrée du catalogue est rattachée')
-    + ' à au moins une fiche.';
-  legend.appendChild(note);
+  // Les types proposés sont ceux RÉELLEMENT présents dans le catalogue : une
+  // liste déroulante qui offre « Studio » quand aucune entrée n'en est un ne
+  // sert qu'à fabriquer des tableaux vides.
+  var typesPresents = [];
+  items.forEach(function(it){
+    var lib = it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant');
+    if(typesPresents.indexOf(lib) === -1) typesPresents.push(lib);
+  });
+  typesPresents.sort(function(a, b){ return a.localeCompare(b, 'fr'); });
 
+  filtres.appendChild(statsFiltreSelect('stats-filtre-famille', 'Famille',
+    [['', 'Toutes les familles'], ['courant', 'Courants seulement'], ['categorie', 'Catégories seulement']],
+    function(v){ STATS_ETAT.famille = v; }));
+
+  filtres.appendChild(statsFiltreSelect('stats-filtre-type', 'Type',
+    [['', 'Tous les types']].concat(typesPresents.map(function(lib){ return [lib, lib]; })),
+    function(v){ STATS_ETAT.type = v; }));
+
+  filtres.appendChild(statsFiltreSelect('stats-filtre-rattachement', 'Rattachement',
+    [['', 'Rattachées ou non'], ['oui', 'Rattachées seulement'], ['non', 'Jamais rattachées']],
+    function(v){ STATS_ETAT.rattachement = v; }));
+
+  var reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'btn-reject stats-filtre-reset';
+  reset.textContent = 'Tout afficher';
+  reset.addEventListener('click', function(){
+    STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = ''; STATS_ETAT.rattachement = '';
+    recherche.value = '';
+    ['stats-filtre-famille', 'stats-filtre-type', 'stats-filtre-rattachement'].forEach(function(id){
+      var sel = document.getElementById(id);
+      if(sel) sel.value = '';
+    });
+    statsRemplirTable(null);
+  });
+  filtres.appendChild(reset);
+  bloc.appendChild(filtres);
+
+  var hote = statsEl('div', 'stats-table-wrap');
+  hote.id = 'stats-table-hote';
+  bloc.appendChild(hote);
+
+  bloc.appendChild(buildStatsLegend(totalFiches, items));
+  return bloc;
+}
+
+// Une liste déroulante de filtre. `options` est une liste de [valeur, libellé].
+function statsFiltreSelect(id, etiquette, options, onChange){
+  var sel = document.createElement('select');
+  sel.className = 'contrib-select stats-filtre-select';
+  sel.id = id;
+  sel.setAttribute('aria-label', etiquette);
+  options.forEach(function(o){
+    var opt = document.createElement('option');
+    opt.value = o[0];
+    opt.textContent = o[1];
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function(){
+    onChange(sel.value);
+    statsRemplirTable(null);
+  });
+  return sel;
+}
+
+// Les lignes retenues par les filtres, dans l'ordre du tri en cours.
+function statsFiltrees(){
+  var q = normStr(STATS_ETAT.q || '').trim();
+  var lignes = STATS_ETAT.items.filter(function(it){
+    if(STATS_ETAT.famille === 'courant' && it.estCategorie) return false;
+    if(STATS_ETAT.famille === 'categorie' && !it.estCategorie) return false;
+    if(STATS_ETAT.type && (it.typeLabel || '') !== STATS_ETAT.type) return false;
+    if(STATS_ETAT.rattachement === 'oui' && !it.count) return false;
+    if(STATS_ETAT.rattachement === 'non' && it.count) return false;
+    if(q && normStr(it.nom).indexOf(q) === -1) return false;
+    return true;
+  });
+
+  var clef = STATS_ETAT.tri, desc = STATS_ETAT.descendant;
+  lignes.sort(function(a, b){
+    var x, y, c;
+    if(clef === 'nom'){
+      c = a.nom.localeCompare(b.nom, 'fr');
+    } else if(clef === 'type'){
+      c = String(a.typeLabel || '').localeCompare(String(b.typeLabel || ''), 'fr');
+    } else if(clef === 'debut'){
+      // Une entrée sans année ferme la marche dans les deux sens : elle n'a
+      // pas de place sur une chronologie, mieux vaut qu'elle ne s'y glisse pas.
+      x = a.debut || (desc ? -1 : 99999);
+      y = b.debut || (desc ? -1 : 99999);
+      c = x - y;
+    } else {
+      // « count » et « part » se trient sur le même nombre : la part n'est
+      // que l'effectif rapporté à un total identique pour toutes les lignes.
+      c = (a.count || 0) - (b.count || 0);
+    }
+    if(c !== 0) return desc ? -c : c;
+    return a.nom.localeCompare(b.nom, 'fr');
+  });
+  return lignes;
+}
+
+// Redessine le tableau sur place. `clefFocus` rend le focus à l'en-tête que
+// l'on vient de cliquer : sans cela, trier au clavier renvoie le focus au
+// début de la page et la colonne suivante devient inatteignable.
+function statsRemplirTable(clefFocus){
+  var hote = document.getElementById('stats-table-hote');
+  if(!hote) return;
+  var lignes = statsFiltrees();
+
+  var compteur = document.getElementById('stats-compteur');
+  if(compteur){
+    var total = STATS_ETAT.items.length;
+    compteur.textContent = lignes.length === total
+      ? statsFmtNb(total) + (total > 1 ? ' entrées' : ' entrée')
+      : statsFmtNb(lignes.length) + ' entrée' + (lignes.length > 1 ? 's' : '')
+        + ' sur ' + statsFmtNb(total);
+  }
+
+  hote.innerHTML = '';
+  if(!lignes.length){
+    hote.appendChild(statsEl('div', 'empty-state', 'Aucune entrée ne répond à ces filtres.'));
+    return;
+  }
+
+  // La micro-barre se rapporte au maximum DU FILTRE : c'est ce qui rend le
+  // tableau lisible une fois Hollywood écarté.
+  var maxFiltre = lignes.reduce(function(m, it){ return Math.max(m, it.count); }, 0) || 1;
+
+  var table = statsEl('table', 'stats-table');
+  var thead = document.createElement('thead');
+  var trh = document.createElement('tr');
+  STATS_COLONNES.forEach(function(c){
+    var th = statsEl('th', c.texte ? 'stats-gauche' : null);
+    th.setAttribute('scope', 'col');
+    if(c.fixe){ th.className = 'stats-col-rang'; trh.appendChild(th); return; }
+    var actif = c.clef === STATS_ETAT.tri;
+    if(actif) th.setAttribute('aria-sort', STATS_ETAT.descendant ? 'descending' : 'ascending');
+    var b = statsEl('button', 'stats-tri' + (actif ? ' stats-tri-actif' : ''));
+    b.type = 'button';
+    b.appendChild(statsEl('span', null, c.titre));
+    var fleche = statsEl('span', 'stats-fleche', actif ? (STATS_ETAT.descendant ? '↓' : '↑') : '');
+    fleche.setAttribute('aria-hidden', 'true');
+    b.appendChild(fleche);
+    b.setAttribute('data-col', c.clef);
+    b.title = (c.aide ? c.aide + ' — ' : '') + 'Trier par « ' + c.titre + ' »';
+    b.setAttribute('aria-label', 'Trier par ' + c.titre);
+    b.addEventListener('click', function(){
+      if(STATS_ETAT.tri === c.clef){
+        STATS_ETAT.descendant = !STATS_ETAT.descendant;
+      } else {
+        STATS_ETAT.tri = c.clef;
+        // Un nom se lit de A à Z, un effectif du plus grand au plus petit :
+        // c'est ce que l'on cherche dans chaque cas.
+        STATS_ETAT.descendant = !c.texte;
+      }
+      statsRemplirTable(c.clef);
+    });
+    th.appendChild(b);
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  lignes.forEach(function(it, i){
+    var tr = document.createElement('tr');
+    tr.className = it.estCategorie ? 'is-categorie' : 'is-courant';
+    if(!it.count) tr.className += ' is-zero';
+
+    tr.appendChild(statsEl('td', 'stats-col-rang', String(i + 1)));
+
+    var tdNom = statsEl('td', 'stats-gauche');
+    var nom = statsEl('span', 'stats-table-nom');
+    var drapeau = statsEl('span', 'stats-table-flagcell');
+    drapeau.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-table-flag') : '';
+    nom.appendChild(drapeau);
+    nom.appendChild(statsEl('span', null, it.nom));
+    tdNom.appendChild(nom);
+    tr.appendChild(tdNom);
+
+    var tdType = statsEl('td', 'stats-gauche');
+    tdType.appendChild(statsEl('span', 'stats-table-type',
+      it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant')));
+    tr.appendChild(tdType);
+
+    tr.appendChild(statsEl('td', 'stats-table-annees', statsAnnees(it) || '—'));
+
+    var tdCount = statsEl('td', 'stats-table-count');
+    var piste = statsEl('span', 'stats-table-piste');
+    if(it.count){
+      var rempli = statsEl('span', 'stats-table-fill');
+      rempli.style.width = (it.count / maxFiltre * 100).toFixed(2) + '%';
+      piste.appendChild(rempli);
+    }
+    tdCount.appendChild(piste);
+    var n = statsEl('strong', 'stats-table-n', it.count ? statsFmtNb(it.count) : '·');
+    if(!it.count) n.className += ' stats-zero';
+    tdCount.appendChild(n);
+    tr.appendChild(tdCount);
+
+    var tdPart = statsEl('td', 'stats-table-part',
+      (it.count && STATS_ETAT.totalFiches) ? statsFmtPct(it.count / STATS_ETAT.totalFiches) : '·');
+    if(!it.count) tdPart.className += ' stats-zero';
+    tr.appendChild(tdPart);
+
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  hote.appendChild(table);
+
+  if(clefFocus){
+    var cible = table.querySelector('[data-col="' + clefFocus + '"]');
+    if(cible) cible.focus();
+  }
+}
+
+// Note de lecture, sous le tableau.
+function buildStatsLegend(totalFiches, items){
+  var legend = statsEl('div', 'stats-legend');
+  var utilises = items.filter(function(it){ return it.count > 0; }).length;
+  legend.appendChild(statsEl('span', 'stats-legend-note',
+    'La micro-barre se rapporte à l’entrée la mieux représentée du filtre en cours, '
+    + 'et non à celle du catalogue entier : filtrer rend l’échelle à nouveau lisible. '
+    + 'Le pourcentage, lui, reste la part des ' + statsFmtNb(totalFiches)
+    + ' fiches cinéaste portant l’entrée. ' + statsFmtNb(utilises) + ' des '
+    + statsFmtNb(items.length)
+    + (items.length > 1 ? ' entrées du catalogue sont rattachées' : ' entrée du catalogue est rattachée')
+    + ' à au moins une fiche.'));
   return legend;
 }
 
