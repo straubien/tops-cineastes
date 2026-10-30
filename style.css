@@ -1543,7 +1543,7 @@ a { text-decoration: none; color: inherit; }
    --brun en donne 9,5. */
 .fiche-presentation {
   font-family: var(--font);
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1.65;
   color: var(--brun);
   max-width: 68ch;
