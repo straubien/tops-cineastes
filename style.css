@@ -1536,7 +1536,7 @@ a { text-decoration: none; color: inherit; }
    un texte a lire, pas un titre a reconnaitre. */
 .fiche-presentation {
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.6;
   color: #e6e0d4;
   max-width: 68ch;
