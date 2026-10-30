@@ -1525,26 +1525,31 @@ a { text-decoration: none; color: inherit; }
   z-index: 1;
 }
 /* LE TEXTE DE PRESENTATION D'UN COURANT OU D'UNE CATEGORIE.
-   Dans le header noir de la fiche, sous le nom, les annees et le nombre de
-   cineastes. Il s'adresse aux visiteurs qui ne sont pas cinephiles : sans
-   lui, « Nouvelle Vague tchecoslovaque » n'etait qu'un titre suivi d'une
-   liste de noms inconnus.
-   Un filet rouge a gauche le detache du bloc de titre, et la mesure est
-   plafonnee a 68 caracteres : au-dela, l'oeil perd la ligne suivante, et
-   en deca le paragraphe s'allonge inutilement — ces textes font de cent a
-   deux cent vingt mots. Le corps est plus petit que celui des dates : c'est
-   un texte a lire, pas un titre a reconnaitre. */
+   Pose juste SOUS le header noir, sur le creme de la fiche. Il avait
+   d'abord ete mis DANS le header : un paragraphe de cent a deux cent vingt
+   mots en creme clair sur fond noir se lit mal, le contraste inverse
+   fatiguant l'oeil sur cette longueur. Sur le creme, il se lit comme du
+   texte courant.
+   Le filet rouge a gauche reprend celui du bloc de presentation d'un
+   cinephile (.profil-presentation), pour que les deux textes longs du site
+   se signalent de la meme facon. Les marges laterales sont celles des
+   autres blocs du corps de fiche (1.8rem), pour que le paragraphe s'aligne
+   sur le titre de section qui le suit. La mesure est plafonnee a 68
+   caracteres : au-dela l'oeil perd la ligne suivante, en deca le
+   paragraphe s'allonge inutilement.
+   La couleur est --brun et non --text-dim : les deux sont identiques en
+   mode clair, mais en mode sombre --text-dim ne donne que 5,9:1 contre le
+   fond de carte, ce qui est juste pour deux cents mots d'affilee, la ou
+   --brun en donne 9,5. */
 .fiche-presentation {
   font-family: var(--font);
   font-size: 17px;
-  line-height: 1.6;
-  color: #e6e0d4;
+  line-height: 1.65;
+  color: var(--brun);
   max-width: 68ch;
-  margin: 16px 0 2px;
-  padding-left: 12px;
-  border-left: 2px solid var(--rouge);
-  position: relative;
-  z-index: 1;
+  margin: 1.4rem 1.8rem 0;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid var(--rouge);
 }
 .fiche-body {
   display: grid;

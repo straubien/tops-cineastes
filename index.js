@@ -3751,11 +3751,16 @@ function openCourantDetail(courantId){
       +courFlagsHtml
       +courYearsHtml
       +'<div class="fiche-dates">'+cin.length+' '+t('occurrences_in_ranking')+'</div>'
-      // Le texte de presentation arrive apres coup (voir juste en dessous) :
-      // la fiche ne l'attend pas pour s'ouvrir, et le bloc reste absent tant
-      // qu'il n'y a rien a y mettre. Jamais de cadre vide.
-      +'<p class="fiche-presentation" id="courant-presentation" data-courant="'+escapeHtml(String(courantId))+'" hidden></p>'
     +'</div>'
+    // LE TEXTE DE PRESENTATION EST HORS DU HEADER, ET C'EST VOULU.
+    // Il y a d'abord ete pose, sur le noir : un paragraphe de cent a deux
+    // cent vingt mots en creme clair sur fond noir se lit mal : le contraste
+    // inverse fatigue sur cette longueur. Il est donc rendu juste en
+    // dessous, sur le creme de la fiche, ou il se lit comme du texte
+    // courant. Il arrive apres coup (voir tcRemplirPresentationCourant) :
+    // la fiche ne l'attend pas pour s'ouvrir, et le bloc reste absent tant
+    // qu'il n'y a rien a y mettre. Jamais de cadre vide.
+    +'<p class="fiche-presentation" id="courant-presentation" data-courant="'+escapeHtml(String(courantId))+'" hidden></p>'
     +'<div class="fiche-section" style="margin:1.2rem 1.8rem 0.5rem">'+t('cin_classes')+'</div>'
     +'<div id="courant-detail-sort-toggle" class="ranking-toggle" style="margin:0 1.8rem 0.8rem">'
       +'<button type="button" class="ranking-toggle-btn" data-action="courant-detail-sort" data-mode="age" data-i18n="courant_sort_age">'+t('courant_sort_age')+'</button>'
