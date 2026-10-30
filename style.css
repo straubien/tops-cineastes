@@ -1530,16 +1530,17 @@ a { text-decoration: none; color: inherit; }
    lui, « Nouvelle Vague tchecoslovaque » n'etait qu'un titre suivi d'une
    liste de noms inconnus.
    Un filet rouge a gauche le detache du bloc de titre, et la mesure est
-   plafonnee a 62 caracteres : au-dela, l'oeil perd la ligne suivante. Le
-   corps est plus petit que celui des dates — c'est un texte a lire, pas un
-   titre a reconnaitre. */
+   plafonnee a 68 caracteres : au-dela, l'oeil perd la ligne suivante, et
+   en deca le paragraphe s'allonge inutilement — ces textes font de cent a
+   deux cent vingt mots. Le corps est plus petit que celui des dates : c'est
+   un texte a lire, pas un titre a reconnaitre. */
 .fiche-presentation {
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.6;
   color: #e6e0d4;
-  max-width: 62ch;
-  margin: 14px 0 2px;
+  max-width: 68ch;
+  margin: 16px 0 2px;
   padding-left: 12px;
   border-left: 2px solid var(--rouge);
   position: relative;

@@ -2622,7 +2622,9 @@ function courantDescChamp(etiquette, aide, valeur){
   label.textContent = etiquette;
   var champ = document.createElement('textarea');
   champ.className = 'autocomplete-input courant-desc-champ';
-  champ.rows = 3;
+  // Six lignes : ces textes font une centaine de mots, et une zone de trois
+  // lignes obligeait à faire défiler pour relire ce qu'on venait d'écrire.
+  champ.rows = 6;
   champ.value = valeur;
   champ.placeholder = aide;
   champ.setAttribute('aria-label', etiquette);
@@ -2720,7 +2722,7 @@ function renderCourantCatalogue(rows){
     var descCell = document.createElement('div');
     descCell.className = 'courant-row-desc';
     var descFr = courantDescChamp('Présentation (français)',
-      'Deux ou trois phrases pour situer l’entrée, à destination d’un visiteur qui n’est pas cinéphile : ce que c’est, quand, où, et pourquoi cela compte.',
+      'Adressée à un public cinéphile : conditions d’apparition, programme esthétique, place dans l’histoire du cinéma, et ce qui met fin au courant. Évitez d’énumérer des noms de cinéastes — la liste figure juste en dessous sur la fiche. Développez autant qu’il le faut : les textes existants font de cent à deux cent vingt mots.',
       row.description_fr || '');
     var descEn = courantDescChamp('Présentation (anglais)',
       'La même chose en anglais. Si elle est vide, le site affiche le texte français aux visiteurs anglophones plutôt qu’un blanc.',
