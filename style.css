@@ -1526,10 +1526,10 @@ a { text-decoration: none; color: inherit; }
 }
 /* LE TEXTE DE PRESENTATION D'UN COURANT OU D'UNE CATEGORIE.
    Pose juste SOUS le header noir, sur le creme de la fiche. Il avait
-   d'abord ete mis DANS le header : un paragraphe de cent a deux cent vingt
-   mots en creme clair sur fond noir se lit mal, le contraste inverse
-   fatiguant l'oeil sur cette longueur. Sur le creme, il se lit comme du
-   texte courant.
+   d'abord ete mis DANS le header : une notice de deux cent cinquante a
+   quatre cents mots en creme clair sur fond noir se lit mal, le contraste
+   inverse fatiguant l'oeil sur cette longueur. Sur le creme, elle se lit
+   comme du texte courant.
    Le filet rouge a gauche reprend celui du bloc de presentation d'un
    cinephile (.profil-presentation), pour que les deux textes longs du site
    se signalent de la meme facon. Les marges laterales sont celles des
@@ -1539,8 +1539,8 @@ a { text-decoration: none; color: inherit; }
    paragraphe s'allonge inutilement.
    La couleur est --brun et non --text-dim : les deux sont identiques en
    mode clair, mais en mode sombre --text-dim ne donne que 5,9:1 contre le
-   fond de carte, ce qui est juste pour deux cents mots d'affilee, la ou
-   --brun en donne 9,5. */
+   fond de carte, ce qui est juste pour plusieurs centaines de mots
+   d'affilee, la ou --brun en donne 9,5. */
 .fiche-presentation {
   font-family: var(--font);
   font-size: 19px;
@@ -1550,6 +1550,33 @@ a { text-decoration: none; color: inherit; }
   margin: 1.4rem 1.8rem 0;
   padding: 2px 0 2px 14px;
   border-left: 3px solid var(--rouge);
+}
+/* LES ALINEAS DE LA NOTICE.
+   Le bloc est un conteneur depuis que les notices font plusieurs
+   paragraphes : un <p> ne peut pas en contenir d'autres, et c'est
+   tcPosePresentation (index.js) qui les pose. L'interligne entre alineas est
+   volontairement plus serre qu'un blanc de paragraphe complet : le filet
+   rouge a gauche tient deja le bloc ensemble visuellement, un blanc large le
+   ferait paraitre decoupe. Le dernier alinea ne prend pas de marge basse,
+   pour que le filet epouse exactement la hauteur du texte. */
+.fiche-presentation p {
+  margin: 0 0 0.85em;
+}
+.fiche-presentation p:last-child {
+  margin-bottom: 0;
+}
+/* LES TITRES D'OEUVRES DANS LA NOTICE.
+   Gras ET italique, poses par tcPoseAlinea (index.js) a partir des
+   asterisques stockees en base.
+   LA GRAISSE EST 600, PAS 700, ET CE N'EST PAS UN DETAIL : Cormorant
+   Garamond est fourni avec un VRAI italique en 300, 400, 500 et 600, mais
+   son 700 n'existe qu'en romain. Demander 700 en italique ferait donc
+   synthetiser la cursive par le navigateur, qui se contente de pencher la
+   lettre droite — ce qui se voit immediatement sur un garamond, dont
+   l'italique a un dessin tout different du romain. */
+.fiche-presentation .titre-film {
+  font-weight: 600;
+  font-style: italic;
 }
 .fiche-body {
   display: grid;

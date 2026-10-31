@@ -3753,14 +3753,19 @@ function openCourantDetail(courantId){
       +'<div class="fiche-dates">'+cin.length+' '+t('occurrences_in_ranking')+'</div>'
     +'</div>'
     // LE TEXTE DE PRESENTATION EST HORS DU HEADER, ET C'EST VOULU.
-    // Il y a d'abord ete pose, sur le noir : un paragraphe de cent a deux
-    // cent vingt mots en creme clair sur fond noir se lit mal : le contraste
-    // inverse fatigue sur cette longueur. Il est donc rendu juste en
-    // dessous, sur le creme de la fiche, ou il se lit comme du texte
-    // courant. Il arrive apres coup (voir tcRemplirPresentationCourant) :
-    // la fiche ne l'attend pas pour s'ouvrir, et le bloc reste absent tant
-    // qu'il n'y a rien a y mettre. Jamais de cadre vide.
-    +'<p class="fiche-presentation" id="courant-presentation" data-courant="'+escapeHtml(String(courantId))+'" hidden></p>'
+    // Il y a d'abord ete pose, sur le noir : une notice de deux cent
+    // cinquante a quatre cents mots en creme clair sur fond noir se lit mal,
+    // le contraste inverse fatiguant sur cette longueur. Elle est donc
+    // rendue juste en dessous, sur le creme de la fiche, ou elle se lit
+    // comme du texte courant. Elle arrive apres coup (voir
+    // tcRemplirPresentationCourant) : la fiche ne l'attend pas pour
+    // s'ouvrir, et le bloc reste absent tant qu'il n'y a rien a y mettre.
+    // Jamais de cadre vide.
+    //
+    // C'EST UN <div> ET NON UN <p> : les notices font plusieurs paragraphes,
+    // et un <p> ne peut pas en contenir d'autres. Les alineas sont poses par
+    // tcPosePresentation, qui cree un <p> par paragraphe.
+    +'<div class="fiche-presentation" id="courant-presentation" data-courant="'+escapeHtml(String(courantId))+'" hidden></div>'
     +'<div class="fiche-section" style="margin:1.2rem 1.8rem 0.5rem">'+t('cin_classes')+'</div>'
     +'<div id="courant-detail-sort-toggle" class="ranking-toggle" style="margin:0 1.8rem 0.8rem">'
       +'<button type="button" class="ranking-toggle-btn" data-action="courant-detail-sort" data-mode="age" data-i18n="courant_sort_age">'+t('courant_sort_age')+'</button>'
@@ -3773,10 +3778,14 @@ function openCourantDetail(courantId){
   tcOuvrirOverlay(courant, null, {t:'cour', c:courantId});
 }
 
-// LE TEXTE DE PRESENTATION DU COURANT, dans le header de sa fiche.
-// Il s'adresse aux visiteurs qui ne sont pas cinephiles : « Nouvelle Vague
-// tchecoslovaque » ne dit rien a qui ne connait pas, et la liste de noms qui
-// suit encore moins. Deux ou trois phrases suffisent a situer l'entree.
+// LE TEXTE DE PRESENTATION DU COURANT, sous le header de sa fiche.
+// Il s'adresse a un public cinephile, suppose avoir une formation
+// universitaire : on y attend de la precision, un appui sur l'historiographie
+// et des oeuvres nommees et datees, pas un resume d'encyclopedie generale.
+// AUCUN PLAN N'EST IMPOSE : chaque courant commande le sien, ce qui compte
+// pour Dogme 95 n'etant pas ce qui compte pour Hollywood classique. La liste
+// des cineastes, elle, suit juste en dessous : la notice n'a pas a les
+// enumerer.
 //
 // Le texte vit dans la base (courants.description_fr / description_en) et se
 // modifie depuis « Admin > Gestion des courants ». Il est lu a l'ouverture de
@@ -3789,9 +3798,58 @@ function tcRemplirPresentationCourant(courantId){
     // entre-temps : on ne remplit que le bloc de la fiche qu'on a demandee.
     if(!el||!texte)return;
     if(el.getAttribute('data-courant')!==String(courantId))return;
-    el.textContent=texte;
+    tcPosePresentation(el,texte);
     el.hidden=false;
   });
+}
+
+// LES ALINEAS DE LA NOTICE.
+// Les paragraphes sont separes, dans la base, par une ligne vide. Un
+// « textContent » unique les aurait colles bout a bout, les sauts de ligne ne
+// s'affichant pas en HTML : on pose donc un <p> par paragraphe.
+//
+// CHAQUE PARAGRAPHE PASSE PAR « textContent », JAMAIS PAR « innerHTML ».
+// C'est du texte saisi en Admin : il ne doit pouvoir injecter aucune balise.
+//
+// Un texte sans ligne vide donne un seul paragraphe, donc exactement l'ancien
+// affichage : les notices deja en base n'ont pas a etre retouchees.
+function tcPosePresentation(el,texte){
+  el.textContent='';
+  String(texte).split(/\n\s*\n/).forEach(function(bloc){
+    // Les retours a la ligne isoles DANS un paragraphe sont des accidents de
+    // saisie, pas des alineas : on les ramene a des espaces.
+    bloc=bloc.replace(/\s+/g,' ').trim();
+    if(!bloc)return;
+    var p=document.createElement('p');
+    tcPoseAlinea(p,bloc);
+    el.appendChild(p);
+  });
+}
+
+// LES TITRES D'OEUVRES, EN GRAS ITALIQUE.
+// La base stocke un titre entre asterisques : *Le Cuirasse Potemkine*. On n'y
+// met pas de HTML, et pour la meme raison que plus haut : ce texte vient d'un
+// champ d'Admin, il ne doit pouvoir injecter aucune balise. On decoupe donc la
+// chaine soi-meme et on fabrique un <span> par titre, dont le contenu passe
+// par « textContent » comme tout le reste.
+//
+// UNE ASTERISQUE NON APPARIEE EST DU TEXTE ORDINAIRE : une coquille de saisie
+// n'avale pas la fin du paragraphe, elle s'affiche telle quelle.
+function tcPoseAlinea(p,bloc){
+  var reste=bloc;
+  for(;;){
+    var i=reste.indexOf('*');
+    if(i===-1)break;
+    var j=reste.indexOf('*',i+1);
+    if(j===-1)break;
+    if(i>0)p.appendChild(document.createTextNode(reste.slice(0,i)));
+    var t=document.createElement('span');
+    t.className='titre-film';
+    t.textContent=reste.slice(i+1,j);
+    p.appendChild(t);
+    reste=reste.slice(j+1);
+  }
+  if(reste)p.appendChild(document.createTextNode(reste));
 }
 
 // Frise chronologique du classement unique "Courants & Catégories" :

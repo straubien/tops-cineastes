@@ -2722,7 +2722,7 @@ function renderCourantCatalogue(rows){
     var descCell = document.createElement('div');
     descCell.className = 'courant-row-desc';
     var descFr = courantDescChamp('Présentation (français)',
-      'Adressée à un public cinéphile : conditions d’apparition, programme esthétique, place dans l’histoire du cinéma, et ce qui met fin au courant. Évitez d’énumérer des noms de cinéastes — la liste figure juste en dessous sur la fiche. Développez autant qu’il le faut : les textes existants font de cent à deux cent vingt mots.',
+      'Adressée à un public cinéphile de formation universitaire : de la précision, un appui sur l’historiographie, des œuvres citées. Aucun plan imposé — chaque courant commande le sien. Séparez les paragraphes par une ligne vide. Encadrez chaque titre de film d’astérisques et faites-le suivre du réalisateur puis de l’année, entre parenthèses : *Le Cuirassé Potemkine* (Eisenstein, 1925) — le site l’affichera en gras italique. En revanche n’énumérez pas de cinéastes hors citation : la liste figure juste en dessous sur la fiche. Les notices font de deux cent cinquante à quatre cents mots.',
       row.description_fr || '');
     var descEn = courantDescChamp('Présentation (anglais)',
       'La même chose en anglais. Si elle est vide, le site affiche le texte français aux visiteurs anglophones plutôt qu’un blanc.',
