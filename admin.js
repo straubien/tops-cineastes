@@ -2611,10 +2611,15 @@ async function loadCourantCatalogue(){
   if(_courantFicheSelected) renderCourantFicheResult(_courantFicheSelected);
 }
 
-// Une zone de saisie de présentation : son intitulé, son aide, sa valeur.
+// Une zone de saisie de présentation : son intitulé et sa valeur.
 // Renvoie l'enveloppe à poser dans la ligne et le champ lui-même, pour que
 // l'appelant puisse en relire la valeur au moment d'enregistrer.
-function courantDescChamp(etiquette, aide, valeur){
+//
+// PAS DE TEXTE D'AIDE SOUS LE CHAMP, ET C'EST VOULU. Il y en a eu un ; il
+// décrivait la forme attendue des notices, il a vieilli plus vite que les
+// notices elles-mêmes, et une consigne fausse affichée sous un champ est
+// pire que pas de consigne du tout.
+function courantDescChamp(etiquette, valeur){
   var wrap = document.createElement('div');
   wrap.className = 'field-wrap courant-desc-wrap';
   var label = document.createElement('div');
@@ -2626,14 +2631,9 @@ function courantDescChamp(etiquette, aide, valeur){
   // lignes obligeait à faire défiler pour relire ce qu'on venait d'écrire.
   champ.rows = 6;
   champ.value = valeur;
-  champ.placeholder = aide;
   champ.setAttribute('aria-label', etiquette);
-  var note = document.createElement('div');
-  note.className = 'courant-desc-aide';
-  note.textContent = aide;
   wrap.appendChild(label);
   wrap.appendChild(champ);
-  wrap.appendChild(note);
   return { wrap: wrap, champ: champ };
 }
 
@@ -2721,12 +2721,8 @@ function renderCourantCatalogue(rows){
     // ouvre. Le compteur dit si le texte existe déjà, sans avoir à déplier.
     var descCell = document.createElement('div');
     descCell.className = 'courant-row-desc';
-    var descFr = courantDescChamp('Présentation (français)',
-      'Adressée à un public cinéphile de formation universitaire : de la précision, un appui sur l’historiographie, des œuvres citées. Aucun plan imposé — chaque courant commande le sien. Séparez les paragraphes par une ligne vide. Encadrez chaque titre de film d’astérisques et faites-le suivre du réalisateur puis de l’année, entre parenthèses : *Le Cuirassé Potemkine* (Eisenstein, 1925) — le site l’affichera en gras italique. En revanche n’énumérez pas de cinéastes hors citation : la liste figure juste en dessous sur la fiche. Les notices font de deux cent cinquante à quatre cents mots.',
-      row.description_fr || '');
-    var descEn = courantDescChamp('Présentation (anglais)',
-      'La même chose en anglais. Si elle est vide, le site affiche le texte français aux visiteurs anglophones plutôt qu’un blanc.',
-      row.description_en || '');
+    var descFr = courantDescChamp('Présentation (français)', row.description_fr || '');
+    var descEn = courantDescChamp('Présentation (anglais)', row.description_en || '');
     descCell.appendChild(descFr.wrap);
     descCell.appendChild(descEn.wrap);
 
