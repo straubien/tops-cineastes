@@ -1543,13 +1543,20 @@ a { text-decoration: none; color: inherit; }
    d'affilee, la ou --brun en donne 9,5. */
 .fiche-presentation {
   font-family: var(--font);
-  font-size: 19px;
+  font-size: 22px;
   line-height: 1.65;
   color: var(--brun);
   max-width: 68ch;
   margin: 1.4rem 1.8rem 0;
   padding: 2px 0 2px 14px;
   border-left: 3px solid var(--rouge);
+  /* Texte justifie. La cesure automatique (hyphens: auto) est indispensable :
+     sans elle, la justification ouvre de grands blancs entre les mots. Elle
+     suit l'attribut lang de <html>, que i18n.js bascule entre fr et en. */
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 /* LES ALINEAS DE LA NOTICE.
    Le bloc est un conteneur depuis que les notices font plusieurs
