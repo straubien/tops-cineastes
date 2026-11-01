@@ -1545,7 +1545,7 @@ a { text-decoration: none; color: inherit; }
   font-family: var(--font);
   font-size: 19px;
   line-height: 1.65;
-  color: var(--brun);
+  color: var(--text);
   max-width: 68ch;
   margin: 1.4rem 1.8rem 0;
   padding: 2px 0 2px 14px;
