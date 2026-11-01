@@ -312,7 +312,7 @@ function tcCourantLabel(id){
 // Deux colonnes de la table « courants » : description_fr et description_en.
 //
 // ELLES NE SONT PAS CHARGÉES AVEC LE CATALOGUE (tcLoadCourants), ET C'EST
-// VOLONTAIRE. À cent trente entrées de trois ou quatre phrases dans deux
+// VOLONTAIRE. À cent trente entrées de plusieurs phrases dans deux
 // langues, cela ferait une bonne centaine de kilo-octets transférés à CHAQUE
 // visite de N'IMPORTE QUELLE page, pour un texte qu'on ne lit qu'en ouvrant
 // une fiche de courant. Le lien Facebook d'un cinéaste avait exactement ce

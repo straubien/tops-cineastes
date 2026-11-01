@@ -3753,9 +3753,9 @@ function openCourantDetail(courantId){
       +'<div class="fiche-dates">'+cin.length+' '+t('occurrences_in_ranking')+'</div>'
     +'</div>'
     // LE TEXTE DE PRESENTATION EST HORS DU HEADER, ET C'EST VOULU.
-    // Il y a d'abord ete pose, sur le noir : une notice de deux cent
-    // cinquante a quatre cents mots en creme clair sur fond noir se lit mal,
-    // le contraste inverse fatiguant sur cette longueur. Elle est donc
+    // Il y a d'abord ete pose, sur le noir : une notice longue en creme clair
+    // sur fond noir se lit mal, le contraste inverse fatiguant sur cette
+    // longueur. Elle est donc
     // rendue juste en dessous, sur le creme de la fiche, ou elle se lit
     // comme du texte courant. Elle arrive apres coup (voir
     // tcRemplirPresentationCourant) : la fiche ne l'attend pas pour
@@ -3783,9 +3783,7 @@ function openCourantDetail(courantId){
 // universitaire : on y attend de la precision, un appui sur l'historiographie
 // et des oeuvres nommees et datees, pas un resume d'encyclopedie generale.
 // AUCUN PLAN N'EST IMPOSE : chaque courant commande le sien, ce qui compte
-// pour Dogme 95 n'etant pas ce qui compte pour Hollywood classique. La liste
-// des cineastes, elle, suit juste en dessous : la notice n'a pas a les
-// enumerer.
+// pour Dogme 95 n'etant pas ce qui compte pour Hollywood classique.
 //
 // Le texte vit dans la base (courants.description_fr / description_en) et se
 // modifie depuis « Admin > Gestion des courants ». Il est lu a l'ouverture de
