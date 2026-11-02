@@ -3838,14 +3838,16 @@ function tcPoseAlinea(p,bloc){
   for(;;){
     var i=reste.indexOf('*');
     if(i===-1)break;
-    var j=reste.indexOf('*',i+1);
+    var triple=reste.substr(i,3)==='***';
+    var marque=triple?'***':'*';
+    var j=reste.indexOf(marque,i+marque.length);
     if(j===-1)break;
     if(i>0)p.appendChild(document.createTextNode(reste.slice(0,i)));
     var t=document.createElement('span');
-    t.className='titre-film';
-    t.textContent=reste.slice(i+1,j);
+    t.className=triple?'titre-film':'titre-italique';
+    t.textContent=reste.slice(i+marque.length,j);
     p.appendChild(t);
-    reste=reste.slice(j+1);
+    reste=reste.slice(j+marque.length);
   }
   if(reste)p.appendChild(document.createTextNode(reste));
 }
