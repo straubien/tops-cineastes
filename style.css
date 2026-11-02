@@ -1542,8 +1542,8 @@ a { text-decoration: none; color: inherit; }
    fond de carte, ce qui est juste pour plusieurs centaines de mots
    d'affilee, la ou --brun en donne 9,5. */
 .fiche-presentation {
-  font-family: var(--font);
-  font-size: 19px;
+  font-family: var(--font-baskerville);
+  font-size: 18px;
   line-height: 1.65;
   color: var(--text);
   max-width: 68ch;
