@@ -1578,6 +1578,10 @@ a { text-decoration: none; color: inherit; }
   font-weight: 600;
   font-style: italic;
 }
+.fiche-presentation .titre-italique {
+  font-style: italic;
+  font-weight: normal;
+}
 .fiche-body {
   display: grid;
   grid-template-columns: 120px 1fr;
