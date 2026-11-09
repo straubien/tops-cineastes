@@ -566,7 +566,8 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
         return sb.from('submissions').select('parsed_json')
           .eq('contributor_id', contribId)
           .eq('status', 'approved')
-          .limit(200);
+          .filter('parsed_json->>cineaste', 'eq', cineaste)
+          .limit(1);
       });
       if(dupRes && !dupRes.error && dupRes.data){
         var dejaApprouve = dupRes.data.some(function(row){
@@ -1194,7 +1195,8 @@ async function removeDuplicateApprovedSubmissions(submission, parsedJson, keepId
     return sb.from('submissions').select('id, parsed_json')
       .eq('contributor_id', contributorId)
       .eq('status', 'approved')
-      .limit(200);
+      .filter('parsed_json->>cineaste', 'eq', cineaste)
+      .limit(1000);
   });
   if(!res || res.error || !res.data) return;
   var dupIds = res.data.filter(function(row){
