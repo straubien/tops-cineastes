@@ -5387,7 +5387,7 @@ function openFicheThematique(themeNom){
       var mtDup = await tcWithRetryTimeout(function(){
         return sbMT.from('submissions').select('id, parsed_json, status')
           .eq('contributor_id', mtCurrentContributor.id)
-          .limit(200);
+          .filter('parsed_json->>cineaste', 'eq', cineaste)
       });
       if(mtDup && !mtDup.error && mtDup.data){
         mtExisting = mtDup.data.find(function(row){
