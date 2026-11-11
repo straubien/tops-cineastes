@@ -2849,47 +2849,65 @@ a { text-decoration: none; color: inherit; }
    sienne, dans admin.css. */
 .films-list li.tc-nc,
 .fiche-contrib-films li.tc-nc,
-.mt-prev-films li.tc-nc { counter-increment: none; }
+.mt-prev-films li.tc-nc { counter-increment: none; list-style: none; }
 .films-list li.tc-nc::before,
 .fiche-contrib-films li.tc-nc::before,
 .mt-prev-films li.tc-nc::before { content: none; }
 
 /* L'intertitre qui ouvre la partie non classée. C'est un <li> : il vit dans la
    liste, donc un lecteur d'écran l'annonce à sa place, juste avant les titres
-   qu'il concerne. Il ne doit, lui aussi, consommer aucun numéro. */
+   qu'il concerne. Il ne doit, lui aussi, consommer aucun numéro.
+
+   Son dessin est celui des titres de section du site : Goudy en capitales
+   espacées, précédé du petit carré rouge. C'est la recette exacte de
+   .result-title, qui coiffe « Résultat de l'analyse » sur la même page. */
 .films-list li.tc-nc-sep,
 .fiche-contrib-films li.tc-nc-sep,
 .mt-prev-films li.tc-nc-sep,
 .tc-nc-sep {
   counter-increment: none;
+  list-style: none;
   display: block;
-  padding: 14px 0 5px;
+  padding: 15px 0 7px;
   border-bottom: none;
-  font-family: system-ui, Arial, sans-serif;
-  font-size: 11px;
+  font-family: var(--font-names);
+  font-size: 13px;
   font-weight: 700;
   font-style: normal;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--text,#111008);
-  opacity: 0.6;
+  color: var(--rouge-texte);
 }
+/* Le carré rouge prend la place du numéro, et donc son ::before : il faut
+   defaire le positionnement absolu que les listes y posent. */
 .films-list li.tc-nc-sep::before,
 .fiche-contrib-films li.tc-nc-sep::before,
 .mt-prev-films li.tc-nc-sep::before,
-.tc-nc-sep::before { content: none; }
+.tc-nc-sep::before {
+  content: '';
+  position: static;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  min-width: 0;
+  margin: 0 9px 2px 0;
+  background: var(--rouge);
+  vertical-align: middle;
+}
 /* Un filet au-dessus, sauf quand l'intertitre ouvre la liste (top entièrement
    sans classement) : il n'y aurait alors rien à séparer. */
-li.tc-nc-sep:not(:first-child) { border-top: 0.5px solid var(--border-dark,#d0c8b8); margin-top: 4px; }
+li.tc-nc-sep:not(:first-child) { border-top: 0.5px solid var(--border-dark,#d0c8b8); margin-top: 6px; }
 
 /* La case à cocher des formulaires et la zone de saisie qu'elle dévoile.
    Définies ici, et non dans le <style> de index.html, parce que le back-office
-   s'en sert aussi : style.css est le seul fichier chargé par les trois pages. */
-.tc-nc-case { display: flex; align-items: center; gap: 9px; margin-top: 11px; }
-.tc-nc-case input[type="checkbox"] { width: 17px; height: 17px; flex-shrink: 0; accent-color: var(--rouge,#A33025); cursor: pointer; margin: 0; }
-.tc-nc-case label { display: inline; font-family: system-ui, Arial, sans-serif; font-size: 15px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text,#111008); margin: 0; cursor: pointer; }
-.tc-nc-zone { margin-top: 11px; padding-left: 26px; border-left: 2px solid var(--border-dark,#d0c8b8); }
-.tc-nc-hint { font-family: system-ui, Arial, sans-serif; font-size: 14px; font-style: italic; line-height: 1.5; color: var(--text,#111008); opacity: 0.7; margin-bottom: 9px; }
+   s'en sert aussi : style.css est le seul fichier chargé par les trois pages.
+   Le filet rouge de la zone reprend celui de .parse-warning et des blocs. */
+.tc-nc-case { display: flex; align-items: center; gap: 10px; margin-top: 1.1rem; }
+.tc-nc-case input[type="checkbox"] { width: 17px; height: 17px; flex-shrink: 0; margin: 0; accent-color: var(--rouge,#A33025); cursor: pointer; }
+.tc-nc-case label { display: inline; margin: 0; cursor: pointer; font-family: var(--font); font-size: 18px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text,#111008); transition: color 0.15s; }
+.tc-nc-case:hover label { color: var(--rouge-texte,#A33025); }
+.tc-nc-zone { margin-top: 1rem; padding: 2px 0 2px 1.1rem; border-left: 3px solid var(--rouge,#A33025); }
+.tc-nc-hint { font-family: var(--font); font-size: 17px; font-style: italic; line-height: 1.45; color: var(--text,#111008); opacity: 0.7; margin-bottom: 10px; }
 
 .submit-confirm { display: flex; align-items: center; gap: 16px; }
 .success-msg { display: none; background: var(--noir,#1a1a1a); color: #f0ece3; border-radius: 0 6px 6px 0; padding: 1.6rem 2.1rem; margin-top: 1.5rem; position: relative; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }

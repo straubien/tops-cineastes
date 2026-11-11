@@ -1656,17 +1656,30 @@ body {
    par le back-office aussi : on ne reprend ici que ce qui dépend de cette liste. */
 .submission-films li.tc-nc { counter-increment: none; }
 .submission-films li.tc-nc::before { content: none; }
+/* .submission-films li impose 16 px et la police du back-office : l'intertitre
+   doit reprendre a sa main celle des titres de section, sinon il s'affiche
+   aussi gros qu'un titre de film. */
 .submission-films li.tc-nc-sep {
   counter-increment: none;
-  padding: 12px 16px 6px;
+  padding: 14px 16px 7px;
   border-bottom: none;
-  font-family: system-ui, Arial, sans-serif;
-  font-size: 11px;
+  font-family: var(--font-names);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   line-height: 1.2;
+  color: var(--rouge-texte);
 }
-.submission-films li.tc-nc-sep::before { content: none; }
+.submission-films li.tc-nc-sep::before {
+  content: '';
+  position: static;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 9px 2px 0;
+  background: var(--rouge);
+  vertical-align: middle;
+}
 .submission-films li.tc-nc-sep:not(:first-child) { border-top: 1px solid var(--border-dim); }
 .submission-raw {
   font-size: 13px;
