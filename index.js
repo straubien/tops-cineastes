@@ -3236,27 +3236,34 @@ function renderActualites(){
       items.push({date:p.reviewed_at||p.submitted_at,html:'<span class="actu-icon">🏷️</span> '+t(actuKey,[escapeHtml(dn),formatNom(p.cineaste_nom||''),'<span class="actu-courant-name">'+escapeHtml(tcCourantLabelFromName(p.courant||''))+'</span>']),cineaste:p.cineaste_nom,type:'courants'});
     });
     // Versions dont on possède une empreinte, par source, de la plus
-    // récente à la plus ancienne : une mise à jour n'a de détail à montrer
-    // que si SA version est là et qu'une version antérieure l'est aussi,
-    // faute de quoi il n'y a rien à comparer.
+    // récente à la plus ancienne : une mise à jour ne peut se raconter top
+    // par top que si SA version est là et qu'une version antérieure l'est
+    // aussi, faute de quoi il n'y a rien à comparer.
     var empreintesParSource={};
     (empreintes||[]).forEach(function(e){
       if(!e||!e.source)return;
       (empreintesParSource[e.source]=empreintesParSource[e.source]||[]).push(String(e.version));
     });
-    jsonUpdates.forEach(function(u){
-      var aut=tcMajAuteur(u.source);
-      var item={date:u.created_at,html:tcActuAvatarHtml(aut.id,aut.nom)+' '+t('actu_top_json_update',escapeHtml(aut.nom)),type:'tops'};
+    // Chaque mise à jour annoncée, accompagnée de la version qui la précède
+    // quand il y en a une. L'ordre est celui du fil : la plus récente d'abord.
+    var majPaires=jsonUpdates.map(function(u){
       var versions=empreintesParSource[u.source]||[];
       var rang=versions.indexOf(String(u.version));
-      if(rang!==-1&&versions[rang+1]){
-        item.maj={source:u.source,version:String(u.version),precedente:versions[rang+1]};
-      }
-      items.push(item);
+      return {source:u.source, version:String(u.version),
+              precedente:(rang!==-1&&versions[rang+1])||null, date:u.created_at};
     });
-    items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-    _actuItemsCache=items;
-    applyActuFilterSelection();
+    // Une actualité par top ajouté ou modifié : cela demande de comparer deux
+    // empreintes, donc d'attendre leur lecture (cf. tcMajChargerChangements).
+    // Cette lecture n'échoue jamais — au pire elle ne rend rien, et l'annonce
+    // reste groupée comme autrefois.
+    return tcMajChargerChangements(majPaires).then(function(changements){
+      majPaires.forEach(function(p){
+        tcMajItemsActualite(p,changements).forEach(function(it){ items.push(it); });
+      });
+      items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+      _actuItemsCache=items;
+      applyActuFilterSelection();
+    });
   }).catch(function(){
     _actuItemsCache=null;
     _actuTronque=false;
@@ -3303,6 +3310,106 @@ function tcMajCalculerChangements(avant,apres){
   ajouts.sort(function(a,b){return a.localeCompare(b,'fr');});
   modifies.sort(function(a,b){return a.localeCompare(b,'fr');});
   return {ajouts:ajouts,modifies:modifies};
+}
+
+// ── UNE ACTUALITÉ PAR TOP AJOUTÉ OU MODIFIÉ ────────────────────
+// Une mise à jour du fichier de tops ne se résume plus à une ligne « a mis à
+// jour ses tops » : le fil annonce chaque top, un par un, avec la même phrase
+// qu'un top envoyé par le formulaire — « a posté un nouveau top pour X »
+// pour un top qui entre dans le fichier, « a modifié son top pour X » pour un
+// top retouché. Il faut pour cela comparer deux empreintes (cf.
+// tcEmpreinteTops), et une empreinte pèse une trentaine de kilo-octets — d'où
+// les deux précautions qui suivent.
+//
+//   1. Le résultat d'une comparaison ne changera JAMAIS : une version
+//      publiée ne se réécrit pas. On le garde donc dans le navigateur, et
+//      une version déjà racontée ne retélécharge plus rien.
+//   2. On ne compare que les ACTU_MAJ_LOT mises à jour les plus récentes
+//      encore inconnues du navigateur. Au-delà, l'annonce reste groupée et
+//      son détail s'ouvre d'un clic, comme avant : ouvrir Actualités n'a pas
+//      à télécharger des années d'archives pour des lignes que personne ne
+//      fait défiler jusque-là.
+var ACTU_MAJ_LOT=12;
+var TC_MAJ_CACHE_CLE='tc-maj-changements';
+
+// Une paire (version annoncée, version précédente) — ce qui identifie une
+// comparaison, et donc une entrée du cache.
+function tcMajCle(p){ return p.source+'|'+p.version+'|'+p.precedente; }
+
+function tcMajCacheLire(){
+  try{
+    var obj=JSON.parse(localStorage.getItem(TC_MAJ_CACHE_CLE)||'{}');
+    return (obj&&typeof obj==='object')?obj:{};
+  }catch(e){ return {}; }
+}
+// On réécrit le cache avec les seules comparaisons dont le fil vient de se
+// servir : les autres ne sont plus d'aucune utilité et la clé ne grossit donc
+// pas indéfiniment. Accessoire comme l'annonce elle-même : un quota dépassé
+// ou un navigateur sans stockage ne doit rien empêcher.
+function tcMajCacheEcrire(obj){
+  try{ localStorage.setItem(TC_MAJ_CACHE_CLE,JSON.stringify(obj)); }catch(e){}
+}
+
+// Rend une promesse — qui n'échoue jamais — portant les changements connus,
+// rangés par clé de paire : { a:[noms ajoutés], m:[noms modifiés] }. Une paire
+// absente du résultat n'a pas pu être comparée (première version annoncée,
+// empreinte manquante, lecture en panne, ou archive au-delà du lot) :
+// l'appelant retombe alors sur l'annonce groupée.
+function tcMajChargerChangements(paires){
+  var cache=tcMajCacheLire(), resultat={}, aLire={}, aComparer=[];
+  paires.forEach(function(p){
+    if(!p.precedente)return;                      // rien à quoi comparer
+    var cle=tcMajCle(p);
+    if(cache[cle]){ resultat[cle]=cache[cle]; return; }
+    if(aComparer.length>=ACTU_MAJ_LOT)return;     // archives : annonce groupée
+    aComparer.push(p);
+    aLire[p.source+'|'+p.version]=true;
+    aLire[p.source+'|'+p.precedente]=true;        // une empreinte sert à deux paires
+  });
+  if(!aComparer.length){ tcMajCacheEcrire(resultat); return Promise.resolve(resultat); }
+  var cles=Object.keys(aLire);
+  return Promise.all(cles.map(function(k){
+    var i=k.indexOf('|');
+    // Une empreinte illisible n'est pas une panne : la mise à jour garde son
+    // annonce groupée, et le reste du fil s'affiche normalement.
+    try{ return tcLireEmpreinte(k.slice(0,i),k.slice(i+1)).catch(function(){ return null; }); }
+    catch(e){ return null; }
+  })).then(function(lus){
+    var empreintes={};
+    cles.forEach(function(k,i){ empreintes[k]=lus[i]; });
+    aComparer.forEach(function(p){
+      var apres=empreintes[p.source+'|'+p.version];
+      var avant=empreintes[p.source+'|'+p.precedente];
+      if(!apres||!avant)return;                   // empreinte illisible
+      var ch=tcMajCalculerChangements(avant,apres);
+      resultat[tcMajCle(p)]={a:ch.ajouts, m:ch.modifies};
+    });
+    tcMajCacheEcrire(resultat);
+    return resultat;
+  }).catch(function(){ return resultat; });
+}
+
+// Les actualités d'une mise à jour : une ligne par top ajouté, une par top
+// retouché, cliquables vers la fiche du cinéaste comme n'importe quel top du
+// fil. Comparaison impossible — ou version qui n'a finalement rien changé —
+// l'annonce groupée d'autrefois, dont le détail s'ouvre d'un clic dès qu'il y
+// a deux empreintes à comparer.
+function tcMajItemsActualite(p,changements){
+  var aut=tcMajAuteur(p.source);
+  var avatar=tcActuAvatarHtml(aut.id,aut.nom);
+  var ch=changements&&changements[tcMajCle(p)];
+  if(ch&&(ch.a.length||ch.m.length)){
+    return ch.a.map(function(nom){
+      return {date:p.date, html:avatar+' '+t('actu_top_nouveau',[escapeHtml(aut.nom),formatNom(nom)]),
+              cineaste:nom, type:'tops'};
+    }).concat(ch.m.map(function(nom){
+      return {date:p.date, html:avatar+' '+t('actu_top_modifie',[escapeHtml(aut.nom),formatNom(nom)]),
+              cineaste:nom, type:'tops'};
+    }));
+  }
+  var item={date:p.date, html:avatar+' '+t('actu_top_json_update',escapeHtml(aut.nom)), type:'tops'};
+  if(p.precedente)item.maj={source:p.source, version:p.version, precedente:p.precedente};
+  return [item];
 }
 
 function tcMajListeCineastes(noms){
