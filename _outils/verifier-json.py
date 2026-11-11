@@ -115,10 +115,22 @@ def verifier_structure(donnees, rapport):
                 continue
             if not _texte_non_vide(film.get("titre")):
                 rapport.erreur('%s : "titre" absent ou vide' % ou_f)
-            rang = film.get("rang")
-            if not isinstance(rang, int) or isinstance(rang, bool) or rang < 1:
-                rapport.erreur('%s : "rang" vaut %r, un entier >= 1 est attendu'
-                               % (ou_f, rang))
+            # Un film de la partie « vus mais non classés » (nc = true) n'a pas
+            # de rang, et c'est normal : il est compté comme les autres, mais
+            # s'affiche sans numéro. Exiger un rang le rendrait impossible.
+            if film.get("nc") is True:
+                if "rang" in film:
+                    rapport.avertir('%s : marqué "nc" mais porte un "rang" '
+                                    "(%r), qui ne sera jamais affiche"
+                                    % (ou_f, film.get("rang")))
+            elif "nc" in film:
+                rapport.erreur('%s : "nc" vaut %r, seul true est attendu '
+                               "(ou le champ absent)" % (ou_f, film.get("nc")))
+            else:
+                rang = film.get("rang")
+                if not isinstance(rang, int) or isinstance(rang, bool) or rang < 1:
+                    rapport.erreur('%s : "rang" vaut %r, un entier >= 1 est attendu'
+                                   % (ou_f, rang))
             if "note" in film and not isinstance(film["note"], str):
                 rapport.erreur('%s : "note" devrait etre du texte, et vaut %s'
                                % (ou_f, type(film["note"]).__name__))
@@ -142,27 +154,42 @@ def verifier_qualite(donnees, rapport):
     rangs_doubles = 0
     annees_texte = 0
     annees_absentes = 0
+    non_classes = 0
+    tops_non_classes = 0
     for top in tops:
         if not isinstance(top, dict):
             continue
         films = top.get("films")
         if not isinstance(films, list):
             continue
-        rangs = [f.get("rang") for f in films if isinstance(f, dict)]
+        rangs = [f.get("rang") for f in films
+                 if isinstance(f, dict) and f.get("nc") is not True]
         if len(rangs) != len(set(rangs)):
             rangs_doubles += 1
+        nc_du_top = 0
         for film in films:
             if not isinstance(film, dict):
                 continue
+            if film.get("nc") is True:
+                nc_du_top += 1
             if "annee" not in film:
                 annees_absentes += 1
             elif isinstance(film.get("annee"), str):
                 annees_texte += 1
+        if nc_du_top:
+            non_classes += nc_du_top
+            tops_non_classes += 1
 
     if rangs_doubles:
         rapport.informer("%d cineaste(s) ont des films au meme rang (ex aequo). "
                          "Le champ « rang » n'est jamais lu a l'affichage : "
                          "c'est l'ordre du tableau qui fait foi." % rangs_doubles)
+    if non_classes:
+        rapport.informer("%d film(s) repartis dans %d top(s) sont marques "
+                         "« nc » : vus, mais non classes. Ils comptent dans "
+                         "les statistiques comme les autres, et s'affichent "
+                         "sans numero, sous l'intertitre « Vus mais non "
+                         "classes »." % (non_classes, tops_non_classes))
     if annees_texte:
         rapport.informer("%d film(s) portent une plage d'annees en texte "
                          "(ex. « 1989-1999 »). C'est correct pour une oeuvre "
