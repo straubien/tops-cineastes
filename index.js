@@ -3341,9 +3341,12 @@ var ACTU_MAJ_LOT=12;
 // cache ne peut plus être cru sur parole : les navigateurs repartent alors
 // d'un cache vide, sans que personne ait à vider quoi que ce soit à la main.
 // Numéro 2 : le 11 novembre 2026, une empreinte d'un autre âge avait fait
-// passer la totalité du fichier pour modifiée.
-var TC_MAJ_CACHE_CLE='tc-maj-changements-2';
-var TC_MAJ_CACHE_ANCIENNES=['tc-maj-changements'];
+// passer la totalité du fichier pour modifiée. Numéro 3, le même jour :
+// l'empreinte de la 7.8 a été retouchée en base pour taire deux annonces que
+// la réparation d'une erreur de ce fichier avait fait naître — une écriture
+// en base ne touche pas ce tiroir-ci, d'où le numéro suivant.
+var TC_MAJ_CACHE_CLE='tc-maj-changements-3';
+var TC_MAJ_CACHE_ANCIENNES=['tc-maj-changements','tc-maj-changements-2'];
 
 // Une paire (version annoncée, version précédente) — ce qui identifie une
 // comparaison, et donc une entrée du cache.
