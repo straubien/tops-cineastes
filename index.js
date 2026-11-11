@@ -948,6 +948,13 @@ function tcCheckJsonUpdate(source,version,donnees){
 // version annoncée, un condensé : un cinéaste, une signature de son top.
 // Comparer deux condensés suffit alors à dire qui a été ajouté et quels
 // tops ont été retouchés, sans jamais stocker les tops eux-mêmes.
+// ATTENTION : modifier ce qui entre dans la signature rend INCOMPARABLES
+// toutes les empreintes déjà enregistrées, calculées avec l'ancienne formule :
+// plus une seule ne correspondra. C'est arrivé le 11 novembre 2026 avec
+// l'ajout de « nc » — la mise à jour suivante a annoncé le fichier ENTIER
+// comme modifié. Si vous y touchez, recalculez les empreintes de la table
+// json_empreintes, ou videz-la : le fil retombe alors sur l'annonce groupée,
+// sans rien casser. (tcMajComparaisonCredible sert de dernier rempart.)
 function tcSignatureFilms(films){
   var txt=(films||[]).map(function(f){
     // f.nc : le passage d'un film du classement à la partie « vus mais non
@@ -3330,7 +3337,13 @@ function tcMajCalculerChangements(avant,apres){
 //      à télécharger des années d'archives pour des lignes que personne ne
 //      fait défiler jusque-là.
 var ACTU_MAJ_LOT=12;
-var TC_MAJ_CACHE_CLE='tc-maj-changements';
+// Le nom de la clé porte un numéro, qui change dès que ce qui a été mis en
+// cache ne peut plus être cru sur parole : les navigateurs repartent alors
+// d'un cache vide, sans que personne ait à vider quoi que ce soit à la main.
+// Numéro 2 : le 11 novembre 2026, une empreinte d'un autre âge avait fait
+// passer la totalité du fichier pour modifiée.
+var TC_MAJ_CACHE_CLE='tc-maj-changements-2';
+var TC_MAJ_CACHE_ANCIENNES=['tc-maj-changements'];
 
 // Une paire (version annoncée, version précédente) — ce qui identifie une
 // comparaison, et donc une entrée du cache.
@@ -3347,7 +3360,27 @@ function tcMajCacheLire(){
 // pas indéfiniment. Accessoire comme l'annonce elle-même : un quota dépassé
 // ou un navigateur sans stockage ne doit rien empêcher.
 function tcMajCacheEcrire(obj){
-  try{ localStorage.setItem(TC_MAJ_CACHE_CLE,JSON.stringify(obj)); }catch(e){}
+  try{
+    // Les anciennes clés occupent le même quota : on les purge avant d'écrire.
+    for(var i=0;i<TC_MAJ_CACHE_ANCIENNES.length;i++) localStorage.removeItem(TC_MAJ_CACHE_ANCIENNES[i]);
+    localStorage.setItem(TC_MAJ_CACHE_CLE,JSON.stringify(obj));
+  }catch(e){}
+}
+
+// ── GARDE-FOU : UNE COMPARAISON QUI N'A PAS DE SENS ──────────────
+// Deux empreintes ne se comparent que si la même formule les a calculées
+// (cf. tcSignatureFilms). Le 11 novembre 2026, celle de la 7.8 datait d'avant
+// l'ajout du drapeau « nc » : aucune des 1285 signatures ne correspondait
+// plus, et le fil a annoncé 1285 tops modifiés au lieu de douze. Si cela se
+// reproduit, l'annonce groupée vaut mieux qu'un fil noyé sous des lignes
+// fausses. Une grosse mise à jour sincère n'est pas gênée : il faut À LA FOIS
+// plus de TC_MAJ_MODIFS_MAX lignes ET la moitié du fichier pour qu'on renonce.
+var TC_MAJ_MODIFS_MAX=100;    // en deçà, aucun risque d'inonder le fil
+var TC_MAJ_MODIFS_PART=0.5;   // part des tops communs au-delà de laquelle on renonce
+function tcMajComparaisonCredible(apres,ch){
+  if(ch.modifies.length<=TC_MAJ_MODIFS_MAX)return true;
+  var communs=Object.keys(apres||{}).length-ch.ajouts.length;
+  return communs<=0||ch.modifies.length<communs*TC_MAJ_MODIFS_PART;
 }
 
 // Rend une promesse — qui n'échoue jamais — portant les changements connus,
@@ -3382,6 +3415,7 @@ function tcMajChargerChangements(paires){
       var avant=empreintes[p.source+'|'+p.precedente];
       if(!apres||!avant)return;                   // empreinte illisible
       var ch=tcMajCalculerChangements(avant,apres);
+      if(!tcMajComparaisonCredible(apres,ch))return;   // empreintes incomparables
       resultat[tcMajCle(p)]={a:ch.ajouts, m:ch.modifies};
     });
     tcMajCacheEcrire(resultat);
