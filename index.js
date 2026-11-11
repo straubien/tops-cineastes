@@ -950,7 +950,9 @@ function tcCheckJsonUpdate(source,version,donnees){
 // tops ont été retouchés, sans jamais stocker les tops eux-mêmes.
 function tcSignatureFilms(films){
   var txt=(films||[]).map(function(f){
-    return [f&&f.rang,f&&f.titre,f&&f.annee,f&&f.note].join('\u0001');
+    // f.nc : le passage d'un film du classement à la partie « vus mais non
+    // classés » est une retouche du top, et doit donc changer la signature.
+    return [f&&f.rang,f&&f.titre,f&&f.annee,f&&f.note,f&&f.nc?1:0].join('\u0001');
   }).join('\u0002');
   // FNV-1a sur 32 bits : court, stable d'une version à l'autre, et sans
   // aucune bibliothèque à charger.
@@ -1689,10 +1691,12 @@ function _renderImpPanel(){
     var rowHtml='<div class="imp-panel-row"><span class="imp-panel-cin">'+escapeHtml(it.cineaste)+'</span>'+editHtml+'<span class="imp-panel-count">'+it.count+' film'+(it.count!==1?'s':'')+'</span>'+toggleHtml+'</div>';
     var filmsHtml='';
     if(hasFilms){
-      filmsHtml='<ol class="fiche-contrib-films">'+it.films.map(function(f){
+      filmsHtml='<ol class="fiche-contrib-films">'+it.films.map(function(f,iF){
         var s1='<span class="fiche-muzard-film">'+escapeHtml(f.titre)+'</span>'+(f.note?'<span class="film-note">('+escapeHtml(f.note)+')</span>':'');
         var s2='<span class="fiche-muzard-annee">'+escapeHtml(f.annee||'')+'</span>';
-        return'<li>'+s1+s2+'</li>';
+        // Les films « vus mais non classés » ne portent pas de numéro, et un
+        // intertitre ouvre leur partie.
+        return tcIntertitreNCHtml(it.films,iF)+'<li'+(f&&f.nc?' class="tc-nc"':'')+'>'+s1+s2+'</li>';
       }).join('')+'</ol>';
     }
     return'<div class="imp-panel-block'+(hasFilms?' has-films':'')+'" id="'+blockId+'"'+(hasFilms?' data-action="toggle-accordeon" data-block-id="'+blockId+'"':'')+'>'+rowHtml+filmsHtml+'</div>';
@@ -2106,8 +2110,11 @@ function tcRemplirBlocsContributeurs(c,contribsDiv){
     if(hasFilms&&tcFilmsCharges(films)){
       var ol=document.createElement('ol');
       ol.className='fiche-contrib-films';
-      films.forEach(function(f){
+      films.forEach(function(f,iF){
+        // Intertitre devant le premier film « vu mais non classé ».
+        tcPoserIntertitreNC(ol,films,iF);
         var li=document.createElement('li');
+        if(f&&f.nc)li.className='tc-nc';
         var s1=document.createElement('span');s1.className='fiche-muzard-film';s1.textContent=f.titre;
         if(f.note){var sn=document.createElement('span');sn.className='film-note';sn.textContent='('+f.note+')';li.appendChild(s1);li.appendChild(sn);}else{li.appendChild(s1);}
         var s2=document.createElement('span');s2.className='fiche-muzard-annee';s2.textContent=f.annee||'';
@@ -5147,8 +5154,10 @@ function openFicheThematique(themeNom){
     if(hasFilms){
       var ol = document.createElement('ol');
       ol.className = 'fiche-contrib-films';
-      films.forEach(function(f){
+      films.forEach(function(f, iF){
+        tcPoserIntertitreNC(ol, films, iF);
         var li = document.createElement('li');
+        if(f && f.nc) li.className = 'tc-nc';
         var titre = typeof f === 'string' ? f : (f.titre || '');
         var s1 = document.createElement('span'); s1.className = 'fiche-muzard-film'; s1.textContent = titre;
         if(f && f.note){ var sn = document.createElement('span'); sn.className = 'film-note'; sn.textContent = '(' + f.note + ')'; li.appendChild(s1); li.appendChild(sn); }
@@ -5246,6 +5255,60 @@ function openFicheThematique(themeNom){
     }
   });
 
+  // ── ZONE « VUS MAIS NON CLASSÉS » ────────────────────
+  // Les deux onglets (top cinéaste, top thématique) ont la même case à cocher et
+  // la même seconde zone de saisie. Leurs identifiants ne diffèrent que par un
+  // préfixe : 'mt-nc' et 'mt-theme-nc'.
+
+  // Montre ou cache la zone. Ce qui y a été tapé n'est pas effacé : décocher la
+  // case suffit à l'écarter de l'analyse, et la recocher le retrouve.
+  function mtBasculerZoneNC(prefixe, ouvrir){
+    var box = document.getElementById(prefixe + '-toggle');
+    var zone = document.getElementById(prefixe + '-zone');
+    if(box) box.checked = !!ouvrir;
+    if(zone) zone.style.display = ouvrir ? 'block' : 'none';
+  }
+
+  // Le texte de la zone, ou rien si la case n'est pas cochée.
+  function mtTexteNC(prefixe){
+    var box = document.getElementById(prefixe + '-toggle');
+    var ta = document.getElementById(prefixe + '-textarea');
+    if(!box || !box.checked || !ta) return '';
+    return ta.value.trim();
+  }
+
+  // Remet la zone à son état de départ : vide et repliée.
+  function mtViderZoneNC(prefixe){
+    var ta = document.getElementById(prefixe + '-textarea');
+    if(ta) ta.value = '';
+    mtBasculerZoneNC(prefixe, false);
+  }
+
+  function mtBrancherCaseNC(prefixe){
+    var box = document.getElementById(prefixe + '-toggle');
+    if(!box) return;
+    box.addEventListener('change', function(){ mtBasculerZoneNC(prefixe, box.checked); });
+  }
+  mtBrancherCaseNC('mt-nc');
+  mtBrancherCaseNC('mt-theme-nc');
+
+  // Redispose un top déjà enregistré dans les DEUX zones : les films numérotés
+  // dans la zone principale, la partie non classée dans la sienne, case cochée.
+  // C'est l'opération inverse de la réunion faite à l'analyse.
+  function mtPoserFilmsDansFormulaire(films, idTexte, prefixeNC){
+    var classes = [], nonClasses = [];
+    (films || []).forEach(function(f){
+      if(!f || !f.titre) return;
+      var ligne = f.titre + (f.annee ? ' (' + f.annee + ')' : '');
+      if(f.nc) nonClasses.push(ligne); else classes.push(ligne);
+    });
+    var ta = document.getElementById(idTexte);
+    if(ta) ta.value = classes.map(function(l, i){ return (i + 1) + '. ' + l; }).join('\n');
+    var taNC = document.getElementById(prefixeNC + '-textarea');
+    if(taNC) taNC.value = nonClasses.join('\n');
+    mtBasculerZoneNC(prefixeNC, nonClasses.length > 0);
+  }
+
   // ── STEPPER VISUEL ───────────────────────────────────────────
   function mtUpdateStepper(step){
     [1, 2, 3].forEach(function(n){
@@ -5283,7 +5346,10 @@ function openFicheThematique(themeNom){
 
   function mtParseTops(){
     var cineaste = mtSelectedCineaste || document.getElementById('mt-cineaste-input').value.trim();
-    var texte = document.getElementById('mt-tops-textarea').value.trim();
+    // Les deux zones ne font qu'un texte : la ligne-repère les sépare, et
+    // parseTopsBrut sait la relire. La zone « sans classement » peut donc être
+    // seule remplie — le top est alors entièrement non classé.
+    var texte = tcTexteAvecNC(document.getElementById('mt-tops-textarea').value.trim(), mtTexteNC('mt-nc'));
     if(!cineaste){ alert(t('mt_no_cin_alert')); return; }
     if(!texte){ alert(t('mt_no_texte_alert')); return; }
 
@@ -5344,8 +5410,10 @@ function openFicheThematique(themeNom){
 
     var list = document.getElementById('mt-films-list');
     list.innerHTML = '';
-    films.forEach(function(f){
+    films.forEach(function(f, iF){
+      tcPoserIntertitreNC(list, films, iF);
       var li = document.createElement('li');
+      if(f && f.nc) li.className = 'tc-nc';
       var titreEl = document.createElement('span'); titreEl.className = 'film-titre'; titreEl.textContent = f.titre;
       li.appendChild(titreEl);
       if(f.annee){ var anneeEl = document.createElement('span'); anneeEl.className = 'film-annee'; anneeEl.textContent = f.annee; li.appendChild(anneeEl); }
@@ -5372,7 +5440,7 @@ function openFicheThematique(themeNom){
   async function mtSubmitTops(){
     if(!mtParsedFilms || !mtCurrentContributor) return;
     var cineaste = document.getElementById('mt-cineaste-input').value.trim();
-    var rawText = document.getElementById('mt-tops-textarea').value.trim();
+    var rawText = tcTexteAvecNC(document.getElementById('mt-tops-textarea').value.trim(), mtTexteNC('mt-nc'));
     var btn = document.getElementById('mt-btn-submit');
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'+t('mt_envoi');
 
@@ -5488,7 +5556,9 @@ function openFicheThematique(themeNom){
       row.appendChild(nameSpan); row.appendChild(actionsDiv);
 
       var editZone = document.createElement('div'); editZone.className = 'prev-edit-zone';
-      var filmsText = films.map(function(f, i){ return (i + 1) + '. ' + f.titre + (f.annee ? ' (' + f.annee + ')' : ''); }).join('\n');
+      // Le texte comporte la ligne-repère « vus mais non classés » quand le top a
+      // une partie non classée : la relecture la reconnaît, rien n'est perdu.
+      var filmsText = tcFilmsVersTexte(films);
       var ta = document.createElement('textarea'); ta.value = filmsText;
       var editActions = document.createElement('div'); editActions.className = 'prev-edit-actions';
       var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.style.cssText = 'font-size:13px;padding:7px 18px'; saveBtn.textContent = t('mt_sauvegarder');
@@ -5503,13 +5573,7 @@ function openFicheThematique(themeNom){
       cancelBtn.addEventListener('click', function(){ editZone.classList.remove('visible'); editBtn.textContent = t('mt_modifier'); ta.value = filmsText; });
       saveBtn.addEventListener('click', async function(){
         saveBtn.disabled = true; saveBtn.textContent = t('mt_enregistrement');
-        var newFilms = ta.value.split('\n').filter(function(l){ return l.trim(); }).map(function(line, i){
-          line = line.replace(/^\d+[.\-)\s]+/, '').trim();
-          var am = line.match(/\((\d{4})\)\s*$/);
-          var annee = am ? parseInt(am[1]) : null;
-          var titre = line.replace(/\(\d{4}\)\s*$/, '').trim();
-          return { rang: i + 1, titre: titre, annee: annee };
-        });
+        var newFilms = tcRelireTexteEdite(ta.value);
         var newParsedJson = Object.assign({}, s.parsed_json, { films: newFilms });
         if(s.status === 'approved') newParsedJson.isModification = true;
         var r;
@@ -5543,6 +5607,7 @@ function openFicheThematique(themeNom){
   function mtResetForm(){
     document.getElementById('mt-cineaste-input').value = '';
     document.getElementById('mt-tops-textarea').value = '';
+    mtViderZoneNC('mt-nc');
     document.getElementById('mt-result-wrap').classList.remove('visible');
     document.getElementById('mt-cineaste-dropdown').classList.remove('visible');
     var dupMsg = document.getElementById('mt-duplicate-msg');
@@ -5587,8 +5652,9 @@ function openFicheThematique(themeNom){
     function poserLeTexte(){
       var films = (nomCinephile && SUPABASE_TOPS[nomCinephile] && SUPABASE_TOPS[nomCinephile][cineaste]) || [];
       if(!tcFilmsCharges(films)) films = [];
-      var raw = films.map(function(f, i){ return (i + 1) + '. ' + f.titre + (f.annee ? ' (' + f.annee + ')' : ''); }).join('\n');
-      if(ta) ta.value = raw;
+      // Le top revient dans les deux zones, la partie non classée dans la
+      // sienne : on retrouve le formulaire tel qu'il avait été rempli.
+      mtPoserFilmsDansFormulaire(films, 'mt-tops-textarea', 'mt-nc');
       mtUpdateStepper(2);
     }
 
@@ -5835,7 +5901,7 @@ function openFicheThematique(themeNom){
 
   function mtParseTopsThematique(){
     var themeNom = document.getElementById('mt-theme-input').value.trim();
-    var texte = document.getElementById('mt-theme-textarea').value.trim();
+    var texte = tcTexteAvecNC(document.getElementById('mt-theme-textarea').value.trim(), mtTexteNC('mt-theme-nc'));
     var resultWrap = document.getElementById('mt-theme-result-wrap');
     var filmsList = document.getElementById('mt-theme-films-list');
     var titleEl = document.getElementById('mt-theme-result-title');
@@ -5849,8 +5915,10 @@ function openFicheThematique(themeNom){
 
     if(titleEl) titleEl.textContent = themeNom;
     filmsList.innerHTML = '';
-    films.forEach(function(f){
+    films.forEach(function(f, iF){
+      tcPoserIntertitreNC(filmsList, films, iF);
       var li = document.createElement('li');
+      if(f && f.nc) li.className = 'tc-nc';
       li.textContent = f.titre + (f.annee ? ' (' + f.annee + ')' : '');
       filmsList.appendChild(li);
     });
@@ -5901,6 +5969,7 @@ function openFicheThematique(themeNom){
 
     document.getElementById('mt-theme-input').value = '';
     document.getElementById('mt-theme-textarea').value = '';
+    mtViderZoneNC('mt-theme-nc');
     var rw = document.getElementById('mt-theme-result-wrap');
     if(rw) rw.classList.remove('visible');
     var sm = document.getElementById('mt-theme-success-msg');
@@ -5943,9 +6012,10 @@ function openFicheThematique(themeNom){
         + '<span class="mt-prev-status ' + statusCls + '">' + statusLabel + '</span>'
         + '</div>'
         + '<ol class="mt-prev-films" style="padding-left:1.5rem;margin:0.4rem 0">'
-        + films.slice(0, 5).map(function(f){
+        + films.slice(0, 5).map(function(f, iF){
             var titre = typeof f === 'string' ? f : (f.titre || '');
-            return '<li>' + escapeHtml(titre) + '</li>';
+            return tcIntertitreNCHtml(films, iF)
+              + '<li' + (f && f.nc ? ' class="tc-nc"' : '') + '>' + escapeHtml(titre) + '</li>';
           }).join('')
         + (films.length > 5 ? '<li style="color:var(--brun-pale);font-style:italic">+ ' + (films.length - 5) + '</li>' : '')
         + '</ol>';
@@ -5957,6 +6027,7 @@ function openFicheThematique(themeNom){
   document.getElementById('mt-theme-btn-reset').addEventListener('click', function(){
     document.getElementById('mt-theme-input').value = '';
     document.getElementById('mt-theme-textarea').value = '';
+    mtViderZoneNC('mt-theme-nc');
     var rw = document.getElementById('mt-theme-result-wrap');
     if(rw) rw.classList.remove('visible');
     var sm = document.getElementById('mt-theme-success-msg');

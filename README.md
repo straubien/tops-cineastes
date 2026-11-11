@@ -150,6 +150,17 @@ Le contrôle des droits d'administration se fait à **deux** endroits, et le sec
 
 ## Quelques choix de conception
 
+**Les films « vus mais non classés ».** Un top peut comporter une partie sans numérotation : des films vus, que le cinéphile n'a pas voulu classer. Un top entier peut être de cette nature, ou seulement une section placée après la partie numérotée. Ces films vivent dans le **même tableau `films`** que les autres, marqués d'un drapeau `nc: true` et privés de `rang` :
+
+```json
+{ "rang": 1, "titre": "L'Intendant Sansho", "annee": 1954 }
+{ "titre": "La Rue de la honte", "annee": 1956, "nc": true }
+```
+
+Ce choix n'est pas anodin : **toutes les statistiques du site parcourent `films` ou lisent `films.length`**. Un second tableau aurait obligé à reprendre une quarantaine de calculs, un par un ; le drapeau les laisse tous justes sans y toucher, et les tops existants, qui n'ont pas de `nc`, ne changent pas d'un iota. C'est la même logique que la numérotation : elle vient de compteurs CSS, jamais du champ `rang`, donc une classe `tc-nc` sur la ligne suffit à la faire disparaître.
+
+Côté saisie, une case à cocher dévoile une seconde zone de texte. Les deux zones sont réunies en un seul texte par une **ligne-repère** (`--- vus mais non classés ---`), que `parseTopsBrut` sait relire : les éditeurs à une seule zone (modification d'une soumission, back-office) font ainsi l'aller-retour sans rien perdre. Cette ligne-repère est volontairement exigeante sur les mots — un simple `---` décoratif collé au milieu d'une liste ne doit pas basculer la moitié d'un top en « non classé » à l'insu de la personne.
+
 **Conditions de course dans les enregistrements.** Les six formulaires de `submit.js` figent l'identifiant du contributeur *avant* l'attente réseau et vérifient qu'il y a toujours un profil en mémoire *après*. Sans ça, une déconnexion pendant un enregistrement — particulièrement pendant l'envoi d'un avatar, qui peut durer 40 s — provoquait une erreur.
 
 **Panne ≠ résultat vide.** `supabase-js` ne rejette jamais ses promesses : une requête en échec résout normalement, avec `{ data: null, error }`. Un code qui ne lit que `data` confond donc « le serveur est en panne » et « il n'y a rien à afficher ». `tcSbError` (dans `utils.js`) transforme l'erreur en exception, pour qu'elle ne puisse pas être ignorée.

@@ -470,6 +470,28 @@ createAutocomplete({
 });
 document.getElementById('import-cineaste').addEventListener('input', function(){ selectedCineaste = null; });
 
+// ── ZONE « VUS MAIS NON CLASSÉS » DE L'IMPORT MANUEL ──────────────
+// Même principe que côté cinéphile : une case à cocher dévoile une seconde zone,
+// dont le contenu est réuni au texte principal par la ligne-repère avant
+// l'analyse. Les films y sont comptés comme les autres, mais sans numéro.
+function importBasculerZoneNC(ouvrir){
+  var box = document.getElementById('import-nc-toggle');
+  var zone = document.getElementById('import-nc-zone');
+  if(box) box.checked = !!ouvrir;
+  if(zone) zone.style.display = ouvrir ? 'block' : 'none';
+}
+// Le texte de la zone, ou rien si la case n'est pas cochée.
+function importTexteNC(){
+  var box = document.getElementById('import-nc-toggle');
+  var ta = document.getElementById('import-nc-textarea');
+  if(!box || !box.checked || !ta) return '';
+  return ta.value.trim();
+}
+(function(){
+  var box = document.getElementById('import-nc-toggle');
+  if(box) box.addEventListener('change', function(){ importBasculerZoneNC(box.checked); });
+})();
+
 // Parsing
 function showImportError(msg){
   var el=document.getElementById('import-error');
@@ -479,7 +501,10 @@ function showImportError(msg){
 document.getElementById('btn-parse').addEventListener('click', function(){
   var contrib = document.getElementById('import-contrib').value;
   var cineaste = selectedCineaste || document.getElementById('import-cineaste').value.trim();
-  var texte = document.getElementById('import-textarea').value.trim();
+  // Les deux zones ne font qu'un texte, séparées par la ligne-repère que
+  // parseTopsBrut sait relire. La zone « sans classement » peut être seule
+  // remplie : le top est alors entièrement non classé.
+  var texte = tcTexteAvecNC(document.getElementById('import-textarea').value.trim(), importTexteNC());
 
   if(!contrib){ showImportError('Sélectionnez un contributeur.'); return; }
   if(!cineaste){ showImportError('Sélectionnez un cinéaste.'); return; }
@@ -488,7 +513,8 @@ document.getElementById('btn-parse').addEventListener('click', function(){
 
   parsedFilms = parseTopsBrut(texte);
   if(!parsedFilms.length){
-    showImportError('Aucun film détecté. Vérifiez le format (lignes numérotées).');
+    showImportError('Aucun film détecté. Vérifiez le format (lignes numérotées), '
+      + 'ou utilisez la case « sans classement » pour une liste sans numéros.');
     return;
   }
 
@@ -501,8 +527,10 @@ document.getElementById('btn-parse').addEventListener('click', function(){
     ' — <span style="font-size:18px;color:var(--brun-pale)">' + escapeHtml(contrib) + '</span>';
 
   var list = document.getElementById('import-films-list');
-  list.innerHTML = parsedFilms.map(function(f){
-    return '<li><span class="film-titre">' + escapeHtml(f.titre) + '</span>'
+  list.innerHTML = parsedFilms.map(function(f, iF){
+    // Pas de numéro sur les films non classés, et un intertitre devant le premier.
+    return tcIntertitreNCHtml(parsedFilms, iF)
+      + '<li' + (f && f.nc ? ' class="tc-nc"' : '') + '><span class="film-titre">' + escapeHtml(f.titre) + '</span>'
       + (f.annee ? '<span class="film-annee">' + escapeHtml(f.annee) + '</span>' : '')
       + '</li>';
   }).join('');
@@ -529,7 +557,7 @@ document.getElementById('btn-submit-import').addEventListener('click', async fun
   if(!parsedFilms) return;
   var contrib = document.getElementById('import-contrib').value;
   var cineaste = selectedCineaste || document.getElementById('import-cineaste').value.trim();
-  var rawText = document.getElementById('import-textarea').value.trim();
+  var rawText = tcTexteAvecNC(document.getElementById('import-textarea').value.trim(), importTexteNC());
   var btn = document.getElementById('btn-submit-import');
 
   btn.disabled = true;
@@ -630,6 +658,9 @@ document.getElementById('btn-reset-import').addEventListener('click', function()
   document.getElementById('import-contrib').value = '';
   document.getElementById('import-cineaste').value = '';
   document.getElementById('import-textarea').value = '';
+  var taNC = document.getElementById('import-nc-textarea');
+  if(taNC) taNC.value = '';
+  importBasculerZoneNC(false);
   document.getElementById('import-result').classList.remove('visible');
   document.getElementById('import-success').classList.remove('visible');
   selectedCineaste = null;
@@ -865,8 +896,11 @@ function buildSubmissionCard(s, container){
     var films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
     var ol = document.createElement('ol');
     ol.className = 'submission-films';
-    films.forEach(function(f){
+    films.forEach(function(f, iF){
+      // Intertitre devant le premier film « vu mais non classé ».
+      tcPoserIntertitreNC(ol, films, iF);
       var li = document.createElement('li');
+      if(f && f.nc) li.className = 'tc-nc';
       li.textContent = f.titre;
       if(f.annee){ var ys=document.createElement('span');ys.style.color='var(--brun-pale)';ys.style.fontSize='13px';ys.textContent=' ('+f.annee+')';li.appendChild(ys); }
       ol.appendChild(li);
@@ -918,9 +952,9 @@ function buildSubmissionCard(s, container){
 
     if(type === 'top'){
       films = s.parsed_json && s.parsed_json.films ? s.parsed_json.films : [];
-      editTextarea.value = films.map(function(f,i){
-        return (i+1)+'. '+f.titre+(f.annee?' ('+f.annee+')':'');
-      }).join('\n');
+      // La ligne-repère « vus mais non classés » figure dans le texte quand le
+      // top a une partie non classée : la relecture la reconnaît.
+      editTextarea.value = tcFilmsVersTexte(films);
     } else if(type === 'favoris' || type === 'autres_cineastes'){
       cineastes = s.parsed_json && s.parsed_json.cineastes ? s.parsed_json.cineastes : [];
       editTextarea.value = cineastes.join('\n');
@@ -1104,19 +1138,12 @@ async function updateSubmissionWithEdit(id, s, type, editedText){
   var newParsedJson = Object.assign({}, s.parsed_json);
 
   if(type === 'top'){
-    var lines = editedText.split('\n').filter(function(l){ return l.trim(); });
-    var films = lines.map(function(line, i){
-      line = line.replace(/^\d+[.\-)\s]+/, '').trim();
-      var am = line.match(/\((\d{4})\)\s*$/);
-      var annee = am ? parseInt(am[1]) : null;
-      var titre = line.replace(/\(\d{4}\)\s*$/, '').trim();
-      return { rang: i+1, titre: titre, annee: annee };
-    }).filter(function(f){ return f.titre; });
+    var films = tcRelireTexteEdite(editedText).filter(function(f){ return f.titre; });
     newParsedJson.films = films;
   } else if(type === 'favoris' || type === 'autres_cineastes'){
     newParsedJson.cineastes = editedText.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
   } else if(type === 'films_favoris' || type === 'autres_films'){
-    lines = editedText.split('\n').filter(function(l){ return l.trim(); });
+    var lines = editedText.split('\n').filter(function(l){ return l.trim(); });
     films = lines.map(function(line){
       var am = line.match(/\((\d{4})\)\s*$/);
       var annee = am ? parseInt(am[1]) : null;
@@ -1899,10 +1926,11 @@ function buildThematicCard(row){
   var body = document.createElement('div');
   body.className = 'submission-body';
   var filmsHtml = '<ul class="submission-films">'
-    + films.map(function(f){
+    + films.map(function(f, iF){
         var titre = typeof f === 'string' ? f : (f.titre || '');
         var annee = f.annee ? ' (' + f.annee + ')' : '';
-        return '<li>' + escapeHtml(titre + annee) + '</li>';
+        return tcIntertitreNCHtml(films, iF)
+          + '<li' + (f && f.nc ? ' class="tc-nc"' : '') + '>' + escapeHtml(titre + annee) + '</li>';
       }).join('')
     + '</ul>';
 

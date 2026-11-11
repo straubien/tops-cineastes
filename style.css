@@ -2834,6 +2834,63 @@ a { text-decoration: none; color: inherit; }
 .films-list li { counter-increment: film-counter; display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border-dim,#e5dfd0); position: relative; padding-left: 2.2rem; }
 .films-list li:last-child { border-bottom: none; }
 .films-list li::before { content: counter(film-counter) '.'; position: absolute; left: 0; font-family: system-ui, sans-serif; font-size: 13px; color: var(--text,#111008); min-width: 1.8rem; }
+
+/* ── PARTIE « VUS MAIS NON CLASSÉS » ─────────────────────────────
+   Les films d'un top peuvent se diviser en deux : une partie numérotée et une
+   partie simplement vue, que le cinéphile n'a pas voulu classer. Les seconds
+   sont comptés comme les autres ; seule leur numérotation disparaît.
+
+   La numérotation des listes de ce site vient de compteurs CSS, jamais du
+   champ « rang ». Il suffit donc de neutraliser le compteur sur ces lignes :
+   les numéros des films classés qui précèdent restent intacts, et le retrait
+   de gauche est conservé pour que les titres restent alignés.
+
+   Trois familles de listes existent sur le site public ; le back-office a la
+   sienne, dans admin.css. */
+.films-list li.tc-nc,
+.fiche-contrib-films li.tc-nc,
+.mt-prev-films li.tc-nc { counter-increment: none; }
+.films-list li.tc-nc::before,
+.fiche-contrib-films li.tc-nc::before,
+.mt-prev-films li.tc-nc::before { content: none; }
+
+/* L'intertitre qui ouvre la partie non classée. C'est un <li> : il vit dans la
+   liste, donc un lecteur d'écran l'annonce à sa place, juste avant les titres
+   qu'il concerne. Il ne doit, lui aussi, consommer aucun numéro. */
+.films-list li.tc-nc-sep,
+.fiche-contrib-films li.tc-nc-sep,
+.mt-prev-films li.tc-nc-sep,
+.tc-nc-sep {
+  counter-increment: none;
+  display: block;
+  padding: 14px 0 5px;
+  border-bottom: none;
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text,#111008);
+  opacity: 0.6;
+}
+.films-list li.tc-nc-sep::before,
+.fiche-contrib-films li.tc-nc-sep::before,
+.mt-prev-films li.tc-nc-sep::before,
+.tc-nc-sep::before { content: none; }
+/* Un filet au-dessus, sauf quand l'intertitre ouvre la liste (top entièrement
+   sans classement) : il n'y aurait alors rien à séparer. */
+li.tc-nc-sep:not(:first-child) { border-top: 0.5px solid var(--border-dark,#d0c8b8); margin-top: 4px; }
+
+/* La case à cocher des formulaires et la zone de saisie qu'elle dévoile.
+   Définies ici, et non dans le <style> de index.html, parce que le back-office
+   s'en sert aussi : style.css est le seul fichier chargé par les trois pages. */
+.tc-nc-case { display: flex; align-items: center; gap: 9px; margin-top: 11px; }
+.tc-nc-case input[type="checkbox"] { width: 17px; height: 17px; flex-shrink: 0; accent-color: var(--rouge,#A33025); cursor: pointer; margin: 0; }
+.tc-nc-case label { display: inline; font-family: system-ui, Arial, sans-serif; font-size: 15px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text,#111008); margin: 0; cursor: pointer; }
+.tc-nc-zone { margin-top: 11px; padding-left: 26px; border-left: 2px solid var(--border-dark,#d0c8b8); }
+.tc-nc-hint { font-family: system-ui, Arial, sans-serif; font-size: 14px; font-style: italic; line-height: 1.5; color: var(--text,#111008); opacity: 0.7; margin-bottom: 9px; }
+
 .submit-confirm { display: flex; align-items: center; gap: 16px; }
 .success-msg { display: none; background: var(--noir,#1a1a1a); color: #f0ece3; border-radius: 0 6px 6px 0; padding: 1.6rem 2.1rem; margin-top: 1.5rem; position: relative; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
 .success-msg.visible { display: block; }

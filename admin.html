@@ -135,6 +135,19 @@
           <div class="textarea-hint">Le parseur extrait automatiquement les films numérotés.</div>
         </div>
 
+        <!-- Partie « vus mais non classés » : films comptabilisés, mais sans numéro. -->
+        <div class="field-wrap">
+          <div class="tc-nc-case">
+            <input type="checkbox" id="import-nc-toggle">
+            <label for="import-nc-toggle">Ajouter un top ou une section sans classement</label>
+          </div>
+          <div class="tc-nc-zone" id="import-nc-zone" style="display:none">
+            <div class="tc-nc-hint">Ces films comptent dans les statistiques comme tous les autres : seule la numérotation disparaît. Laissez la zone ci-dessus vide pour un top entièrement sans classement.</div>
+            <textarea class="tops-textarea" id="import-nc-textarea" aria-label="Films vus mais non classés"
+              placeholder="Un titre par ligne, sans numéro — avec l'année entre parenthèses…"></textarea>
+          </div>
+        </div>
+
         <div class="actions">
           <button class="btn-primary" id="btn-parse">Analyser</button>
           <button class="btn-secondary" id="btn-reset-import">Recommencer</button>

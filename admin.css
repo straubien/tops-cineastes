@@ -1649,6 +1649,25 @@ body {
   color: var(--rouge-texte);
 }
 .submission-films li:last-child { border-bottom: none; }
+
+/* Partie « vus mais non classés » d'un top : comptée comme le reste, mais sans
+   numéro. La numérotation venant d'un compteur CSS, il suffit de le neutraliser.
+   L'intertitre, lui, est déjà habillé par style.css (classe .tc-nc-sep), chargé
+   par le back-office aussi : on ne reprend ici que ce qui dépend de cette liste. */
+.submission-films li.tc-nc { counter-increment: none; }
+.submission-films li.tc-nc::before { content: none; }
+.submission-films li.tc-nc-sep {
+  counter-increment: none;
+  padding: 12px 16px 6px;
+  border-bottom: none;
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+}
+.submission-films li.tc-nc-sep::before { content: none; }
+.submission-films li.tc-nc-sep:not(:first-child) { border-top: 1px solid var(--border-dim); }
 .submission-raw {
   font-size: 13px;
   color: var(--brun-pale);

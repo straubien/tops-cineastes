@@ -436,6 +436,18 @@
             <div class="textarea-wrap">
               <textarea class="tops-textarea" id="mt-tops-textarea" aria-label="Votre top" data-i18n-aria="mt_top_label" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
             </div>
+            <!-- Partie « vus mais non classés » : les films y sont comptabilisés comme
+                 les autres, mais affichés sans numéro. -->
+            <div class="tc-nc-case">
+              <input type="checkbox" id="mt-nc-toggle">
+              <label for="mt-nc-toggle" data-i18n="mt_nc_case">Ajouter un top ou une section sans classement</label>
+            </div>
+            <div class="tc-nc-zone" id="mt-nc-zone" style="display:none">
+              <div class="tc-nc-hint" data-i18n="mt_nc_hint">Ces films comptent dans les statistiques comme tous les autres : seule la numérotation disparaît. Laissez la zone « Votre top » vide pour un top entièrement sans classement.</div>
+              <div class="textarea-wrap">
+                <textarea class="tops-textarea" id="mt-nc-textarea" aria-label="Films vus mais non classés" data-i18n-aria="mt_nc_label" data-i18n-ph="mt_nc_ph" placeholder="Un titre par ligne, sans numéro — avec l'année entre parenthèses si vous la connaissez…"></textarea>
+              </div>
+            </div>
             <div class="parse-warning" id="mt-duplicate-msg" style="display:none"></div>
             <div class="actions">
               <button class="btn-primary" id="mt-btn-parse" data-i18n="mt_analyser">Analyser ma liste</button>
@@ -496,6 +508,18 @@
             </div>
             <div class="textarea-wrap">
               <textarea class="tops-textarea" id="mt-theme-textarea" aria-label="Votre top" data-i18n-aria="mt_top_label" data-i18n-ph="mt_top_ph" placeholder="Collez votre liste ici, dans n'importe quel format…"></textarea>
+            </div>
+            <!-- Partie « vus mais non classés » : les films y sont comptabilisés comme
+                 les autres, mais affichés sans numéro. -->
+            <div class="tc-nc-case">
+              <input type="checkbox" id="mt-theme-nc-toggle">
+              <label for="mt-theme-nc-toggle" data-i18n="mt_nc_case">Ajouter un top ou une section sans classement</label>
+            </div>
+            <div class="tc-nc-zone" id="mt-theme-nc-zone" style="display:none">
+              <div class="tc-nc-hint" data-i18n="mt_nc_hint">Ces films comptent dans les statistiques comme tous les autres : seule la numérotation disparaît. Laissez la zone « Votre top » vide pour un top entièrement sans classement.</div>
+              <div class="textarea-wrap">
+                <textarea class="tops-textarea" id="mt-theme-nc-textarea" aria-label="Films vus mais non classés" data-i18n-aria="mt_nc_label" data-i18n-ph="mt_nc_ph" placeholder="Un titre par ligne, sans numéro — avec l'année entre parenthèses si vous la connaissez…"></textarea>
+              </div>
             </div>
             <div class="actions">
               <button class="btn-primary" id="mt-theme-btn-parse" data-i18n="mt_analyser">Analyser ma liste</button>

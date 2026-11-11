@@ -441,7 +441,120 @@ function tcCourantTypeCle(id){
   return (row && row.type) || 'courant';
 }
 
-function parseTopsBrut(texte){
+// ── FILMS « VUS MAIS NON CLASSÉS » ────────────────────────
+// Un top peut comporter une partie SANS numérotation : des films vus, mais que
+// le cinéphile n'a pas voulu classer. Un top entier peut être de cette nature,
+// ou seulement une section placée après la partie numérotée.
+//
+// Ces films vivent dans le MÊME tableau « films » que les autres, marqués d'un
+// drapeau « nc » et privés de « rang ». Ce choix est délibéré : toutes les
+// statistiques du site parcourent « films » ou lisent « films.length ». Un
+// second tableau aurait obligé à reprendre une quarantaine de calculs ; le
+// drapeau les laisse tous justes sans y toucher, et les tops existants, qui
+// n'ont pas de « nc », ne changent pas d'un iota.
+//
+// L'affichage, lui, les reconnaît au drapeau : pas de numéro, et un intertitre
+// pour dire pourquoi.
+
+// Ligne-repère écrite dans le texte brut, entre les deux parties. C'est elle qui
+// permet aux éditeurs à une seule zone de texte (modification d'une soumission,
+// back-office) de faire l'aller-retour sans rien perdre.
+var TC_MARQUEUR_NC = '--- vus mais non classés ---';
+
+// Reconnaît la ligne-repère, quelle que soit sa décoration (tirets, croisillons,
+// crochets, guillemets) et dans les deux langues.
+//
+// Volontairement exigeante sur les MOTS : un simple « --- » collé au milieu
+// d'une liste ne doit pas basculer la moitié du top en « non classé » à l'insu
+// de la personne. Le site n'a donc jamais besoin qu'on la tape : la case à
+// cocher des formulaires l'écrit, et les éditeurs la relisent.
+function tcEstMarqueurNC(ligne){
+  var s = String(ligne || '').trim();
+  if(!s) return false;
+  // On dépouille la décoration autour des mots.
+  s = s.replace(/^[\s\-\u2013\u2014_=*#\[\(\u00ab"']+/, '')
+       .replace(/[\s\-\u2013\u2014_=*#\]\)\u00bb"':.]+$/, '')
+       .trim().toLowerCase().replace(/\s+/g, ' ');
+  // Accents retirés : « non classés » s'écrit aussi « non classes ».
+  if(s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s === 'vus mais non classes' || s === 'vu mais non classe'
+      || s === 'sans classement' || s === 'hors classement'
+      || s === 'non classes' || s === 'non classe'
+      || s === 'seen but unranked' || s === 'unranked'
+      || s === 'no ranking' || s === 'without ranking';
+}
+
+// Un film appartient-il à la partie non classée ?
+function tcFilmNonClasse(f){ return !!(f && f.nc); }
+
+// Faut-il poser l'intertitre devant ce film ? Oui devant le PREMIER film non
+// classé de la liste. Un top entièrement non classé le porte donc aussi, en
+// tête : c'est précisément ce qu'il y a à dire au lecteur.
+function tcDoitPoserIntertitreNC(films, index){
+  if(!films || !films[index] || !films[index].nc) return false;
+  return !(index > 0 && films[index - 1] && films[index - 1].nc);
+}
+
+// Libellé de l'intertitre. Passe par tcTexte, donc utilisable aussi dans le
+// back-office, qui ne charge pas i18n.js (A-066).
+function tcLibelleNC(){
+  return tcTexte('nc_intertitre', 'Vus mais non classés');
+}
+
+// L'intertitre en texte HTML, pour les listes construites par concaténation.
+// Chaîne vide si ce film n'en demande pas.
+function tcIntertitreNCHtml(films, index){
+  if(!tcDoitPoserIntertitreNC(films, index)) return '';
+  return '<li class="tc-nc-sep">' + escapeHtml(tcLibelleNC()) + '</li>';
+}
+
+// Le même intertitre, en élément, pour les listes construites noeud par noeud.
+// Ne pose rien si ce film n'en demande pas.
+function tcPoserIntertitreNC(listeEl, films, index){
+  if(!listeEl || !tcDoitPoserIntertitreNC(films, index)) return;
+  var li = document.createElement('li');
+  li.className = 'tc-nc-sep';
+  li.textContent = tcLibelleNC();
+  listeEl.appendChild(li);
+}
+
+// Reconstruit le texte d'un top pour une zone de saisie : la partie numérotée,
+// puis la ligne-repère, puis la partie non classée. Relire ce texte avec
+// parseTopsBrut redonne le même tableau de films.
+function tcFilmsVersTexte(films){
+  var classes = [], nonClasses = [];
+  (films || []).forEach(function(f){
+    if(!f || !f.titre) return;
+    var ligne = f.titre + (f.annee ? ' (' + f.annee + ')' : '');
+    if(f.nc) nonClasses.push(ligne);
+    else classes.push(ligne);
+  });
+  var lignes = classes.map(function(l, i){ return (i + 1) + '. ' + l; });
+  if(nonClasses.length){
+    lignes.push(TC_MARQUEUR_NC);
+    lignes = lignes.concat(nonClasses);
+  }
+  return lignes.join('\n');
+}
+
+// Réunit la partie numérotée et la partie non classée saisies dans DEUX zones de
+// texte séparées (la case à cocher des formulaires) en un seul texte brut, que
+// parseTopsBrut sait relire. C'est ce texte qui part en base comme « raw_text » :
+// la soumission se relit donc telle qu'elle a été saisie.
+function tcTexteAvecNC(texteClasse, texteNonClasse){
+  var a = String(texteClasse || '').trim();
+  var b = String(texteNonClasse || '').trim();
+  if(!b) return a;
+  return (a ? a + '\n' : '') + TC_MARQUEUR_NC + '\n' + b;
+}
+
+// L'analyseur de listes collées.
+//
+// opts.sansClassement : tout le texte est non classé dès la première ligne,
+// sans attendre la ligne-repère. Sert à analyser la zone de texte dédiée des
+// formulaires. Sinon, c'est la ligne-repère rencontrée dans le texte qui fait
+// basculer la lecture, pour tout ce qui suit.
+function parseTopsBrut(texte, opts){
   var films = [];
   var rang = 0;
   // Lignes non vides que l'analyseur n'a pas su lire. Elles etaient
@@ -451,13 +564,24 @@ function parseTopsBrut(texte){
   var ignorees = [];
   // Une annee doit rester plausible. « (9999) » etait accepte tel quel.
   var anneeMax = new Date().getFullYear() + 3;
+  var sansClassement = !!(opts && opts.sansClassement);
   texte.split('\n').forEach(function(line){
     line = line.trim();
     if(!line) return;
-    var m = line.match(/^(\d+)[\.\-\)]\s*(.+)$/);
-    if(!m){ ignorees.push(line); return; }
-    rang++;
-    var contenu = m[2].trim();
+    // La ligne-repère ne produit pas de film : elle change le mode de lecture.
+    if(tcEstMarqueurNC(line)){ sansClassement = true; return; }
+    var contenu;
+    if(sansClassement){
+      // Aucune numérotation attendue : toute ligne non vide est un film, et
+      // aucune n'est donc « ignoree ». Un numéro ou une puce laissés par un
+      // copier-coller sont simplement retirés du titre.
+      contenu = line.replace(/^(?:\d+[\.\-\)]|[\-\u2013\u2014\u2022\*\u00b7])\s*/, '').trim();
+      if(!contenu) return;
+    } else {
+      var m = line.match(/^(\d+)[\.\-\)]\s*(.+)$/);
+      if(!m){ ignorees.push(line); return; }
+      contenu = m[2].trim();
+    }
     var annee = null;
     var anneeM = contenu.match(/\((\d{4})\)\s*$/);
     if(anneeM){
@@ -469,12 +593,45 @@ function parseTopsBrut(texte){
       // Hors bornes : on ne la retire pas du titre. Le film ressort alors
       // dans l'avertissement « N films sans annee », donc visiblement.
     }
-    films.push({ rang: rang, titre: contenu, annee: annee });
+    if(sansClassement){
+      // Pas de « rang » : il n'aurait aucun sens ici, et son absence est ce qui
+      // distingue ces films partout ailleurs.
+      films.push({ titre: contenu, annee: annee, nc: true });
+    } else {
+      rang++;
+      films.push({ rang: rang, titre: contenu, annee: annee });
+    }
   });
   // Porte sur le tableau plutot que dans un objet enveloppe : aucun appelant
   // existant n'est casse, et JSON.stringify d'un tableau ignore cette
   // propriete, donc rien n'est ajoute aux soumissions envoyees en base.
   films.ignorees = ignorees;
+  return films;
+}
+
+// Relit le texte d'un ÉDITEUR à une seule zone (modification d'une soumission
+// déjà analysée, back-office). La numérotation y est FACULTATIVE : la personne
+// retouche une liste déjà reconnue, et une ligne qu'elle ajoute sans numéro ne
+// doit pas disparaître en silence. La ligne-repère fait basculer la suite dans
+// la partie « vus mais non classés ».
+//
+// parseTopsBrut, lui, reste exigeant sur la numérotation : c'est ce qui lui
+// permet de distinguer un film d'un commentaire dans une liste collée brute.
+function tcRelireTexteEdite(texte){
+  var films = [];
+  var rang = 0;
+  var nc = false;
+  String(texte || '').split('\n').forEach(function(line){
+    line = line.trim();
+    if(!line) return;
+    if(tcEstMarqueurNC(line)){ nc = true; return; }
+    line = line.replace(/^\d+[\.\-\)\s]+/, '').trim();
+    var am = line.match(/\((\d{4})\)\s*$/);
+    var annee = am ? parseInt(am[1], 10) : null;
+    var titre = line.replace(/\(\d{4}\)\s*$/, '').trim();
+    if(nc){ films.push({ titre: titre, annee: annee, nc: true }); }
+    else { rang++; films.push({ rang: rang, titre: titre, annee: annee }); }
+  });
   return films;
 }
 

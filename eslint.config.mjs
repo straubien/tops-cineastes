@@ -55,6 +55,12 @@ const globauxDuProjet = {
   tcCourantTypeFamille: 'readonly', tcCourantTypeCle: 'readonly',
   _TC_TYPES_CACHE: 'writable',
   parseTopsBrut: 'readonly', parseFilmStr: 'readonly', tcMessageLignesIgnorees: 'readonly',
+  // Partie « vus mais non classés » d'un top (films comptés, mais non numérotés)
+  TC_MARQUEUR_NC: 'readonly', tcEstMarqueurNC: 'readonly', tcFilmNonClasse: 'readonly',
+  tcDoitPoserIntertitreNC: 'readonly', tcLibelleNC: 'readonly',
+  tcIntertitreNCHtml: 'readonly', tcPoserIntertitreNC: 'readonly',
+  tcFilmsVersTexte: 'readonly', tcTexteAvecNC: 'readonly',
+  tcRelireTexteEdite: 'readonly',
   formatPresentation: 'readonly', friendlyError: 'readonly', tcFetchWithTimeout: 'readonly',
   tcWithRetryTimeout: 'readonly', tcSafeUrl: 'readonly', TC_CONTRIB_COLONNES: 'readonly',
   tcReportErrorToSupabase: 'readonly', createAutocomplete: 'readonly',
