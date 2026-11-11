@@ -81,6 +81,159 @@ test('tcMessageLignesIgnorees : annonce le nombre et un apercu', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  Partie « vus mais non classes » d'un top
+//
+//  Ces films sont comptes comme les autres, mais ne portent pas de numero.
+//  Ils vivent dans le MEME tableau, marques « nc » et prives de « rang » :
+//  c'est ce qui laisse toutes les statistiques justes sans y toucher.
+// ═══════════════════════════════════════════════════════════════
+
+test('parseTopsBrut : sansClassement rend tous les films non classes, sans rang', () => {
+  const r = u.parseTopsBrut('Sansho (1954)\nUgetsu (1953)', { sansClassement: true });
+  assert.equal(r.length, 2);
+  assert.deepEqual(r.map(f => f.titre), ['Sansho', 'Ugetsu']);
+  assert.deepEqual(r.map(f => f.annee), [1954, 1953]);
+  assert.ok(r.every(f => f.nc === true));
+  assert.ok(r.every(f => f.rang === undefined), 'un film non classe n\'a pas de rang');
+});
+
+test('parseTopsBrut : sans classement, aucune ligne n\'est ignoree', () => {
+  // C'est tout l'objet du mode : la numerotation n'est plus ce qui distingue
+  // un film d'autre chose, donc toute ligne non vide est un titre.
+  const r = u.parseTopsBrut('Un titre\nUn autre titre', { sansClassement: true });
+  assert.equal(r.length, 2);
+  assert.deepEqual(r.ignorees, []);
+});
+
+test('parseTopsBrut : sans classement, numeros et puces d\'un copier-coller sont retires', () => {
+  const r = u.parseTopsBrut('1. Sansho\n- Ugetsu\n\u2022 Les Contes', { sansClassement: true });
+  assert.deepEqual(r.map(f => f.titre), ['Sansho', 'Ugetsu', 'Les Contes']);
+});
+
+test('parseTopsBrut : un titre commencant par une annee n\'est pas tronque', () => {
+  // « 2001, l'odyssee de l'espace » ne doit pas perdre son debut.
+  const r = u.parseTopsBrut('2001, l\'odyssee de l\'espace', { sansClassement: true });
+  assert.equal(r[0].titre, '2001, l\'odyssee de l\'espace');
+});
+
+test('parseTopsBrut : la ligne-repere fait basculer la suite en non classe', () => {
+  const r = u.parseTopsBrut('1. Le repentir (1984)\n' + u.TC_MARQUEUR_NC + '\nMoi, grand-mere (1962)');
+  assert.equal(r.length, 2, 'la ligne-repere ne produit pas de film');
+  assert.equal(r[0].rang, 1);
+  assert.equal(r[0].nc, undefined);
+  assert.equal(r[1].nc, true);
+  assert.equal(r[1].titre, 'Moi, grand-mere');
+  assert.equal(r[1].annee, 1962);
+});
+
+test('parseTopsBrut : la partie numerotee garde ses rangs de 1 a N', () => {
+  const r = u.parseTopsBrut('1. A\n2. B\n' + u.TC_MARQUEUR_NC + '\nC\nD');
+  assert.deepEqual(r.filter(f => !f.nc).map(f => f.rang), [1, 2]);
+  assert.equal(r.length, 4, 'les quatre films sont comptes');
+});
+
+test('tcEstMarqueurNC : reconnait les tournures usuelles et les deux langues', () => {
+  ['--- vus mais non classes ---', 'Sans classement', '=== HORS CLASSEMENT ===',
+   '« non classes »', '--- unranked ---', '# Seen but unranked',
+   u.TC_MARQUEUR_NC].forEach(l => {
+    assert.ok(u.tcEstMarqueurNC(l), 'devrait reconnaitre : ' + l);
+  });
+});
+
+test('tcEstMarqueurNC : un simple filet de tirets n\'est PAS la ligne-repere', () => {
+  // Sinon un « --- » decoratif colle au milieu d'une liste basculerait la
+  // moitie du top en « non classe » a l'insu du cinephile.
+  ['---', '***', '', '1. Un film', 'Mes classes sociales'].forEach(l => {
+    assert.ok(!u.tcEstMarqueurNC(l), 'ne devrait pas reconnaitre : ' + l);
+  });
+});
+
+test('tcTexteAvecNC : reunit les deux zones de saisie par la ligne-repere', () => {
+  const texte = u.tcTexteAvecNC('1. A', 'B\nC');
+  assert.equal(texte, '1. A\n' + u.TC_MARQUEUR_NC + '\nB\nC');
+  const films = u.parseTopsBrut(texte);
+  assert.deepEqual(films.map(f => f.titre), ['A', 'B', 'C']);
+  assert.deepEqual(films.map(f => !!f.nc), [false, true, true]);
+});
+
+test('tcTexteAvecNC : zone non classee vide laisse le texte intact', () => {
+  assert.equal(u.tcTexteAvecNC('1. A', ''), '1. A');
+  assert.equal(u.tcTexteAvecNC('1. A', '   '), '1. A');
+});
+
+test('tcTexteAvecNC : partie numerotee vide donne un top entierement non classe', () => {
+  const films = u.parseTopsBrut(u.tcTexteAvecNC('', 'A\nB'));
+  assert.equal(films.length, 2);
+  assert.ok(films.every(f => f.nc === true));
+});
+
+test('tcFilmsVersTexte : un aller-retour par le texte ne perd rien', () => {
+  const avant = u.parseTopsBrut('1. A (1960)\n2. B\n' + u.TC_MARQUEUR_NC + '\nC (1970)\nD');
+  const apres = u.parseTopsBrut(u.tcFilmsVersTexte(avant));
+  assert.deepEqual(apres.map(f => f.titre), avant.map(f => f.titre));
+  assert.deepEqual(apres.map(f => f.annee), avant.map(f => f.annee));
+  assert.deepEqual(apres.map(f => !!f.nc), avant.map(f => !!f.nc));
+  assert.deepEqual(apres.map(f => f.rang), avant.map(f => f.rang));
+});
+
+test('tcFilmsVersTexte : sans partie non classee, pas de ligne-repere ecrite', () => {
+  const texte = u.tcFilmsVersTexte(u.parseTopsBrut('1. A\n2. B'));
+  assert.equal(texte, '1. A\n2. B');
+  assert.ok(texte.indexOf(u.TC_MARQUEUR_NC) === -1);
+});
+
+test('tcRelireTexteEdite : la numerotation y est facultative', () => {
+  // L'editeur retouche une liste DEJA analysee : une ligne ajoutee sans
+  // numero ne doit pas disparaitre en silence.
+  const r = u.tcRelireTexteEdite('1. A\nB sans numero');
+  assert.deepEqual(r.map(f => f.titre), ['A', 'B sans numero']);
+  assert.deepEqual(r.map(f => f.rang), [1, 2]);
+});
+
+test('tcRelireTexteEdite : la ligne-repere y est reconnue aussi', () => {
+  const r = u.tcRelireTexteEdite('1. A\n' + u.TC_MARQUEUR_NC + '\nB (1999)');
+  assert.equal(r.length, 2);
+  assert.deepEqual(r.map(f => !!f.nc), [false, true]);
+  assert.equal(r[1].annee, 1999);
+  assert.equal(r[1].rang, undefined);
+});
+
+test('tcDoitPoserIntertitreNC : seulement devant le PREMIER film non classe', () => {
+  const films = u.parseTopsBrut('1. A\n' + u.TC_MARQUEUR_NC + '\nB\nC');
+  assert.equal(u.tcDoitPoserIntertitreNC(films, 0), false, 'pas devant un film classe');
+  assert.equal(u.tcDoitPoserIntertitreNC(films, 1), true);
+  assert.equal(u.tcDoitPoserIntertitreNC(films, 2), false, 'une seule fois');
+});
+
+test('tcDoitPoserIntertitreNC : un top entierement non classe le porte en tete', () => {
+  const films = u.parseTopsBrut('A\nB', { sansClassement: true });
+  assert.equal(u.tcDoitPoserIntertitreNC(films, 0), true);
+  assert.equal(u.tcDoitPoserIntertitreNC(films, 1), false);
+});
+
+test('tcFilmNonClasse : lit le drapeau sans se laisser surprendre par un trou', () => {
+  assert.equal(u.tcFilmNonClasse({ nc: true }), true);
+  assert.equal(u.tcFilmNonClasse({ rang: 1 }), false);
+  assert.equal(u.tcFilmNonClasse(null), false);
+  assert.equal(u.tcFilmNonClasse(undefined), false);
+});
+
+test('tcIntertitreNCHtml : pose la classe de l\'intertitre, et rien ailleurs', () => {
+  const films = u.parseTopsBrut('1. A\n' + u.TC_MARQUEUR_NC + '\nB');
+  assert.match(u.tcIntertitreNCHtml(films, 1), /^<li class="tc-nc-sep">/);
+  assert.equal(u.tcIntertitreNCHtml(films, 0), '');
+});
+
+test('les tops existants, sans aucun « nc », ne changent pas d\'un iota', () => {
+  // Garde-fou de non-regression : c'est le cas des ~12 000 tops deja en base.
+  const r = u.parseTopsBrut('1. Sansho (1954)\n2) Ugetsu (1953)');
+  assert.equal(r.length, 2);
+  assert.deepEqual(r[0], { rang: 1, titre: 'Sansho', annee: 1954 });
+  assert.deepEqual(r[1], { rang: 2, titre: 'Ugetsu', annee: 1953 });
+  assert.deepEqual(r.ignorees, []);
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  Noms et affichage
 // ═══════════════════════════════════════════════════════════════
 
