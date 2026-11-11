@@ -1,6 +1,6 @@
 {
   "contributeur": "MATHIEU MUZARD",
-  "version": "7.8",
+  "version": "7.9",
   "tops": [
     {
       "cineaste": "ABULADZE, Tengiz",
@@ -6853,6 +6853,11 @@
           "rang": 1,
           "titre": "Jason et les Argonautes",
           "annee": 1963
+        },
+        {
+          "rang": 2,
+          "titre": "Un million d'années avant J.C.",
+          "annee": 1966
         }
       ]
     },
@@ -7423,6 +7428,11 @@
         },
         {
           "rang": 4,
+          "titre": "Ornette, made in America",
+          "annee": 1985
+        },
+        {
+          "rang": 5,
           "titre": "Bullfight",
           "annee": 1955
         }
@@ -7993,6 +8003,26 @@
           "titre": "Le fils de Kong",
           "annee": 1933,
           "note": "réal. Ernst B. Schoedsack"
+        }
+      ]
+    },
+    {
+      "cineaste": "COPANS, Richard",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Racines",
+          "annee": 2003
+        },
+        {
+          "rang": 2,
+          "titre": "Les disques de Rivka",
+          "annee": 2005
+        },
+        {
+          "rang": 3,
+          "titre": "Vilnius",
+          "annee": 2000
         }
       ]
     },
@@ -10918,6 +10948,16 @@
           "rang": 7,
           "titre": "Mister Scarface",
           "annee": 1976
+        }
+      ]
+    },
+    {
+      "cineaste": "DILLON, John Francis",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Suds",
+          "annee": 1920
         }
       ]
     },
@@ -19417,56 +19457,61 @@
         },
         {
           "rang": 4,
+          "titre": "Un été chez grand-père",
+          "annee": 1984
+        },
+        {
+          "rang": 5,
           "titre": "Goodbye south, goodbye",
           "annee": 1996
         },
         {
-          "rang": 5,
+          "rang": 6,
           "titre": "Le maître de marionnettes",
           "annee": 1993
         },
         {
-          "rang": 6,
+          "rang": 7,
           "titre": "Café lumière",
           "annee": 2003
         },
         {
-          "rang": 7,
+          "rang": 8,
           "titre": "La fille du Nil",
           "annee": 1987
         },
         {
-          "rang": 8,
+          "rang": 9,
           "titre": "Green green grass of home",
           "annee": 1982
         },
         {
-          "rang": 9,
+          "rang": 10,
           "titre": "Millennium mambo",
           "annee": 2001
         },
         {
-          "rang": 10,
+          "rang": 11,
           "titre": "Les fleurs de Shanghai",
           "annee": 1998
         },
         {
-          "rang": 11,
+          "rang": 12,
           "titre": "Three times",
           "annee": 2005
         },
         {
-          "rang": 12,
+          "rang": 13,
           "titre": "Cute girl",
           "annee": 1980
         },
         {
-          "rang": 13,
+          "rang": 14,
           "titre": "Cheerful wind",
           "annee": 1981
         },
         {
-          "rang": 14,
+          "rang": 15,
           "titre": "Le voyage du ballon rouge",
           "annee": 2007
         }
@@ -19584,6 +19629,31 @@
           "rang": 7,
           "titre": "Une créature de rêve",
           "annee": 1985
+        }
+      ]
+    },
+    {
+      "cineaste": "HUI, Ann",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Boat people",
+          "annee": 1982
+        },
+        {
+          "rang": 2,
+          "titre": "The secret",
+          "annee": 1979
+        },
+        {
+          "rang": 3,
+          "titre": "Love in a fallen city",
+          "annee": 1982
+        },
+        {
+          "rang": 4,
+          "titre": "Elégies",
+          "annee": 2023
         }
       ]
     },
@@ -19868,21 +19938,26 @@
         },
         {
           "rang": 5,
+          "titre": "Le prêtre",
+          "annee": 1978
+        },
+        {
+          "rang": 6,
           "titre": "Colegas",
           "annee": 1982
         },
         {
-          "rang": 6,
+          "rang": 7,
           "titre": "Navajeros",
           "annee": 1980
         },
         {
-          "rang": 7,
+          "rang": 8,
           "titre": "El pico",
           "annee": 1983
         },
         {
-          "rang": 8,
+          "rang": 9,
           "titre": "El pico 2",
           "annee": 1984
         }
@@ -21124,6 +21199,16 @@
       ]
     },
     {
+      "cineaste": "JO, Kyong-sun",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Le calice",
+          "annee": 1987
+        }
+      ]
+    },
+    {
       "cineaste": "JOANNON, Léo",
       "films": [
         {
@@ -21634,9 +21719,13 @@
         {
           "rang": 3,
           "titre": "La forêt de Mogari",
-          "annee": 2007,
-          "note": "KAWASHIMA, Yûzô"
-        },
+          "annee": 2007
+        }
+      ]
+    },
+    {
+      "cineaste": "KAWASHIMA, Yûzô",
+      "films": [
         {
           "rang": 1,
           "titre": "Les femmes naissent deux fois",
@@ -27004,7 +27093,7 @@
           "rang": 4,
           "titre": "Le nouveau monde",
           "annee": 2005,
-          "note": "theatrical cut"
+          "note": "extended cut"
         }
       ]
     },
@@ -27756,6 +27845,16 @@
           "rang": 1,
           "titre": "Mort à l'arrivée",
           "annee": 1949
+        }
+      ]
+    },
+    {
+      "cineaste": "MATHIS, Alexandre",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Outre tombe",
+          "annee": 2015
         }
       ]
     },
@@ -32320,6 +32419,17 @@
       ]
     },
     {
+      "cineaste": "PAK, Hak",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "La fille aux fleurs",
+          "annee": 1972,
+          "note": "co-réal. Choe Ik-gyu"
+        }
+      ]
+    },
+    {
       "cineaste": "PAKULA, Alan J.",
       "films": [
         {
@@ -35694,7 +35804,7 @@
         },
         {
           "rang": 9,
-          "titre": "Duelle",
+          "titre": "Duelle (une quarantaine)",
           "annee": 1976
         },
         {
@@ -35704,13 +35814,14 @@
         },
         {
           "rang": 11,
-          "titre": "Noroît",
-          "annee": 1976
+          "titre": "La belle noiseuse",
+          "annee": 1991
         },
         {
           "rang": 12,
-          "titre": "La belle noiseuse",
-          "annee": 1991
+          "titre": "Va savoir",
+          "annee": 2001,
+          "note": "version longue"
         },
         {
           "rang": 13,
@@ -35724,14 +35835,13 @@
         },
         {
           "rang": 15,
-          "titre": "Va savoir",
-          "annee": 2001,
-          "note": "version longue"
+          "titre": "Merry-go-round",
+          "annee": 1980
         },
         {
           "rang": 16,
-          "titre": "Merry-go-round",
-          "annee": 1980
+          "titre": "Noroît",
+          "annee": 1976
         },
         {
           "rang": 17,
@@ -39827,6 +39937,17 @@
       ]
     },
     {
+      "cineaste": "SOMAI, Shinji",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Sailor suit and machine gun",
+          "annee": 1981,
+          "note": "theatrical version"
+        }
+      ]
+    },
+    {
       "cineaste": "SOUKAZ, Lionel",
       "films": [
         {
@@ -39945,21 +40066,31 @@
         },
         {
           "rang": 15,
+          "titre": "Minority report",
+          "annee": 2002
+        },
+        {
+          "rang": 16,
+          "titre": "A.I.",
+          "annee": 2001
+        },
+        {
+          "rang": 17,
           "titre": "Le monde perdu",
           "annee": 1997
         },
         {
-          "rang": 16,
+          "rang": 18,
           "titre": "Hook ou la revanche du capitaine Crochet",
           "annee": 1991
         },
         {
-          "rang": 17,
+          "rang": 19,
           "titre": "Amistad",
           "annee": 1997
         },
         {
-          "rang": 18,
+          "rang": 20,
           "titre": "La liste de Schindler",
           "annee": 1993
         }
@@ -41321,11 +41452,21 @@
         },
         {
           "rang": 13,
+          "titre": "Capitaine Conan",
+          "annee": 1996
+        },
+        {
+          "rang": 14,
           "titre": "L.627",
           "annee": 1992
         },
         {
-          "rang": 14,
+          "rang": 15,
+          "titre": "L'appât",
+          "annee": 1995
+        },
+        {
+          "rang": 16,
           "titre": "Daddy nostalgie",
           "annee": 1990
         }
@@ -42372,6 +42513,16 @@
           "rang": 13,
           "titre": "Haze",
           "annee": 2005
+        }
+      ]
+    },
+    {
+      "cineaste": "TSUKERMAN, Slava",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Liquid sky",
+          "annee": 1982
         }
       ]
     },
@@ -43926,46 +44077,56 @@
         },
         {
           "rang": 5,
-          "titre": "Argent amer",
-          "annee": 2016
-        },
-        {
-          "rang": 6,
           "titre": "Jeunesse (Le printemps)",
           "annee": 2023
         },
         {
+          "rang": 6,
+          "titre": "Jeunesse (Les tourments)",
+          "annee": 2024
+        },
+        {
           "rang": 7,
+          "titre": "Jeunesse (Retour au pays)",
+          "annee": 2024
+        },
+        {
+          "rang": 8,
+          "titre": "Argent amer",
+          "annee": 2016
+        },
+        {
+          "rang": 9,
           "titre": "Ta'ang",
           "annee": 2016
         },
         {
-          "rang": 8,
+          "rang": 10,
           "titre": "Les trois soeurs du Yunnan",
           "annee": 2012
         },
         {
-          "rang": 9,
+          "rang": 11,
           "titre": "Les âmes mortes",
           "annee": 2018
         },
         {
-          "rang": 10,
+          "rang": 12,
           "titre": "L'homme sans nom",
           "annee": 2010
         },
         {
-          "rang": 11,
+          "rang": 13,
           "titre": "Le fossé",
           "annee": 2010
         },
         {
-          "rang": 12,
+          "rang": 14,
           "titre": "L'argent du charbon",
           "annee": 2010
         },
         {
-          "rang": 13,
+          "rang": 15,
           "titre": "L'état du monde",
           "annee": 2007,
           "note": "segment"
@@ -45275,11 +45436,16 @@
         },
         {
           "rang": 42,
+          "titre": "Menus-plaisirs - Les Troisgros",
+          "annee": 2023
+        },
+        {
+          "rang": 43,
           "titre": "Boxing gym",
           "annee": 2010
         },
         {
-          "rang": 43,
+          "rang": 44,
           "titre": "Crazy horse",
           "annee": 2011
         }
@@ -45559,6 +45725,16 @@
       ]
     },
     {
+      "cineaste": "YAMATOYA, Atsushi",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Une poupée gonflable dans le désert",
+          "annee": 1967
+        }
+      ]
+    },
+    {
       "cineaste": "YANG, Edward",
       "films": [
         {
@@ -45583,6 +45759,16 @@
         },
         {
           "rang": 5,
+          "titre": "Confusion chez Confucius",
+          "annee": 1994
+        },
+        {
+          "rang": 6,
+          "titre": "Mahjong",
+          "annee": 1996
+        },
+        {
+          "rang": 7,
           "titre": "In our time",
           "annee": 1982,
           "note": "co-réal. Tao Te-chen, Ko I-chen & Chang Yi"
@@ -45686,6 +45872,17 @@
           "rang": 12,
           "titre": "Evasion du Japon",
           "annee": 1964
+        }
+      ]
+    },
+    {
+      "cineaste": "YUN, Yong-gyu",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "La légende de Chunhyang",
+          "annee": 1980,
+          "note": "co-réal. Yu Won-jun"
         }
       ]
     },
