@@ -5469,10 +5469,16 @@ function openFicheThematique(themeNom){
     inputId: 'mt-cineaste-input',
     dropdownId: 'mt-cineaste-dropdown',
     getItems: function(){ return DATA && DATA.cineastes ? DATA.cineastes.map(function(c){ return c.nom; }) : []; },
-    onSelect: function(nom){ mtSelectedCineaste = nom; mtUpdateStepper(2); }
+    onSelect: function(nom){ mtSelectedCineaste = nom; mtUpdateStepper(2); mtPrefillTopExistant(nom); }
   });
   document.getElementById('mt-cineaste-input').addEventListener('input', function(){
     mtUpdateStepper(this.value.trim() ? 2 : 1);
+  });
+  // Nom tapé à la main (sans passer par la liste déroulante) : le top existant
+  // est reposé une fois la saisie terminée.
+  document.getElementById('mt-cineaste-input').addEventListener('change', function(){
+    var nom = this.value.trim();
+    if(nom) mtPrefillTopExistant(nom);
   });
 
   // Une soumission est-elle DÉJÀ EN ATTENTE pour ce cinéaste ?
@@ -5486,6 +5492,103 @@ function openFicheThematique(themeNom){
   // Dans ce cas, une nouvelle soumission est autorisée : c'est une MODIFICATION.
   function mtHasPublishedTop(cineaste){
     return !!(mtCurrentContributor && SUPABASE_TOPS[mtCurrentContributor.json_name] && SUPABASE_TOPS[mtCurrentContributor.json_name][cineaste]);
+  }
+
+  // ── PRÉ-REMPLISSAGE DU FORMULAIRE ────────────────────────
+  // Choisir un cinéaste pour lequel on a déjà un top ne doit pas laisser une page
+  // blanche : la liste déjà enregistrée revient dans le formulaire (partie classée
+  // et partie non classée), il n'y a plus qu'à la retoucher. Une saisie déjà
+  // commencée n'est JAMAIS écrasée.
+
+  // La soumission déjà faite pour ce cinéaste, quel que soit son statut.
+  function mtSoumissionPour(cineaste){
+    return mtLastSubmissions.find(function(s){
+      return s.parsed_json && s.parsed_json.cineaste && normStr(s.parsed_json.cineaste) === normStr(cineaste);
+    }) || null;
+  }
+
+  // Le nom du cinéaste tel qu'il est écrit dans les données : la table « tops »
+  // est indexée dessus, et la personne a pu taper le nom sans majuscule ni accent.
+  function mtNomCineasteExact(saisie){
+    if(!saisie || !(DATA && DATA.cineastes)) return null;
+    var cible = normStr(saisie);
+    var trouve = DATA.cineastes.find(function(c){ return c.nom && normStr(c.nom) === cible; });
+    return trouve ? trouve.nom : null;
+  }
+
+  // Le formulaire est-il encore vierge ? (les deux zones de saisie)
+  function mtFormulaireVierge(){
+    var ta = document.getElementById('mt-tops-textarea');
+    var taNC = document.getElementById('mt-nc-textarea');
+    return !(ta && ta.value.trim()) && !(taNC && taNC.value.trim());
+  }
+
+  // Le champ « Cinéaste » reprend l'orthographe enregistrée.
+  function mtFixerNomCineaste(nom){
+    if(!nom) return;
+    var inp = document.getElementById('mt-cineaste-input');
+    if(inp) inp.value = nom;
+    mtSelectedCineaste = nom;
+  }
+
+  function mtAnnoncerPrefill(){
+    var dupMsg = document.getElementById('mt-duplicate-msg');
+    if(!dupMsg) return;
+    dupMsg.textContent = t('mt_prefill_info');
+    dupMsg.style.display = 'block';
+  }
+
+  function mtPrefillTopExistant(cineaste){
+    if(!cineaste || !mtCurrentContributor || !mtFormulaireVierge()) return;
+
+    // 1) Une soumission existe déjà : c'est elle qui fait foi. La renvoyer la
+    //    met à jour (mtSubmitTops dédoublonne), d'où le passe-droit : on n'a pas
+    //    à renvoyer vers l'édition en ligne, le formulaire montre déjà la liste.
+    var sub = mtSoumissionPour(cineaste);
+    var filmsSub = sub && sub.parsed_json && sub.parsed_json.films;
+    if(filmsSub && filmsSub.length){
+      // On rétablit l'orthographe exacte du nom : c'est sur elle que
+      // mtSubmitTops retrouve la soumission à mettre à jour (pas de doublon).
+      mtFixerNomCineaste(sub.parsed_json.cineaste);
+      mtPoserFilmsDansFormulaire(filmsSub, 'mt-tops-textarea', 'mt-nc');
+      mtEditBypassCineaste = sub.parsed_json.cineaste;
+      mtAnnoncerPrefill();
+      mtUpdateStepper(2);
+      return;
+    }
+
+    // 2) Sinon, le top publié dans la table « tops ».
+    var nomCinephile = mtCurrentContributor.json_name;
+    var nomExact = mtNomCineasteExact(cineaste);
+    if(!nomCinephile || !nomExact) return;
+    var tops = SUPABASE_TOPS[nomCinephile];
+    if(!tops || !tops[nomExact]) return;   // aucun top publié : rien à reposer
+
+    var ta = document.getElementById('mt-tops-textarea');
+    function poser(){
+      var films = SUPABASE_TOPS[nomCinephile] && SUPABASE_TOPS[nomCinephile][nomExact];
+      if(!tcFilmsCharges(films) || !films.length) return;
+      mtFixerNomCineaste(nomExact);
+      mtPoserFilmsDansFormulaire(films, 'mt-tops-textarea', 'mt-nc');
+      mtAnnoncerPrefill();
+      mtUpdateStepper(2);
+    }
+
+    if(tcFilmsCharges(tops[nomExact])){ poser(); return; }
+
+    // Les films ne sont pas encore chargés : on les attend plutôt que de laisser
+    // croire à un top vide (même précaution que mtGoEditTop).
+    if(ta) ta.disabled = true;
+    tcChargerFilmsDuCinephile(nomCinephile).then(function(){
+      if(ta) ta.disabled = false;
+      // Entre-temps, la personne a pu changer de cinéaste ou commencer à écrire.
+      var inp = document.getElementById('mt-cineaste-input');
+      if(!inp || normStr(inp.value.trim()) !== normStr(cineaste)) return;
+      if(!mtFormulaireVierge()) return;
+      poser();
+    }).catch(function(){
+      if(ta) ta.disabled = false;
+    });
   }
 
   function mtParseTops(){
@@ -5769,6 +5872,7 @@ function openFicheThematique(themeNom){
     var inp = document.getElementById('mt-cineaste-input');
     if(inp) inp.value = cineaste;
     mtUpdateStepper(2);
+    mtPrefillTopExistant(cineaste);
   };
 
   window.mtGoEditTop = function(cineaste){

@@ -208,6 +208,7 @@ var TC_TRANSLATIONS = {
     mt_dup_pending: "Vous avez déjà une soumission en attente pour ce cinéaste.",
     mt_dup_edit_pending: "Modifier ma soumission en attente",
     mt_dup_will_replace: "Vous avez déjà un top pour ce cinéaste : votre nouvelle liste le remplacera après validation.",
+    mt_prefill_info: "Votre top actuel a été repris ci-dessus : modifiez-le, puis relancez l’analyse.",
     liste_des_tops: "Liste des tops",
     // Commentaires sous les tops
     tc_cm_voir: "Commentaires",
@@ -910,6 +911,7 @@ var TC_TRANSLATIONS = {
     mt_dup_pending: "You already have a pending submission for this filmmaker.",
     mt_dup_edit_pending: "Edit my pending submission",
     mt_dup_will_replace: "You already have a top for this filmmaker: your new list will replace it after validation.",
+    mt_prefill_info: "Your current top has been filled in above: edit it, then run the analysis again.",
     liste_des_tops: "Tops list",
     // Comments under tops
     tc_cm_voir: "Comments",
