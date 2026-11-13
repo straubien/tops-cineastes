@@ -866,9 +866,124 @@ a { text-decoration: none; color: inherit; }
   padding: 3rem 2rem;
   position: relative;
   overflow: hidden;
+  background: var(--noir);
   animation: splash-in 0.8s ease-out;
 }
 @keyframes splash-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Mur de visages ──────────────────────────────────────
+   Mosaïque de portraits en fond du splash. Un index de cinéastes, c'est
+   d'abord un mur de visages : la composition suprématiste (triangle,
+   blocs rouges, bandes) reste posée PAR-DESSUS, intacte.
+
+   Aucun script : chaque tuile porte deux couches d'image (::before et
+   ::after) qui se relaient en fondu croisé. 18 tuiles = 36 visages.
+   Les portraits mesurent 240 px de large et pèsent une vingtaine de
+   ko chacun ; c'est exactement la taille d'une tuile sur un écran de
+   1440 px, donc aucune image n'est chargée pour rien.
+
+   Le réglage système « réduire les animations » est déjà pris en
+   charge par la règle globale en bas de ce fichier : les fondus
+   s'arrêtent alors sur la première couche, qui reste affichée. */
+.splash-mur {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  /* Filet noir entre les tuiles : le mur se lit comme une planche-contact
+     et non comme une seule photo decoupee. */
+  gap: 2px;
+  overflow: hidden;
+  /* Fond tant que les portraits ne sont pas arrivés : le titre clair
+     reste lisible dès la première image à l'écran. */
+  background: var(--noir);
+}
+.splash-mur > i {
+  position: relative;
+  overflow: hidden;
+  /* Noir et blanc : la plupart des portraits le sont déjà, le filtre
+     met les quelques photos en couleur au même diapason. Il est posé
+     sur la tuile et non sur les deux couches : une seule surface à
+     filtrer au lieu de deux, pendant que le fondu tourne. */
+  filter: grayscale(1) contrast(1.1) brightness(1.02);
+}
+.splash-mur > i::before,
+.splash-mur > i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Les deux visages d'une tuile sont posés dans --a et --b, plus bas.
+     Passer par des variables plutôt que d'écrire l'image ici permettra,
+     le jour où le mur sera piloté depuis le back-office, de changer un
+     visage en une ligne de JavaScript : une règle CSS ne se modifie pas
+     de l'extérieur, une variable posée sur la tuile, si. */
+  background-size: cover;
+  /* 22 % et non 50 % : sur un portrait, le visage est en haut. */
+  background-position: center 22%;
+  animation: splash-mur-a 32s ease-in-out infinite;
+  /* Chaque tuile part décalée, sinon les 18 visages changeraient
+     ensemble. La valeur vient de « --i », posé dans index.html. */
+  animation-delay: calc(var(--i, 0) * -1.7s);
+}
+.splash-mur > i::before { background-image: var(--a); }
+.splash-mur > i::after  { background-image: var(--b); animation-name: splash-mur-b; }
+
+/* Fondu croisé : un visage tient 14 secondes, puis cède la place à
+   l'autre couche en deux secondes. */
+@keyframes splash-mur-a { 0%, 44% { opacity: 1 } 50%, 94% { opacity: 0 } 100% { opacity: 1 } }
+@keyframes splash-mur-b { 0%, 44% { opacity: 0 } 50%, 94% { opacity: 1 } 100% { opacity: 0 } }
+
+/* Voile sombre — c'est lui qui rend le titre lisible par-dessus les
+   photos. Plus dense au centre, derrière le titre et le bouton. */
+.splash-mur::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 56% 46% at 50% 50%, rgba(8,8,8,0.86) 0%, rgba(8,8,8,0.58) 55%, rgba(8,8,8,0.38) 100%),
+    linear-gradient(to bottom, rgba(8,8,8,0.46) 0%, rgba(8,8,8,0.06) 34%, rgba(8,8,8,0.06) 64%, rgba(8,8,8,0.56) 100%);
+}
+
+/* Les visages, tuile par tuile. --a est le visage montré d'abord, --b
+   celui qui le remplace. Les tuiles se lisent de gauche à droite puis de
+   haut en bas : 1 à 6 sur la première rangée, 7 à 12 sur la deuxième,
+   13 à 18 sur la troisième (et par colonnes de trois sur mobile).
+   Pour changer un visage, il suffit de remplacer le nom de fichier :
+   ces 36 portraits vivent déjà dans /portraits, rien à ajouter. */
+.splash-mur > i:nth-child(1)  { --a: url("portraits/portrait-Antonioni.jpg");            --b: url("portraits/portrait-Lynch.jpg"); }
+.splash-mur > i:nth-child(2)  { --a: url("portraits/portrait-Duras.jpg");                --b: url("portraits/portrait-Netzer.jpg"); }
+.splash-mur > i:nth-child(3)  { --a: url("portraits/portrait-Ozu.jpg");                  --b: url("portraits/portrait-Hasebe.jpg"); }
+.splash-mur > i:nth-child(4)  { --a: url("portraits/portrait-Godard.jpg");               --b: url("portraits/portrait-Fassbinder.jpg"); }
+.splash-mur > i:nth-child(5)  { --a: url("portraits/portrait-Deren.jpg");                --b: url("portraits/portrait-Rohmer.jpg"); }
+.splash-mur > i:nth-child(6)  { --a: url("portraits/portrait-Mizoguchi.jpg");            --b: url("portraits/portrait-Wang.jpg"); }
+.splash-mur > i:nth-child(7)  { --a: url("portraits/portrait-Bresson.jpg");              --b: url("portraits/portrait-Straub.jpg"); }
+.splash-mur > i:nth-child(8)  { --a: url("portraits/portrait-Landeta.jpg");              --b: url("portraits/portrait-Yuan.jpg"); }
+.splash-mur > i:nth-child(9)  { --a: url("portraits/portrait-Kubrick.jpg");              --b: url("portraits/portrait-Leone.jpg"); }
+.splash-mur > i:nth-child(10) { --a: url("portraits/portrait-Hitchcock.jpg");            --b: url("portraits/portrait-Eastwood.jpg"); }
+.splash-mur > i:nth-child(11) { --a: url("portraits/portrait-Weerasethakul.jpg");        --b: url("portraits/portrait-Chang, Yi.jpg"); }
+.splash-mur > i:nth-child(12) { --a: url("portraits/portrait-Pasolini, Pier Paolo.jpg"); --b: url("portraits/portrait-Oliveira.jpg"); }
+.splash-mur > i:nth-child(13) { --a: url("portraits/portrait-Lang.jpg");                 --b: url("portraits/portrait-Dreyer.jpg"); }
+.splash-mur > i:nth-child(14) { --a: url("portraits/portrait-Rothman.jpg");              --b: url("portraits/portrait-Minnelli.jpg"); }
+.splash-mur > i:nth-child(15) { --a: url("portraits/portrait-Ray, Satyajit.jpg");        --b: url("portraits/portrait-Sharma.jpg"); }
+.splash-mur > i:nth-child(16) { --a: url("portraits/portrait-Murnau.jpg");               --b: url("portraits/portrait-Brakhage.jpg"); }
+.splash-mur > i:nth-child(17) { --a: url("portraits/portrait-Roussopoulos.jpg");         --b: url("portraits/portrait-Isou.jpg"); }
+.splash-mur > i:nth-child(18) { --a: url("portraits/portrait-Tarkovsky.jpg");            --b: url("portraits/portrait-Mekas.jpg"); }
+
+/* Le splash ne s'inverse plus avec le mode sombre. Avant, il le pouvait :
+   fond crème et formes noires d'un côté, l'inverse de l'autre. Maintenant
+   qu'il repose sur un mur de photographies, toujours sombre, l'inversion
+   rendrait le titre illisible — en mode sombre « --noir » vaut #f0ece3 et
+   « --bg » #1a1714, soit exactement le contraire de ce qu'il faut ici.
+   Le splash est une affiche : on lui rend ses couleurs d'affiche, une seule
+   fois, et toutes les règles ci-dessous restent écrites avec les variables. */
+.dark .splash {
+  --noir:  #1a1a1a;
+  --bg:    #f7f3ec;
+  --rouge: #A33025;
+  --brun:  #3d2b1a;
+}
 
 /* Grand triangle noir — coin supérieur droit */
 .splash::before {
@@ -975,9 +1090,11 @@ a { text-decoration: none; color: inherit; }
   font-family: var(--font-display);
   font-size: 72px;
   letter-spacing: 0.12em;
-  color: var(--noir);
+  color: var(--bg);
   line-height: 1;
   margin-bottom: 1rem;
+  /* Halo tres doux : le titre reste lisible meme sur un visage clair. */
+  text-shadow: 0 2px 30px rgba(0,0,0,0.6);
 }
 
 /* Le "/" devient un bloc de couleur plein */
@@ -1007,20 +1124,21 @@ a { text-decoration: none; color: inherit; }
   color: var(--text);
 }
 
-/* Bouton : bloc noir plein */
+/* Bouton : filet clair sur le mur de visages. Un bloc noir plein, comme
+   avant, se confondrait avec les portraits assombris derriere lui. */
 .splash-enter {
   font-family: var(--font-names);
   font-size: 16px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--bg);
-  background: var(--noir);
-  border: none;
+  background: rgba(12,11,10,0.35);
+  border: 1px solid rgba(247,243,236,0.55);
   padding: 14px 40px;
   cursor: pointer;
-  transition: background 0.25s;
+  transition: background 0.25s, border-color 0.25s;
 }
-.splash-enter:hover { background: var(--rouge); }
+.splash-enter:hover { background: var(--rouge); border-color: var(--rouge); }
 .splash-enter.loading { background: var(--brun); cursor: wait; letter-spacing: 0.1em; }
 
 .splash.hidden { display: none; }
@@ -2621,6 +2739,8 @@ a { text-decoration: none; color: inherit; }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media (max-width: 760px) {
+  /* Le mur passe de 6 x 3 a 3 x 6 : les memes 18 visages, en portrait. */
+  .splash-mur { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(6, 1fr); }
   .splash-title { font-size: 44px; }
   .splash-title .slash-block { font-size: 36px; }
   .splash-geo-sq1 { width: 32px; height: 32px; top: 20px; right: 20px; }
