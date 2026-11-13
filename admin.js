@@ -4829,19 +4829,26 @@ function murNomsParFichier(){
   return m;
 }
 
-// Toutes les photos possibles pour un cineaste, de la meilleure a la plus
-// incertaine : TMDB d'abord, qui sert du 342 px la ou le depot n'a que
-// 240 px, puis les portraits locaux. Un duo peut porter deux chemins TMDB ;
-// le mur n'affiche qu'un visage par tuile, on garde donc le premier venu.
+// Toutes les photos possibles pour un cineaste, dans l'ordre ou on les veut :
+// LE DEPOT D'ABORD, TMDB ensuite.
+//
+// Les portraits de /portraits sont plus petits que ceux de TMDB (240 px
+// contre 342), mais ils ont ete choisis un par un, ils sont servis par le
+// site lui-meme — aucune requete vers un tiers, rien a attendre d'un service
+// exterieur — et ce sont deja eux qu'on voit partout ailleurs sur le site.
+// TMDB ne sert donc plus que de recours, pour les milliers de cineastes qui
+// n'ont pas de portrait dans le depot.
+//
+// Un duo peut porter deux chemins TMDB ; le mur n'affiche qu'un visage par
+// tuile, on garde donc le premier venu.
 function murCandidats(nom){
-  var urls = [];
+  var urls = (tcLocalPortraitCandidates(nom) || []).slice();
   var ligne = ((DATA && DATA.cineastes) || []).filter(function(c){ return c && c.nom === nom; })[0];
   var photo = ligne && ligne.photo_tmdb;
   var ajouteTmdb = function(chemin){
     if(typeof chemin === 'string' && chemin) urls.push('https://image.tmdb.org/t/p/w342' + chemin);
   };
   if(Array.isArray(photo)) photo.forEach(ajouteTmdb); else ajouteTmdb(photo);
-  (tcLocalPortraitCandidates(nom) || []).forEach(function(u){ urls.push(u); });
   return urls;
 }
 
@@ -4979,7 +4986,7 @@ async function murAjouter(nom){
   murMessage('Recherche de la photo de « ' + nom + ' »…');
   var trouvee = await murPremiereImage(urls);
   if(!trouvee){
-    murMessage('Aucune photo accessible pour « ' + nom + ' » : ni TMDB, ni /portraits. '
+    murMessage('Aucune photo accessible pour « ' + nom + ' » : ni dans /portraits, ni sur TMDB. '
       + 'Ce cinéaste ne peut pas figurer sur le mur.');
     return;
   }
