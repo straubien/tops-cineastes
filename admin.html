@@ -86,6 +86,7 @@
       <button class="tab" data-tab="statistiques">Statistiques</button>
       <button class="tab" data-tab="activite">Activité</button>
       <button class="tab" data-tab="reglages">Réglages</button>
+      <button class="tab" data-tab="mur">Mur d'accueil</button>
     </div>
 
     <!-- ── TAB 1 : DASHBOARD ── -->
@@ -458,6 +459,55 @@
       </div>
       <button class="btn-primary" id="reglages-affinite-poids-btn-save">Enregistrer</button>
       <div id="reglages-poids-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin:1rem 0;font-size:15px;max-width:520px;"></div>
+    </div>
+
+    <!-- ── TAB 14 : MUR D'ACCUEIL ── -->
+    <div class="tab-panel" id="panel-mur">
+      <div class="section-title">Le mur de visages de la page d'accueil</div>
+      <div class="mur-aide">
+        La page d'accueil affiche dix-huit portraits, et chaque tuile fait alternéer deux visages
+        en fondu. Sans rien ici, le site utilise les trente-six portraits inscrits dans
+        <code>style.css</code>. Dès que vous enregistrez une liste, c'est elle qui s'applique —
+        et vous pouvez revenir en arrière à tout moment.
+      </div>
+
+      <div class="field-wrap" style="max-width:520px;">
+        <div class="field-label">Ajouter un cinéaste</div>
+        <div class="autocomplete-wrap">
+          <input type="text" class="autocomplete-input" id="mur-recherche" aria-label="Ajouter un cinéaste au mur"
+            placeholder="Tapez un nom…" autocomplete="off">
+          <div class="autocomplete-dropdown" id="mur-dropdown"></div>
+        </div>
+      </div>
+      <div class="mur-aide" style="margin-top:-0.4rem;">
+        Le cinéaste rejoint la première case libre du mur, ou la suite si le mur est complet.
+        Sa photo est cherchée d'abord sur TMDB, puis dans <code>/portraits</code>.
+      </div>
+      <div id="mur-message" style="display:none;" class="mur-message"></div>
+
+      <div class="section-title" style="margin-top:2rem;">Le mur de départ — 18 cases</div>
+      <div class="mur-aide">
+        Exactement ce que voit un visiteur à la seconde zéro, dans la disposition réelle du site.
+        Faites glisser une vignette sur une autre pour les échanger. Au clavier : sélectionnez une
+        vignette puis utilisez les flèches gauche et droite.
+      </div>
+      <div class="mur-plan" id="mur-plan"></div>
+
+      <div class="section-title" style="margin-top:2rem;">La suite</div>
+      <div class="mur-aide">
+        Ces visages entrent ensuite, dans cet ordre, au fil des fondus — chacun remplace
+        tranquillement une tuile pendant qu'elle est cachée. Laissez cette liste vide pour un mur
+        fixe de dix-huit visages.
+      </div>
+      <div class="mur-suite" id="mur-suite"></div>
+
+      <div class="mur-barre">
+        <div class="mur-total" id="mur-total"></div>
+        <button class="btn-primary" id="mur-save">Enregistrer</button>
+        <button type="button" class="mur-btn-sec" id="mur-prefill">Partir du mur actuel</button>
+        <button type="button" class="mur-btn-sec" id="mur-reset">Rétablir le mur par défaut</button>
+      </div>
+      <div id="mur-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin:1rem 0;font-size:15px;max-width:640px;"></div>
     </div>
 
   </div>

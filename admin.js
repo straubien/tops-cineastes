@@ -275,6 +275,7 @@ document.querySelectorAll('.tab').forEach(function(tab){
     // pas en secondes.
     if(tab.getAttribute('data-tab') === 'activite') renderActivite(false);
     if(tab.getAttribute('data-tab') === 'reglages'){ loadReglagesAffiniteFormule(); loadReglagesAffinitePoids(); }
+    if(tab.getAttribute('data-tab') === 'mur') loadMurAccueil();
   });
 });
 
@@ -4760,3 +4761,421 @@ async function saveReglagesAffinitePoids(){
 
 var _reglagesAffinitePoidsBtnSave = document.getElementById('reglages-affinite-poids-btn-save');
 if(_reglagesAffinitePoidsBtnSave) _reglagesAffinitePoidsBtnSave.addEventListener('click', saveReglagesAffinitePoids);
+
+// ═══════════════════════════════════════════════════════════════
+// MUR D'ACCUEIL — qui figure sur la page d'accueil, et dans quel ordre
+// ═══════════════════════════════════════════════════════════════
+// La page d'accueil pose dix-huit portraits en grille, et chaque tuile fait
+// alterner deux visages en fondu. Tant que cette table ne dit rien, le site
+// affiche les trente-six portraits ecrits dans style.css.
+//
+// Ce qu'on enregistre ici tient dans une seule ligne d'app_settings :
+//
+//   { "v":1,
+//     "mur":   [ {"n":"ANTONIONI, Michelangelo","u":"https://…"}, … 18 … ],
+//     "suite": [ … autant qu'on veut, ou rien du tout … ] }
+//
+// « mur » est le premier ecran, celui que voit un visiteur a la seconde zero.
+// « suite » est la reserve : ces visages entrent ensuite, dans cet ordre, en
+// remplacant tranquillement une tuile pendant qu'elle est cachee. L'URL est
+// resolue et VERIFIEE ici, une fois pour toutes : le site public n'a plus
+// qu'a la poser, sans avoir a chercher ni a retomber sur ses pieds.
+var MUR_CLE = 'splash_mur';
+var MUR_CASES = 18;
+
+// Les trente-six portraits inscrits dans style.css, dans l'ordre des tuiles :
+// d'abord le visage montre en premier sur chacune des dix-huit, puis celui qui
+// prend le relais. Sert au bouton « Partir du mur actuel », pour que l'on
+// parte de ce qui est en ligne plutot que d'une grille vide.
+var MUR_DEFAUT = [
+  'Antonioni', 'Duras', 'Ozu', 'Godard', 'Deren', 'Mizoguchi',
+  'Bresson', 'Landeta', 'Kubrick', 'Hitchcock', 'Weerasethakul', 'Pasolini, Pier Paolo',
+  'Lang', 'Rothman', 'Ray, Satyajit', 'Murnau', 'Roussopoulos', 'Tarkovsky',
+  'Lynch', 'Netzer', 'Hasebe', 'Fassbinder', 'Rohmer', 'Wang',
+  'Straub', 'Yuan', 'Leone', 'Eastwood', 'Chang, Yi', 'Oliveira',
+  'Dreyer', 'Minnelli', 'Sharma', 'Brakhage', 'Isou', 'Mekas'
+];
+
+var murEtat = { mur: [], suite: [] };
+var _murPrise = null;
+var _murNomsParFichier = null;
+
+function murVider(){
+  murEtat = { mur: [], suite: [] };
+  for(var i = 0; i < MUR_CASES; i++) murEtat.mur.push(null);
+}
+murVider();
+
+function murMessage(texte){
+  var el = document.getElementById('mur-message');
+  if(!el) return;
+  el.textContent = texte || '';
+  el.style.display = texte ? 'block' : 'none';
+}
+
+// Les portraits de /portraits sont nommes d'apres le seul nom de famille.
+// Pour afficher « ANTONIONI, Michelangelo » plutot que « Antonioni », on
+// retourne la correspondance : pour chaque cineaste connu, les chemins de
+// portrait qu'il produirait. C'est la fonction du site public qui les calcule,
+// donc les deux ne peuvent pas diverger.
+function murNomsParFichier(){
+  if(_murNomsParFichier) return _murNomsParFichier;
+  var m = {};
+  ((DATA && DATA.cineastes) || []).forEach(function(c){
+    if(!c || !c.nom) return;
+    (tcLocalPortraitCandidates(c.nom) || []).forEach(function(u){ if(!m[u]) m[u] = c.nom; });
+  });
+  _murNomsParFichier = m;
+  return m;
+}
+
+// Toutes les photos possibles pour un cineaste, de la meilleure a la plus
+// incertaine : TMDB d'abord, qui sert du 342 px la ou le depot n'a que
+// 240 px, puis les portraits locaux. Un duo peut porter deux chemins TMDB ;
+// le mur n'affiche qu'un visage par tuile, on garde donc le premier venu.
+function murCandidats(nom){
+  var urls = [];
+  var ligne = ((DATA && DATA.cineastes) || []).filter(function(c){ return c && c.nom === nom; })[0];
+  var photo = ligne && ligne.photo_tmdb;
+  var ajouteTmdb = function(chemin){
+    if(typeof chemin === 'string' && chemin) urls.push('https://image.tmdb.org/t/p/w342' + chemin);
+  };
+  if(Array.isArray(photo)) photo.forEach(ajouteTmdb); else ajouteTmdb(photo);
+  (tcLocalPortraitCandidates(nom) || []).forEach(function(u){ urls.push(u); });
+  return urls;
+}
+
+// On ne se fie pas a ce que la base laisse entendre : on charge vraiment les
+// images, dans l'ordre, et on garde la premiere qui arrive. Le navigateur fait
+// ici office d'arbitre — c'est le seul moyen sur de savoir si
+// « portraits/portrait-Machin.jpg » existe, et ca evite de publier un trou.
+function murPremiereImage(urls){
+  return new Promise(function(resolve){
+    var i = 0;
+    (function suivante(){
+      if(i >= urls.length){ resolve(null); return; }
+      var u = urls[i++];
+      var img = new Image();
+      img.onload = function(){ resolve(u); };
+      img.onerror = suivante;
+      img.src = u;
+    })();
+  });
+}
+
+function murContient(nom){
+  return murEtat.mur.concat(murEtat.suite).some(function(e){ return e && e.n === nom; });
+}
+
+function murCase(item, zone, index, numero){
+  var el = document.createElement('div');
+  el.className = 'mur-case' + (item ? '' : ' vide');
+  el.setAttribute('data-zone', zone);
+  el.setAttribute('data-index', String(index));
+  if(!item) return el;
+  el.style.backgroundImage = 'url("' + item.u + '")';
+  el.setAttribute('draggable', 'true');
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', item.n + ', position ' + numero
+    + '. Fleches gauche et droite pour deplacer.');
+  var num = document.createElement('span');
+  num.className = 'mur-case-num';
+  num.textContent = String(numero);
+  var nom = document.createElement('span');
+  nom.className = 'mur-case-nom';
+  nom.textContent = item.n;
+  var croix = document.createElement('button');
+  croix.type = 'button';
+  croix.className = 'mur-case-x';
+  croix.setAttribute('data-retirer', '1');
+  croix.setAttribute('aria-label', 'Retirer ' + item.n);
+  croix.textContent = '×';
+  el.appendChild(num);
+  el.appendChild(nom);
+  el.appendChild(croix);
+  return el;
+}
+
+function murRender(){
+  var plan = document.getElementById('mur-plan');
+  var suite = document.getElementById('mur-suite');
+  if(!plan || !suite) return;
+  plan.innerHTML = '';
+  suite.innerHTML = '';
+  murEtat.mur.forEach(function(item, i){ plan.appendChild(murCase(item, 'mur', i, i + 1)); });
+  murEtat.suite.forEach(function(item, i){ suite.appendChild(murCase(item, 'suite', i, MUR_CASES + i + 1)); });
+  // Une case d'arrivee toujours libre au bout de la suite : sans elle, on ne
+  // pourrait jamais deposer quelqu'un en derniere position.
+  suite.appendChild(murCase(null, 'suite', murEtat.suite.length, 0));
+
+  var pleines = murEtat.mur.filter(function(x){ return !!x; }).length;
+  var total = pleines + murEtat.suite.length;
+  var el = document.getElementById('mur-total');
+  if(!el) return;
+  if(pleines < MUR_CASES){
+    el.textContent = (MUR_CASES - pleines) + ' case(s) encore vide(s) sur le mur de départ — '
+      + total + ' cinéaste(s) au total';
+  } else {
+    el.textContent = total + ' cinéastes : ' + MUR_CASES + ' sur le mur, '
+      + murEtat.suite.length + ' en réserve'
+      + (murEtat.suite.length ? '' : ' — le mur restera fixe');
+  }
+}
+
+// Echange, insertion, retrait : tout passe par ici, pour que le plan et la
+// reserve ne puissent jamais se contredire.
+function murDeplacer(src, dst){
+  if(!src || !dst) return;
+  if(src.zone === dst.zone && src.index === dst.index) return;
+  var cible = dst.index;
+  if(src.zone === 'mur' && dst.zone === 'mur'){
+    var garde = murEtat.mur[src.index];
+    murEtat.mur[src.index] = murEtat.mur[cible];
+    murEtat.mur[cible] = garde;
+  } else if(src.zone === 'suite' && dst.zone === 'suite'){
+    var deplace = murEtat.suite.splice(src.index, 1)[0];
+    if(!deplace) return;
+    // La cible recule d'un cran si l'element retire se trouvait avant elle.
+    if(cible > src.index) cible--;
+    murEtat.suite.splice(cible, 0, deplace);
+  } else if(src.zone === 'suite' && dst.zone === 'mur'){
+    var venu = murEtat.suite.splice(src.index, 1)[0];
+    if(!venu) return;
+    var sortant = murEtat.mur[cible];
+    murEtat.mur[cible] = venu;
+    // L'occupant de la case ne disparait pas : il prend la place liberee.
+    if(sortant) murEtat.suite.splice(src.index, 0, sortant);
+  } else {
+    var part = murEtat.mur[src.index];
+    if(!part) return;
+    murEtat.mur[src.index] = null;
+    murEtat.suite.splice(Math.min(cible, murEtat.suite.length), 0, part);
+  }
+  murRender();
+}
+
+function murRetirer(zone, index){
+  if(zone === 'mur') murEtat.mur[index] = null;
+  else murEtat.suite.splice(index, 1);
+  murRender();
+}
+
+// Deplacement au clavier, d'un cran a gauche ou a droite dans sa propre zone.
+// Le glisser-deposer ne repond ni au clavier ni au doigt ; ceci repond aux deux.
+function murDecaler(zone, index, sens){
+  var cible = index + sens;
+  var liste = zone === 'mur' ? murEtat.mur : murEtat.suite;
+  if(cible < 0 || cible >= liste.length) return null;
+  murDeplacer({ zone: zone, index: index }, { zone: zone, index: cible });
+  return cible;
+}
+
+async function murAjouter(nom){
+  if(!nom) return;
+  if(murContient(nom)){ murMessage('« ' + nom + ' » figure déjà sur le mur.'); return; }
+  var urls = murCandidats(nom);
+  if(!urls.length){ murMessage('Aucune photo connue pour « ' + nom + ' ».'); return; }
+  murMessage('Recherche de la photo de « ' + nom + ' »…');
+  var trouvee = await murPremiereImage(urls);
+  if(!trouvee){
+    murMessage('Aucune photo accessible pour « ' + nom + ' » : ni TMDB, ni /portraits. '
+      + 'Ce cinéaste ne peut pas figurer sur le mur.');
+    return;
+  }
+  murMessage('');
+  var item = { n: nom, u: trouvee };
+  var libre = murEtat.mur.indexOf(null);
+  if(libre !== -1) murEtat.mur[libre] = item; else murEtat.suite.push(item);
+  murRender();
+}
+
+function murPrefill(){
+  var noms = murNomsParFichier();
+  var items = MUR_DEFAUT.map(function(fichier){
+    var u = 'portraits/portrait-' + fichier + '.jpg';
+    return { n: noms[u] || fichier, u: u };
+  });
+  murEtat.mur = items.slice(0, MUR_CASES);
+  murEtat.suite = items.slice(MUR_CASES);
+  murMessage('Mur actuel chargé. Rien n\'est publié tant que vous n\'avez pas cliqué sur Enregistrer.');
+  murRender();
+}
+
+async function loadMurAccueil(){
+  var err = document.getElementById('mur-error');
+  if(err) err.style.display = 'none';
+  murMessage('');
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('app_settings').select('value').eq('key', MUR_CLE).maybeSingle();
+    });
+  } catch(e){
+    admErreur(err, e, 'chargement du mur');
+    murRender();
+    return;
+  }
+  if(res.error){ admErreur(err, res.error, 'chargement du mur'); murRender(); return; }
+  murVider();
+  var valeur = res.data && res.data.value;
+  if(!valeur){
+    murMessage('Aucune liste enregistrée : le site affiche les trente-six portraits de style.css. '
+      + '« Partir du mur actuel » les charge ici pour que vous puissiez les retoucher.');
+    murRender();
+    return;
+  }
+  var conf = null;
+  try { conf = JSON.parse(valeur); } catch(e){ conf = null; }
+  if(!conf || !Array.isArray(conf.mur)){
+    murMessage('La liste enregistrée est illisible. Recomposez-la, ou rétablissez le mur par défaut.');
+    murRender();
+    return;
+  }
+  for(var i = 0; i < MUR_CASES; i++){
+    var e = conf.mur[i];
+    murEtat.mur[i] = (e && e.u) ? { n: e.n || '?', u: e.u } : null;
+  }
+  murEtat.suite = (Array.isArray(conf.suite) ? conf.suite : [])
+    .filter(function(x){ return x && x.u; })
+    .map(function(x){ return { n: x.n || '?', u: x.u }; });
+  murRender();
+}
+
+async function murSave(){
+  var err = document.getElementById('mur-error');
+  var btn = document.getElementById('mur-save');
+  if(err) err.style.display = 'none';
+  var vides = murEtat.mur.filter(function(x){ return !x; }).length;
+  if(vides){
+    if(err){
+      err.textContent = 'Le mur de départ doit être complet avant d\'être enregistré : il reste '
+        + vides + ' case(s) vide(s). Rien n\'a été modifié en ligne.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  var charge = JSON.stringify({ v: 1, mur: murEtat.mur, suite: murEtat.suite });
+  if(btn) btn.disabled = true;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('app_settings')
+        .upsert({ key: MUR_CLE, value: charge, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+        .select('key');
+    }, { retries: 0 });
+  } catch(e){
+    admErreur(err, e, 'enregistrement du mur');
+    if(btn) btn.disabled = false;
+    return;
+  }
+  if(btn) btn.disabled = false;
+  if(res.error){ admErreur(err, res.error, 'enregistrement du mur'); return; }
+  if(!res.data || !res.data.length){
+    showAdminNotice('L\'enregistrement n\'a pas abouti — vérifiez les droits de la table app_settings.', false);
+    return;
+  }
+  showAdminNotice('Mur d\'accueil enregistré. Les visiteurs le verront à leur prochaine visite.', true);
+}
+
+async function murReset(){
+  var err = document.getElementById('mur-error');
+  if(err) err.style.display = 'none';
+  if(!confirm('Rétablir le mur par défaut ?\n\nLa liste enregistrée sera supprimée et le site '
+    + 'reviendra aux trente-six portraits inscrits dans style.css.')) return;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('app_settings').delete().eq('key', MUR_CLE).select('key');
+    }, { retries: 0 });
+  } catch(e){ admErreur(err, e, 'suppression du mur'); return; }
+  if(res.error){ admErreur(err, res.error, 'suppression du mur'); return; }
+  murVider();
+  murRender();
+  murMessage('Mur par défaut rétabli.');
+  showAdminNotice('Mur par défaut rétabli.', true);
+}
+
+// ── Branchements ────────────────────────────────────────────────
+createAutocomplete({
+  inputId: 'mur-recherche',
+  dropdownId: 'mur-dropdown',
+  getItems: function(){ return cineastesIndex; },
+  onSelect: function(nom){
+    var champ = document.getElementById('mur-recherche');
+    if(champ) champ.value = '';
+    murAjouter(nom);
+  }
+});
+
+['mur-plan', 'mur-suite'].forEach(function(id){
+  var zone = document.getElementById(id);
+  if(!zone) return;
+
+  zone.addEventListener('click', function(ev){
+    var croix = ev.target.closest('[data-retirer]');
+    if(!croix) return;
+    var c = croix.parentNode;
+    murRetirer(c.getAttribute('data-zone'), Number(c.getAttribute('data-index')));
+  });
+
+  zone.addEventListener('dragstart', function(ev){
+    var c = ev.target.closest('.mur-case');
+    if(!c || c.classList.contains('vide')) return;
+    _murPrise = { zone: c.getAttribute('data-zone'), index: Number(c.getAttribute('data-index')) };
+    c.classList.add('prise');
+    // Firefox n'amorce pas un glisser sans donnee transportee, meme inutilisee.
+    if(ev.dataTransfer){ ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', ''); }
+  });
+
+  zone.addEventListener('dragend', function(){
+    _murPrise = null;
+    document.querySelectorAll('.mur-case.prise, .mur-case.survol').forEach(function(c){
+      c.classList.remove('prise');
+      c.classList.remove('survol');
+    });
+  });
+
+  zone.addEventListener('dragover', function(ev){
+    if(!_murPrise) return;
+    var c = ev.target.closest('.mur-case');
+    if(!c) return;
+    ev.preventDefault();
+    if(ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    c.classList.add('survol');
+  });
+
+  zone.addEventListener('dragleave', function(ev){
+    var c = ev.target.closest('.mur-case');
+    if(c) c.classList.remove('survol');
+  });
+
+  zone.addEventListener('drop', function(ev){
+    if(!_murPrise) return;
+    var c = ev.target.closest('.mur-case');
+    if(!c) return;
+    ev.preventDefault();
+    murDeplacer(_murPrise, { zone: c.getAttribute('data-zone'), index: Number(c.getAttribute('data-index')) });
+    _murPrise = null;
+  });
+
+  zone.addEventListener('keydown', function(ev){
+    if(ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    var c = ev.target.closest('.mur-case');
+    if(!c || c.classList.contains('vide')) return;
+    ev.preventDefault();
+    var zn = c.getAttribute('data-zone');
+    var arrivee = murDecaler(zn, Number(c.getAttribute('data-index')), ev.key === 'ArrowRight' ? 1 : -1);
+    if(arrivee === null) return;
+    // Le rendu a recree les cases : on rend le focus a la vignette deplacee.
+    var neuve = document.querySelector('.mur-case[data-zone="' + zn + '"][data-index="' + arrivee + '"]');
+    if(neuve) neuve.focus();
+  });
+});
+
+var _murBtnSave = document.getElementById('mur-save');
+if(_murBtnSave) _murBtnSave.addEventListener('click', murSave);
+var _murBtnPrefill = document.getElementById('mur-prefill');
+if(_murBtnPrefill) _murBtnPrefill.addEventListener('click', murPrefill);
+var _murBtnReset = document.getElementById('mur-reset');
+if(_murBtnReset) _murBtnReset.addEventListener('click', murReset);

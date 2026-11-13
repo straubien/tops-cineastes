@@ -1935,3 +1935,134 @@ body {
   .dash-hero { grid-template-columns: 1fr; }
   .tab { padding: 10px 14px; font-size: 13px; }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   MUR D'ACCUEIL
+   ═════════════════════════════════════════════════════════════
+   Le plan reprend la grille du site — six colonnes sur trois rangees, fond
+   noir, filet de deux pixels — pour que ce qu'on compose ici ressemble a ce
+   qui sera publie. Les vignettes sont en noir et blanc pour la meme raison. */
+.mur-aide {
+  font-size: 13px;
+  color: var(--brun-pale);
+  margin-bottom: 1.2rem;
+  max-width: 640px;
+  line-height: 1.55;
+}
+.mur-aide code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--bg-subtle);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.mur-message {
+  font-size: 14px;
+  padding: 9px 14px;
+  margin: 0 0 1.2rem;
+  max-width: 640px;
+  border-left: 3px solid var(--rouge);
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.mur-plan {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  background: #1a1a1a;
+  padding: 2px;
+  max-width: 760px;
+}
+.mur-suite {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  background: #1a1a1a;
+  padding: 2px;
+  max-width: 760px;
+  min-height: 56px;
+}
+.mur-suite .mur-case { width: calc((760px - 16px) / 6); }
+
+.mur-case {
+  position: relative;
+  aspect-ratio: 240 / 285;
+  background: #262626 center 22% / cover no-repeat;
+  filter: grayscale(1) contrast(1.1);
+  cursor: grab;
+  overflow: hidden;
+}
+.mur-case:focus-visible { outline: 2px solid var(--rouge); outline-offset: -2px; }
+.mur-case.vide {
+  background: #262626;
+  cursor: default;
+  /* Une case vide reste une case : on la montre comme telle plutot que de
+     laisser un trou, sinon le plan ne ressemble plus a la grille du site. */
+  box-shadow: inset 0 0 0 1px #3a3a3a;
+}
+.mur-case.survol { box-shadow: inset 0 0 0 3px var(--rouge); }
+.mur-case.prise { opacity: 0.35; }
+
+/* Le nom, lisible sur n'importe quelle photo grace au degrade. */
+.mur-case-nom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 5px 4px;
+  font-size: 10px;
+  line-height: 1.25;
+  color: #f0ece3;
+  background: linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0));
+  pointer-events: none;
+  word-break: break-word;
+}
+.mur-case-num {
+  position: absolute;
+  top: 0; left: 0;
+  padding: 1px 5px;
+  font-size: 10px;
+  color: #f0ece3;
+  background: rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.mur-case-x {
+  position: absolute;
+  top: 0; right: 0;
+  width: 20px; height: 20px;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: #f0ece3;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.mur-case-x:hover { background: var(--rouge); }
+
+.mur-barre {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 1.6rem;
+}
+.mur-total { font-size: 14px; color: var(--brun-pale); margin-right: auto; }
+.mur-btn-sec {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.mur-btn-sec:hover { border-color: var(--rouge); color: var(--rouge-texte); }
+
+@media (max-width: 760px) {
+  .mur-plan { grid-template-columns: repeat(3, 1fr); }
+  .mur-suite .mur-case { width: calc((100% - 8px) / 3); }
+}

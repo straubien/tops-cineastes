@@ -992,6 +992,194 @@ function tcEnregistrerEmpreinte(source,version,donnees){
   }catch(e){}
 }
 
+// ══════════════════════════════════════════════════════════════
+// MUR D'ACCUEIL — les visages du splash
+// ══════════════════════════════════════════════════════════════
+// Le mur affiche par defaut les trente-six portraits ecrits dans style.css.
+// Le back-office (onglet « Mur d'accueil ») peut lui substituer sa propre
+// liste, rangee dans app_settings sous la cle « splash_mur ».
+//
+// Le splash est peint AVANT le moindre appel reseau : tous les scripts de
+// cette page sont en « defer ». Une liste lue sur Supabase arriverait donc
+// toujours trop tard, et le visiteur verrait le mur changer sous ses yeux.
+// D'ou les trois couches, de la plus rapide a la plus fraiche :
+//
+//   1. style.css   — les trente-six visages par defaut, instantanes, et qui
+//                     tiennent meme si Supabase ne repond pas.
+//   2. localStorage — la derniere liste connue de CE navigateur, appliquee
+//                     avant la premiere image a l'ecran.
+//   3. Supabase     — la liste a jour, mise de cote pour la prochaine visite.
+//
+// Une toute premiere visite voit donc le mur par defaut ; des la suivante,
+// c'est celui du back-office, sans aucun delai.
+
+// Cle unique, cote base comme cote navigateur.
+var TC_MUR_CLE = 'splash_mur';
+// Ces deux valeurs DOIVENT rester egales a l'animation ecrite dans style.css
+// (section ① SPLASH) : « splash-mur-a 32s » et « calc(var(--i) * -1.7s) ».
+// C'est ce qui permet de savoir, a tout instant et sans rien mesurer, laquelle
+// des deux couches d'une tuile est cachee — donc laquelle peut changer de
+// visage sans que personne ne le voie.
+var TC_MUR_CYCLE = 32000;
+var TC_MUR_DECALAGE = 1700;
+// Une liste appliquee le reste : on ne remplace pas un mur deja a l'ecran.
+var _murApplique = false;
+
+function tcMurTuiles(){
+  return document.querySelectorAll('.splash-mur > i');
+}
+
+// Le contenu d'app_settings n'est ecrit que par un administrateur, mais il
+// entre ici comme une URL d'image : on verifie sa forme plutot que de faire
+// confiance. Seuls les portraits du site et ceux de TMDB sont acceptes — les
+// deux seules sources que la politique de securite de la page autorise — et
+// un guillemet ou une parenthese fermante, qui briseraient le url(…) du CSS,
+// suffisent a ecarter une entree.
+function tcMurUrlValide(u){
+  if(typeof u !== 'string' || !u || u.length > 300) return false;
+  if(u.indexOf('"') !== -1 || u.indexOf(')') !== -1 || u.indexOf('\\') !== -1) return false;
+  return u.indexOf('portraits/portrait-') === 0
+      || u.indexOf('https://image.tmdb.org/t/p/') === 0;
+}
+
+// Rend la configuration seulement si elle est utilisable de bout en bout :
+// un mur incomplet vaut moins que le mur par defaut, qui lui est sur.
+function tcMurConfigValide(conf, nbTuiles){
+  if(!conf || typeof conf !== 'object') return null;
+  var mur = conf.mur, suite = conf.suite || [];
+  if(!Array.isArray(mur) || mur.length !== nbTuiles) return null;
+  if(!Array.isArray(suite)) return null;
+  var propre = function(e){ return e && tcMurUrlValide(e.u) ? { n: (typeof e.n === 'string' ? e.n : ''), u: e.u } : null; };
+  var m = [], i, e;
+  for(i = 0; i < mur.length; i++){ e = propre(mur[i]); if(!e) return null; m.push(e); }
+  var sv = [];
+  for(i = 0; i < suite.length; i++){ e = propre(suite[i]); if(e) sv.push(e); }
+  return { mur: m, suite: sv };
+}
+
+// Pose les visages de depart. --a est la couche montree d'abord, --b celle
+// qui prend le relais ; style.css ne fait que les lire.
+function tcMurAppliquer(conf){
+  var tuiles = tcMurTuiles();
+  if(!tuiles.length) return false;
+  var c = tcMurConfigValide(conf, tuiles.length);
+  if(!c) return false;
+  var grille = tuiles[0].parentNode;
+  var i;
+  for(i = 0; i < tuiles.length; i++){
+    tuiles[i].style.setProperty('--a', 'url("' + c.mur[i].u + '")');
+  }
+  // Pas de reserve : dix-huit visages, un par tuile, et le mur ne bouge plus.
+  if(!c.suite.length){
+    grille.classList.add('fige');
+    _murApplique = true;
+    return true;
+  }
+  grille.classList.remove('fige');
+  for(i = 0; i < tuiles.length; i++){
+    tuiles[i].style.setProperty('--b', 'url("' + c.suite[i % c.suite.length].u + '")');
+  }
+  tcMurRotation(tuiles, c.suite);
+  _murApplique = true;
+  return true;
+}
+
+// Fait defiler la reserve a travers les dix-huit tuiles, indefiniment et avec
+// deux couches seulement. L'astuce tient en une phrase : on ne change JAMAIS
+// l'image visible, uniquement celle qui est cachee derriere, qui a ensuite
+// quatorze secondes devant elle avant d'apparaitre. Rien a precharger, et
+// aucun a-coup possible.
+function tcMurRotation(tuiles, reserve){
+  if(reserve.length < 1) return;
+  var depart = (window.performance && performance.now) ? performance.now() : Date.now();
+  var maintenant = function(){
+    return ((window.performance && performance.now) ? performance.now() : Date.now()) - depart;
+  };
+  var demi = TC_MUR_CYCLE / 2;
+  var curseur = tuiles.length % reserve.length;
+  // Le decalage d'une tuile ne se deduit PAS de sa place dans la grille : les
+  // valeurs de « --i » sont volontairement melangees dans index.html, pour
+  // que les dix-huit visages ne changent jamais ensemble. Il faut donc lire
+  // celui que porte chaque tuile, sinon on croirait cachee une couche qui est
+  // en réalité a l'ecran — et le visage changerait sous les yeux du visiteur.
+  var decalage = [];
+  // Demi-cycle en cours pour chaque tuile, au moment ou l'on arrive : on le
+  // note pour le laisser passer. Sans cela, la seconde couche serait
+  // remplacee avant meme d'avoir ete montree une fois.
+  var vu = [];
+  for(var k = 0; k < tuiles.length; k++){
+    var i_css = parseFloat(getComputedStyle(tuiles[k]).getPropertyValue('--i'));
+    decalage.push((isNaN(i_css) ? k : i_css) * TC_MUR_DECALAGE);
+    vu.push(Math.floor(decalage[k] / demi));
+  }
+  setInterval(function(){
+    var t = maintenant();
+    for(var i = 0; i < tuiles.length; i++){
+      // Position absolue de cette tuile dans son animation. Recalculee a
+      // chaque passage plutot qu'accumulee : un onglet mis en arriere-plan
+      // ralentit les minuteries, mais ne peut pas dephaser le calcul.
+      var pos = t + decalage[i];
+      var tour = Math.floor(pos / demi);
+      if(tour <= vu[i]) continue;
+      var phase = pos % TC_MUR_CYCLE;
+      // Tour pair : --a est a l'ecran, --b est cachee, et l'inverse au tour
+      // impair. On ne touche la couche cachee qu'en plein milieu de son
+      // absence, loin des deux fondus.
+      var bEstCachee = (tour % 2 === 0);
+      var creneau = bEstCachee ? (phase > 2000 && phase < 12000)
+                               : (phase > 18000 && phase < 28000);
+      if(!creneau) continue;
+      var aRemplacer = bEstCachee ? '--b' : '--a';
+      var visible = tuiles[i].style.getPropertyValue(bEstCachee ? '--a' : '--b');
+      // Deux fois le meme visage sur une tuile donnerait un battement a
+      // chaque fondu : on avance d'un cran plutot que de l'accepter.
+      var essais = 0;
+      var choix = reserve[curseur % reserve.length];
+      while(reserve.length > 1 && essais < reserve.length
+            && visible.indexOf(choix.u) !== -1){
+        curseur++; essais++;
+        choix = reserve[curseur % reserve.length];
+      }
+      curseur++;
+      tuiles[i].style.setProperty(aRemplacer, 'url("' + choix.u + '")');
+      vu[i] = tour;
+    }
+  }, 1000);
+}
+
+// — Couche 2 : ce que ce navigateur a deja vu, applique tout de suite.
+(function(){
+  var brut = null;
+  try { brut = localStorage.getItem('tc-' + TC_MUR_CLE); } catch(e){ brut = null; }
+  if(!brut) return;
+  try { tcMurAppliquer(JSON.parse(brut)); } catch(e){}
+})();
+
+// — Couche 3 : la liste a jour. Elle sert a la visite SUIVANTE, et seulement
+// a celle-ci quand rien n'etait encore en cache : remplacer un mur deja
+// installe sous les yeux du visiteur serait pire que de le laisser vieillir
+// d'une visite. Tout echec est sans consequence — le mur par defaut reste.
+(function(){
+  if(typeof TC_SB === 'undefined' || !TC_SB) return;
+  tcWithRetryTimeout(function(){
+    return TC_SB.from('app_settings').select('value').eq('key', TC_MUR_CLE).maybeSingle();
+  }).then(function(res){
+    if(!res || res.error) return;
+    var valeur = res.data && res.data.value;
+    // Plus de ligne : le back-office est revenu au mur par defaut. On oublie
+    // le cache, sinon ce navigateur garderait l'ancienne liste pour toujours.
+    if(!valeur){
+      try { localStorage.removeItem('tc-' + TC_MUR_CLE); } catch(e){}
+      return;
+    }
+    var conf;
+    try { conf = JSON.parse(valeur); } catch(e){ return; }
+    if(!tcMurConfigValide(conf, tcMurTuiles().length)) return;
+    try { localStorage.setItem('tc-' + TC_MUR_CLE, valeur); } catch(e){}
+    if(!_murApplique) tcMurAppliquer(conf);
+  }).catch(function(){});
+})();
+
 function enterSite(){
   document.getElementById('splash').classList.add('hidden');
   document.getElementById('main-wrapper').classList.add('visible');

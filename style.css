@@ -935,6 +935,14 @@ a { text-decoration: none; color: inherit; }
 @keyframes splash-mur-a { 0%, 44% { opacity: 1 } 50%, 94% { opacity: 0 } 100% { opacity: 1 } }
 @keyframes splash-mur-b { 0%, 44% { opacity: 0 } 50%, 94% { opacity: 1 } 100% { opacity: 0 } }
 
+/* Mur figé. Posé par index.js dans un seul cas : le back-office n'a retenu
+   que dix-huit visages, un par tuile, sans réserve derrière. Il n'y a alors
+   rien vers quoi fondre, et laisser tourner l'animation ferait disparaître
+   la moitié du mur une seconde sur deux. */
+.splash-mur.fige > i::before,
+.splash-mur.fige > i::after { animation: none; }
+.splash-mur.fige > i::after { opacity: 0; }
+
 /* Voile sombre — c'est lui qui rend le titre lisible par-dessus les
    photos. Plus dense au centre, derrière le titre et le bouton. */
 .splash-mur::after {
@@ -996,7 +1004,12 @@ a { text-decoration: none; color: inherit; }
   z-index: 1;
 }
 
-/* Éléments géométriques flottants */
+/* Éléments géométriques flottants.
+   Il n'en reste que trois. Le filet rouge vertical, le trait rouge horizontal
+   et la barre noire oblique ont été retirés avec l'arrivée du mur de visages :
+   sur un fond crème uni ils se lisaient comme des accents, sur des
+   photographies ils ne se lisaient plus que comme des rayures. Restent la
+   masse noire et les deux blocs rouges, seule couleur saturée de la page. */
 .splash-geo {
   position: absolute;
   inset: 0;
@@ -1011,24 +1024,6 @@ a { text-decoration: none; color: inherit; }
   background: var(--noir);
   z-index: 1;
   animation: geo-slide-left 1s cubic-bezier(0.16,1,0.3,1) both;
-}
-/* Bande verticale droite fine — rouge */
-.splash-geo-v2 {
-  position: absolute;
-  top: 0; right: 80px;
-  width: 5px; height: 65%;
-  background: var(--rouge);
-  z-index: 1;
-  animation: geo-slide-left 1.1s 0.15s cubic-bezier(0.16,1,0.3,1) both;
-}
-/* Barre diagonale noire — prolonge la pointe des blocs rouges */
-.splash-geo-h1 {
-  position: absolute;
-  top: 38%; left: auto; right: 6%; bottom: auto;
-  width: 420px; height: 12px;
-  background: var(--noir);
-  transform: rotate(-32deg);
-  animation: geo-slide-up 1s 0.1s cubic-bezier(0.16,1,0.3,1) both;
 }
 /* Bloc rouge incliné — coin haut droit */
 .splash-geo-sq1 {
@@ -1051,24 +1046,10 @@ a { text-decoration: none; color: inherit; }
   z-index: 2;
   animation: geo-fade 1s 0.35s ease-out both;
 }
-/* Trait horizontal médian */
-.splash-geo-h2 {
-  position: absolute;
-  top: 50%; left: 16px;
-  width: 70px; height: 2px;
-  background: var(--rouge);
-  transform: translateY(-50%);
-  z-index: 1;
-  animation: geo-slide-left 1s 0.25s cubic-bezier(0.16,1,0.3,1) both;
-}
 
 @keyframes geo-slide-left {
   from { transform: translateX(-40px); opacity: 0; }
   to   { transform: translateX(0); opacity: 1; }
-}
-@keyframes geo-slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
 }
 @keyframes geo-fade {
   from { opacity: 0; }
@@ -2744,7 +2725,6 @@ a { text-decoration: none; color: inherit; }
   .splash-title { font-size: 44px; }
   .splash-title .slash-block { font-size: 36px; }
   .splash-geo-sq1 { width: 32px; height: 32px; top: 20px; right: 20px; }
-  .splash-geo-v2 { right: 48px; }
 
   .header-inner { padding: 0.7rem 1rem; flex-wrap: wrap; gap: 0.4rem; }
   .logo { font-size: 21px; }
