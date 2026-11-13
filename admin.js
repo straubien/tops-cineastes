@@ -5009,6 +5009,47 @@ function murPrefill(){
   murRender();
 }
 
+// Re-cherche la photo de chaque cineaste de la liste, avec les regles en
+// vigueur, et remplace celles qui ne correspondent plus.
+//
+// POURQUOI CE BOUTON EXISTE
+// L'URL d'une photo est resolue UNE FOIS, au moment ou l'on ajoute le
+// cineaste, puis enregistree telle quelle : c'est ce qui permet au site
+// public de ne rien avoir a chercher. Mais si la priorite entre /portraits
+// et TMDB change ensuite, une liste composee avant le changement garde ses
+// anciennes URL, indefiniment. Les retirer et les rajouter un par un serait
+// absurde ; ce bouton fait le tour en un clic.
+//
+// Il ne touche ni aux noms, ni a l'ordre, ni a ce qui est publie : il faut
+// toujours cliquer sur Enregistrer ensuite. Et un cineaste dont plus aucune
+// photo ne repond garde son URL actuelle plutot que de trouer le mur.
+async function murRechercherPhotos(){
+  var btn = document.getElementById('mur-rechercher');
+  var entrees = murEtat.mur.concat(murEtat.suite).filter(Boolean);
+  if(!entrees.length){ murMessage('La liste est vide : il n\'y a rien à re-chercher.'); return; }
+  if(btn) btn.disabled = true;
+  murMessage('Recherche des photos de ' + entrees.length + ' cinéastes…');
+  var changees = 0;
+  var introuvables = [];
+  await Promise.all(entrees.map(function(e){
+    return murPremiereImage(murCandidats(e.n)).then(function(trouvee){
+      if(!trouvee){ introuvables.push(e.n); return; }
+      if(trouvee !== e.u){ e.u = trouvee; changees++; }
+    });
+  }));
+  if(btn) btn.disabled = false;
+  murRender();
+  var texte = changees
+    ? changees + ' photo(s) remplacée(s) sur ' + entrees.length
+      + '. Rien n\'est publié tant que vous n\'avez pas cliqué sur Enregistrer.'
+    : 'Aucun changement : les ' + entrees.length
+      + ' photos sont déjà celles que les règles actuelles retiennent.';
+  if(introuvables.length){
+    texte += ' Sans photo accessible, laissé(s) tel(s) quel(s) : ' + introuvables.join(', ') + '.';
+  }
+  murMessage(texte);
+}
+
 async function loadMurAccueil(){
   var err = document.getElementById('mur-error');
   if(err) err.style.display = 'none';
@@ -5182,6 +5223,8 @@ createAutocomplete({
 
 var _murBtnSave = document.getElementById('mur-save');
 if(_murBtnSave) _murBtnSave.addEventListener('click', murSave);
+var _murBtnRechercher = document.getElementById('mur-rechercher');
+if(_murBtnRechercher) _murBtnRechercher.addEventListener('click', murRechercherPhotos);
 var _murBtnPrefill = document.getElementById('mur-prefill');
 if(_murBtnPrefill) _murBtnPrefill.addEventListener('click', murPrefill);
 var _murBtnReset = document.getElementById('mur-reset');
