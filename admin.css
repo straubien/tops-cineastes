@@ -1936,12 +1936,13 @@ body {
   .tab { padding: 10px 14px; font-size: 13px; }
 }
 
-/* ═════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    MUR D'ACCUEIL
-   ═════════════════════════════════════════════════════════════
-   Le plan reprend la grille du site — six colonnes sur trois rangees, fond
-   noir, filet de deux pixels — pour que ce qu'on compose ici ressemble a ce
-   qui sera publie. Les vignettes sont en noir et blanc pour la meme raison. */
+   ═══════════════════════════════════════════════════════════════
+   Une seule liste, puisque le site tire les visages au hasard : il n'y a
+   plus de « premier ecran » a composer. Les vignettes gardent le fond noir,
+   le filet de deux pixels et le noir et blanc du site, pour que ce qu'on
+   voit ici ressemble a ce qui sera publie. */
 .mur-aide {
   font-size: 13px;
   color: var(--brun-pale);
@@ -1956,6 +1957,7 @@ body {
   padding: 1px 5px;
   border-radius: 3px;
 }
+.mur-aide strong { color: var(--text); font-weight: 700; }
 .mur-message {
   font-size: 14px;
   padding: 9px 14px;
@@ -1966,24 +1968,17 @@ body {
   color: var(--text);
 }
 
-.mur-plan {
+/* La liste s'etale sur autant de rangees qu'il faut : on peut y mettre
+   dix-huit visages comme deux cents, sans rien changer ici. */
+.mur-liste {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 2px;
   background: #1a1a1a;
   padding: 2px;
   max-width: 760px;
+  min-height: 60px;
 }
-.mur-suite {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  background: #1a1a1a;
-  padding: 2px;
-  max-width: 760px;
-  min-height: 56px;
-}
-.mur-suite .mur-case { width: calc((760px - 16px) / 6); }
 
 .mur-case {
   position: relative;
@@ -1997,8 +1992,8 @@ body {
 .mur-case.vide {
   background: #262626;
   cursor: default;
-  /* Une case vide reste une case : on la montre comme telle plutot que de
-     laisser un trou, sinon le plan ne ressemble plus a la grille du site. */
+  /* La case d'arrivee au bout de la liste : sans elle, on ne pourrait jamais
+     deposer quelqu'un en derniere position. */
   box-shadow: inset 0 0 0 1px #3a3a3a;
 }
 .mur-case.survol { box-shadow: inset 0 0 0 3px var(--rouge); }
@@ -2015,15 +2010,6 @@ body {
   background: linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0));
   pointer-events: none;
   word-break: break-word;
-}
-.mur-case-num {
-  position: absolute;
-  top: 0; left: 0;
-  padding: 1px 5px;
-  font-size: 10px;
-  color: #f0ece3;
-  background: rgba(0,0,0,0.6);
-  pointer-events: none;
 }
 .mur-case-x {
   position: absolute;
@@ -2061,8 +2047,8 @@ body {
   transition: border-color 0.2s, color 0.2s;
 }
 .mur-btn-sec:hover { border-color: var(--rouge); color: var(--rouge-texte); }
+.mur-btn-sec:disabled { opacity: 0.5; cursor: wait; }
 
 @media (max-width: 760px) {
-  .mur-plan { grid-template-columns: repeat(3, 1fr); }
-  .mur-suite .mur-case { width: calc((100% - 8px) / 3); }
+  .mur-liste { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 }

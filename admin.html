@@ -465,10 +465,10 @@
     <div class="tab-panel" id="panel-mur">
       <div class="section-title">Le mur de visages de la page d'accueil</div>
       <div class="mur-aide">
-        La page d'accueil affiche dix-huit portraits, et chaque tuile fait alternéer deux visages
-        en fondu. Sans rien ici, le site utilise les trente-six portraits inscrits dans
-        <code>style.css</code>. Dès que vous enregistrez une liste, c'est elle qui s'applique —
-        et vous pouvez revenir en arrière à tout moment.
+        La page d'accueil montre dix-huit portraits à la fois, et chaque tuile fait alterner deux
+        visages en fondu. Ils sont <strong>tirés au hasard</strong> dans la liste ci-dessous à chaque
+        visite, ceux déjà vus passant en fin de file — le même principe que la mosaïque du Top 1000.
+        Sans rien ici, le site affiche les trente-six portraits inscrits dans <code>style.css</code>.
       </div>
 
       <div class="field-wrap" style="max-width:520px;">
@@ -480,26 +480,18 @@
         </div>
       </div>
       <div class="mur-aide" style="margin-top:-0.4rem;">
-        Le cinéaste rejoint la première case libre du mur, ou la suite si le mur est complet.
         Sa photo est cherchée d'abord dans <code>/portraits</code>, puis sur TMDB à défaut.
       </div>
       <div id="mur-message" style="display:none;" class="mur-message"></div>
 
-      <div class="section-title" style="margin-top:2rem;">Le mur de départ — 18 cases</div>
+      <div class="section-title" style="margin-top:2rem;">Les visages</div>
       <div class="mur-aide">
-        Exactement ce que voit un visiteur à la seconde zéro, dans la disposition réelle du site.
-        Faites glisser une vignette sur une autre pour les échanger. Au clavier : sélectionnez une
-        vignette puis utilisez les flèches gauche et droite.
+        Il en faut au moins dix-huit, un par tuile ; trente-six ou plus pour qu'aucun ne se répète
+        à l'écran. <strong>L'ordre n'a aucun effet sur le site</strong>, puisque le tirage est
+        aléatoire : le glisser-déposer et les flèches gauche et droite ne servent qu'à ranger cette
+        liste comme bon vous semble.
       </div>
-      <div class="mur-plan" id="mur-plan"></div>
-
-      <div class="section-title" style="margin-top:2rem;">La suite</div>
-      <div class="mur-aide">
-        Ces visages entrent ensuite, dans cet ordre, au fil des fondus — chacun remplace
-        tranquillement une tuile pendant qu'elle est cachée. Laissez cette liste vide pour un mur
-        fixe de dix-huit visages.
-      </div>
-      <div class="mur-suite" id="mur-suite"></div>
+      <div class="mur-liste" id="mur-liste"></div>
 
       <div class="mur-barre">
         <div class="mur-total" id="mur-total"></div>

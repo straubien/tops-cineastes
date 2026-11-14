@@ -992,9 +992,9 @@ function tcEnregistrerEmpreinte(source,version,donnees){
   }catch(e){}
 }
 
-// ══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // MUR D'ACCUEIL — les visages du splash
-// ══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // Le mur affiche par defaut les trente-six portraits ecrits dans style.css.
 // Le back-office (onglet « Mur d'accueil ») peut lui substituer sa propre
 // liste, rangee dans app_settings sous la cle « splash_mur ».
@@ -1022,6 +1022,9 @@ var TC_MUR_CLE = 'splash_mur';
 // visage sans que personne ne le voie.
 var TC_MUR_CYCLE = 32000;
 var TC_MUR_DECALAGE = 1700;
+// Memoire des visages deja montres, le temps d'une session de navigation.
+var TC_MUR_VUS = 'tc-mur-vus';
+var TC_MUR_MEMOIRE_MAX = 30;
 // Une liste appliquee le reste : on ne remplace pas un mur deja a l'ecran.
 var _murApplique = false;
 
@@ -1042,44 +1045,121 @@ function tcMurUrlValide(u){
       || u.indexOf('https://image.tmdb.org/t/p/') === 0;
 }
 
-// Rend la configuration seulement si elle est utilisable de bout en bout :
-// un mur incomplet vaut moins que le mur par defaut, qui lui est sur.
-function tcMurConfigValide(conf, nbTuiles){
+// Rend la liste des visages, ou rien si elle est inutilisable : un mur
+// incomplet vaut moins que le mur par defaut, qui lui est sur.
+//
+// Deux formats sont admis. Le format courant est une simple liste. Le premier
+// format separait « le mur de depart » de « la suite » ; il n'existe plus
+// depuis que les visages sont tires au hasard, mais une liste enregistree
+// avant ce changement doit continuer a fonctionner : on recolle simplement
+// les deux moities.
+function tcMurListe(conf, nbTuiles){
   if(!conf || typeof conf !== 'object') return null;
-  var mur = conf.mur, suite = conf.suite || [];
-  if(!Array.isArray(mur) || mur.length !== nbTuiles) return null;
-  if(!Array.isArray(suite)) return null;
-  var propre = function(e){ return e && tcMurUrlValide(e.u) ? { n: (typeof e.n === 'string' ? e.n : ''), u: e.u } : null; };
-  var m = [], i, e;
-  for(i = 0; i < mur.length; i++){ e = propre(mur[i]); if(!e) return null; m.push(e); }
-  var sv = [];
-  for(i = 0; i < suite.length; i++){ e = propre(suite[i]); if(e) sv.push(e); }
-  return { mur: m, suite: sv };
+  var brut = Array.isArray(conf.visages) ? conf.visages
+           : (Array.isArray(conf.mur) ? conf.mur.concat(Array.isArray(conf.suite) ? conf.suite : []) : null);
+  if(!brut || brut.length < nbTuiles) return null;
+  var liste = [];
+  for(var i = 0; i < brut.length; i++){
+    var e = brut[i];
+    if(e && tcMurUrlValide(e.u)) liste.push({ n: (typeof e.n === 'string' ? e.n : ''), u: e.u });
+  }
+  return liste.length >= nbTuiles ? liste : null;
 }
 
-// Pose les visages de depart. --a est la couche montree d'abord, --b celle
-// qui prend le relais ; style.css ne fait que les lire.
+// ── L'alternance ────────────────────────────────────────────────
+// Reprise de celle du Top 1000 (app.js, initMosaicBanner) : une seule
+// reserve, melangee a chaque chargement, d'ou l'on tire les visages au fil
+// d'un curseur partage — mais les visages deja montres dans cette session
+// passent en fin de file. On ne revoit donc pas les memes d'une visite a
+// l'autre tant que la reserve n'a pas ete parcourue.
+function tcMurVus(){
+  try {
+    var v = JSON.parse(sessionStorage.getItem(TC_MUR_VUS) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch(e){ return []; }
+}
+
+// Le Top 1000 retient trente visages sur une reserve de cent. Garder trente
+// sur une reserve de quarante rendrait presque tout « deja vu », et le tri
+// ci-dessous ne trierait plus rien. Le plafond laisse donc toujours de quoi
+// remplir un mur entier de visages jamais vus.
+function tcMurNoterVu(url, taillePool, nbTuiles){
+  try {
+    var v = tcMurVus();
+    if(v.indexOf(url) !== -1) return;
+    v.push(url);
+    var plafond = Math.min(TC_MUR_MEMOIRE_MAX, Math.max(0, taillePool - nbTuiles));
+    if(v.length > plafond) v = v.slice(v.length - plafond);
+    sessionStorage.setItem(TC_MUR_VUS, JSON.stringify(v));
+  } catch(e){}
+}
+
+function tcMurOrdonner(liste){
+  var pool = liste.slice();
+  // Melange de Fisher-Yates.
+  for(var j = pool.length - 1; j > 0; j--){
+    var r = Math.floor(Math.random() * (j + 1));
+    var t = pool[j]; pool[j] = pool[r]; pool[r] = t;
+  }
+  var vus = tcMurVus();
+  var jamais = [], deja = [];
+  for(var m = 0; m < pool.length; m++){
+    if(vus.indexOf(pool[m].u) === -1) jamais.push(pool[m]); else deja.push(pool[m]);
+  }
+  return jamais.concat(deja);
+}
+
+// Pose un visage sur une couche et le note comme vu.
+function tcMurPoser(tuile, cle, entree, taillePool, nbTuiles){
+  tuile.style.setProperty(cle, 'url("' + entree.u + '")');
+  tcMurNoterVu(entree.u, taillePool, nbTuiles);
+}
+
 function tcMurAppliquer(conf){
   var tuiles = tcMurTuiles();
   if(!tuiles.length) return false;
-  var c = tcMurConfigValide(conf, tuiles.length);
-  if(!c) return false;
+  var liste = tcMurListe(conf, tuiles.length);
+  if(!liste) return false;
+  var ordre = tcMurOrdonner(liste);
   var grille = tuiles[0].parentNode;
-  var i;
+  var curseur = { i: 0 };
+  var i, entree;
+  // Les dix-huit visages du premier ecran : les premiers de la file, donc
+  // ceux que cette session n'a pas encore vus. On les POSE maintenant mais on
+  // ne les note qu'a la fin — voir plus bas.
+  var premierEcran = [];
   for(i = 0; i < tuiles.length; i++){
-    tuiles[i].style.setProperty('--a', 'url("' + c.mur[i].u + '")');
+    entree = ordre[curseur.i % ordre.length];
+    curseur.i++;
+    tuiles[i].style.setProperty('--a', 'url(\"' + entree.u + '\")');
+    premierEcran.push(entree);
   }
-  // Pas de reserve : dix-huit visages, un par tuile, et le mur ne bouge plus.
-  if(!c.suite.length){
+  var noterPremierEcran = function(){
+    premierEcran.forEach(function(e){ tcMurNoterVu(e.u, ordre.length, tuiles.length); });
+  };
+  // Juste de quoi remplir le mur : la seconde couche n'aurait rien d'autre a
+  // montrer que ce qui est deja a l'ecran. On fige plutot que de clignoter.
+  if(ordre.length <= tuiles.length){
     grille.classList.add('fige');
+    noterPremierEcran();
     _murApplique = true;
     return true;
   }
   grille.classList.remove('fige');
   for(i = 0; i < tuiles.length; i++){
-    tuiles[i].style.setProperty('--b', 'url("' + c.suite[i % c.suite.length].u + '")');
+    tcMurPoser(tuiles[i], '--b', ordre[curseur.i % ordre.length], ordre.length, tuiles.length);
+    curseur.i++;
   }
-  tcMurRotation(tuiles, c.suite);
+  // L'ORDRE DANS LEQUEL ON NOTE COMPTE, des que la reserve est juste.
+  // Une seule visite consomme trente-six visages, alors que la memoire n'en
+  // retient qu'au plus « reserve moins dix-huit » — il faut bien laisser de
+  // quoi remplir un mur neuf. Quand les deux chiffres se croisent, les
+  // premiers notes sont oublies. On note donc la seconde couche d'abord et le
+  // premier ecran en dernier : ce sont les visages que le visiteur a vraiment
+  // regardes en arrivant, et ce sont eux qu'il ne doit pas revoir en arrivant
+  // la fois suivante.
+  noterPremierEcran();
+  tcMurRotation(tuiles, ordre, curseur);
   _murApplique = true;
   return true;
 }
@@ -1087,16 +1167,14 @@ function tcMurAppliquer(conf){
 // Fait defiler la reserve a travers les dix-huit tuiles, indefiniment et avec
 // deux couches seulement. L'astuce tient en une phrase : on ne change JAMAIS
 // l'image visible, uniquement celle qui est cachee derriere, qui a ensuite
-// quatorze secondes devant elle avant d'apparaitre. Rien a precharger, et
-// aucun a-coup possible.
-function tcMurRotation(tuiles, reserve){
-  if(reserve.length < 1) return;
+// quatorze secondes devant elle avant d'apparaitre.
+function tcMurRotation(tuiles, ordre, curseur){
+  if(ordre.length < 2) return;
   var depart = (window.performance && performance.now) ? performance.now() : Date.now();
   var maintenant = function(){
     return ((window.performance && performance.now) ? performance.now() : Date.now()) - depart;
   };
   var demi = TC_MUR_CYCLE / 2;
-  var curseur = tuiles.length % reserve.length;
   // Le decalage d'une tuile ne se deduit PAS de sa place dans la grille : les
   // valeurs de « --i » sont volontairement melangees dans index.html, pour
   // que les dix-huit visages ne changent jamais ensemble. Il faut donc lire
@@ -1129,22 +1207,33 @@ function tcMurRotation(tuiles, reserve){
       var creneau = bEstCachee ? (phase > 2000 && phase < 12000)
                                : (phase > 18000 && phase < 28000);
       if(!creneau) continue;
-      var aRemplacer = bEstCachee ? '--b' : '--a';
-      var visible = tuiles[i].style.getPropertyValue(bEstCachee ? '--a' : '--b');
-      // Deux fois le meme visage sur une tuile donnerait un battement a
-      // chaque fondu : on avance d'un cran plutot que de l'accepter.
-      var essais = 0;
-      var choix = reserve[curseur % reserve.length];
-      while(reserve.length > 1 && essais < reserve.length
-            && visible.indexOf(choix.u) !== -1){
-        curseur++; essais++;
-        choix = reserve[curseur % reserve.length];
-      }
-      curseur++;
-      tuiles[i].style.setProperty(aRemplacer, 'url("' + choix.u + '")');
       vu[i] = tour;
+      tcMurRemplacer(tuiles[i], bEstCachee ? '--b' : '--a',
+                     bEstCachee ? '--a' : '--b', ordre, curseur, tuiles.length);
     }
   }, 1000);
+}
+
+// Choisit le prochain visage de la file pour une couche cachee, apres s'etre
+// assure que son image repond vraiment. Un portrait disparu ne laisse donc
+// pas un trou noir dans le mur : on passe simplement au suivant, exactement
+// comme le « onerror » du Top 1000.
+function tcMurRemplacer(tuile, cleCachee, cleVisible, ordre, curseur, nbTuiles){
+  var essais = 0;
+  var visible = tuile.style.getPropertyValue(cleVisible);
+  (function prochain(){
+    if(essais >= 5) return;   // on renonce : la tuile garde le visage qu'elle a
+    essais++;
+    var choix = ordre[curseur.i % ordre.length];
+    curseur.i++;
+    // Deux fois le meme visage sur une tuile donnerait un battement a chaque
+    // fondu : on avance d'un cran plutot que de l'accepter.
+    if(visible && visible.indexOf(choix.u) !== -1){ prochain(); return; }
+    var img = new Image();
+    img.onload = function(){ tcMurPoser(tuile, cleCachee, choix, ordre.length, nbTuiles); };
+    img.onerror = prochain;
+    img.src = choix.u;
+  })();
 }
 
 // — Couche 2 : ce que ce navigateur a deja vu, applique tout de suite.
@@ -1174,7 +1263,7 @@ function tcMurRotation(tuiles, reserve){
     }
     var conf;
     try { conf = JSON.parse(valeur); } catch(e){ return; }
-    if(!tcMurConfigValide(conf, tcMurTuiles().length)) return;
+    if(!tcMurListe(conf, tcMurTuiles().length)) return;
     try { localStorage.setItem('tc-' + TC_MUR_CLE, valeur); } catch(e){}
     if(!_murApplique) tcMurAppliquer(conf);
   }).catch(function(){});
