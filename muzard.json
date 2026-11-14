@@ -1,6 +1,6 @@
 {
   "contributeur": "MATHIEU MUZARD",
-  "version": "7.9",
+  "version": "8.0",
   "tops": [
     {
       "cineaste": "ABULADZE, Tengiz",
@@ -1911,6 +1911,16 @@
           "titre": "Pygmalion",
           "annee": 1938,
           "note": "co-réal. Leslie Howard"
+        }
+      ]
+    },
+    {
+      "cineaste": "ASSARAT, Aditya",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Wonderful town",
+          "annee": 2007
         }
       ]
     },
@@ -6999,6 +7009,176 @@
           "rang": 11,
           "titre": "La comtesse de Hong Kong",
           "annee": 1967
+        },
+        {
+          "titre": "Charlot débute",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot fait la noce",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot boxeur",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot dans le parc",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot veut se marier",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot vagabond",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot à la plage",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot apprenti",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Mam'zelle Charlot",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot à la banque",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot marin",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot au music-hall",
+          "annee": 1915,
+          "nc": true
+        },
+        {
+          "titre": "Charlot joue Carmen",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot cambrioleur",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Les avatars de Charlot",
+          "annee": 1918,
+          "nc": true
+        },
+        {
+          "titre": "Charlot et le comte",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot musicien",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot pompier",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot machiniste",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot rentre tard",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot usurier",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot chef de rayon",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Charlot patine",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "L'émigrant",
+          "annee": 1917,
+          "nc": true
+        },
+        {
+          "titre": "Charlot s'évade",
+          "annee": 1917,
+          "nc": true
+        },
+        {
+          "titre": "Charlot fait une cure",
+          "annee": 1917,
+          "nc": true
+        },
+        {
+          "titre": "Charlot policeman",
+          "annee": 1917,
+          "nc": true
+        },
+        {
+          "titre": "Une vie de chien",
+          "annee": 1918,
+          "nc": true
+        },
+        {
+          "titre": "Charlot soldat",
+          "annee": 1918,
+          "nc": true
+        },
+        {
+          "titre": "Une journée de plaisir",
+          "annee": 1919,
+          "nc": true
+        },
+        {
+          "titre": "Une idylle aux champs",
+          "annee": 1919,
+          "nc": true
+        },
+        {
+          "titre": "Charlot et le masque de fer",
+          "annee": 1921,
+          "nc": true
+        },
+        {
+          "titre": "Jour de paye",
+          "annee": 1922,
+          "nc": true
+        },
+        {
+          "titre": "Le pèlerin",
+          "annee": 1923,
+          "nc": true
         }
       ]
     },
@@ -7736,54 +7916,289 @@
       "cineaste": "COHL, Emile",
       "films": [
         {
-          "rang": 1,
-          "titre": "Le mobilier fidèle",
-          "annee": 1910
+          "titre": "Fantasmagorie",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 2,
-          "titre": "Le peintre néo-impressionniste",
-          "annee": 1910
+          "titre": "L'hôtel du silence",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 3,
-          "titre": "Les locataires d'à côté",
-          "annee": 1909
+          "titre": "Le cauchemar du fantoche",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 4,
-          "titre": "Le songe du garçon de café",
-          "annee": 1910
+          "titre": "Un drame chez les fantoches",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 5,
-          "titre": "Le placier est tenace",
-          "annee": 1910
+          "titre": "Le cerceau magique",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 6,
-          "titre": "Les chaussures matrimoniales",
-          "annee": 1909
+          "titre": "Le petit soldat qui devient Dieu",
+          "annee": 1908,
+          "nc": true
         },
         {
-          "rang": 7,
+          "titre": "Les frères Boutdebois",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Transfigurations",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Soyons donc sportifs",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Japon de fantaisie",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les joyeux microbes",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Moderne école",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "L'éventail animé",
+          "annee": 1909,
+          "nc": true
+        },
+        {
           "titre": "Clair de lune espagnol",
-          "annee": 1909
+          "annee": 1909,
+          "nc": true
         },
         {
-          "rang": 8,
-          "titre": "Les quatre petits tailleurs",
-          "annee": 1910
+          "titre": "Les locataires d'à côté",
+          "annee": 1909,
+          "nc": true
         },
         {
-          "rang": 9,
+          "titre": "Les couronnes",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Monsieur Clown chez les Lilliputiens",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Porcelaines tendres",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les chapeaux des belles dames",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les générations comiques",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les chaussures matrimoniales",
+          "annee": 1909,
+          "nc": true
+        },
+        {
           "titre": "Les lunettes féeriques",
-          "annee": 1909
+          "annee": 1909,
+          "nc": true
         },
         {
-          "rang": 10,
+          "titre": "Affaires de cœur",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Cadres fleuris",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le binetoscope",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Rêves enfantins",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "En route",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le songe du garçon de café",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le champion du jeu à la mode",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le mobilier fidèle",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le petit Chantecler",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Les douze travaux d'Hercule",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le tout petit Faust",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le peintre néo-impressionniste",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Les quatre petits tailleurs",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "L'enfance de l'art",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Les beaux-arts mystérieux",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le placier est tenace",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Histoire de chapeaux",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Rien n'est impossible à l'homme",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Monsieur de Crac",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Les chefs-d'œuvre de bébé",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "La musicomanie",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le retapeur de cervelles",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le musée des grotesques",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Les fantaisies d'Agénor Maltracé",
+          "annee": 1911,
+          "nc": true
+        },
+        {
           "titre": "Jobard a tué sa belle-mère",
-          "annee": 1911
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Le cheveu délateur",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Les exploits de Feu Follet",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Les métamorphoses comiques",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Zozor ruine la réputation de sa famille",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Bewitched matches",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "He poses for his portrait",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "L'avenir dévoilé par les lignes du pied",
+          "annee": 1914,
+          "nc": true
+        },
+        {
+          "titre": "Les exploits de Farfadet",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Les aventures des Pieds-Nickelés",
+          "annee": 1918,
+          "nc": true
+        },
+        {
+          "titre": "La maison du fantoche",
+          "annee": 1921,
+          "nc": true
         }
       ]
     },
@@ -8474,6 +8889,56 @@
           "rang": 3,
           "titre": "Coeur bleu",
           "annee": 1980
+        },
+        {
+          "titre": "Philippe Garrel à Digne (Premier voyage)",
+          "annee": 1975,
+          "nc": true
+        },
+        {
+          "titre": "Philippe Garrel à Digne (Second voyage)",
+          "annee": 1979,
+          "nc": true
+        },
+        {
+          "titre": "Passions",
+          "annee": 1982,
+          "nc": true
+        },
+        {
+          "titre": "Attention poésie",
+          "annee": 1982,
+          "nc": true
+        },
+        {
+          "titre": "L'art, c'est se perdre dans les châteaux du rêve",
+          "annee": 1982,
+          "nc": true
+        },
+        {
+          "titre": "L'oeuvre d'art est utile car elle consolide notre liberté",
+          "annee": 1982,
+          "nc": true
+        },
+        {
+          "titre": "Vincent Nordon racontre Straub, Huillet, Pialat et Cinématon",
+          "annee": 2001,
+          "nc": true
+        },
+        {
+          "titre": "Vincent Nordon vous salue bien",
+          "annee": 2010,
+          "nc": true
+        },
+        {
+          "titre": "Vincent Nordon, Roland Barthes et Ca/cinéma",
+          "annee": 2010,
+          "nc": true
+        },
+        {
+          "titre": "Vincent Nordon, Marguerite Duras, Kenji Mizoguchi et le Japon",
+          "annee": 2011,
+          "nc": true
         }
       ]
     },
@@ -13098,6 +13563,16 @@
           "rang": 6,
           "titre": "Fatima",
           "annee": 2015
+        },
+        {
+          "rang": 7,
+          "titre": "Mes 17 ans",
+          "annee": 1996
+        },
+        {
+          "rang": 8,
+          "titre": "Les étrangers",
+          "annee": 1999
         }
       ]
     },
@@ -13497,6 +13972,106 @@
           "rang": 4,
           "titre": "Fantômas",
           "annee": 1914
+        },
+        {
+          "titre": "Le récit du colonel",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Une dame vraiment bien",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La légende de la fileuse",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La bous-bous-mie",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Le printemps",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La fée des grèves",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La possession de l'enfant",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La nativité",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "L'orgie romaine",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Le trust",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "La tare",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Bébé tire à la cible",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le cœur et l'argent",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le nain",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "La hantise",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Bout de Zan vole un éléphant",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "Erreur tragique",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "L'agonie de Byzance",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "C'est pour les orphelins",
+          "annee": 1916,
+          "nc": true
+        },
+        {
+          "titre": "Lagourdette, gentleman cambrioleur",
+          "annee": 1916,
+          "nc": true
         }
       ]
     },
@@ -14551,6 +15126,76 @@
           "rang": 17,
           "titre": "Gloria !",
           "annee": 1979
+        },
+        {
+          "titre": "Information",
+          "annee": 1966,
+          "nc": true
+        },
+        {
+          "titre": "States",
+          "annee": 1967,
+          "nc": true
+        },
+        {
+          "titre": "Heterodyne",
+          "annee": 1967,
+          "nc": true
+        },
+        {
+          "titre": "Snowblind",
+          "annee": 1968,
+          "nc": true
+        },
+        {
+          "titre": "Prince Ruperts drop",
+          "annee": 1969,
+          "nc": true
+        },
+        {
+          "titre": "Palindrome",
+          "annee": 1969,
+          "nc": true
+        },
+        {
+          "titre": "Artificial light",
+          "annee": 1969,
+          "nc": true
+        },
+        {
+          "titre": "Apparatus sum",
+          "annee": 1972,
+          "nc": true
+        },
+        {
+          "titre": "Ordinary matter",
+          "annee": 1972,
+          "nc": true
+        },
+        {
+          "titre": "Less",
+          "annee": 1973,
+          "nc": true
+        },
+        {
+          "titre": "Autumnal equinox",
+          "annee": 1974,
+          "nc": true
+        },
+        {
+          "titre": "Noctiluca",
+          "annee": 1974,
+          "nc": true
+        },
+        {
+          "titre": "Not the first time",
+          "annee": 1976,
+          "nc": true
+        },
+        {
+          "titre": "Matrix (first dream)",
+          "annee": 1979,
+          "nc": true
         }
       ]
     },
@@ -17124,6 +17769,251 @@
           "rang": 19,
           "titre": "The idol dancer",
           "annee": 1920
+        },
+        {
+          "titre": "The adventures of Dollie",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le roman d'une juive",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Fou d'argent",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La chanson de la chemise",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Edgar Allan Poe",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Le grillon du foyer",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Ces sacrés chapeaux",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Fools of fate",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les remords de l'alcoolique",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Résurrection",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "A trap for Santa Claus",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "L'âme du violon",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "At the Altar",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La pièce d'or",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "What drink did",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La chambre scellée",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Le spéculateur en grain",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "La villa solitaire",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "A la frontière des États",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Le fugitif",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "L'usurier",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "La mer calme",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Ce que disent les fleurs",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "La raccommodeuse de filets",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Derrière les volets clos",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Peggy l'insoumise",
+          "annee": 1910,
+          "nc": true
+        },
+        {
+          "titre": "Epées et coeurs",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "La bataille",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "La dernière goutte d'eau",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Sa confiance",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "His trust fulfilled",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Les aventures de Billy",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Le cœur de l'avare",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "A country cupid",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Enoch Arden",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Le chapeau de New York",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Les amis",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "The musketeers of Pig Alley",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le dilemme du voleur",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le rayon de soleil",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "L'invisible ennemi",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "La belle dame",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le moindre mal",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "One is business, the other crime",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Death's marathon",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "The battle at Elderbush Gulch",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "L'amour maternel",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "Le massacre",
+          "annee": 1914,
+          "nc": true
+        },
+        {
+          "titre": "Dans la tourmente",
+          "annee": 1919,
+          "nc": true
         }
       ]
     },
@@ -17659,6 +18549,371 @@
           "rang": 4,
           "titre": "Amazing grace",
           "annee": 1992
+        }
+      ]
+    },
+    {
+      "cineaste": "GUY, Alice",
+      "films": [
+        {
+          "titre": "Le pêcheur dans le torrent",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Baignade dans un torrent",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Bob Walter - Danse serpentine",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "L'aveugle fin de siècle",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Chez le magnétiseur",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Les cambrioleurs",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Scène d'escamotage",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Surprise d'une maison au petit jour",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Au cabaret",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "La bonne absinthe",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Avenue de l'Opéra",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Chapellerie et charcuterie automatiques",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Chez le photographe",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Danse des saisons: l'hiver, danse de la neige",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "La concierge",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Chirurgie fin de siècle",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Les fredaines de Pierrette",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Au bal de Flore",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "La fée aux choux",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Lina Esbrard - Danse serpentine",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Sage-femme de première classe",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Intervention malencontreuse",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Miss Dundee et ses chiens savants",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Comment monsieur prend son bain",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Faust et Méphistophélès",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Les maçons",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La statue",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La charité du prestidigitateur",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Clown, chien et ballon",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le coq dressé",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Cake-walk nègre",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Espagne",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Tango",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La malagueña y el torero",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Saharet, le boléro",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Alice Guy tourne une phonoscène",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Polin, l'anatomie du conscrit",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le vrai jiu-jitsu",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Five o'clock tea",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Questions indiscrètes",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La polka des trottins",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Lilas blanc",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La naissance, la vie et la mort du Christ",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Une course d'obstacle",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Madame a des envies",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Une femme collante",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La hiérarchie dans l'amour",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La marâtre",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Une histoire roulante",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Le matelas épileptique",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Le Noël de monsieur le curé",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La vérité sur l'homme-singe",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Les résultats du féminisme",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Effets de mer",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Le fils du garde-chasse",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La course à la saucisse",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le billet de banque",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "La glu",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le bonnet à poil",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le frotteur",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Une héroïne de quatre ans",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le lit à roulettes",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le piano irrésistible",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le ballon dirigeable « Le Patrie »",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Sur la barricade",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Greater love hath no man",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "Falling leaves",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "The detective's dog",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "The girl in the arm-chair",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "The pit and the pendulum",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "A house divided",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "Matrimony's speed limit",
+          "annee": 1913,
+          "nc": true
         }
       ]
     },
@@ -20667,6 +21922,17 @@
           "rang": 20,
           "titre": "Dr. Jekyll and Mr. Hyde",
           "annee": 2023
+        },
+        {
+          "titre": "Celestial subway lines/salvaging noise",
+          "annee": 2005,
+          "nc": true,
+          "note": "performance filmée"
+        },
+        {
+          "titre": "The surging sea of humanity",
+          "annee": 2006,
+          "nc": true
         }
       ]
     },
@@ -22485,6 +23751,11 @@
         },
         {
           "rang": 31,
+          "titre": "Like someone in love",
+          "annee": 2012
+        },
+        {
+          "rang": 32,
           "titre": "24 frames",
           "annee": 2017
         }
@@ -26505,6 +27776,440 @@
       ]
     },
     {
+      "cineaste": "LUMIERE, Louis",
+      "films": [
+        {
+          "titre": "Sortie d'usine",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Débarquement du congrès de photographes à Lyon",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Repas de bébé",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Forgerons",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Arroseur et arrosé",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Partie d'écarté",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Arrivée d'un train à La Ciotat",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Démolition d'un mur",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Panorama de l'arrivée en gare de Perrache pris du train",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Arrivée d'un train à Perrache",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Place des Cordeliers",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Place Bellecour",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Quai de l'Archevêché",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Place du Pont",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Concours de boules",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "La petite fille et son chat",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Premiers pas de bébé",
+          "nc": true
+        },
+        {
+          "titre": "Pêche aux poissons rouges",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Petit frère et petite sœur",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Le goûter des bébés",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Baignade en mer",
+          "annee": 1895,
+          "nc": true
+        },
+        {
+          "titre": "Enfants jouant aux billes",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Défilé de voitures de bébés à la pouponnière de Paris",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Ateliers de La Ciotat",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Chaudière",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Ouvriers réparant un trottoir de bitume",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Défournage du coke",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Laveuses sur la rivière",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Transport d'une tourelle par un attelage de 60 chevaux",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Pêche aux sardines",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Les pompiers, I: passage des pompes",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Attelage d'un camion",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Voltige",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Saut à la couverte",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Bains sur la Saône",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Départ de cyclistes",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Course en sacs",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Partie de boules",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Partie de tric trac",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Départ en voiture",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Chamonix: la Mer de Glace. Descente",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Les Kremos: pyramide",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Les Kremos: saut périlleux",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Panorama pendant l'ascension de la tour Eiffel",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Bassin des Tuileries",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Le retour. Aux Champs-Élysées",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Panorama des rives de la Seine, IV",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Les escaliers du pont de l'Alma",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Place de la Concorde (obélisque et fontaines)",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Parvis Notre-Dame",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "La Canebière",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "La plage et la mer",
+          "annee": 1900,
+          "nc": true,
+          "note": "réal. Félix Mesguich"
+        },
+        {
+          "titre": "Entrée du cinématographe",
+          "annee": 1896,
+          "nc": true,
+          "note": "réal. Charles Moisson"
+        },
+        {
+          "titre": "Pont de Westminster",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Panoptikum - Friedrichstrasse",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Rue Tverskaïa",
+          "annee": 1896,
+          "nc": true,
+          "note": "réal. Charles Moisson"
+        },
+        {
+          "titre": "Lutteurs japonais",
+          "annee": 1897,
+          "nc": true,
+          "note": "réal. Constant Girel"
+        },
+        {
+          "titre": "Bonne d'enfant et soldat",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Patineur grotesque",
+          "annee": 1896,
+          "nc": true,
+          "note": "réal. Marius Sestier"
+        },
+        {
+          "titre": "Querelle de matelassières",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "24e chasseurs alpins: leçon de boxe",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "L'amoureux dans le sac",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Chapeaux à transformation",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "27e chasseurs alpins : assaut d'un mur",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Le scieur de bois mélomane",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Danseuse de ballets",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Charcuterie mécanique",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Locomobile",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Machine à damer",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Scaphandrier",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Vue prise d'une plate-forme mobile, I",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Puits de pétrole à Bakou. Vue de près",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Lancement du Varese à Livourne",
+          "annee": 1899,
+          "nc": true,
+          "note": "réal. Francesco Felicetti"
+        },
+        {
+          "titre": "Vue prise d'une baleinière en marche",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Accident d'automobile",
+          "nc": true
+        },
+        {
+          "titre": "Bocal de poissons rouges",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Mauvais temps au port",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "En file indienne sur les glaciers avec les raquettes, I. Montée",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "En file indienne dans la montagne, I. Montée",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Panorama pris d'un ballon captif",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Lancement d'un navire",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Le squelette joyeux",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Danse serpentine",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Bataille de neige",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Écriture à l'envers",
+          "annee": 1896,
+          "nc": true
+        }
+      ]
+    },
+    {
       "cineaste": "LUNA, Bigas",
       "films": [
         {
@@ -27350,6 +29055,16 @@
           "titre": "Manhunter",
           "annee": 1986,
           "note": "theatrical cut"
+        }
+      ]
+    },
+    {
+      "cineaste": "MARC’O",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Closed vision",
+          "annee": 1954
         }
       ]
     },
@@ -28229,6 +29944,226 @@
           "rang": 10,
           "titre": "Le merle",
           "annee": 1958
+        },
+        {
+          "titre": "Polychrome phantasy",
+          "annee": 1935,
+          "nc": true
+        },
+        {
+          "titre": "Camera makes whoopee",
+          "annee": 1935,
+          "nc": true
+        },
+        {
+          "titre": "Hell unlimited",
+          "annee": 1936,
+          "nc": true
+        },
+        {
+          "titre": "Book bargain",
+          "annee": 1937,
+          "nc": true
+        },
+        {
+          "titre": "News for the navy",
+          "annee": 1937,
+          "nc": true
+        },
+        {
+          "titre": "Mony a pickle",
+          "annee": 1938,
+          "nc": true
+        },
+        {
+          "titre": "The obedient flame",
+          "annee": 1939,
+          "nc": true
+        },
+        {
+          "titre": "Stars and stripes",
+          "annee": 1939,
+          "nc": true
+        },
+        {
+          "titre": "Spook sport",
+          "annee": 1939,
+          "nc": true
+        },
+        {
+          "titre": "Scherzo",
+          "annee": 1939,
+          "nc": true
+        },
+        {
+          "titre": "Love on the wing",
+          "annee": 1939,
+          "nc": true
+        },
+        {
+          "titre": "Loops",
+          "annee": 1940,
+          "nc": true
+        },
+        {
+          "titre": "Dots",
+          "annee": 1940,
+          "nc": true
+        },
+        {
+          "titre": "NBC Valentine greeting",
+          "annee": 1940,
+          "nc": true
+        },
+        {
+          "titre": "V is for victory",
+          "annee": 1941,
+          "nc": true
+        },
+        {
+          "titre": "Mail early",
+          "annee": 1941,
+          "nc": true
+        },
+        {
+          "titre": "Boogie-doodle",
+          "annee": 1941,
+          "nc": true
+        },
+        {
+          "titre": "Hen hop",
+          "annee": 1942,
+          "nc": true
+        },
+        {
+          "titre": "Five for four",
+          "annee": 1942,
+          "nc": true
+        },
+        {
+          "titre": "Dollar dance",
+          "annee": 1943,
+          "nc": true
+        },
+        {
+          "titre": "Keep your mouth shut",
+          "annee": 1944,
+          "nc": true
+        },
+        {
+          "titre": "C'est l'aviron",
+          "annee": 1944,
+          "nc": true
+        },
+        {
+          "titre": "Alouette",
+          "annee": 1944,
+          "nc": true
+        },
+        {
+          "titre": "Là-haut sur ces montagnes",
+          "annee": 1946,
+          "nc": true
+        },
+        {
+          "titre": "Hoppity pop",
+          "annee": 1946,
+          "nc": true
+        },
+        {
+          "titre": "A little phantasy on a 19th century painting",
+          "annee": 1946,
+          "nc": true
+        },
+        {
+          "titre": "La poulette grise",
+          "annee": 1947,
+          "nc": true
+        },
+        {
+          "titre": "Workshop experiments in animated sound",
+          "annee": 1949,
+          "nc": true
+        },
+        {
+          "titre": "Pen point percussion",
+          "annee": 1951,
+          "nc": true
+        },
+        {
+          "titre": "Neighbours",
+          "annee": 1952,
+          "nc": true
+        },
+        {
+          "titre": "A phantasy",
+          "annee": 1952,
+          "nc": true
+        },
+        {
+          "titre": "Rythmetic",
+          "annee": 1956,
+          "nc": true
+        },
+        {
+          "titre": "A chairy tale",
+          "annee": 1957,
+          "nc": true
+        },
+        {
+          "titre": "Short and suite",
+          "annee": 1959,
+          "nc": true
+        },
+        {
+          "titre": "Mail early for christmas",
+          "annee": 1959,
+          "nc": true
+        },
+        {
+          "titre": "Opening speech",
+          "annee": 1960,
+          "nc": true
+        },
+        {
+          "titre": "New York lightboard",
+          "annee": 1961,
+          "nc": true
+        },
+        {
+          "titre": "New York lightboard record",
+          "annee": 1961,
+          "nc": true
+        },
+        {
+          "titre": "Christmas cracker",
+          "annee": 1962,
+          "nc": true
+        },
+        {
+          "titre": "Canon",
+          "annee": 1964,
+          "nc": true
+        },
+        {
+          "titre": "Pas de deux",
+          "annee": 1968,
+          "nc": true
+        },
+        {
+          "titre": "Spheres",
+          "annee": 1969,
+          "nc": true
+        },
+        {
+          "titre": "Ballet adagio",
+          "annee": 1972,
+          "nc": true
+        },
+        {
+          "titre": "Narcissus",
+          "annee": 1983,
+          "nc": true
         }
       ]
     },
@@ -28668,6 +30603,1001 @@
           "rang": 35,
           "titre": "Silence please",
           "annee": 2014
+        }
+      ]
+    },
+    {
+      "cineaste": "MELIES, Georges",
+      "films": [
+        {
+          "titre": "Une partie de cartes",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Une nuit terrible",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Escamotage d'une dame chez Robert-Houdin",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Le cauchemar",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Le château hanté",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "La prise de Tournavos",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Entre Calais et Douvres",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "L'auberge ensorcelée",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Après le bal",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Visite sous-marine du « Maine »",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Panorama pris d'un train en marche",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Le magicien",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Illusions fantasmagoriques",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Guillaume Tell et le clown",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "La lune à un mètre",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Un homme de tête",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Tentation de saint Antoine",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "L'illusionniste fin de siècle",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Le diable au couvent",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "La danse du feu",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Le portrait mystérieux",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, la dictée du bordereau",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, à l'île du Diable",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, mise aux fers de Dreyfus",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, suicide du colonel Henry",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, débarquement à Quiberon",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, entrevue de Dreyfus et de sa femme à Rennes",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, attentat contre maître Labori",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, bagarre entre journalistes",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Affaire Dreyfus, le conseil de guerre en séance à Rennes",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Cendrillon",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Le chevalier mystère",
+          "annee": 1899,
+          "nc": true
+        },
+        {
+          "titre": "Tom Whisky ou l'illusionniste toqué",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "La vengeance du gâte-sauce",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Les infortunes d'un explorateur ou les momies récalcitrantes",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "L'homme orchestre",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Jeanne d'Arc",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le rêve du radjah ou la forêt enchantée",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le sorcier, le prince et le bon génie",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le livre magique",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Spiritisme abracadabrant",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "L'illusionniste double et la tête vivante",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Rêve de Noël",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Nouvelles luttes extravagantes",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le repas fantastique",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le déshabillage impossible",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le tonneau des Danaïdes",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le savant et le chimpanzé",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "Le réveil d'un monsieur pressé",
+          "annee": 1900,
+          "nc": true
+        },
+        {
+          "titre": "La maison tranquille",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "La chrysalide et le papillon",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Dislocation mystérieuse",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "L'antre des esprits",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Chez la sorcière",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Excelsior !",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Barbe-Bleue",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Le chapeau à surprise",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "L'homme à la tête en caoutchouc",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Le diable géant ou le miracle de la madone",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Nain et géant",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Douche du colonel",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "La danseuse microscopique",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Le voyage dans la Lune",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "La clownesse fantôme",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Les trésors de Satan",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "L'homme-mouche",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "L'équilibre impossible",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Le voyage de Gulliver à Lilliput et chez les géants",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Le sacre d'Edouard VII",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "La guirlande merveilleuse",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Un malheur n'arrive jamais seul",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le cake-walk infernal",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "La boîte à malice",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le puits fantastique",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "L'auberge du bon repos",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "La statue animée",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le sorcier",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "L'oracle de Delphes",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le portrait spirite",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le mélomane",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le monstre",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le royaume des fées",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le chaudron infernal",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le revenant",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le tonnerre de Jupiter",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le parapluie fantastique",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Tom Tight et Dum Dum",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Bob Kick, l'enfant terrible",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Illusions funambulesques",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "L'enchanteur Alcofribas",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Jack et Jim",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "La lanterne magique",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le rêve du maître de ballet",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Faust aux enfers",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Le bourreau turc",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Au clair de lune ou Pierrot malheureux",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Un prêté pour un rendu",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le coffre enchanté",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le roi du maquillage",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le rêve de l'horloger",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Les transmutations imperceptibles",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Un miracle sous l'Inquisition",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Damnation du docteur Faust",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le thaumaturge chinois",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le merveilleux éventail vivant",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Sorcellerie culinaire",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "La planche du diable",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "La sirène",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Voyage à travers l'impossible",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "La cascade de feu",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Les cartes vivantes",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le diable noir",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le phénix ou le coffret de cristal",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le menuet lilliputien",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le palais des mille et une nuits",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le compositeur toqué",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La chaise à porteurs enchantée",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le raid Paris-Monte-Carlo en deux heures",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Un feu d'artifice improvisé",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "La légende de Rip Van Winckle",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le tripot clandestin",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Une chute de cinq étages",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Jack le ramoneur",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Le maestro Do-Mi-Sol-So",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La cardeuse de matelas",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Les affiches en goguette",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Les incendiaires",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "L'anarchie chez Guignol",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "L'hôtel des voyageurs de commerce ou les suites d'une bonne cuite",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Les bulles de savon vivantes",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Les quatre cents farces du diable",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "L'alchimiste Parafaragaramus ou la cornue infernale",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La fée Carabosse ou le poignard fatal",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "La douche d'eau bouillante",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Les fromages automobiles",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le tunnel sous la Manche ou le cauchemar franco-anglais",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Éclipse de soleil en pleine lune",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Pauvre John ou les aventures d'un buveur de whisky",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "La colle universelle",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Ali Barbouyou et Ali Bouf à l'huile",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le tambourin fantastique",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La cuisine de l'ogre",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Il y a un dieu pour les ivrognes",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Les torches humaines",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le génie du feu",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Why that actor was late",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le rêve d'un fumeur d'opium",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La photographie électrique à distance",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La prophétesse de Thèbes",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Salon de coiffure",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le nouveau seigneur du village",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "L'avare",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le conseil du pipelet ou un tour à la foire",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Lully ou le violon brisé",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Les patineurs",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Amour et mélasse",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Les mésaventures d'un photographe",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le fakir de Singapour",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "A tricky painter's fate",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "French interpreter policeman",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Anaïc ou le balafré",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Pour l'étoile S.V.P.",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Conte de la grand-mère et rêve de l'enfant",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Hallucinations pharmaceutiques ou le truc du potard",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "La bonne bergère et la mauvaise princesse",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Le locataire diabolique",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les illusions fantaisistes",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Les hallucinations du baron de Munchausen",
+          "annee": 1911,
+          "nc": true
+        },
+        {
+          "titre": "A la conquête du pôle",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Cendrillon ou la pantoufle merveilleuse",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le chevalier des neiges",
+          "annee": 1912,
+          "nc": true
+        },
+        {
+          "titre": "Le voyage de la famille Bourrichon",
+          "annee": 1913,
+          "nc": true
+        },
+        {
+          "titre": "Défense d'afficher",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Le manoir du diable",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Bombardement d'une maison",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Combat naval en Grèce",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "L'hallucination de l'alchimiste",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Sur les toits",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "L'omnibus des toqués ou blancs et noirs",
+          "annee": 1901,
+          "nc": true
+        },
+        {
+          "titre": "Les aventures de Robinson Crusoé",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Eruption volcanique à la Martinique",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "L'œuf du sorcier",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "La flamme merveilleuse",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Un peu de feu S.V.P.",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Les apparitions fugitives",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Détresse et charité",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le juif errant",
+          "annee": 1904,
+          "nc": true
+        },
+        {
+          "titre": "Le baquet de Mesmer",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "L'île de Calypso",
+          "annee": 1905,
+          "nc": true
+        },
+        {
+          "titre": "Le dirigeable fantastique ou le cauchemar d'un inventeur",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Robert Macaire et Bertrand, les rois des cambrioleurs",
+          "annee": 1906,
+          "nc": true
+        },
+        {
+          "titre": "Deux cents milles sous les mers ou le cauchemar du pêcheur",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Le mariage de Victoire",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "Satan en prison",
+          "annee": 1907,
+          "nc": true
+        },
+        {
+          "titre": "François Ier et Triboulet",
+          "annee": 1908,
+          "nc": true
+        },
+        {
+          "titre": "Hydrothérapie fantastique",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Papillon fantastique",
+          "annee": 1909,
+          "nc": true
+        },
+        {
+          "titre": "Le vitrail diabolique",
+          "annee": 1911,
+          "nc": true
         }
       ]
     },
@@ -30236,6 +33166,36 @@
           "rang": 23,
           "titre": "Wild girl",
           "annee": 2021
+        },
+        {
+          "titre": "Night highway",
+          "annee": 1990,
+          "nc": true
+        },
+        {
+          "titre": "Lost avenues",
+          "annee": 1991,
+          "nc": true
+        },
+        {
+          "titre": "Photo op",
+          "annee": 1992,
+          "nc": true
+        },
+        {
+          "titre": "The death train",
+          "annee": 1993,
+          "nc": true
+        },
+        {
+          "titre": "The world is round",
+          "annee": 1994,
+          "nc": true
+        },
+        {
+          "titre": "Nemo",
+          "annee": 1995,
+          "nc": true
         }
       ]
     },
@@ -34450,6 +37410,111 @@
           "rang": 1,
           "titre": "Le village du péché",
           "annee": 1927
+        }
+      ]
+    },
+    {
+      "cineaste": "PROMIO, Alexandre",
+      "films": [
+        {
+          "titre": "Enfants pêchant des crevettes",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Fort-de-France - Marché",
+          "annee": 1902,
+          "nc": true
+        },
+        {
+          "titre": "Rentrée à l'étable",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Danse au bivouac",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Déchargement d'un navire",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Panorama du Grand Canal pris d'un bateau",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Panorama pris du chemin de fer électrique, IV",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Pompiers: un incendie, II",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Pompiers: exercices de sauvetage",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Panorama de la Corne d'Or",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Caravane de chameaux",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Porte de Jaffa: côté est",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Les pyramides (vue générale)",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Le bey de Tunis et les personnages de sa suite descendant l'escalier du Bardo",
+          "annee": 1903,
+          "nc": true
+        },
+        {
+          "titre": "Broadway",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Défilé de policemen",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Football",
+          "annee": 1897,
+          "nc": true
+        },
+        {
+          "titre": "Explosion en mer",
+          "annee": 1898,
+          "nc": true
+        },
+        {
+          "titre": "Descente des voyageurs du pont de Brooklyn",
+          "annee": 1896,
+          "nc": true
+        },
+        {
+          "titre": "Colleurs d'affiches",
+          "annee": 1897,
+          "nc": true
         }
       ]
     },
