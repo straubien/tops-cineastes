@@ -2,18 +2,61 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<!-- GABARIT DE FABRICATION, pas une page du site.
-     Sert a produire og-image.png par capture d'ecran, en 2400x1260
-     (soit le double de 1200x630 : on capture en double densite puis on
-     reduit, ce qui donne une image nette sur les ecrans modernes).
+<!-- ===========================================================================
+     GABARIT DE FABRICATION — pas une page du site.
 
-     Place dans _outils/ : Jekyll ne publie pas les dossiers prefixes d'un
-     tiret bas, donc ce fichier n'est plus accessible publiquement.
-     Cf. audit B-27, actions A-051 et A-052.
+     Sert a produire og-image-2.png : l'image que Facebook, X, LinkedIn,
+     WhatsApp et Slack affichent quand on partage l'adresse du site.
 
-     NOTE : les deux polices Cormorant ci-dessous n'existeront qu'une fois
-     l'action A-135 faite (rapatriement des polices Google dans fonts/).
-     D'ici la, le rendu utilisera une police de remplacement. -->
+     ── CE QUI A CHANGE, ET POURQUOI ────────────────────────────────────────
+     La version precedente de ce gabarit reproduisait l'ANCIENNE page
+     d'accueil : fond creme, grand triangle noir, titre sombre. La page
+     d'accueil est maintenant un mur de visages en noir et blanc, titre clair
+     par-dessus. L'apercu montrait donc un site qui n'existait plus.
+
+     Celui-ci reprend la composition du splash, telle qu'elle est ecrite dans
+     style.css (section ① SPLASH), avec trois differences imposees par le
+     format :
+
+       * HUIT COLONNES AU LIEU DE SIX. En 2400 x 1260, six colonnes sur trois
+         rangees donneraient des tuiles presque carrees (400 x 420), ou les
+         visages seraient coupes au menton. Huit colonnes rendent des tuiles
+         de 300 x 420 — exactement la proportion qu'elles ont sur un ecran
+         d'ordinateur, et vingt-quatre visages au lieu de dix-huit.
+
+       * AUCUNE ANIMATION. Sur le site, chaque tuile fait alterner deux
+         visages en fondu. Une image fixe n'a qu'une couche : on garde le
+         premier visage de chaque paire, plus six de la seconde serie pour
+         completer les huit colonnes.
+
+       * PAS DE BOUTON « EXPLORER L'INDEX ». Il n'y a rien a cliquer dans une
+         vignette de partage. Le sous-titre « INDEX COLLABORATIF » le
+         remplace : c'est aussi ce que dit la balise og:description.
+
+     ── COMMENT REFABRIQUER L'IMAGE ─────────────────────────────────────────
+     Ouvrir ce fichier dans un navigateur et capturer la zone 2400 x 1260,
+     ou, plus sur, par Playwright :
+
+         npx playwright screenshot --viewport-size=2400,1260 \
+             _outils/og-image.html og-image-2.png
+
+     L'image se publie TELLE QUELLE, en 2400 x 1260, et les balises
+     og:image:width / og:image:height d'index.html disent 2400 et 1260. On ne
+     la reduit plus a 1200 x 630 comme avant : Facebook accepte jusqu'a 8 Mo
+     et se charge lui-meme de la mise a l'echelle, si bien qu'un ecran a
+     haute densite affiche une image nette au lieu d'une image etiree.
+
+     ── SI VOUS CHANGEZ L'IMAGE, CHANGEZ SON NOM DE FICHIER ─────────────────
+     Facebook garde en cache ce qu'il a lu pour une adresse donnee, parfois
+     des semaines. Reecrire og-image.png sans changer son nom ne suffit pas :
+     c'est l'ancienne image qui continue de s'afficher. D'ou « og-image-2 ».
+     La prochaine fois, « og-image-3 ».
+
+     ── LE PORTRAIT MANQUANT ────────────────────────────────────────────────
+     portrait-Ozu.jpg a ete supprime du depot alors que style.css le reclame
+     encore (troisieme tuile du mur) : sur le site, cette tuile est noire.
+     Ce gabarit-ci ne l'utilise pas, mais la page d'accueil, elle, a le trou.
+     =========================================================================== -->
 <style>
 @font-face {
   font-family: 'ImprintMTShadow';
@@ -26,22 +69,21 @@
 @font-face {
   font-family: 'Cormorant Garamond';
   font-weight: 400;
-  src: url('../fonts/cormorant-400.woff2') format('woff2');
+  src: url('../fonts/cormorant-garamond-400-latin.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-weight: 600;
-  src: url('../fonts/cormorant-600.woff2') format('woff2');
+  src: url('../fonts/cormorant-garamond-600-latin.woff2') format('woff2');
 }
 
 :root {
-  --bg: #f7f3ec;
-  --rouge: #A33025;
-  --noir: #1a1a1a;
-  --brun: #3d2b1a;
+  --bg:     #f7f3ec;   /* le clair : titre et sous-titre */
+  --rouge:  #A33025;
+  --noir:   #1a1a1a;
   --font-display: 'ImprintMTShadow', serif;
-  --font-names: 'GoudyOldStyle', Georgia, serif;
-  --font: 'Cormorant Garamond', Georgia, serif;
+  --font-names:   'GoudyOldStyle', Georgia, serif;
+  --font:         'Cormorant Garamond', Georgia, serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,103 +91,101 @@
 body {
   width: 2400px;
   height: 1260px;
-  background: var(--bg);
+  background: var(--noir);
   position: relative;
   overflow: hidden;
   font-family: var(--font);
 }
 
-/* Grain papier */
-body::after {
-  content: '';
+/* ── Le mur de visages ───────────────────────────────────────────────────
+   Huit colonnes, trois rangees, un filet noir de 4 px entre les tuiles (le
+   double des 2 px du site, puisque toute l'image est en double densite) :
+   le mur se lit comme une planche-contact, pas comme une seule photo. */
+.mur {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 200px;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  overflow: hidden;
+  background: var(--noir);
+}
+.mur > i {
+  position: relative;
+  overflow: hidden;
+  /* Le meme filtre que sur le site : les quelques portraits en couleur
+     rejoignent le diapason des autres. */
+  filter: grayscale(1) contrast(1.1) brightness(1.02);
+}
+.mur > i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--a);
+  background-size: cover;
+  /* 22 % et non 50 % : sur un portrait, le visage est en haut. */
+  background-position: center 22%;
 }
 
-/* Grand triangle noir — coin supérieur droit, étiré pour le format large */
+/* Voile sombre — c'est lui qui rend le titre lisible par-dessus les photos.
+   Plus dense au centre. Repris de style.css, avec l'ellipse elargie : en
+   2400 x 1260 le titre est plus large, en proportion, que sur un ecran. */
+.mur::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 62% 50% at 50% 50%, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.60) 55%, rgba(8,8,8,0.38) 100%),
+    linear-gradient(to bottom, rgba(8,8,8,0.46) 0%, rgba(8,8,8,0.06) 34%, rgba(8,8,8,0.06) 64%, rgba(8,8,8,0.56) 100%);
+}
+
+/* ── La composition suprematiste, par-dessus ─────────────────────────────
+   Les memes trois elements que le splash — la masse noire d'angle et les
+   deux blocs rouges —, aux memes proportions. */
 .tri {
   position: absolute;
-  top: -8%; right: -6%;
-  width: 42%; height: 130%;
+  top: -10%; right: -10%;
+  width: 55%; height: 75%;
   background: var(--noir);
   clip-path: polygon(100% 0, 100% 100%, 0 0);
   z-index: 1;
 }
-
-/* Bande verticale gauche — noire */
 .geo-v1 {
   position: absolute;
   top: 0; left: 0;
-  width: 26px; height: 100%;
+  width: 32px; height: 100%;
   background: var(--noir);
   z-index: 1;
 }
-
-/* Bande verticale fine rouge, côté droit */
-.geo-v2 {
-  position: absolute;
-  top: 0; right: 48px;
-  width: 9px; height: 65%;
-  background: var(--rouge);
-  z-index: 1;
-}
-
-/* Barre diagonale noire */
-.geo-h1 {
-  position: absolute;
-  top: 18%; right: 2%;
-  width: 560px; height: 18px;
-  background: var(--noir);
-  transform: rotate(-26deg);
-  z-index: 1;
-}
-
-/* Blocs rouges inclinés — coin haut droit */
+/* LES DEUX BLOCS ROUGES SONT PLUS ECARTES QUE SUR LE SITE, et il le faut.
+   Sur la page d'accueil, « top: 14% » et « top: 26% » sont calcules sur la
+   hauteur d'un ecran — 900 px environ, soit 108 px entre les deux. Ici la
+   hauteur n'est que de 1260 px pour 2400 de large : les memes pourcentages
+   rapprochaient les blocs au point qu'ils se touchaient, et les deux carres
+   se lisaient comme une seule forme en escalier. On rend l'ecart a l'oeil. */
 .geo-sq1 {
   position: absolute;
-  top: 10%; right: 12%;
-  width: 230px; height: 145px;
+  top: 9%; right: 16%;
+  width: 300px; height: 190px;
   background: var(--rouge);
   transform: rotate(-14deg);
   z-index: 2;
 }
 .geo-sq2 {
   position: absolute;
-  top: 23%; right: 5%;
-  width: 230px; height: 92px;
+  top: 32%; right: 9%;
+  width: 300px; height: 120px;
   background: var(--rouge);
   transform: rotate(-14deg);
   z-index: 2;
 }
 
-/* Trait horizontal médian gauche */
-.geo-h2 {
-  position: absolute;
-  top: 50%; left: 26px;
-  width: 110px; height: 3px;
-  background: var(--rouge);
-  transform: translateY(-50%);
-  z-index: 1;
-}
-
-/* Bloc rouge bas gauche pour équilibrer le format large */
-.geo-sq3 {
-  position: absolute;
-  bottom: 8%; left: 6%;
-  width: 90px; height: 90px;
-  background: var(--rouge);
-  transform: rotate(12deg);
-  z-index: 1;
-  opacity: 0.9;
-}
-
-/* Centre */
+/* ── Le centre ───────────────────────────────────────────────────────────
+   Le titre est volontairement plus grand, en proportion, que sur la page
+   d'accueil : dans un fil Facebook, la vignette est affichee a 500 px de
+   large environ. Ce qui tient a l'ecran ne tient pas forcement la. */
 .center {
   position: relative;
   z-index: 3;
@@ -155,59 +195,83 @@ body::after {
   justify-content: center;
   height: 100%;
   text-align: center;
-  padding-left: 60px;
-  padding-right: 320px;
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: 72px;
+  font-size: 150px;
   letter-spacing: 0.12em;
-  color: var(--noir);
+  color: var(--bg);
   line-height: 1;
   white-space: nowrap;
-  transform: scale(1.65);
-  margin-bottom: 56px;
+  text-shadow: 0 4px 60px rgba(0,0,0,0.6);
+  margin-bottom: 46px;
 }
 
 .title .slash-block {
   display: inline-block;
   background: var(--rouge);
   color: var(--bg);
-  padding: 0 12px;
-  margin: 0 6px;
-  font-size: 56px;
+  padding: 0 26px;
+  margin: 0 12px;
+  font-size: 116px;
   font-weight: 400;
   vertical-align: middle;
   line-height: 1.2;
 }
 
 .sub {
-  font-family: var(--font);
-  font-size: 30px;
-  font-weight: 600;
-  font-style: normal;
+  font-family: var(--font-names);
+  font-size: 40px;
   text-transform: uppercase;
-  color: var(--brun);
-  letter-spacing: 0.32em;
-}
-
-.sub strong {
-  font-weight: 600;
-  font-style: normal;
-  color: var(--noir);
+  color: var(--bg);
+  letter-spacing: 0.4em;
+  /* La lettre-espacement pousse le texte vers la droite : on rend la
+     derniere espace pour que le mot reste optiquement centre. */
+  text-indent: 0.4em;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.7);
+  opacity: 0.92;
 }
 </style>
 </head>
 <body>
+  <!-- Vingt-quatre visages. Les dix-huit premiers sont ceux que la page
+       d'accueil montre en premier (la couche « --a » de style.css) ; les six
+       derniers viennent de la seconde serie, pour completer les huit
+       colonnes. portrait-Ozu.jpg est ecarte : le fichier n'existe plus. -->
+  <div class="mur">
+    <i style="--a: url('../portraits/portrait-Antonioni.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Duras.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Godard.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Deren.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Mizoguchi.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Bresson.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Landeta.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Kubrick.jpg')"></i>
+
+    <i style="--a: url('../portraits/portrait-Hitchcock.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Weerasethakul.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Pasolini, Pier Paolo.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Lang.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Rothman.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Ray, Satyajit.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Murnau.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Roussopoulos.jpg')"></i>
+
+    <i style="--a: url('../portraits/portrait-Tarkovsky.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Lynch.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Fassbinder.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Dreyer.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Oliveira.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Mekas.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Straub.jpg')"></i>
+    <i style="--a: url('../portraits/portrait-Hasebe.jpg')"></i>
+  </div>
+
   <div class="tri"></div>
   <div class="geo-v1"></div>
-  <div class="geo-v2"></div>
-  <div class="geo-h1"></div>
   <div class="geo-sq1"></div>
   <div class="geo-sq2"></div>
-  <div class="geo-h2"></div>
-  <div class="geo-sq3"></div>
 
   <div class="center">
     <div class="title">TOPS<span class="slash-block">/</span>CINÉASTES</div>

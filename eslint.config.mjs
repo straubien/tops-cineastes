@@ -68,6 +68,8 @@ const globauxDuProjet = {
   IntersectionObserver: 'readonly', DocumentFragment: 'readonly',
   tcBarreRoving: 'readonly', tcBarreRovingMaj: 'readonly',
   tcJournalConnexion: 'readonly',
+  // Reconnait une session d'invite du Jeu du photogramme (cf. utils.js).
+  tcEstInvite: 'readonly',
   // bibliotheque externe (jsDelivr)
   supabase: 'readonly'
 };

@@ -89,11 +89,17 @@ var _loadingSafety = setTimeout(function(){
 }, 10000);
 (async function(){
   var session = (await sb.auth.getSession()).data.session;
+  // Un invité du Jeu du photogramme a une session anonyme, rangée au même
+  // endroit que les autres. Le back-office n'est pas pour lui : la base lui
+  // refuserait tout, mais autant ne pas lui montrer le tableau de bord en
+  // train d'échouer. Cf. tcEstInvite dans utils.js.
+  if(tcEstInvite(session)) session = null;
   clearTimeout(_loadingSafety);
   clearTimeout(_showLoadingTimer); // CORRECTIF BUG A : annule l'affichage tardif si auth rapide
   if(session){ hideAdminLoading(); await onLogin(session.user); }
   else { hideAdminLoading(); document.getElementById('section-login').style.display = 'block'; }
   sb.auth.onAuthStateChange(async function(ev, sess){
+    if(tcEstInvite(sess)) return;   // invité du jeu : voir juste au-dessus
     if(ev === 'SIGNED_IN' && sess){
       // Évite un rechargement complet (et le flash associé) si l'admin déjà
       // connecté reçoit un SIGNED_IN redondant (retour d'onglet, refresh…).
@@ -449,7 +455,12 @@ async function renderDashboard(force){
 function populateContribSelect(){
   var sel = document.getElementById('import-contrib');
   if(!sel) return;
-  tcWithRetryTimeout(function(){ return sb.from('contributors').select('json_name, display_name').order('json_name', { ascending: true }); }).then(function(res){
+  // `.not('json_name','is',null)` écarte les fiches sans nom de fichier JSON.
+  // Aujourd'hui elles ne sont rien d'autre que les INVITÉS du Jeu du
+  // photogramme, qui n'ont pas de tops à importer et n'ont donc rien à faire
+  // dans cette liste. Les vingt-quatre cinéphiles inscrits ont tous un
+  // `json_name` : pour eux, cette liste ne change pas d'un iota.
+  tcWithRetryTimeout(function(){ return sb.from('contributors').select('json_name, display_name').not('json_name', 'is', null).order('json_name', { ascending: true }); }).then(function(res){
     if(!res || res.error || !res.data) return;
     res.data.forEach(function(c){
       var n = c.json_name || (c.display_name ? c.display_name.toUpperCase() : null);

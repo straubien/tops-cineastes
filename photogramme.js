@@ -82,6 +82,7 @@ var JP_STUDIO_LECTURE = false;
 var JP_SANS_TITRE_EN   = false;   // jeu_photogrammes_secret.titre_en
 var JP_SANS_ANNULATION = false;   // jeu_photogrammes.annule_at
 var JP_SANS_REFUS      = false;   // fonction jeu_refus()
+var JP_SANS_INVITE     = false;   // contributors.invite (fichier SQL n° 9)
 
 var JP_REFUS      = {};   // photogramme_id -> [ { nom, texte } ]  (point 4)
 var JP_SOLUTIONS  = [];   // les solutions de la partie terminée (point 3)
@@ -322,6 +323,28 @@ function jpDepuisChamp(v){
 
 function jpConnecte(){ return !!(JP_USER && JP_MOI); }
 
+// ── QUI EST UN INVITE, ET POURQUOI LE RESTE DU FICHIER L'IGNORE ───────────
+//
+// Un invite, c'est une session anonyme de Supabase doublee d'une fiche
+// `contributors` marquee `invite` — celle que cree `jeu_invite_creer`.
+// Autrement dit : JP_USER et JP_MOI sont tous les deux la, exactement comme
+// pour un cinephile inscrit.
+//
+// C'EST VOULU, ET C'EST TOUT LE DISPOSITIF. `jpConnecte()` repond vrai pour
+// un invite, si bien que la partie, le classement, le direct, le compteur du
+// bandeau, les pastilles de la pellicule et l'arbitrage du createur
+// fonctionnent pour lui SANS QU'UNE SEULE LIGNE DU JEU AIT ETE TOUCHEE.
+//
+// Trois choses seulement le distinguent, et elles sont toutes les trois
+// verrouillees dans la base, pas ici :
+//   * il ne cree pas de partie (politique d'ecriture de `jeu_sessions`) ;
+//   * sa fiche est gelee, il ne peut donc pas se renommer ni se promouvoir ;
+//   * sans `json_name`, il n'apparait nulle part ailleurs sur le site.
+function jpInvite(){ return !!(JP_USER && JP_USER.is_anonymous); }
+
+// Un compte en bonne et due forme. C'est ce que le studio exige, et lui seul.
+function jpInscrit(){ return jpConnecte() && !jpInvite(); }
+
 // Administrateur du site (colonne `is_admin` de `contributors`, deja chargee
 // avec la fiche). C'est exactement la notion dont la base se sert, sous le
 // nom de `tc_est_admin()`, pour ouvrir la lecture des parties des autres.
@@ -337,10 +360,34 @@ function jpMajEntete(){
     hu.style.display = 'none';
     bl.style.display = 'none';
   }
+  // L'entete ne dit pas la meme chose a un invite qu'a un cinephile inscrit :
+  // « Connecte en tant que » serait un contresens pour quelqu'un qui n'a pas
+  // de compte, et « Se deconnecter » n'aurait rien a deconnecter.
+  var lib = jpEl('jp-entete-libelle');
+  if(lib){
+    lib.setAttribute('data-i18n', jpInvite() ? 'jp_entete_invite' : 'header_connected');
+    lib.textContent = t(jpInvite() ? 'jp_entete_invite' : 'header_connected');
+  }
+  if(bl){
+    bl.setAttribute('data-i18n', jpInvite() ? 'jp_quitter_invite' : 'nav_se_deconnecter');
+    bl.textContent = t(jpInvite() ? 'jp_quitter_invite' : 'nav_se_deconnecter');
+  }
+  // ATTENTION AU NOM : « jp-invite-connexion », c'est l'INVITATION a se
+  // connecter affichee en haut de la liste des parties. Rien a voir avec les
+  // invites du jeu — sinon qu'elle doit maintenant les mentionner.
   var inv = jpEl('jp-invite-connexion');
-  if(inv) inv.style.display = jpConnecte() ? 'none' : '';
+  if(inv){
+    inv.style.display = jpConnecte() ? 'none' : '';
+    var cleInv = JP_SANS_INVITE ? 'jp_invite_connexion' : 'jp_invite_connexion_ouvert';
+    inv.setAttribute('data-i18n', cleInv);
+    inv.textContent = t(cleInv);
+  }
   var om = jpEl('jp-onglet-miennes');
-  if(om) om.style.display = jpConnecte() ? '' : 'none';
+  if(om) om.style.display = jpInscrit() ? '' : 'none';
+  // Preparer une partie demande un compte : le bouton disparait pour un
+  // invite plutot que de le mener a un refus.
+  var cr = jpEl('jp-btn-creer');
+  if(cr) cr.style.display = jpInvite() ? 'none' : '';
 }
 
 // Charge la fiche `contributors` du compte connecte. Un compte sans fiche
@@ -357,7 +404,11 @@ function jpChargerMoi(){
     // Une visite de plus au journal des connexions (cf. utils.js) : sans cet
     // appel, un cinephile qui ne vient que pour jouer n'apparaitrait nulle
     // part dans le palmares d'activite du back-office.
-    if(JP_MOI) tcJournalConnexion(JP_SB);
+    //
+    // Un invite n'y entre pas : ce journal compte les connexions des
+    // cinephiles inscrits, et une centaine de passages anonymes y noieraient
+    // ce qu'il sert a lire.
+    if(JP_MOI && !jpInvite()) tcJournalConnexion(JP_SB);
   }).catch(function(e){
     console.error('photogramme : profil illisible', e);
     JP_MOI = null;
@@ -373,6 +424,191 @@ function jpAuthRealtime(session){
       JP_SB.realtime.setAuth(session ? session.access_token : null);
     }
   }catch(e){ /* version de la bibliotheque sans cette methode */ }
+}
+
+
+// ── 4 bis. JOUER EN INVITE ─────────────────────────────────────────────────
+//
+//  CE QUE CECI RESOUT : quelqu'un a qui l'on envoie le lien d'une partie, et
+//  qui n'a pas de compte sur le site, se heurtait a un ecran de connexion
+//  pendant que les autres jouaient. Il peut desormais choisir un pseudo et
+//  entrer, en deux gestes.
+//
+//  L'ENCHAINEMENT, ET POURQUOI IL EST DANS CET ORDRE :
+//
+//    1. `signInAnonymously()` — Supabase ouvre une session anonyme. Le
+//       visiteur devient quelqu'un, mais encore personne : il a un identifiant
+//       d'authentification, pas de fiche.
+//    2. `jeu_invite_creer(pseudo)` — la base cree sa fiche `contributors`,
+//       marquee « invite » et sans `json_name`. C'est elle, et elle seule,
+//       qui verifie le pseudo : ce qui est controle ici ne sert qu'a repondre
+//       tout de suite, sans aller-retour.
+//    3. `jpChargerMoi()` — la page relit la fiche, et a partir de cet
+//       instant l'invite est un joueur comme un autre.
+//
+//  SI LA DEUXIEME ETAPE ECHOUE (pseudo deja pris, fichier SQL n° 9 pas
+//  encore passe), ON REFERME LA PREMIERE. Laisser trainer une session
+//  anonyme sans fiche donnerait un visiteur a demi connecte, que l'entete
+//  afficherait sans nom et que le jeu refuserait sans le dire.
+
+// Vrai le temps que les trois etapes s'enchainent. Entre la premiere et la
+// troisieme, Supabase emet « SIGNED_IN » : sans ce drapeau, le gestionnaire
+// d'en bas conclurait que ce visiteur n'a pas de fiche et le renverrait a la
+// liste des parties au milieu de son inscription.
+var JP_INVITE_EN_COURS = false;
+
+// Les memes regles que `jeu_invite_creer`, cote page : repondre sans attendre
+// le reseau. LA BASE RESTE L'ARBITRE — ceci ne fait que devancer sa reponse.
+// Le nettoyage du pseudo, identique a celui de `jeu_invite_creer` : espaces
+// multiples ramenes a un seul, et APOSTROPHE TYPOGRAPHIQUE (’) ramenee a
+// l'apostrophe droite. Ce dernier point n'est pas un detail : c'est celle
+// que posent les telephones et les correcteurs automatiques, et « O’Hara »
+// se serait fait refuser sans que personne comprenne pourquoi.
+function jpNettoyerPseudo(p){
+  return String(p || '').replace(/[‘’ʼ]/g, "'").replace(/\s+/g, ' ').trim();
+}
+
+function jpPseudoErreur(pseudo){
+  if(pseudo.length < 2)  return t('jp_invite_err_court');
+  if(pseudo.length > 32) return t('jp_invite_err_long');
+  if(!/^[0-9A-Za-zÀ-ÖØ-öø-ÿ '\-.]+$/.test(pseudo)) return t('jp_invite_err_signes');
+  if(!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(pseudo))            return t('jp_invite_err_lettre');
+  return '';
+}
+
+function jpInviteEtat(msg){
+  var el = jpEl('jp-invite-erreur');
+  if(!el) return;
+  el.textContent = msg || '';
+  el.style.display = msg ? '' : 'none';
+  if(msg) jpAnnoncer(msg);
+}
+
+// Le message de la base est deja en clair et deja juste (« Ce pseudo est
+// deja pris. ») : on le montre tel quel. On ne traduit que les deux pannes
+// qu'elle ne peut pas nommer, parce qu'elles sont en amont d'elle.
+function jpInviteErreurLisible(e){
+  var m = (e && (e.message || e.error_description || e.msg)) || '';
+  var code = (e && e.code) || '';
+  if(code === 'PGRST202' || /Could not find the function/i.test(m)){
+    console.warn('photogramme : la fonction « jeu_invite_creer » est absente de la base. '
+      + 'Passez le fichier A-FAIRE-DANS-SUPABASE-9.sql dans Supabase pour que les '
+      + 'invites puissent jouer. Message de la base : ' + m);
+    return t('jp_invite_err_base');
+  }
+  if(/anonymous/i.test(m) && /disabled|not enabled/i.test(m)){
+    console.warn('photogramme : les connexions anonymes sont desactivees dans Supabase. '
+      + 'Tableau de bord > Authentication > Sign In / Providers > Anonymous sign-ins. '
+      + 'Message de la base : ' + m);
+    return t('jp_invite_err_anonyme');
+  }
+  return m || t('jp_invite_err_inconnue');
+}
+
+function jpInviterJouer(){
+  if(JP_INVITE_EN_COURS) return;
+  var champ  = jpEl('jp-invite-pseudo');
+  var bouton = jpEl('jp-invite-btn');
+  if(!champ) return;
+
+  // Le meme nettoyage que la base, et pour la meme raison : sans lui,
+  // « Jean   Luc » passerait le controle d'ici et se verrait refuser par
+  // celui de la-bas, pour un motif invisible a l'oeil.
+  var pseudo = jpNettoyerPseudo(champ.value);
+  var erreur = jpPseudoErreur(pseudo);
+  if(erreur){ jpInviteEtat(erreur); champ.focus(); return; }
+
+  JP_INVITE_EN_COURS = true;
+  jpInviteEtat('');
+  if(bouton){ bouton.disabled = true; bouton.textContent = t('jp_invite_entree'); }
+  champ.disabled = true;
+
+  function rendreLaMain(msg){
+    JP_INVITE_EN_COURS = false;
+    if(bouton){ bouton.disabled = false; bouton.textContent = t('jp_invite_btn'); }
+    champ.disabled = false;
+    jpInviteEtat(msg);
+    champ.focus();
+  }
+
+  // On referme la session anonyme avant de rendre la main : voir plus haut.
+  function renoncer(e){
+    var msg = jpInviteErreurLisible(e);
+    JP_INVITE_EN_COURS = false;   // avant signOut, pour que SIGNED_OUT soit entendu
+    JP_SB.auth.signOut().then(function(){ rendreLaMain(msg); },
+                              function(){ rendreLaMain(msg); });
+  }
+
+  JP_SB.auth.signInAnonymously().then(function(r){
+    if(r && r.error) throw r.error;
+    JP_USER = (r && r.data && r.data.user) || JP_USER;
+    jpAuthRealtime(r && r.data && r.data.session);
+    return tcWithRetryTimeout(function(){
+      return JP_SB.rpc('jeu_invite_creer', { p_pseudo: pseudo });
+    }, { retries: 0, timeoutMs: 12000 });
+  }).then(function(r){
+    if(r && r.error) throw r.error;
+    return jpChargerMoi();
+  }).then(function(){
+    if(!JP_MOI) throw new Error(t('jp_invite_err_inconnue'));
+    // Le pseudo est garde pour la prochaine visite. La session anonyme est
+    // elle aussi conservee par Supabase : ce memento ne sert donc qu'au cas
+    // ou elle aurait expire, pour n'avoir pas a le retaper.
+    //
+    // ON N'ECRIT PAS « tc-display-name », ET C'EST VOULU : cette clef-la est
+    // le memo du site entier, celui dont l'entete de l'Index tire le nom du
+    // cinephile connecte. Un invite n'est connecte a rien hors du jeu.
+    try{ localStorage.setItem('tc-jp-pseudo', JP_MOI.display_name); }catch(e){}
+
+    JP_INVITE_EN_COURS = false;
+    if(bouton){ bouton.disabled = false; bouton.textContent = t('jp_invite_btn'); }
+    champ.disabled = false;
+    champ.value = '';
+    jpInviteEtat('');
+
+    jpMajEntete();
+    // Le canal du direct a pu etre ouvert avant qu'on sache qui regarde.
+    jpRebrancherDirect();
+
+    // Retour la ou l'invite voulait aller — la partie dont il a suivi le
+    // lien, le plus souvent. `jpRouter` la rouvre alors avec son identite,
+    // et non plus en simple spectateur.
+    var vers = JP_RETOUR || '#parties';
+    JP_RETOUR = '';
+    jpAller(vers);
+  }).catch(function(e){
+    renoncer(e);
+  });
+}
+
+// L'ecran de connexion ne dit pas la meme chose selon qui l'atteint, et il a
+// desormais deux moities. On regle les deux ici, en un seul endroit.
+function jpMajVueConnexion(){
+  var bloc = jpEl('jp-invite-bloc');
+  // Pas de bloc « invite » si la base ne sait pas encore les accueillir, ni
+  // pour quelqu'un qui est deja entre d'une facon ou d'une autre.
+  if(bloc) bloc.style.display = (JP_SANS_INVITE || jpConnecte()) ? 'none' : '';
+
+  // Un invite arrive ici pour une seule raison : il a voulu preparer une
+  // partie. On le lui dit, plutot que de lui montrer un formulaire de
+  // connexion sans explication.
+  var note = jpEl('jp-connexion-studio');
+  if(note) note.style.display = jpInvite() ? '' : 'none';
+
+  var sous = jpEl('jp-connexion-sous');
+  if(sous){
+    var cle = jpInvite() ? 'jp_connexion_sub_invite'
+            : (JP_SANS_INVITE ? 'jp_connexion_sub' : 'jp_connexion_sub_ouvert');
+    sous.setAttribute('data-i18n', cle);
+    sous.textContent = t(cle);
+  }
+
+  // Le pseudo de la derniere fois, s'il y en a eu une.
+  var champ = jpEl('jp-invite-pseudo');
+  if(champ && !champ.value){
+    try{ champ.value = localStorage.getItem('tc-jp-pseudo') || ''; }catch(e){}
+  }
+  jpInviteEtat('');
 }
 
 
@@ -416,7 +652,7 @@ function jpRouter(){
   if(h.indexOf('partie/') !== 0) jpQuitterPartie();
 
   if(h === '' || h === 'parties'){ jpAfficher('parties'); jpChargerParties(); return; }
-  if(h === 'connexion'){ jpAfficher('connexion'); return; }
+  if(h === 'connexion'){ jpAfficher('connexion'); jpMajVueConnexion(); return; }
   if(h === 'creer'){ jpOuvrirStudio(null); return; }
   if(h.indexOf('studio/') === 0){ jpOuvrirStudio(h.slice(7)); return; }
   if(h.indexOf('partie/') === 0){ jpOuvrirPartie(h.slice(7)); return; }
@@ -427,7 +663,24 @@ window.addEventListener('hashchange', jpRouter);
 
 // Garde l'adresse en cas de connexion necessaire, pour y revenir apres.
 var JP_RETOUR = '';
+
+// ── DEUX PORTES, ET NON PLUS UNE ──────────────────────────────────────────
+//
+// `jpExigeConnexion` gardait tout : jouer comme preparer. Elle ne garde plus
+// que ce qui demande un VRAI COMPTE — le studio, et lui seul : deposer des
+// images et ecrire les titres attendus, c'est produire du contenu sur le
+// site. Un invite qui l'atteindrait est renvoye a l'ecran de connexion, ou
+// un mot lui dit pourquoi.
 function jpExigeConnexion(){
+  if(jpInscrit()) return true;
+  JP_RETOUR = location.hash || '#parties';
+  jpAller('#connexion');
+  return false;
+}
+
+// Et celle-ci garde le JEU : un pseudo suffit. Elle est la porte de
+// `jpRepondre` et de `jpDire`.
+function jpExigeJoueur(){
   if(jpConnecte()) return true;
   JP_RETOUR = location.hash || '#parties';
   jpAller('#connexion');
@@ -495,6 +748,20 @@ function jpVerifierColonnes(){
         + 'Passez le fichier A-FAIRE-DANS-SUPABASE-8.sql dans Supabase pour que les '
         + 'titres s\'affichent en anglais sur la version anglaise du site. '
         + 'Message de la base : ' + (r.error.message || ''));
+    }, function(){}),
+    // La colonne « invite » arrive avec le fichier SQL n° 9. Tant qu'elle
+    // n'est pas la, la fonction « jeu_invite_creer » n'existe pas non plus :
+    // on cache la moitie « invite » de l'ecran de connexion plutot que
+    // d'offrir un bouton qui ne pourrait qu'echouer. Le jeu reste, pour
+    // tout le reste, exactement ce qu'il etait.
+    JP_SB.from('contributors').select('invite').limit(1).then(function(r){
+      if(!r || !r.error) return;
+      JP_SANS_INVITE = true;
+      console.warn('photogramme : la colonne « invite » est absente de la base. '
+        + 'Passez le fichier A-FAIRE-DANS-SUPABASE-9.sql dans Supabase (et activez '
+        + '« Anonymous sign-ins » dans Authentication > Sign In / Providers) pour que '
+        + 'les cinephiles sans compte puissent jouer. Message de la base : '
+        + (r.error.message || ''));
     }, function(){}),
     JP_SB.from('jeu_photogrammes').select('annule_at').limit(1).then(function(r){
       if(!r || !r.error) return;
@@ -2644,7 +2911,8 @@ function jpPreparerJeu(){
     jpEl('jp-verdict-txt').textContent = t('jp_vous_animez');
     jpRendreCommandesCreateur();
   } else if(!jpConnecte()){
-    jpEl('jp-verdict-txt').textContent = t('jp_connectez_vous_pour_jouer');
+    jpEl('jp-verdict-txt').textContent =
+      t(JP_SANS_INVITE ? 'jp_connectez_vous_pour_jouer' : 'jp_entrez_pour_jouer');
   } else if(arrivee){
     // A L'ARRIVEE SEULEMENT. Reprendre le clavier a chaque retour sur
     // l'onglet arrachait le curseur au titre que le joueur etait en train
@@ -3077,7 +3345,7 @@ function jpRendreVerdictCourant(p){
 // base tranche ensuite. Si elle contredit l'affichage, l'affichage se
 // corrige — ce qui n'arrive qu'en cas de panne.
 function jpRepondre(){
-  if(!jpConnecte()){ jpExigeConnexion(); return; }
+  if(!jpConnecte()){ jpExigeJoueur(); return; }
   var saisie = jpEl('jp-reponse');
   var texte = saisie.value.trim();
   if(!texte) return;
@@ -3611,7 +3879,7 @@ function jpChatEtat(msg, duree){
 }
 
 function jpDire(){
-  if(!jpConnecte()){ jpExigeConnexion(); return; }
+  if(!jpConnecte()){ jpExigeJoueur(); return; }
   if(!JP_PARTIE) return;
   var champ = jpEl('jp-chat-texte');
   var bouton = jpEl('jp-chat-envoyer');
@@ -5232,11 +5500,29 @@ function jpBrancher(){
   jpEl('btn-dark').addEventListener('click', toggleDark);
   jpEl('btn-lang').addEventListener('click', toggleLang);
   jpEl('btn-logout').addEventListener('click', function(){
+    // QUITTER EN INVITE EST SANS RETOUR, ET IL FAUT LE DIRE. Une session
+    // anonyme ne se rouvre pas : au prochain passage, ce sera un autre
+    // visiteur, et le pseudo d'aujourd'hui restera attache a la fiche
+    // d'aujourd'hui — donc indisponible. Mieux vaut un avertissement d'une
+    // ligne qu'un « ce pseudo est deja pris » incomprehensible plus tard.
+    if(jpInvite()){
+      if(!confirm(t('jp_invite_confirme_quitter'))) return;
+      try{ localStorage.removeItem('tc-jp-pseudo'); }catch(e){}
+    }
     try{ localStorage.removeItem('tc-display-name'); }catch(e){}
     JP_SB.auth.signOut();
   });
 
   jpEl('btn-login').addEventListener('click', jpSeConnecter);
+
+  // L'autre moitie de l'ecran de connexion : le pseudo, et la touche Entree
+  // qui vaut le bouton — on arrive ici pour jouer, pas pour viser une cible.
+  var invBtn = jpEl('jp-invite-btn');
+  if(invBtn) invBtn.addEventListener('click', jpInviterJouer);
+  var invChamp = jpEl('jp-invite-pseudo');
+  if(invChamp) invChamp.addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter'){ ev.preventDefault(); jpInviterJouer(); }
+  });
   jpEl('login-password').addEventListener('keydown', function(ev){ if(ev.key === 'Enter') jpSeConnecter(); });
   jpEl('login-email').addEventListener('keydown', function(ev){ if(ev.key === 'Enter') jpSeConnecter(); });
 
@@ -5408,6 +5694,16 @@ JP_SB.auth.onAuthStateChange(function(evenement, session){
   // cesse de lui envoyer les lignes que la regle de securite protege — donc
   // les scores des AUTRES joueurs. Le classement se figeait sans rien dire.
   if(evenement === 'TOKEN_REFRESHED'){
+    JP_USER = session ? session.user : JP_USER;
+    jpAuthRealtime(session);
+    return;
+  }
+  // UN INVITE EST EN TRAIN DE NAITRE. Sa session anonyme vient d'etre
+  // ouverte, mais sa fiche `contributors` n'existe pas encore : la suite de
+  // ce gestionnaire la chercherait, ne la trouverait pas, et renverrait le
+  // visiteur a la liste des parties au milieu de son inscription.
+  // `jpInviterJouer` fait elle-meme, et dans le bon ordre, tout ce qui suit.
+  if(JP_INVITE_EN_COURS){
     JP_USER = session ? session.user : JP_USER;
     jpAuthRealtime(session);
     return;

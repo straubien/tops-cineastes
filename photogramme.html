@@ -11,9 +11,13 @@
 <meta name="description" content="Jeu du photogramme : reconnaître des films à une seule image, entre cinéphiles, en temps limité.">
 <meta property="og:title" content="Jeu du photogramme — TOPS / CINÉASTES">
 <meta property="og:description" content="Dix images, dix films à reconnaître. Le plus vite possible.">
-<meta property="og:image" content="https://straubien.github.io/tops-cineastes/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<!-- La même image d'aperçu que la page d'accueil, en 2400 x 1260.
+     Cf. le commentaire d'index.html et _outils/og-image.html. -->
+<meta property="og:image" content="https://straubien.github.io/tops-cineastes/og-image-2.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="TOPS / CINÉASTES — un mur de portraits de cinéastes en noir et blanc">
 <meta property="og:url" content="https://straubien.github.io/tops-cineastes/photogramme.html">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -49,7 +53,7 @@
     <nav class="nav jp-nav">
       <a href="index.html" data-i18n="nav_index">Index</a>
       <span class="jp-nav-user" id="header-user" style="display:none">
-        <span data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
+        <span id="jp-entete-libelle" data-i18n="header_connected">Connecté en tant que</span> <strong id="header-name"></strong>
       </span>
       <button type="button" class="jp-nav-btn" id="btn-logout" style="display:none" data-i18n="nav_se_deconnecter">Se déconnecter</button>
       <button type="button" class="jp-nav-btn jp-nav-icone" id="btn-dark" data-i18n-title="nav_dark_title" title="Mode sombre" data-i18n-aria="aria_mode_sombre" aria-label="Activer/désactiver le mode sombre"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:block" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.75A7.25 7.25 0 0 1 9 16.25V1.75Z" fill="currentColor"/></svg></button>
@@ -94,7 +98,13 @@
     <button class="jp-fil" id="jp-retour-connexion" data-i18n="jp_retour_liste">← Toutes les parties</button>
     <div class="login-wrap">
       <div class="login-title" id="jp-titre-connexion" data-i18n="login_title">Connexion</div>
-      <div class="login-sub" data-i18n="jp_connexion_sub">Le jeu est réservé aux cinéphiles inscrits</div>
+      <div class="login-sub" id="jp-connexion-sous" data-i18n="jp_connexion_sub">Le jeu est réservé aux cinéphiles inscrits</div>
+
+      <!-- Un invité qui atteint cet écran n'y vient que pour une raison :
+           il a voulu préparer une partie. On le lui dit ici ; jpMajVueConnexion
+           affiche ou masque ce mot selon qui regarde. -->
+      <div class="jp-alerte jp-alerte-info" id="jp-connexion-studio" style="display:none" data-i18n="jp_connexion_studio">Préparer une partie demande un compte de cinéphile : c'est vous qui choisissez les films et qui arbitrez les réponses.</div>
+
       <div class="login-form">
         <input type="email" id="login-email" placeholder="Votre adresse email" aria-label="Votre adresse email" autocomplete="email" data-i18n-ph="login_email_ph" data-i18n-aria="login_email_ph">
         <div class="pwd-wrap">
@@ -103,6 +113,23 @@
         </div>
         <button class="btn-primary" id="btn-login" data-i18n="login_btn">Se connecter</button>
         <div class="login-error" id="login-error" style="display:none"></div>
+      </div>
+
+      <!-- ══ JOUER EN INVITÉ ════════════════════════════════════════════
+           Masqué tant que le fichier A-FAIRE-DANS-SUPABASE-9.sql n'est pas
+           passé dans Supabase (cf. JP_SANS_INVITE), et masqué pour qui est
+           déjà entré. -->
+      <div class="jp-invite-bloc" id="jp-invite-bloc" style="display:none">
+        <div class="jp-invite-ou"><span data-i18n="jp_invite_ou">ou</span></div>
+        <div class="jp-invite-titre" data-i18n="jp_invite_titre">Jouer en invité</div>
+        <p class="jp-invite-note" data-i18n="jp_invite_note">Pas de compte ? Choisissez un pseudo : il vous suffit pour rejoindre une partie et figurer au classement.</p>
+        <div class="jp-invite-form">
+          <label class="sr-only" for="jp-invite-pseudo" data-i18n="jp_invite_label">Votre pseudo</label>
+          <input type="text" id="jp-invite-pseudo" maxlength="32" autocomplete="nickname" spellcheck="false" placeholder="Votre pseudo" data-i18n-ph="jp_invite_ph" data-i18n-aria="jp_invite_label" aria-label="Votre pseudo">
+          <button class="btn-primary" id="jp-invite-btn" data-i18n="jp_invite_btn">Entrer dans le jeu</button>
+        </div>
+        <div class="login-error" id="jp-invite-erreur" style="display:none" role="alert"></div>
+        <p class="jp-invite-pied" data-i18n="jp_invite_pied">Un invité joue et discute, mais ne prépare pas de partie.</p>
       </div>
     </div>
   </section>

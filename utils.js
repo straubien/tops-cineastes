@@ -811,6 +811,24 @@ function tcSafeUrl(){
 // non accordee en base fait echouer toute la requete.
 var TC_CONTRIB_COLONNES = 'id,name,display_name,auth_id,created_at,cineaste_coeur,cineaste_autres,film_coeur,film_autres,presentation,avatar_url,json_name,is_admin,can_validate_courants,last_seen_at';
 
+// ── UNE SESSION D'INVITE EN EST-ELLE UNE ? ────────────────────
+//
+// Le Jeu du photogramme ouvre une session ANONYME pour qui veut jouer sans
+// compte (cf. photogramme.js, section 4 bis). Supabase range cette session
+// au meme endroit que les autres : les trois pages du site la retrouvent
+// donc telle quelle, et croiraient avoir affaire a un cinephile connecte.
+//
+// ELLES N'EN ONT PAS. Un invite n'a ni tops, ni profil, ni soumissions, ni
+// back-office : hors du jeu, il est un visiteur ordinaire, et chaque page
+// le traite comme tel en appelant ceci.
+//
+// Accepte indifferemment une session ou l'utilisateur qu'elle porte.
+function tcEstInvite(sessionOuUser){
+  if(!sessionOuUser) return false;
+  var u = sessionOuUser.user || sessionOuUser;
+  return !!(u && u.is_anonymous);
+}
+
 // ── LE JOURNAL DES CONNEXIONS ─────────────────────────────────
 // Une visite de plus pour le cinéphile connecté. Les trois pages du site
 // l'appellent une fois, au moment où elles reconnaissent le compte.

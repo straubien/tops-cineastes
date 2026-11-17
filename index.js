@@ -5392,6 +5392,12 @@ if(sessionStorage.getItem('tc-entered') || tcPageDeLAdresse()){ enterSite(); }
   }
 
   sbAuth.auth.onAuthStateChange(function(event, session){
+    // UN INVITÉ DU JEU DU PHOTOGRAMME N'EST PAS CONNECTÉ ICI. Sa session
+    // anonyme est rangée par Supabase au même endroit que les autres : sans
+    // cette ligne, l'Index lui montrerait « Soumettre » et « Mes tops »,
+    // c'est-à-dire des pages qui n'ont rien à lui offrir et où la base lui
+    // refuserait tout. Cf. tcEstInvite dans utils.js.
+    if(tcEstInvite(session)){ setNavDeconnecte(); return; }
     if(event === 'INITIAL_SESSION'){
       if(session){
         var displayName=null;
@@ -5645,6 +5651,14 @@ function openFicheThematique(themeNom){
 
   // Init contributor when auth is confirmed
   sbMT.auth.onAuthStateChange(function(event, session){
+    // « Mes tops » n'existe pas pour un invité du Jeu du photogramme : il n'a
+    // pas de fiche de cinéphile à remplir. Cf. tcEstInvite dans utils.js.
+    if(tcEstInvite(session)){
+      mtCurrentUser = null;
+      mtCurrentContributor = null;
+      mtLoaded = false;
+      return;
+    }
     if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session){
       mtCurrentUser = session.user;
       // Timeout/retry + gestion d'échec : une coupure réseau au login ne doit

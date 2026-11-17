@@ -154,6 +154,17 @@ function makeLocalAvatar(n, fallbackToTmdb){
   }
 
   sb.auth.onAuthStateChange(function(event, session){
+    // UN INVITÉ DU JEU DU PHOTOGRAMME N'A RIEN À FAIRE ICI, et il n'y arrive
+    // que par accident : sa session anonyme est rangée par Supabase au même
+    // endroit que les autres, si bien que cette page le prendrait pour un
+    // cinéphile connecté et lui ouvrirait un profil que la base lui refuse.
+    // On l'oublie purement et simplement, et l'écran de connexion s'affiche
+    // comme pour n'importe quel visiteur.
+    //
+    // (À ne pas confondre avec la variable `isInvite` de cette page, qui
+    // désigne tout autre chose : quelqu'un qui arrive par un lien d'invitation
+    // envoyé par courriel, et à qui l'on demande de choisir un mot de passe.)
+    if(tcEstInvite(session)) session = null;
     // Session initiale
     if(event === 'INITIAL_SESSION'){
       if(session && isInvite){

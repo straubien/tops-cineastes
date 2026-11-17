@@ -1785,3 +1785,210 @@
   .jp-podium-anime .jp-marche,
   .jp-solutions-anime .jp-solution { animation: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ÉCRAN D'ENTRÉE DU JEU
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Il a maintenant deux moitiés : se connecter, ou entrer avec un pseudo.
+
+   POURQUOI CE BLOC EXISTE. La vue « connexion » de photogramme.html n'avait
+   jusqu'ici aucun style : ses classes (`login-wrap`, `login-form`…) ne sont
+   écrites que dans admin.css, que cette page ne charge pas. Les champs
+   s'affichaient donc bruts, collés au bord gauche. Tant que c'était une
+   impasse réservée aux inscrits, cela se voyait peu ; c'est désormais la
+   porte d'entrée du jeu, et elle doit ressembler au reste du site.
+
+   TOUT EST PORTÉ PAR `#jp-vue-connexion`. Les noms `login-*` servent aussi
+   dans admin.css et dans submit.html : sans cette racine, on changerait
+   l'allure de pages qui n'ont rien demandé.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#jp-vue-connexion .login-wrap {
+  max-width: 420px;
+  margin: 2.5rem auto 4rem;
+}
+
+#jp-vue-connexion .login-title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 5vw, 38px);
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+#jp-vue-connexion .login-sub {
+  font-family: var(--font);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--brun-pale);
+  margin-bottom: 1.6rem;
+}
+
+#jp-vue-connexion .login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#jp-vue-connexion .login-form input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font);
+  font-size: 18px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#jp-vue-connexion .login-form input:focus {
+  border-color: var(--rouge);
+  box-shadow: 0 0 0 3px var(--rouge-glow);
+}
+#jp-vue-connexion .login-form input::placeholder {
+  color: var(--brun-pale);
+  font-style: italic;
+}
+
+/* L'œil « voir / masquer » se pose DANS le champ : le champ garde donc une
+   réserve à droite, sans quoi le mot de passe passerait dessous. */
+#jp-vue-connexion .pwd-wrap { position: relative; }
+#jp-vue-connexion .pwd-wrap input { padding-right: 46px; }
+#jp-vue-connexion .pwd-toggle {
+  position: absolute;
+  top: 50%; right: 6px;
+  transform: translateY(-50%);
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  font-size: 15px; line-height: 1;
+  color: var(--brun-pale);
+  padding: 0;
+}
+#jp-vue-connexion .pwd-toggle:hover { color: var(--rouge-texte); }
+
+/* Même dessin que `.jp-btn-fort`, le bouton plein du jeu. */
+#jp-vue-connexion .btn-primary {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 11px 22px;
+  min-height: 44px;
+  border: 1px solid var(--rouge);
+  border-radius: 0;
+  background: var(--rouge);
+  color: #f7f3ec;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#jp-vue-connexion .btn-primary:hover:not(:disabled) {
+  background: var(--jp-noir);
+  border-color: var(--jp-noir);
+  color: var(--jp-sur-noir);
+}
+#jp-vue-connexion .btn-primary:disabled { opacity: 0.45; cursor: default; }
+
+#jp-vue-connexion .login-error {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--rouge-texte);
+  border-left: 3px solid var(--rouge);
+  padding: 6px 0 6px 11px;
+}
+
+/* ── La moitié « invité » ─────────────────────────────────────────────────
+   Séparée de la première par un « ou » posé sur un filet : les deux chemins
+   sont offerts, aucun n'est présenté comme le moindre. */
+
+.jp-invite-bloc { margin-top: 2.6rem; }
+
+.jp-invite-ou {
+  position: relative;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.jp-invite-ou::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: var(--border);
+}
+.jp-invite-ou span {
+  position: relative;
+  background: var(--bg);
+  padding: 0 14px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brun-pale);
+}
+
+.jp-invite-titre {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rouge-texte);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 0.7rem;
+}
+.jp-invite-titre::before {
+  content: '';
+  width: 7px; height: 7px;
+  background: var(--rouge);
+  flex-shrink: 0;
+}
+
+.jp-invite-note {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0 0 1.1rem;
+}
+
+.jp-invite-form { display: flex; flex-direction: column; gap: 12px; }
+
+.jp-invite-form input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font);
+  font-size: 18px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.jp-invite-form input:focus {
+  border-color: var(--rouge);
+  box-shadow: 0 0 0 3px var(--rouge-glow);
+}
+.jp-invite-form input::placeholder { color: var(--brun-pale); font-style: italic; }
+
+.jp-invite-pied {
+  font-family: var(--font);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--brun-pale);
+  margin: 1rem 0 0;
+}
+
+#jp-invite-erreur { margin-top: 2px; }
