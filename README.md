@@ -49,7 +49,7 @@ Jekyll ne publie pas les dossiers commençant par un tiret bas.
 | Fichier | Rôle |
 |---|---|
 | `_outils/verifier-json.py` | Contrôle de `muzard.json` et `cnudde.json` |
-| `_outils/og-image.html` | Gabarit servant à fabriquer `og-image.png` (l'image de partage) par capture d'écran, en 2400×1260 |
+| `_outils/og-image.html` | Gabarit servant à fabriquer `og-image-2.png` (l'image de partage) par capture d'écran, en 2400×1260. L'image est publiée à cette taille, sans réduction. Si vous la refaites, **changez son nom de fichier** (`og-image-3.png`…) : Facebook garde en cache ce qu'il a lu pour une adresse donnée, et réécrire un fichier sans le renommer laisse l'ancienne image s'afficher pendant des semaines |
 
 ---
 
