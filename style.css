@@ -962,7 +962,7 @@ a { text-decoration: none; color: inherit; }
    ces 36 portraits vivent déjà dans /portraits, rien à ajouter. */
 .splash-mur > i:nth-child(1)  { --a: url("portraits/portrait-Antonioni.jpg");            --b: url("portraits/portrait-Lynch.jpg"); }
 .splash-mur > i:nth-child(2)  { --a: url("portraits/portrait-Duras.jpg");                --b: url("portraits/portrait-Netzer.jpg"); }
-.splash-mur > i:nth-child(3)  { --a: url("portraits/portrait-Ozu.jpg");                  --b: url("portraits/portrait-Hasebe.jpg"); }
+.splash-mur > i:nth-child(3)  { --a: url("portraits/portrait-Akerman.jpg");              --b: url("portraits/portrait-Hasebe.jpg"); }
 .splash-mur > i:nth-child(4)  { --a: url("portraits/portrait-Godard.jpg");               --b: url("portraits/portrait-Fassbinder.jpg"); }
 .splash-mur > i:nth-child(5)  { --a: url("portraits/portrait-Deren.jpg");                --b: url("portraits/portrait-Rohmer.jpg"); }
 .splash-mur > i:nth-child(6)  { --a: url("portraits/portrait-Mizoguchi.jpg");            --b: url("portraits/portrait-Wang.jpg"); }
