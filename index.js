@@ -1431,6 +1431,20 @@ function buildPortraitSrc(f){
   return{candidates:candidates,initials:lastName.charAt(0)};
 }
 
+// Photo TMDB d'un cinéaste de l'index, prête à être posée dans un <img>
+// (ou null s'il n'en a pas). Sert de DERNIER recours aux vignettes qui ne
+// cherchaient jusqu'ici que dans /portraits : le portrait local garde la
+// priorite, rien ne change pour les cineastes qui en ont un.
+// Un duo porte deux chemins : on retient le premier disponible, une
+// vignette ronde n'affichant de toute facon qu'un seul visage.
+function tcPhotoTmdbUrl(nomIndex,size){
+  if(!nomIndex||!DATA||!DATA.cineastes)return null;
+  var c=DATA.cineastes.find(function(x){return x.nom===nomIndex;});
+  var p=c&&c.photo_tmdb;
+  if(Array.isArray(p))p=p[0]||p[1]||null;
+  return p?'https://image.tmdb.org/t/p/w'+size+p:null;
+}
+
 // ── RÉSOLUTION D'UN NOM DE CINÉASTE (profil cinéphile) ─────────────
 var _TC_IDX_NOMS = null;
 function tcJetonsNom(nom){
@@ -1538,7 +1552,17 @@ function renderProfilFavs(favs){
     var item=document.createElement('div');item.className='profil-fav-item';
     var imgClass='profil-fav-portrait'+(isFirst?' profil-fav-first':'');
     var initClass='profil-fav-initials'+(isFirst?' profil-fav-first':'');
+    // Cinéaste reconnu dans l'index (cf. tcResoudreCineaste) : sert au lien
+    // vers sa fiche, plus bas, et à retrouver sa photo TMDB juste ici.
+    var cible=tcResoudreCineaste(f);
     var candidates=p.candidates.slice();
+    // Faute de portrait dans /portraits, on se rabat sur la photo TMDB — ce
+    // que faisait deja tout le reste du site (cf. buildPhotoHtml), mais pas
+    // cette grille : un cineaste sans fichier local n'y montrait que ses
+    // initiales, meme quand sa photo etait connue (cas d'OZU, dont le
+    // portrait-Ozu.jpg a ete retire du depot).
+    var tmdbUrl=tcPhotoTmdbUrl(cible,185);
+    if(tmdbUrl)candidates.push(tmdbUrl);
     item.innerHTML='<img class="'+imgClass+'" src="'+escapeHtml(candidates.shift())+'" alt="'+escapeHtml(f)+'" loading="lazy">'
       +'<div class="'+initClass+'" style="display:none">'+escapeHtml(p.initials)+'</div>'
       +'<div class="profil-fav-name">'+escapeHtml(formatFavName(f))+'</div>';
@@ -1548,8 +1572,7 @@ function renderProfilFavs(favs){
       this.style.display='none';this.nextElementSibling.style.display='flex';
     });
     // Cinéaste cliquable vers sa fiche, si son nom est identifiable sans
-    // ambiguïté dans l'index (cf. tcResoudreCineaste).
-    var cible=tcResoudreCineaste(f);
+    // ambiguïté dans l'index (cf. tcResoudreCineaste, résolu plus haut).
     if(cible){
       item.classList.add('profil-cin-lien');
       item.setAttribute('role','button');
@@ -3359,9 +3382,28 @@ function tcActuLoadLegacyTopsKeys(offset,pageSize){
     });
 }
 
+// ── APOSTROPHES : RAPPROCHER DEUX ÉCRITURES DU MÊME NOM ────────────
+// Les noms venus des fichiers de tops (empreintes json_empreintes) et ceux
+// de l'index ne s'ecrivent pas toujours avec la meme apostrophe : « MARC’O »
+// avec l'apostrophe typographique (U+2019) d'un cote, « MARC'O » avec
+// l'apostrophe droite (U+0027) de l'autre. Compares caractere par
+// caractere, ces deux noms ne se reconnaissaient pas : l'actualite
+// « a poste un nouveau top pour Marc'O » restait alors inerte, faute de
+// trouver la fiche correspondante. Cinq autres cineastes etaient dans ce
+// cas : AGATA Antoine d’, D’AMATO, L’HERBIER, O’LEARY et O’NEILL.
+// On ramene donc toutes les variantes d'apostrophe a la meme avant de
+// comparer. Rendre une chaine vide pour une entree qui n'est pas un nom
+// evite au passage qu'elle en reconnaisse une autre par defaut.
+function tcCleNomCineaste(nom){
+  if(typeof nom!=='string')return '';
+  return nom.replace(/[\u2018\u2019\u02BC\u00B4`]/g,"'").toLowerCase();
+}
+
 function tcActuOpenCineaste(nom){
   if(!DATA||typeof nom!=='string')return;
-  var c=DATA.cineastes.find(function(x){return typeof x.nom==='string'&&x.nom.toLowerCase()===nom.toLowerCase();});
+  var cle=tcCleNomCineaste(nom);
+  if(!cle)return;
+  var c=DATA.cineastes.find(function(x){return tcCleNomCineaste(x.nom)===cle;});
   if(c)openFiche(c);
 }
 
@@ -3731,8 +3773,9 @@ function tcMajListeCineastes(noms){
   listDiv.className='cineaste-list';
   listDiv.style.marginTop='0.6rem';
   noms.forEach(function(nom){
-    var c=(DATA&&DATA.cineastes)?DATA.cineastes.find(function(x){
-      return typeof x.nom==='string'&&x.nom.toLowerCase()===nom.toLowerCase();
+    var cleNom=tcCleNomCineaste(nom);
+    var c=(cleNom&&DATA&&DATA.cineastes)?DATA.cineastes.find(function(x){
+      return tcCleNomCineaste(x.nom)===cleNom;
     }):null;
     var dates=c?formatDates(c):'';
     var row=document.createElement('div');
@@ -3826,7 +3869,8 @@ function applyActuFilterSelection(){
   // le bouton déplie le reste quand on le lui demande.
   var montres=ACTU_COMPLET?items:items.slice(0,ACTU_AFFICHES);
   feed.innerHTML=montres.map(function(it){
-    var clickable=it.cineaste&&getLetterData(it.cineaste.charAt(0).toUpperCase()).some(function(c){return c.nom.toLowerCase()===it.cineaste.toLowerCase();});
+    var cleActu=tcCleNomCineaste(it.cineaste);
+    var clickable=!!cleActu&&getLetterData(it.cineaste.charAt(0).toUpperCase()).some(function(c){return tcCleNomCineaste(c.nom)===cleActu;});
     var cls=clickable?' actu-item-clickable':'';
     var attr=clickable?' data-action="tc-actu-open" data-cineaste="'+escapeHtml(it.cineaste)+'"':'';
     // Une mise à jour de tops par fichier externe n'ouvre pas une fiche de
