@@ -1388,6 +1388,23 @@ a { text-decoration: none; color: inherit; }
   margin-left: 12px;
   font-variant-numeric: oldstyle-nums;
 }
+/* HOMONYMES — l'année qui distingue deux cinéastes du même nom.
+   Posée par formatNomQualifie (index.js), et seulement là où les dates ne
+   figurent pas déjà à côté du nom : le fil d'actualités, le classement, la
+   liste de ses propositions. Discrète, entre parenthèses, et jamais en gras
+   même quand le nom l'est. */
+.c-homonyme {
+  font-family: var(--font);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.82em;
+  color: var(--brun-pale);
+  font-variant-numeric: oldstyle-nums;
+  white-space: nowrap;
+}
+.c-homonyme::before { content: ' ('; }
+.c-homonyme::after  { content: ')'; }
+
 /* Badge : bloc --badge-bg → rouge au hover */
 .c-badge {
   font-family: var(--font-names);

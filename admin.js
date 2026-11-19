@@ -275,7 +275,9 @@ document.querySelectorAll('.tab').forEach(function(tab){
     if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantTypes(); loadCourantCatalogue(); initCourantFicheSearch(); }
     // Onglet « Types d'entrée » : il ne lit que sa propre table.
     if(tab.getAttribute('data-tab') === 'courants-types') loadCourantTypes();
-    if(isStatsTabActive) renderStats();
+    // Vrai = ouverture de l'onglet : les filtres et les paliers repartent à
+    // zéro. Les rafraîchissements automatiques, eux, les conservent.
+    if(isStatsTabActive) renderStats(true);
     // L'activite des cinephiles : une seule lecture, gardee deux minutes.
     // Pas de rafraichissement periodique — ces chiffres se comptent en mois,
     // pas en secondes.
@@ -1368,11 +1370,26 @@ function renderProposals(){
   filtered.forEach(function(p){ buildProposalCard(p, container); });
 }
 
+// Les dates d'un membre : « 1944–2024 », « 1944 », « ?–1983 », ou '' si rien
+// n'est renseigné. Sert à lire un duo membre par membre.
+function propAnneesAdmin(naissance, deces){
+  if(!naissance && !deces) return '';
+  if(naissance && deces) return naissance + '–' + deces;
+  return deces ? ('?–' + deces) : String(naissance);
+}
+
 function buildProposalCard(p, container){
     var nomComplet = (p.prenom ? p.prenom + ' ' : '') + p.nom;
     var annees = [];
-    if(p.annee_naissance) annees.push('né(e) en ' + p.annee_naissance);
-    if(p.annee_deces) annees.push('décédé en ' + p.annee_deces);
+    if(p.duo){
+      // Un duo porte deux jeux de dates, lus membre par membre.
+      var _m1 = propAnneesAdmin(p.annee_naissance, p.annee_deces);
+      var _m2 = propAnneesAdmin(p.annee_naissance2, p.annee_deces2);
+      if(_m1 || _m2) annees.push((_m1 || '?') + ' / ' + (_m2 || '?'));
+    } else {
+      if(p.annee_naissance) annees.push('né(e) en ' + p.annee_naissance);
+      if(p.annee_deces) annees.push('décédé en ' + p.annee_deces);
+    }
     if(p.pays && typeof tcCountryLabel === 'function'){ var _pl = tcCountryLabel(p.pays); if(_pl) annees.push(_pl); }
 
     var card = document.createElement('div'); card.className = 'prop-card';
@@ -1385,10 +1402,17 @@ function buildProposalCard(p, container){
     var infoEl = document.createElement('div'); infoEl.className = 'prop-card-info';
 
     var nameEl = document.createElement('div'); nameEl.className = 'prop-card-name'; nameEl.textContent = nomComplet;
+    if(p.duo){
+      var duoBadge = document.createElement('span');
+      duoBadge.className = 'prop-duo-badge';
+      duoBadge.textContent = 'Duo';
+      nameEl.appendChild(document.createTextNode(' '));
+      nameEl.appendChild(duoBadge);
+    }
     infoEl.appendChild(nameEl);
 
     if(p.pays && typeof tcFlagHtml === 'function'){
-      var flagHtml = tcFlagHtml(p.pays, 'prop-flag');
+      var flagHtml = tcFlagHtml(p.pays, 'prop-flag', 'Pays de carrière');
       if(flagHtml){
         var flagWrap = document.createElement('div'); flagWrap.className = 'prop-flag-wrap'; flagWrap.innerHTML = flagHtml;
         infoEl.appendChild(flagWrap);
@@ -1418,8 +1442,12 @@ function buildProposalCard(p, container){
       prenomInput.value = p.prenom || ''; prenomInput.placeholder = 'Prénom *';
 
       var nomInput = document.createElement('input');
-      nomInput.type = 'text'; nomInput.className = 'autocomplete-input'; nomInput.style.textTransform = 'uppercase';
-      nomInput.value = p.nom || ''; nomInput.placeholder = 'Nom *';
+      // PAS DE text-transform ICI : l'index écrit McCAREY, DeMILLE, LaBRUCE,
+      // MacDOUGALL, St. CLAIR — les capitales forcées rendaient ces noms-là
+      // impossibles à corriger avant validation.
+      nomInput.type = 'text'; nomInput.className = 'autocomplete-input';
+      nomInput.value = p.nom || '';
+      nomInput.placeholder = p.duo ? 'Nom du duo *' : 'Nom *';
 
       var paysSelect = document.createElement('select'); paysSelect.className = 'contrib-select';
       var paysGroups = typeof tcCountrySelectOptions === 'function' ? tcCountrySelectOptions() : { iso: [], historic: [] };
@@ -1451,6 +1479,33 @@ function buildProposalCard(p, container){
 
       editZone.appendChild(editRow1); editZone.appendChild(editRow2); editZone.appendChild(editRow3);
 
+      // Duos : le nom et le prénom ci-dessus portent DÉJÀ les deux membres,
+      // au format de l'index (« COEN, Joel & Ethan » ou « ALOV & NAUMOV ») ;
+      // seules les dates et la photo du second membre vivent à part.
+      var naissance2Input = null, deces2Input = null, photo2Input = null;
+      if(p.duo){
+        var sep = document.createElement('div');
+        sep.className = 'prop-edit-duo-titre';
+        sep.textContent = 'Second cinéaste du duo';
+        editZone.appendChild(sep);
+
+        naissance2Input = document.createElement('input');
+        naissance2Input.type = 'number'; naissance2Input.className = 'autocomplete-input';
+        naissance2Input.value = p.annee_naissance2 || ''; naissance2Input.placeholder = 'Année de naissance';
+
+        deces2Input = document.createElement('input');
+        deces2Input.type = 'number'; deces2Input.className = 'autocomplete-input';
+        deces2Input.value = p.annee_deces2 || ''; deces2Input.placeholder = 'Année de décès';
+
+        photo2Input = document.createElement('input');
+        photo2Input.type = 'text'; photo2Input.className = 'autocomplete-input';
+        photo2Input.value = p.photo_tmdb2 || ''; photo2Input.placeholder = '/abcXYZ123.jpg';
+
+        var editRow4 = document.createElement('div'); editRow4.className = 'prop-edit-row';
+        editRow4.appendChild(naissance2Input); editRow4.appendChild(deces2Input); editRow4.appendChild(photo2Input);
+        editZone.appendChild(editRow4);
+      }
+
       editBtn.addEventListener('click', function(){
         editZone.classList.toggle('visible');
         editBtn.textContent = editZone.classList.contains('visible') ? 'Fermer l\'éditeur' : 'Modifier avant validation';
@@ -1463,7 +1518,9 @@ function buildProposalCard(p, container){
         var editFields = null;
         var confirmName = nomComplet;
         if(editZone.classList.contains('visible')){
-          var editedNom = nomInput.value.trim().toUpperCase();
+          // Le nom est pris TEL QUEL, sans .toUpperCase() : voir le
+          // commentaire sur nomInput ci-dessus.
+          var editedNom = nomInput.value.trim();
           if(!editedNom){ showAdminNotice('Le nom ne peut pas être vide.', false); return; }
           editFields = {
             prenom: prenomInput.value.trim(),
@@ -1473,6 +1530,11 @@ function buildProposalCard(p, container){
             annee_deces: decesInput.value ? parseInt(decesInput.value, 10) : null,
             photo_tmdb: photoInput.value.trim() || null
           };
+          if(p.duo){
+            editFields.annee_naissance2 = naissance2Input && naissance2Input.value ? parseInt(naissance2Input.value, 10) : null;
+            editFields.annee_deces2 = deces2Input && deces2Input.value ? parseInt(deces2Input.value, 10) : null;
+            editFields.photo_tmdb2 = photo2Input ? (photo2Input.value.trim() || null) : null;
+          }
           confirmName = (editFields.prenom ? editFields.prenom + ' ' : '') + editFields.nom;
         }
         showConfirmModal('Confirmer l\'approbation de la proposition « ' + confirmName + ' » ?', function(){
@@ -1506,7 +1568,12 @@ function buildProposalCard(p, container){
 }
 
 // Construit le "nom" au format de la table cineastes : "NOM, Prénom"
-// (ou "NOM" seul si pas de prénom). p.nom est déjà en majuscules (cf. submit).
+// (ou "NOM" seul si pas de prénom). Le nom est repris TEL QUEL : il n'est
+// plus mis en capitales à la soumission, parce que l'index en contient
+// trente-sept qui portent une minuscule (McCAREY, DeMILLE, St. CLAIR…).
+// Pour un duo, p.nom et p.prenom portent déjà les deux membres, composés par
+// le formulaire dans l'une des deux écritures que lit tcDuoMembres() :
+// « COEN » + « Joel & Ethan », ou « ALOV & NAUMOV » + ''.
 function cineasteNomFromProposal(p){
   var nom = (p.nom || '').trim();
   var prenom = (p.prenom || '').trim();
@@ -1524,15 +1591,40 @@ async function insertCineasteFromProposal(p){
   if(dup && dup.error) return { error: dup.error, nom: nom };
   if(dup && dup.data && dup.data.length) return { skipped: true, nom: nom };
 
-  var row = {
-    nom: nom,
-    naissance: p.annee_naissance || null,
-    deces: p.annee_deces || null,
-    vivant: p.annee_deces ? false : true,
-    duo: false,
-    pays: p.pays || null,
-    photo_tmdb: p.photo_tmdb || null
-  };
+  // UN DUO NE SE STOCKE PAS COMME UN SOLO. En base, les colonnes naissance,
+  // deces, vivant et photo_tmdb sont du jsonb : un duo y range un TABLEAU de
+  // deux valeurs, une par membre, et c'est ce que lisent formatDates(),
+  // tcPhotoDuo() et le décompte « en activité / disparus » d'index.js.
+  // Écrire ici « duo: false » et une seule année, comme avant, fabriquait une
+  // fiche de duo cassée : un seul jeu de dates pour deux personnes, et aucun
+  // des traitements prévus pour les duos ne se déclenchait.
+  var row;
+  if(p.duo){
+    var n1 = p.annee_naissance || null, n2 = p.annee_naissance2 || null;
+    var d1 = p.annee_deces || null,     d2 = p.annee_deces2 || null;
+    var ph1 = p.photo_tmdb || null,     ph2 = p.photo_tmdb2 || null;
+    row = {
+      nom: nom,
+      naissance: [n1, n2],
+      deces: [d1, d2],
+      vivant: [!d1, !d2],
+      duo: true,
+      pays: p.pays || null,
+      // Deux chemins, ou rien du tout : un tableau [null, null] n'apporte
+      // rien de plus qu'une cellule vide.
+      photo_tmdb: (ph1 || ph2) ? [ph1, ph2] : null
+    };
+  } else {
+    row = {
+      nom: nom,
+      naissance: p.annee_naissance || null,
+      deces: p.annee_deces || null,
+      vivant: p.annee_deces ? false : true,
+      duo: false,
+      pays: p.pays || null,
+      photo_tmdb: p.photo_tmdb || null
+    };
+  }
 
   // INSERT non-idempotent : timeout sans relance auto (évite un doublon).
   var ins = await tcWithRetryTimeout(function(){ return sb.from('cineastes').insert(row).select('id'); }, { retries: 0 });
@@ -1687,26 +1779,66 @@ function deleteCommentAdmin(id, delBtn){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DRAPEAUX DE NATIONALITÉ
+// DRAPEAUX — PAYS DE CARRIÈRE
 // ═══════════════════════════════════════════════════════════════
 var flagsSearchTerm = '';
 // Mode « cinéastes sans pays » : liste tous les cinéastes dont la colonne
 // "pays" est NULL/vide, pour les renseigner directement depuis l'admin.
 var flagsNullMode = false;
 
-function flagsCountrySelectHtml(currentCode){
-  var groups = tcCountrySelectOptions();
-  var html = '<option value=""' + (!currentCode ? ' selected' : '') + '>—</option>';
-  html += '<optgroup label="' + 'Pays actuels (ISO)' + '">';
-  groups.iso.forEach(function(o){
-    html += '<option value="' + o.code + '"' + (currentCode === o.code ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>';
-  });
-  html += '</optgroup><optgroup label="' + 'Pays / entités historiques' + '">';
-  groups.historic.forEach(function(o){
-    html += '<option value="' + o.code + '"' + (currentCode === o.code ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>';
-  });
-  html += '</optgroup>';
-  return html;
+// ── POURQUOI LA RECHERCHE RAMAIT ──────────────────────────────────────────
+// Chaque ligne affichée porte DEUX sélecteurs de pays, soit environ cent
+// quatre-vingts <option> chacun. Sur les 3 700 cinéastes de l'index, taper
+// une lettre en retenait plusieurs centaines : le navigateur construisait
+// d'un seul coup des centaines de milliers de nœuds, le fil principal gelait
+// pendant des secondes, et la frappe elle-même ne s'affichait plus. Deux
+// mesures, l'une et l'autre nécessaires :
+//
+//   1. le <select> n'est fabriqué qu'UNE FOIS puis cloné ligne par ligne —
+//      cloner un sous-arbre déjà analysé coûte une fraction de ce que coûte
+//      le même HTML redonné à innerHTML ;
+//   2. l'affichage est PLAFONNÉ, par paquets, avec un bouton pour la suite.
+//      C'est elle qui garantit un coût borné, quel que soit le terme tapé.
+var FLAGS_PAR_PAQUET = 50;
+var flagsLimite = FLAGS_PAR_PAQUET;
+// En deçà de deux lettres, une recherche ne désigne rien et ramène le pire
+// cas : on ne la lance pas.
+var FLAGS_MIN_LETTRES = 2;
+
+// Le <select> des pays, fabriqué une seule fois (cf. ci-dessus) et cloné à
+// chaque appel.
+var _flagsSelectModele = null;
+function flagsCountrySelect(currentCode, cssClass){
+  if(!_flagsSelectModele){
+    var groups = tcCountrySelectOptions();
+    var html = '<option value="">—</option>';
+    html += '<optgroup label="' + 'Pays actuels (ISO)' + '">';
+    groups.iso.forEach(function(o){
+      html += '<option value="' + o.code + '">' + escapeHtml(o.label) + '</option>';
+    });
+    html += '</optgroup><optgroup label="' + 'Pays / entités historiques' + '">';
+    groups.historic.forEach(function(o){
+      html += '<option value="' + o.code + '">' + escapeHtml(o.label) + '</option>';
+    });
+    html += '</optgroup>';
+    _flagsSelectModele = document.createElement('select');
+    _flagsSelectModele.className = 'contrib-select';
+    _flagsSelectModele.innerHTML = html;
+  }
+  var sel = _flagsSelectModele.cloneNode(true);
+  if(cssClass) sel.className += ' ' + cssClass;
+  sel.value = currentCode || '';
+  // Un code retiré de flagsdata.js entre-temps ne figure plus dans la liste :
+  // le sélecteur retomberait sur « — » et l'enregistrement effacerait
+  // silencieusement le pays. On réintroduit donc la valeur telle quelle.
+  if(currentCode && sel.value !== currentCode){
+    var orphelin = document.createElement('option');
+    orphelin.value = currentCode;
+    orphelin.textContent = currentCode + ' (code inconnu)';
+    sel.insertBefore(orphelin, sel.firstChild);
+    sel.value = currentCode;
+  }
+  return sel;
 }
 
 function renderFlagsAdmin(){
@@ -1721,7 +1853,7 @@ function renderFlagsAdmin(){
     // Liste tous les cinéastes dont le pays n'est pas renseigné (NULL ou vide).
     rows = DATA.cineastes
       .filter(function(c){ return !c.pays; })
-      .sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
+      .sort(function(a,b){ return tcComparerNoms(a.nom, b.nom); });
     if(countEl) countEl.textContent = rows.length + ' cinéaste(s) sans pays';
     tbody.innerHTML = '';
     if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">Tous les cinéastes ont un pays renseigné.</td></tr>'; return; }
@@ -1731,27 +1863,34 @@ function renderFlagsAdmin(){
     // Seule la barre de recherche pilote l'affichage : sans terme saisi, aucun
     // cinéaste n'est listé (évite aussi le gel du navigateur sur 2000+ lignes).
     if(!term){ tbody.innerHTML = '<tr><td colspan="3">' + 'Recherchez un cinéaste pour l\'afficher.' + '</td></tr>'; return; }
+    if(term.length < FLAGS_MIN_LETTRES){
+      tbody.innerHTML = '<tr><td colspan="3">' + 'Tapez au moins ' + FLAGS_MIN_LETTRES + ' lettres.' + '</td></tr>';
+      return;
+    }
     rows = DATA.cineastes
       .filter(function(c){ return normStr(c.nom).indexOf(term) !== -1; })
-      .sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
+      .sort(function(a,b){ return tcComparerNoms(a.nom, b.nom); });
     tbody.innerHTML = '';
     if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">' + 'Aucun résultat.' + '</td></tr>'; return; }
   }
 
-  rows.forEach(function(c){
+  // Un paquet à la fois (cf. le commentaire en tête de section). Le reste
+  // attend derrière le bouton posé en pied de tableau.
+  var visibles = rows.slice(0, flagsLimite);
+
+  // Tout est assemblé hors du document, puis inséré d'un seul coup : le
+  // navigateur ne recalcule la mise en page qu'une fois.
+  var fragment = document.createDocumentFragment();
+  visibles.forEach(function(c){
     var tr = document.createElement('tr');
 
     var tdName = document.createElement('td');
     tdName.textContent = c.nom;
 
     var tdFlag = document.createElement('td');
-    var select = document.createElement('select');
-    select.className = 'contrib-select';
-    select.innerHTML = flagsCountrySelectHtml(c.pays || '');
-    // Second drapeau (optionnel) : nationalité d'une éventuelle 2e carrière.
-    var select2 = document.createElement('select');
-    select2.className = 'contrib-select flags-select-2';
-    select2.innerHTML = flagsCountrySelectHtml(c.pays2 || '');
+    var select = flagsCountrySelect(c.pays || '');
+    // Second drapeau (optionnel) : pays d'une éventuelle 2e carrière.
+    var select2 = flagsCountrySelect(c.pays2 || '', 'flags-select-2');
 
     var tdAction = document.createElement('td');
     var saveBtn = document.createElement('button');
@@ -1763,8 +1902,35 @@ function renderFlagsAdmin(){
     tdFlag.appendChild(select2);
     tdAction.appendChild(saveBtn);
     tr.appendChild(tdName); tr.appendChild(tdFlag); tr.appendChild(tdAction);
-    tbody.appendChild(tr);
+    fragment.appendChild(tr);
   });
+  tbody.appendChild(fragment);
+
+  if(rows.length > visibles.length){
+    var trPlus = document.createElement('tr');
+    var tdPlus = document.createElement('td');
+    tdPlus.colSpan = 3;
+    tdPlus.className = 'flags-plus';
+
+    var info = document.createElement('span');
+    info.className = 'flags-plus-info';
+    info.textContent = visibles.length + ' affichés sur ' + rows.length;
+    tdPlus.appendChild(info);
+
+    var reste = rows.length - visibles.length;
+    var plusBtn = document.createElement('button');
+    plusBtn.type = 'button';
+    plusBtn.className = 'btn-secondary';
+    plusBtn.textContent = 'Afficher ' + Math.min(FLAGS_PAR_PAQUET, reste) + ' de plus';
+    plusBtn.addEventListener('click', function(){
+      flagsLimite += FLAGS_PAR_PAQUET;
+      renderFlagsAdmin();
+    });
+    tdPlus.appendChild(plusBtn);
+
+    trPlus.appendChild(tdPlus);
+    tbody.appendChild(trPlus);
+  }
 }
 
 async function saveCineasteFlag(c, code, code2, saveBtn){
@@ -1825,13 +1991,16 @@ async function saveCineasteFlag(c, code, code2, saveBtn){
   }
 }
 
-// CORRECTIF BLOCAGE RECHERCHE : renderFlagsAdmin() reconstruit potentiellement
-// des dizaines de lignes (2 <select> pays par cinéaste trouvé) à chaque frappe.
-// On attend une courte pause dans la saisie avant de relancer le rendu, pour
-// ne pas figer la page sur chaque caractère tapé.
+// Le rendu est maintenant borné (sélecteur cloné, affichage par paquets), si
+// bien qu'une frappe coûte quelques millisecondes et non plus quelques
+// secondes. La courte pause de saisie reste utile — elle évite de refaire le
+// travail à chaque caractère d'un nom tapé d'une traite — mais elle peut être
+// ramenée au seuil habituel des autres barres du site.
 var _flagsSearchDebounce = null;
 document.getElementById('flags-search').addEventListener('input', function(e){
   flagsSearchTerm = e.target.value;
+  // Chaque nouvelle recherche repart du premier paquet.
+  flagsLimite = FLAGS_PAR_PAQUET;
   // Saisir une recherche sort du mode « sans pays ».
   if(flagsNullMode){
     flagsNullMode = false;
@@ -1839,12 +2008,13 @@ document.getElementById('flags-search').addEventListener('input', function(e){
     if(b) b.classList.remove('active');
   }
   clearTimeout(_flagsSearchDebounce);
-  _flagsSearchDebounce = setTimeout(renderFlagsAdmin, 200);
+  _flagsSearchDebounce = setTimeout(renderFlagsAdmin, 120);
 });
 
 document.getElementById('flags-null-btn').addEventListener('click', function(){
   flagsNullMode = !flagsNullMode;
   this.classList.toggle('active', flagsNullMode);
+  flagsLimite = FLAGS_PAR_PAQUET;
   if(flagsNullMode){
     flagsSearchTerm = '';
     var searchEl = document.getElementById('flags-search');
@@ -4095,7 +4265,11 @@ function actTableau(){
   return bloc;
 }
 
-async function renderStats(){
+// `reinitialiser` : vrai seulement quand on OUVRE l'onglet. L'onglet se
+// redessine aussi tout seul toutes les vingt secondes, et après chaque action
+// admin qui change un rattachement — ces rendus-là conservent le filtre, le
+// tri et les paliers dépliés (cf. renderStatsChart).
+async function renderStats(reinitialiser){
   var errEl = document.getElementById('stats-error');
   var chartEl = document.getElementById('stats-chart');
   if(!chartEl) return;
@@ -4159,57 +4333,83 @@ async function renderStats(){
     };
   });
 
-  renderStatsChart(chartEl, items, totals, cineastes.length);
+  renderStatsChart(chartEl, items, totals, cineastes.length, reinitialiser === true);
 }
 
-// ── LE CLASSEMENT, PUIS LE CATALOGUE ──────────────────────────────────────
-// Le catalogue compte cent trente entrées. Les donner toutes en barres
-// produisait une page de près de dix mille pixels, et surtout illisible :
-// l'entrée de tête (240 fiches) fixait l'échelle alors que la médiane est à
-// sept fiches, si bien que cent vingt barres n'étaient plus qu'un moignon de
-// deux pixels. Les entrées jamais rattachées, elles, se perdaient au milieu.
+// ── LA LECTURE PAR PALIERS ────────────────────────────────────────────────
+// Le catalogue compte cent trente-neuf entrées, dont la mieux représentée
+// porte plus de deux cents fiches quand la médiane en porte sept. Toute
+// présentation à ÉCHELLE UNIQUE y est donc illisible par construction : la
+// première barre fixe l'échelle, les cent vingt suivantes se réduisent à un
+// trait de deux pixels, et les entrées jamais rattachées se perdent au
+// milieu. C'était le défaut de la version précédente — un classement en
+// douze barres, puis un tableau de cent trente-neuf lignes : deux échelles
+// différentes pour le même chiffre, et rien qui se compare vraiment.
 //
-// L'onglet se lit désormais en trois temps :
+// L'onglet se lit désormais en PALIERS D'ORDRE DE GRANDEUR, chacun avec SA
+// PROPRE ÉCHELLE :
+//
 //   1. LE BANDEAU DE SYNTHÈSE, inchangé — les totaux, d'un coup d'œil ;
-//   2. LE CLASSEMENT : les douze premières entrées seulement, en barres.
-//      C'est la seule portion où la comparaison visuelle apprend quelque
-//      chose ; au-delà, toutes les barres se ressemblent ;
-//   3. TOUT LE CATALOGUE : un tableau dense, cherchable, filtrable par
-//      famille, par type et par rattachement, triable sur chaque colonne.
-//      Sa micro-barre se rapporte au maximum DU FILTRE EN COURS et non au
-//      maximum général : demander les écoles redonne une échelle lisible au
-//      lieu de dix traits écrasés contre la barre d'Hollywood.
-var STATS_PODIUM = 12;
+//   2. « PILIERS DE L'INDEX » (50 fiches et plus) et « BIEN REPRÉSENTÉS »
+//      (15 à 49) : en barres. Le nom tient sur sa ligne et l'effectif lui
+//      fait face ; la barre occupe toute la largeur en dessous, au lieu
+//      d'être coincée dans une colonne. La barre d'un palier se rapporte au
+//      maximum DE CE PALIER : on compare enfin des entrées comparables ;
+//   3. « PRÉSENTS » (1 à 14) : une grille compacte, nom et effectif. À ce
+//      niveau une barre n'apprend plus rien, elle encombre ;
+//   4. « JAMAIS RATTACHÉS » (aucune fiche) : replié, en pastilles. C'est une
+//      liste de travail — ce qui reste à affecter — et non du bruit à
+//      traverser au milieu des autres.
+//
+// La recherche et les filtres famille / type s'appliquent à tous les paliers
+// à la fois ; le tri bascule entre effectif et ordre alphabétique. Un palier
+// vide ne s'affiche pas.
 
-// Tout ce dont le tableau a besoin pour se redessiner sans relire la base :
-// les lignes, le total de fiches, l'état des filtres et celui du tri. Un
-// objet, et non des variables nues, pour la même raison que ACT_ETAT.
-var STATS_ETAT = {
-  items: [], totalFiches: 0,
-  q: '', famille: '', type: '', rattachement: '',
-  tri: 'count', descendant: true
-};
-
-// Les colonnes du tableau du catalogue.
-//   clef    la donnée sur laquelle la colonne trie
-//   titre   l'en-tête affiché
-//   texte   colonne de texte : alignée à gauche, triée alphabétiquement
-//   aide    l'infobulle de l'en-tête, quand le titre court ne suffit pas
-var STATS_COLONNES = [
-  { clef: 'rang',  titre: '',          fixe: true },
-  { clef: 'nom',   titre: 'Entrée',    texte: true },
-  { clef: 'type',  titre: 'Type',      texte: true },
-  { clef: 'debut', titre: 'Période',
-    aide: 'Trie par année de début. Les entrées sans année renseignée ferment la marche.' },
-  { clef: 'count', titre: 'Fiches',
-    aide: 'Nombre de fiches cinéaste où l’entrée est affectée (courant, courant 2 ou courant 3).' },
-  { clef: 'part',  titre: 'Part',
-    aide: 'Part des fiches cinéaste de l’index portant cette entrée.' }
+// Les quatre paliers, du plus fourni au plus vide. `max: Infinity` pour le
+// premier, `min: 0, max: 0` pour le dernier.
+var STATS_PALIERS = [
+  { cle: 'piliers',  min: 50, max: Infinity, titre: 'Piliers de l’index',
+    aide: '50 fiches et plus', barres: true },
+  { cle: 'solides',  min: 15, max: 49,       titre: 'Bien représentés',
+    aide: 'de 15 à 49 fiches', barres: true },
+  { cle: 'presents', min: 1,  max: 14,       titre: 'Présents',
+    aide: 'de 1 à 14 fiches',  barres: false },
+  { cle: 'absents',  min: 0,  max: 0,        titre: 'Jamais rattachés',
+    aide: 'aucune fiche cinéaste', barres: false, replie: true }
 ];
 
-// Rendu de l'onglet : le bandeau de synthèse, le classement des douze
-// premières, puis le catalogue complet en tableau.
-function renderStatsChart(containerEl, items, totals, totalFiches){
+// Tout ce dont les paliers ont besoin pour se redessiner sans relire la
+// base : les lignes, le total de fiches, l'état des filtres, celui du tri et
+// celui des paliers dépliés. Un objet, et non des variables nues, pour la
+// même raison que ACT_ETAT.
+var STATS_ETAT = {
+  items: [], totalFiches: 0,
+  q: '', famille: '', type: '',
+  tri: 'count',
+  // Paliers dépliés. Mémorisés, pour qu'un filtre saisi ne referme pas le
+  // palier que l'on venait d'ouvrir.
+  ouverts: {},
+  // Faux tant que l'onglet n'a jamais été dessiné.
+  initialise: false
+};
+
+// Rendu de l'onglet : le bandeau de synthèse, la barre de filtres, puis les
+// paliers.
+//
+// `reinitialiser` ne vaut vrai qu'à l'OUVERTURE de l'onglet. C'est important :
+// l'onglet se redessine tout seul toutes les vingt secondes, et autrefois
+// chacun de ces rendus remettait les filtres à zéro sous les doigts de qui
+// lisait. Avec les paliers, ç'aurait été pire encore — la liste des entrées
+// jamais rattachées, qu'on ouvre justement pour y travailler, se serait
+// refermée seule toutes les vingt secondes. Le filtre, le tri et les paliers
+// dépliés survivent donc à un rafraîchissement, et le curseur revient dans la
+// barre de recherche si c'est là qu'il était.
+function renderStatsChart(containerEl, items, totals, totalFiches, reinitialiser){
+  var champFocus = document.activeElement;
+  var avaitLeFocus = !!(champFocus && champFocus.id === 'stats-filtre-q');
+  var curseur = null;
+  if(avaitLeFocus){ try { curseur = champFocus.selectionStart; } catch(e){ curseur = null; } }
+
   containerEl.innerHTML = '';
   if(!items.length){
     containerEl.innerHTML = '<div class="empty-state">Aucune entrée dans le catalogue.</div>';
@@ -4219,15 +4419,33 @@ function renderStatsChart(containerEl, items, totals, totalFiches){
 
   STATS_ETAT.items = items;
   STATS_ETAT.totalFiches = totalFiches;
-  // Les filtres repartent à zéro à chaque chargement : l'onglet se rouvre
-  // sur le catalogue entier, jamais sur un filtre oublié la fois d'avant.
-  STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = ''; STATS_ETAT.rattachement = '';
-  STATS_ETAT.tri = 'count'; STATS_ETAT.descendant = true;
+  if(reinitialiser || !STATS_ETAT.initialise){
+    // L'onglet se rouvre sur le catalogue entier, jamais sur un filtre
+    // oublié la fois d'avant.
+    STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = '';
+    STATS_ETAT.tri = 'count';
+    STATS_ETAT.ouverts = {};
+    STATS_PALIERS.forEach(function(p){ STATS_ETAT.ouverts[p.cle] = !p.replie; });
+    STATS_ETAT.initialise = true;
+  }
 
   containerEl.appendChild(buildStatsSummary(totals, totalFiches));
-  containerEl.appendChild(buildStatsPodium(items, totalFiches));
-  containerEl.appendChild(buildStatsCatalogue(items, totalFiches));
-  statsRemplirTable(null);
+  containerEl.appendChild(buildStatsFiltres(items));
+
+  var hote = statsEl('div', 'stats-paliers');
+  hote.id = 'stats-paliers';
+  containerEl.appendChild(hote);
+
+  containerEl.appendChild(buildStatsLegend(totalFiches, items));
+  statsRemplirPaliers();
+
+  if(avaitLeFocus){
+    var champ = document.getElementById('stats-filtre-q');
+    if(champ){
+      champ.focus();
+      if(curseur !== null){ try { champ.setSelectionRange(curseur, curseur); } catch(e){ /* champ sans sélection */ } }
+    }
+  }
 }
 
 function statsFmtNb(n){ return (n || 0).toLocaleString('fr-FR'); }
@@ -4235,13 +4453,19 @@ function statsFmtNb(n){ return (n || 0).toLocaleString('fr-FR'); }
 // Pourcentage à une décimale, espace insécable avant le signe (usage français).
 function statsFmtPct(ratio){
   if(!isFinite(ratio)) return '—';
-  return (ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %';
+  return (ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %';
 }
 
 // "1958–1964", "depuis 1958", ou '' si aucune année renseignée au catalogue.
 function statsAnnees(it){
   if(!it.debut) return '';
   return it.fin ? it.debut + '–' + it.fin : 'depuis ' + it.debut;
+}
+
+// Le libellé exact du type, avec repli sur la famille si le catalogue des
+// types n'a pas pu être lu.
+function statsTypeLabel(it){
+  return it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant');
 }
 
 // Petite fabrique locale, sur le modèle d'actEl : un élément, sa classe, son
@@ -4285,13 +4509,18 @@ function buildStatsSummary(totals, totalFiches){
   return bloc;
 }
 
-// ── 2. LE CLASSEMENT (les douze premières) ────────────────────────────────
-function buildStatsPodium(items, totalFiches){
+// ── LA BARRE DE FILTRES ───────────────────────────────────────────────────
+// Recherche, famille, type, tri, remise à zéro. Tout agit immédiatement,
+// rien ne relit la base. Le filtre « rattachement » d'autrefois a disparu :
+// les paliers disent la même chose, et mieux.
+function buildStatsFiltres(items){
   var bloc = statsEl('div', 'stats-bloc');
+
   var tete = statsEl('div', 'stats-bloc-tete');
-  tete.appendChild(statsEl('h3', 'stats-bloc-titre', 'Les entrées les plus représentées'));
-  tete.appendChild(statsEl('span', 'stats-bloc-aide',
-    'Les ' + STATS_PODIUM + ' premières ; le catalogue entier se lit dans le tableau ci-dessous.'));
+  tete.appendChild(statsEl('h3', 'stats-bloc-titre', 'Le catalogue, palier par palier'));
+  var compteur = statsEl('span', 'stats-bloc-aide');
+  compteur.id = 'stats-compteur';
+  tete.appendChild(compteur);
 
   // La légende est TOUJOURS là : la famille ne se lit jamais à la seule
   // couleur de la barre, elle est aussi écrite sous chaque nom.
@@ -4305,86 +4534,6 @@ function buildStatsPodium(items, totalFiches){
   tete.appendChild(keys);
   bloc.appendChild(tete);
 
-  var tete12 = items.slice(0, STATS_PODIUM);
-  var maxCount = Math.max.apply(null, tete12.map(function(it){ return it.count; })) || 1;
-
-  var barsEl = statsEl('div', 'stats-bars');
-  tete12.forEach(function(it, i){ barsEl.appendChild(buildStatsBar(it, i, maxCount, totalFiches)); });
-  bloc.appendChild(barsEl);
-  bloc.appendChild(buildStatsAxis(maxCount));
-  return bloc;
-}
-
-// Une ligne du classement : rang, drapeau du pays d'origine, nom surmontant sa
-// famille et sa période, barre proportionnelle colorée selon la famille, puis
-// effectif et part du total.
-function buildStatsBar(it, index, maxCount, totalFiches){
-  var item = document.createElement('div');
-  item.className = 'stats-bar-item ' + (it.estCategorie ? 'is-categorie' : 'is-courant');
-  if(!it.count) item.className += ' is-zero';
-  else if(index < 3) item.className += ' is-top';
-  item.title = it.nom + ' — ' + statsFmtNb(it.count) + (it.count > 1 ? ' fiches cinéaste' : ' fiche cinéaste');
-
-  var rank = statsEl('span', 'stats-bar-rank', it.count ? String(index + 1) : '—');
-
-  var flagCell = statsEl('span', 'stats-bar-flagcell');
-  flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-bar-flag') : '';
-
-  var label = statsEl('span', 'stats-bar-label', it.nom);
-  var meta = statsEl('span', 'stats-bar-meta');
-  // Le libellé exact du type, avec repli sur la famille si le catalogue des
-  // types n'a pas pu être lu.
-  meta.appendChild(statsEl('span', 'stats-bar-type',
-    it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant')));
-  var annees = statsAnnees(it);
-  if(annees) meta.appendChild(statsEl('span', 'stats-bar-years', annees));
-  label.appendChild(meta);
-
-  var track = statsEl('div', 'stats-bar-track');
-  var fill = statsEl('div', 'stats-bar-fill');
-  fill.style.width = (it.count / maxCount * 100).toFixed(2) + '%';
-  track.appendChild(fill);
-
-  var count = statsEl('span', 'stats-bar-count');
-  count.appendChild(statsEl('strong', 'stats-bar-count-n', statsFmtNb(it.count)));
-  count.appendChild(statsEl('span', 'stats-bar-count-pct',
-    totalFiches ? statsFmtPct(it.count / totalFiches) : '—'));
-
-  item.appendChild(rank);
-  item.appendChild(flagCell);
-  item.appendChild(label);
-  item.appendChild(track);
-  item.appendChild(count);
-  return item;
-}
-
-// Graduations 0 / ¼ / ½ / ¾ / max, alignées sous la colonne des barres grâce
-// à la grille partagée --stats-cols.
-function buildStatsAxis(maxCount){
-  var axis = statsEl('div', 'stats-axis');
-  var scale = statsEl('div', 'stats-axis-scale');
-  [0, 0.25, 0.5, 0.75, 1].forEach(function(ratio){
-    scale.appendChild(statsEl('span', null, statsFmtNb(Math.round(maxCount * ratio))));
-  });
-  axis.appendChild(scale);
-  return axis;
-}
-
-// ── 3. TOUT LE CATALOGUE ──────────────────────────────────────────────────
-// La barre de filtres, puis le tableau. Le tableau lui-même est posé par
-// statsRemplirTable, qui le refait à chaque frappe, chaque filtre, chaque tri
-// sans jamais retoucher à la base.
-function buildStatsCatalogue(items, totalFiches){
-  var bloc = statsEl('div', 'stats-bloc');
-  bloc.id = 'stats-catalogue';
-
-  var tete = statsEl('div', 'stats-bloc-tete');
-  tete.appendChild(statsEl('h3', 'stats-bloc-titre', 'Tout le catalogue'));
-  var compteur = statsEl('span', 'stats-bloc-aide');
-  compteur.id = 'stats-compteur';
-  tete.appendChild(compteur);
-  bloc.appendChild(tete);
-
   var filtres = statsEl('div', 'stats-filtres');
 
   var recherche = document.createElement('input');
@@ -4393,60 +4542,92 @@ function buildStatsCatalogue(items, totalFiches){
   recherche.id = 'stats-filtre-q';
   recherche.placeholder = 'Chercher une entrée…';
   recherche.setAttribute('aria-label', 'Chercher une entrée du catalogue');
+  // La barre est refaite à chaque rendu : elle repart de l'état mémorisé,
+  // sans quoi un rafraîchissement automatique viderait le champ sans vider
+  // le filtre, et l'onglet montrerait un résultat que plus rien n'explique.
+  recherche.value = STATS_ETAT.q || '';
   recherche.addEventListener('input', function(){
     STATS_ETAT.q = recherche.value;
-    statsRemplirTable(null);
+    statsRemplirPaliers();
   });
   filtres.appendChild(recherche);
 
   // Les types proposés sont ceux RÉELLEMENT présents dans le catalogue : une
   // liste déroulante qui offre « Studio » quand aucune entrée n'en est un ne
-  // sert qu'à fabriquer des tableaux vides.
+  // sert qu'à fabriquer des paliers vides.
   var typesPresents = [];
   items.forEach(function(it){
-    var lib = it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant');
+    var lib = statsTypeLabel(it);
     if(typesPresents.indexOf(lib) === -1) typesPresents.push(lib);
   });
   typesPresents.sort(function(a, b){ return a.localeCompare(b, 'fr'); });
 
   filtres.appendChild(statsFiltreSelect('stats-filtre-famille', 'Famille',
     [['', 'Toutes les familles'], ['courant', 'Courants seulement'], ['categorie', 'Catégories seulement']],
+    STATS_ETAT.famille,
     function(v){ STATS_ETAT.famille = v; }));
 
   filtres.appendChild(statsFiltreSelect('stats-filtre-type', 'Type',
     [['', 'Tous les types']].concat(typesPresents.map(function(lib){ return [lib, lib]; })),
+    STATS_ETAT.type,
     function(v){ STATS_ETAT.type = v; }));
 
-  filtres.appendChild(statsFiltreSelect('stats-filtre-rattachement', 'Rattachement',
-    [['', 'Rattachées ou non'], ['oui', 'Rattachées seulement'], ['non', 'Jamais rattachées']],
-    function(v){ STATS_ETAT.rattachement = v; }));
+  // Le tri s'applique À L'INTÉRIEUR de chaque palier : l'appartenance au
+  // palier, elle, ne dépend que de l'effectif et ne bouge jamais.
+  var tri = statsEl('div', 'stats-tri-groupe');
+  tri.setAttribute('role', 'group');
+  tri.setAttribute('aria-label', 'Tri à l’intérieur de chaque palier');
+  [['count', 'Par effectif'], ['nom', 'A → Z']].forEach(function(def){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'stats-tri-btn' + (STATS_ETAT.tri === def[0] ? ' actif' : '');
+    b.textContent = def[1];
+    b.setAttribute('data-tri', def[0]);
+    b.setAttribute('aria-pressed', STATS_ETAT.tri === def[0] ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      STATS_ETAT.tri = def[0];
+      statsMajBoutonsTri();
+      statsRemplirPaliers();
+    });
+    tri.appendChild(b);
+  });
+  filtres.appendChild(tri);
 
   var reset = document.createElement('button');
   reset.type = 'button';
   reset.className = 'btn-reject stats-filtre-reset';
   reset.textContent = 'Tout afficher';
   reset.addEventListener('click', function(){
-    STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = ''; STATS_ETAT.rattachement = '';
+    STATS_ETAT.q = ''; STATS_ETAT.famille = ''; STATS_ETAT.type = '';
+    STATS_ETAT.tri = 'count';
     recherche.value = '';
-    ['stats-filtre-famille', 'stats-filtre-type', 'stats-filtre-rattachement'].forEach(function(id){
+    ['stats-filtre-famille', 'stats-filtre-type'].forEach(function(id){
       var sel = document.getElementById(id);
       if(sel) sel.value = '';
     });
-    statsRemplirTable(null);
+    statsMajBoutonsTri();
+    statsRemplirPaliers();
   });
   filtres.appendChild(reset);
+
   bloc.appendChild(filtres);
-
-  var hote = statsEl('div', 'stats-table-wrap');
-  hote.id = 'stats-table-hote';
-  bloc.appendChild(hote);
-
-  bloc.appendChild(buildStatsLegend(totalFiches, items));
   return bloc;
 }
 
+// Remet les deux boutons de tri d'accord avec STATS_ETAT.tri.
+function statsMajBoutonsTri(){
+  document.querySelectorAll('.stats-tri-btn[data-tri]').forEach(function(x){
+    var actif = x.getAttribute('data-tri') === STATS_ETAT.tri;
+    x.classList.toggle('actif', actif);
+    x.setAttribute('aria-pressed', actif ? 'true' : 'false');
+  });
+}
+
 // Une liste déroulante de filtre. `options` est une liste de [valeur, libellé].
-function statsFiltreSelect(id, etiquette, options, onChange){
+// `valeurCourante` est le choix à rétablir : la barre étant refaite à chaque
+// rendu, un rafraîchissement la remettrait sinon sur « Toutes les familles »
+// en laissant le filtre actif.
+function statsFiltreSelect(id, etiquette, options, valeurCourante, onChange){
   var sel = document.createElement('select');
   sel.className = 'contrib-select stats-filtre-select';
   sel.id = id;
@@ -4457,55 +4638,47 @@ function statsFiltreSelect(id, etiquette, options, onChange){
     opt.textContent = o[1];
     sel.appendChild(opt);
   });
+  sel.value = valeurCourante || '';
+  // Un type disparu du catalogue entre deux rendus ne figure plus dans la
+  // liste : le filtre resterait actif sans que rien ne le montre. On le
+  // relâche plutôt que de mentir à l'écran.
+  if(valeurCourante && sel.value !== valeurCourante){ sel.value = ''; onChange(''); }
   sel.addEventListener('change', function(){
     onChange(sel.value);
-    statsRemplirTable(null);
+    statsRemplirPaliers();
   });
   return sel;
 }
 
-// Les lignes retenues par les filtres, dans l'ordre du tri en cours.
+// Les lignes retenues par les filtres. Le RANG affiché est celui du filtre en
+// cours, et non celui du catalogue entier : demander les seules écoles
+// renumérote de 1 à n plutôt que de laisser des trous.
 function statsFiltrees(){
   var q = normStr(STATS_ETAT.q || '').trim();
   var lignes = STATS_ETAT.items.filter(function(it){
     if(STATS_ETAT.famille === 'courant' && it.estCategorie) return false;
     if(STATS_ETAT.famille === 'categorie' && !it.estCategorie) return false;
-    if(STATS_ETAT.type && (it.typeLabel || '') !== STATS_ETAT.type) return false;
-    if(STATS_ETAT.rattachement === 'oui' && !it.count) return false;
-    if(STATS_ETAT.rattachement === 'non' && it.count) return false;
+    if(STATS_ETAT.type && statsTypeLabel(it) !== STATS_ETAT.type) return false;
     if(q && normStr(it.nom).indexOf(q) === -1) return false;
     return true;
   });
 
-  var clef = STATS_ETAT.tri, desc = STATS_ETAT.descendant;
   lignes.sort(function(a, b){
-    var x, y, c;
-    if(clef === 'nom'){
-      c = a.nom.localeCompare(b.nom, 'fr');
-    } else if(clef === 'type'){
-      c = String(a.typeLabel || '').localeCompare(String(b.typeLabel || ''), 'fr');
-    } else if(clef === 'debut'){
-      // Une entrée sans année ferme la marche dans les deux sens : elle n'a
-      // pas de place sur une chronologie, mieux vaut qu'elle ne s'y glisse pas.
-      x = a.debut || (desc ? -1 : 99999);
-      y = b.debut || (desc ? -1 : 99999);
-      c = x - y;
-    } else {
-      // « count » et « part » se trient sur le même nombre : la part n'est
-      // que l'effectif rapporté à un total identique pour toutes les lignes.
-      c = (a.count || 0) - (b.count || 0);
-    }
-    if(c !== 0) return desc ? -c : c;
-    return a.nom.localeCompare(b.nom, 'fr');
+    return (b.count || 0) - (a.count || 0) || a.nom.localeCompare(b.nom, 'fr');
   });
+  lignes.forEach(function(it, i){ it.rang = i + 1; });
+
+  // Le tri alphabétique réordonne l'affichage, mais le rang reste celui de
+  // l'effectif : c'est lui qui dit où l'entrée se situe.
+  if(STATS_ETAT.tri === 'nom'){
+    lignes.sort(function(a, b){ return a.nom.localeCompare(b.nom, 'fr'); });
+  }
   return lignes;
 }
 
-// Redessine le tableau sur place. `clefFocus` rend le focus à l'en-tête que
-// l'on vient de cliquer : sans cela, trier au clavier renvoie le focus au
-// début de la page et la colonne suivante devient inatteignable.
-function statsRemplirTable(clefFocus){
-  var hote = document.getElementById('stats-table-hote');
+// Redessine les paliers sur place, sans jamais relire la base.
+function statsRemplirPaliers(){
+  var hote = document.getElementById('stats-paliers');
   if(!hote) return;
   var lignes = statsFiltrees();
 
@@ -4524,108 +4697,164 @@ function statsRemplirTable(clefFocus){
     return;
   }
 
-  // La micro-barre se rapporte au maximum DU FILTRE : c'est ce qui rend le
-  // tableau lisible une fois Hollywood écarté.
-  var maxFiltre = lignes.reduce(function(m, it){ return Math.max(m, it.count); }, 0) || 1;
-
-  var table = statsEl('table', 'stats-table');
-  var thead = document.createElement('thead');
-  var trh = document.createElement('tr');
-  STATS_COLONNES.forEach(function(c){
-    var th = statsEl('th', c.texte ? 'stats-gauche' : null);
-    th.setAttribute('scope', 'col');
-    if(c.fixe){ th.className = 'stats-col-rang'; trh.appendChild(th); return; }
-    var actif = c.clef === STATS_ETAT.tri;
-    if(actif) th.setAttribute('aria-sort', STATS_ETAT.descendant ? 'descending' : 'ascending');
-    var b = statsEl('button', 'stats-tri' + (actif ? ' stats-tri-actif' : ''));
-    b.type = 'button';
-    b.appendChild(statsEl('span', null, c.titre));
-    var fleche = statsEl('span', 'stats-fleche', actif ? (STATS_ETAT.descendant ? '↓' : '↑') : '');
-    fleche.setAttribute('aria-hidden', 'true');
-    b.appendChild(fleche);
-    b.setAttribute('data-col', c.clef);
-    b.title = (c.aide ? c.aide + ' — ' : '') + 'Trier par « ' + c.titre + ' »';
-    b.setAttribute('aria-label', 'Trier par ' + c.titre);
-    b.addEventListener('click', function(){
-      if(STATS_ETAT.tri === c.clef){
-        STATS_ETAT.descendant = !STATS_ETAT.descendant;
-      } else {
-        STATS_ETAT.tri = c.clef;
-        // Un nom se lit de A à Z, un effectif du plus grand au plus petit :
-        // c'est ce que l'on cherche dans chaque cas.
-        STATS_ETAT.descendant = !c.texte;
-      }
-      statsRemplirTable(c.clef);
+  STATS_PALIERS.forEach(function(palier){
+    var duPalier = lignes.filter(function(it){
+      var n = it.count || 0;
+      return n >= palier.min && n <= palier.max;
     });
-    th.appendChild(b);
-    trh.appendChild(th);
+    if(!duPalier.length) return; // un palier vide ne s'affiche pas
+    hote.appendChild(buildStatsPalier(palier, duPalier));
   });
-  thead.appendChild(trh);
-  table.appendChild(thead);
-
-  var tbody = document.createElement('tbody');
-  lignes.forEach(function(it, i){
-    var tr = document.createElement('tr');
-    tr.className = it.estCategorie ? 'is-categorie' : 'is-courant';
-    if(!it.count) tr.className += ' is-zero';
-
-    tr.appendChild(statsEl('td', 'stats-col-rang', String(i + 1)));
-
-    var tdNom = statsEl('td', 'stats-gauche');
-    var nom = statsEl('span', 'stats-table-nom');
-    var drapeau = statsEl('span', 'stats-table-flagcell');
-    drapeau.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-table-flag') : '';
-    nom.appendChild(drapeau);
-    nom.appendChild(statsEl('span', null, it.nom));
-    tdNom.appendChild(nom);
-    tr.appendChild(tdNom);
-
-    var tdType = statsEl('td', 'stats-gauche');
-    tdType.appendChild(statsEl('span', 'stats-table-type',
-      it.typeLabel || (it.estCategorie ? 'Catégorie' : 'Courant')));
-    tr.appendChild(tdType);
-
-    tr.appendChild(statsEl('td', 'stats-table-annees', statsAnnees(it) || '—'));
-
-    var tdCount = statsEl('td', 'stats-table-count');
-    var piste = statsEl('span', 'stats-table-piste');
-    if(it.count){
-      var rempli = statsEl('span', 'stats-table-fill');
-      rempli.style.width = (it.count / maxFiltre * 100).toFixed(2) + '%';
-      piste.appendChild(rempli);
-    }
-    tdCount.appendChild(piste);
-    var n = statsEl('strong', 'stats-table-n', it.count ? statsFmtNb(it.count) : '·');
-    if(!it.count) n.className += ' stats-zero';
-    tdCount.appendChild(n);
-    tr.appendChild(tdCount);
-
-    var tdPart = statsEl('td', 'stats-table-part',
-      (it.count && STATS_ETAT.totalFiches) ? statsFmtPct(it.count / STATS_ETAT.totalFiches) : '·');
-    if(!it.count) tdPart.className += ' stats-zero';
-    tr.appendChild(tdPart);
-
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  hote.appendChild(table);
-
-  if(clefFocus){
-    var cible = table.querySelector('[data-col="' + clefFocus + '"]');
-    if(cible) cible.focus();
-  }
 }
 
-// Note de lecture, sous le tableau.
+// Un palier : un <details> pour qu'il se replie sans une ligne de JavaScript
+// d'état, son en-tête portant le titre, la tranche d'effectifs, le nombre
+// d'entrées et le cumul des affectations.
+function buildStatsPalier(palier, lignes){
+  var bloc = document.createElement('details');
+  bloc.className = 'stats-bloc stats-palier is-' + palier.cle;
+  bloc.open = STATS_ETAT.ouverts[palier.cle] !== false;
+  bloc.addEventListener('toggle', function(){
+    STATS_ETAT.ouverts[palier.cle] = bloc.open;
+  });
+
+  var tete = document.createElement('summary');
+  tete.className = 'stats-bloc-tete stats-palier-tete';
+  tete.appendChild(statsEl('h3', 'stats-bloc-titre', palier.titre));
+  tete.appendChild(statsEl('span', 'stats-bloc-aide', palier.aide));
+
+  var cumul = lignes.reduce(function(s, it){ return s + (it.count || 0); }, 0);
+  var chiffres = statsEl('span', 'stats-palier-chiffres');
+  chiffres.appendChild(statsEl('strong', null, statsFmtNb(lignes.length)));
+  chiffres.appendChild(document.createTextNode(lignes.length > 1 ? ' entrées' : ' entrée'));
+  if(cumul){
+    chiffres.appendChild(document.createTextNode(' · '));
+    chiffres.appendChild(statsEl('strong', null, statsFmtNb(cumul)));
+    chiffres.appendChild(document.createTextNode(cumul > 1 ? ' affectations' : ' affectation'));
+  }
+  tete.appendChild(chiffres);
+  bloc.appendChild(tete);
+
+  if(palier.max === 0)      bloc.appendChild(buildStatsPastilles(lignes));
+  else if(palier.barres)    bloc.appendChild(buildStatsBarres(lignes));
+  else                      bloc.appendChild(buildStatsGrille(lignes));
+
+  return bloc;
+}
+
+// ── 1 et 2. LES PALIERS EN BARRES ─────────────────────────────────────────
+// L'échelle est celle DU PALIER, pas celle du catalogue : c'est tout l'objet
+// du découpage.
+function buildStatsBarres(lignes){
+  var max = lignes.reduce(function(m, it){ return Math.max(m, it.count || 0); }, 0) || 1;
+  var wrap = statsEl('div', 'stats-bars');
+  lignes.forEach(function(it){ wrap.appendChild(buildStatsBar(it, max)); });
+  return wrap;
+}
+
+// Une ligne : rang, drapeau, nom et effectif sur la première ligne ; la
+// famille et la période sur la deuxième ; la barre, pleine largeur, sur la
+// troisième. Le nom n'est plus comprimé dans une colonne de 130 px où
+// « Nouvelle Vague tchécoslovaque » passait sur trois lignes.
+function buildStatsBar(it, maxPalier){
+  var item = statsEl('div', 'stats-bar-item ' + (it.estCategorie ? 'is-categorie' : 'is-courant'));
+  item.title = it.nom + ' — ' + statsFmtNb(it.count)
+    + (it.count > 1 ? ' fiches cinéaste' : ' fiche cinéaste');
+
+  var haut = statsEl('div', 'stats-bar-haut');
+  haut.appendChild(statsEl('span', 'stats-bar-rank', String(it.rang)));
+
+  var flagCell = statsEl('span', 'stats-bar-flagcell');
+  // Ici le drapeau est celui du courant lui-même (colonne courants.pays), et
+  // non le pays de carrière d'un cinéaste : pas de préfixe d'infobulle.
+  flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-bar-flag') : '';
+  haut.appendChild(flagCell);
+
+  haut.appendChild(statsEl('span', 'stats-bar-label', it.nom));
+
+  var count = statsEl('span', 'stats-bar-count');
+  count.appendChild(statsEl('strong', 'stats-bar-count-n', statsFmtNb(it.count)));
+  count.appendChild(statsEl('span', 'stats-bar-count-pct',
+    STATS_ETAT.totalFiches ? statsFmtPct(it.count / STATS_ETAT.totalFiches) : '—'));
+  haut.appendChild(count);
+  item.appendChild(haut);
+
+  var meta = statsEl('div', 'stats-bar-meta');
+  meta.appendChild(statsEl('span', 'stats-bar-type', statsTypeLabel(it)));
+  var annees = statsAnnees(it);
+  if(annees) meta.appendChild(statsEl('span', 'stats-bar-years', annees));
+  item.appendChild(meta);
+
+  var track = statsEl('div', 'stats-bar-track');
+  var fill = statsEl('div', 'stats-bar-fill');
+  fill.style.width = (it.count / maxPalier * 100).toFixed(2) + '%';
+  track.appendChild(fill);
+  item.appendChild(track);
+
+  return item;
+}
+
+// ── 3. LE PALIER « PRÉSENTS » ─────────────────────────────────────────────
+// Une à quatorze fiches : une barre n'y distingue plus rien. Une grille de
+// lignes « drapeau — nom — effectif », en autant de colonnes que la largeur
+// en autorise.
+function buildStatsGrille(lignes){
+  var grille = statsEl('div', 'stats-grille');
+  lignes.forEach(function(it){
+    var el = statsEl('div', 'stats-grille-item ' + (it.estCategorie ? 'is-categorie' : 'is-courant'));
+    var annees = statsAnnees(it);
+    el.title = it.nom + ' — ' + statsTypeLabel(it) + (annees ? ' · ' + annees : '')
+      + ' — ' + statsFmtNb(it.count) + (it.count > 1 ? ' fiches cinéaste' : ' fiche cinéaste');
+
+    var flagCell = statsEl('span', 'stats-grille-flagcell');
+    flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-grille-flag') : '';
+    el.appendChild(flagCell);
+
+    el.appendChild(statsEl('span', 'stats-grille-nom', it.nom));
+    el.appendChild(statsEl('span', 'stats-grille-n', statsFmtNb(it.count)));
+    grille.appendChild(el);
+  });
+  return grille;
+}
+
+// ── 4. LE PALIER « JAMAIS RATTACHÉS » ─────────────────────────────────────
+// Replié par défaut. Ce ne sont pas des données à comparer, c'est une liste
+// de travail : aucun chiffre à afficher, tous valent zéro.
+function buildStatsPastilles(lignes){
+  var wrap = statsEl('div', 'stats-pastilles');
+  wrap.appendChild(statsEl('p', 'stats-pastilles-note',
+    'Ces entrées du catalogue ne sont affectées à aucune fiche cinéaste. '
+    + 'C’est la liste de travail : les rattacher, les fusionner avec une '
+    + 'entrée voisine, ou les retirer du catalogue.'));
+
+  var liste = statsEl('div', 'stats-pastilles-liste');
+  lignes.forEach(function(it){
+    var pastille = statsEl('span', 'stats-pastille ' + (it.estCategorie ? 'is-categorie' : 'is-courant'));
+    var annees = statsAnnees(it);
+    pastille.title = statsTypeLabel(it) + (annees ? ' · ' + annees : '');
+
+    var flagCell = statsEl('span', 'stats-pastille-flagcell');
+    flagCell.innerHTML = typeof tcFlagHtml === 'function' ? tcFlagHtml(it.pays, 'stats-pastille-flag') : '';
+    pastille.appendChild(flagCell);
+
+    pastille.appendChild(statsEl('span', null, it.nom));
+    liste.appendChild(pastille);
+  });
+  wrap.appendChild(liste);
+  return wrap;
+}
+
+// Note de lecture, sous les paliers.
 function buildStatsLegend(totalFiches, items){
   var legend = statsEl('div', 'stats-legend');
   var utilises = items.filter(function(it){ return it.count > 0; }).length;
   legend.appendChild(statsEl('span', 'stats-legend-note',
-    'La micro-barre se rapporte à l’entrée la mieux représentée du filtre en cours, '
-    + 'et non à celle du catalogue entier : filtrer rend l’échelle à nouveau lisible. '
-    + 'Le pourcentage, lui, reste la part des ' + statsFmtNb(totalFiches)
-    + ' fiches cinéaste portant l’entrée. ' + statsFmtNb(utilises) + ' des '
-    + statsFmtNb(items.length)
+    'Chaque palier a SA PROPRE ÉCHELLE : une barre se rapporte à l’entrée la mieux '
+    + 'représentée de son palier, jamais à celle du catalogue entier — c’est ce qui '
+    + 'rend la comparaison lisible quand la première entrée porte plus de deux cents '
+    + 'fiches et la médiane sept. Le pourcentage, lui, reste la part des '
+    + statsFmtNb(totalFiches) + ' fiches cinéaste de l’index portant l’entrée. '
+    + statsFmtNb(utilises) + ' des ' + statsFmtNb(items.length)
     + (items.length > 1 ? ' entrées du catalogue sont rattachées' : ' entrée du catalogue est rattachée')
     + ' à au moins une fiche.'));
   return legend;

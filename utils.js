@@ -51,8 +51,22 @@ function normStr(s){
 // codée en dur, à condition que le fichier soit nommé ainsi sur le serveur.
 // L'appelant essaie les candidats dans l'ordre (via l'événement onerror de
 // l'<img>) et affiche un avatar vide si aucun n'existe.
+//
+// HOMONYMES : le suffixe d'unicité (« CLARK (II), Larry ») ne doit pas finir
+// dans un nom de fichier tel quel — il produisait « portrait-Clark (ii).jpg »,
+// que personne n'irait nommer ainsi. On essaie donc d'abord un fichier qui
+// porte le suffixe PROPREMENT, à la fin (« portrait-Clark, Larry (II).jpg »),
+// pour qu'une fiche d'homonyme puisse avoir son portrait à elle, puis on
+// retombe sur les candidats du nom nu, partagés avec l'homonyme.
 function tcLocalPortraitCandidates(nom){
   if(!nom) return [];
+  var suffixe = tcSuffixeHomonyme(nom);
+  if(suffixe){
+    var nus = tcLocalPortraitCandidates(tcNomNu(nom));
+    return nus.map(function(chemin){
+      return chemin.replace(/\.jpg$/, ' (' + suffixe + ').jpg');
+    }).concat(nus);
+  }
   // Une majuscule apres chaque espace, et RIEN apres un trait d'union : c'est
   // la convention des fichiers deja presents dans le depot
   // (portrait-Kragh-jacobsen.jpg, portrait-Moholy-nagy.jpg). Capitaliser
@@ -89,6 +103,64 @@ function tcLocalPortraitPath(nom){
   return candidates.length?candidates[0]:null;
 }
 
+// ── HOMONYMES ────────────────────────────────────────────────────
+// La colonne « nom » de la table cineastes est UNIQUE, et c'est elle qui sert
+// de clef partout ailleurs : tops.cineaste_nom, les commentaires, les
+// notifications, les propositions de courants, les favoris saisis en texte
+// libre, muzard.json et cnudde.json, et les noms de fichiers de /portraits.
+// Deux cineastes du meme nom ne peuvent donc pas coexister tels quels. Le
+// second porte un suffixe d'unicite entre parentheses, accole au nom de
+// famille : « CLARK (II), Larry » — le cineaste de L.A. Rebellion, ne en
+// 1948, a cote de celui de Kids, ne en 1943.
+//
+// CE SUFFIXE EST UN JETON TECHNIQUE, PAS UN MORCEAU DU NOM. Il n'a aucun sens
+// pour un lecteur, et il ne doit jamais s'afficher : tcNomNu le retire. Il
+// fausse aussi le tri, puisque « ( » passe avant « , » — sans tcNomNu,
+// « CLARK (II), Larry » se classait AVANT « CLARK, Bob », et Bob venait
+// s'intercaler entre les deux Larry.
+//
+// DEUX ECRITURES sont reconnues : le chiffre romain, « (II) », et l'annee de
+// naissance, « (1948) », plus parlante si vous renommez un jour. Et SEULEMENT
+// celles-la : « MEDVEDKINE (Groupes) », seul autre nom a parentheses de
+// l'index, garde les siennes — elles font partie du nom.
+var TC_RE_SUFFIXE_HOMONYME = /\s*\((I{1,3}|IV|V|VI{1,3}|IX|X|XI{1,3}|\d{4})\)/i;
+
+// Le nom debarrasse de son suffixe d'unicite. A utiliser pour TOUT affichage
+// et pour TOUT tri ; jamais pour une lecture en base, ou le nom complet est
+// la clef.
+function tcNomNu(nom){
+  if(typeof nom !== 'string') return '';
+  return nom.replace(TC_RE_SUFFIXE_HOMONYME, '');
+}
+
+// Le suffixe d'unicite lui-meme (« II », « 1948 »), ou '' s'il n'y en a pas.
+// Sert de dernier recours pour distinguer deux homonymes dont aucun ne porte
+// d'annee de naissance : deux fiches ne doivent JAMAIS s'afficher a
+// l'identique.
+function tcSuffixeHomonyme(nom){
+  if(typeof nom !== 'string') return '';
+  var m = nom.match(TC_RE_SUFFIXE_HOMONYME);
+  return m ? m[1] : '';
+}
+
+// Compare deux noms pour le tri : sur le nom NU d'abord, de sorte que deux
+// homonymes se suivent au lieu d'etre separes par un troisieme nom.
+function tcComparerNoms(a, b){
+  var c = tcNomNu(a).localeCompare(tcNomNu(b), 'fr');
+  if(c !== 0) return c;
+  // Noms nus identiques : c'est une homonymie. La fiche SANS suffixe passe
+  // la premiere — c'est elle qui porte le nom tout court —, puis les autres
+  // dans l'ordre de leur suffixe. Trier sur le nom complet aurait mis
+  // « CLARK (II), Larry » devant « CLARK, Larry », ce qui se lit a l'envers :
+  // le deuxieme avant le premier.
+  var sa = tcSuffixeHomonyme(a), sb = tcSuffixeHomonyme(b);
+  if(!sa && sb) return -1;
+  if(sa && !sb) return 1;
+  // `numeric` pour que « (1943) » passe avant « (1948) », et « (II) » avant
+  // « (III) » malgre la longueur.
+  return sa.localeCompare(sb, 'fr', { numeric: true });
+}
+
 // ── DUOS DE CINEASTES ────────────────────────────────────────────
 // En base, un duo porte TOUJOURS un « & » dans son nom, et seuls les duos en
 // portent un : verifie sur les 3 356 cineastes de l'index — 54 duos, aucune
@@ -116,6 +188,25 @@ function tcDuoMembres(nom){
   var noms = nom.split(' & ');
   if(noms.length !== 2 || !noms[0].trim() || !noms[1].trim()) return null;
   return [noms[0].trim(), noms[1].trim()];
+}
+
+// L'INVERSE de tcDuoMembres : à partir des deux membres saisis séparément,
+// rend { nom, prenom } au format de la table « cineastes ». Sert au
+// formulaire « Proposer un cinéaste » (index.js), pour qu'un cinéphile n'ait
+// jamais à connaître la convention : il saisit deux personnes, c'est ici
+// qu'elles deviennent « COEN » + « Joel & Ethan », ou « ALOV & NAUMOV » + ''.
+//
+// La règle est celle, et seulement celle, que tcDuoMembres sait relire :
+// nom de famille commun ET deux prénoms renseignés → écriture « NOM, P1 & P2 » ;
+// dans tous les autres cas → « NOM1 & NOM2 », les prénoms tombant, comme dans
+// les trente-deux duos de l'index qui sont écrits ainsi.
+function tcComposerDuo(nom1, prenom1, nom2, prenom2){
+  nom1 = (nom1 || '').trim(); prenom1 = (prenom1 || '').trim();
+  nom2 = (nom2 || '').trim(); prenom2 = (prenom2 || '').trim();
+  if(nom1 && normStr(nom1) === normStr(nom2) && prenom1 && prenom2){
+    return { nom: nom1, prenom: prenom1 + ' & ' + prenom2 };
+  }
+  return { nom: nom1 + ' & ' + nom2, prenom: '' };
 }
 
 // Chemins candidats des portraits locaux des deux membres d'un duo : un

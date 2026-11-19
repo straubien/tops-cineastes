@@ -283,6 +283,15 @@ body {
 #flags-table td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #flags-table select.contrib-select { width: 100%; max-width: none; font-size: 14px; padding: 6px 10px; }
 #flags-table select.flags-select-2 { margin-top: 6px; }
+/* Pied de tableau : « N affichés sur M » et le bouton du paquet suivant.
+   L'affichage est plafonné par paquets — sans quoi une recherche d'une ou
+   deux lettres fabriquait des centaines de sélecteurs de pays d'un coup et
+   figeait la saisie (cf. admin.js, section Drapeaux). */
+#flags-table td.flags-plus {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--bg-subtle);
+}
+#flags-table .flags-plus-info { font-size: 13px; color: var(--brun-pale); }
 
 /* Files d'attente de modération */
 .dash-queue-grid {
@@ -1194,19 +1203,15 @@ body {
 }
 
 /* ── STATISTIQUES ── */
-/* Courants et catégories sont classés ensemble, la couleur de la barre
-   (or / rouge, comme les étiquettes des fiches publiques) et l'étiquette sous
-   le nom distinguant les deux.
-   TROIS CARTES, et non plus une seule : le bandeau de synthèse, le classement
-   des douze premières entrées, puis le catalogue entier en tableau. Les cent
-   trente barres d'autrefois faisaient une page de dix mille pixels où tout se
-   ressemblait ; le tableau en montre autant sur moins d'un cinquième de la
-   hauteur, et se cherche.
-   Les lignes de barres et l'échelle partagent la même grille via
-   --stats-cols, pour que les graduations tombent exactement sous les barres. */
-.stats-chart {
-  --stats-cols: 28px 30px minmax(130px, 1.15fr) minmax(110px, 2.2fr) 76px;
-}
+/* Courants et catégories sont classés ensemble, la couleur (or / rouge,
+   comme les étiquettes des fiches publiques) et l'étiquette écrite sous le
+   nom distinguant les deux.
+   LECTURE PAR PALIERS : le bandeau de synthèse, la barre de filtres, puis un
+   bloc repliable par ordre de grandeur — barres pour les deux premiers,
+   grille compacte pour « Présents », pastilles pour « Jamais rattachés ».
+   Les colonnes partagées (--stats-cols) ont disparu avec le tableau : chaque
+   ligne de barre se pose désormais sur trois rangs à elle, ce qui rend au nom
+   la largeur qui lui manquait. */
 .stats-chart > .empty-state { padding: 1.5rem; }
 .stats-bloc {
   margin-bottom: 1.6rem;
@@ -1231,7 +1236,7 @@ body {
   color: var(--text);
 }
 .stats-bloc-aide { font-size: 12px; font-style: italic; color: var(--brun-pale); }
-/* Les pastilles de famille sont poussées au bout de l'en-tête du classement. */
+/* Les pastilles de famille sont poussées au bout de l'en-tête des filtres. */
 .stats-bloc-tete .stats-legend-keys { margin: 0 0 0 auto; }
 
 /* Bandeau de synthèse — combien de cinéastes sont rattachés au total */
@@ -1271,116 +1276,15 @@ body {
   margin-top: 8px;
 }
 
-/* Barres */
-.stats-bars { padding: 0.3rem 0 0.2rem; }
-.stats-bar-item {
-  display: grid;
-  grid-template-columns: var(--stats-cols);
-  align-items: center;
-  gap: 12px;
-  padding: 9px 1.5rem;
-  border-bottom: 1px solid var(--border-dim);
-  transition: background 0.12s;
-}
-.stats-bar-item:last-child { border-bottom: none; }
-.stats-bar-item:hover { background: var(--bg-subtle); }
-.stats-bar-rank {
-  font-family: system-ui, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--brun-pale);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.stats-bar-item.is-top .stats-bar-rank { color: var(--rouge-texte); font-weight: 700; }
-.stats-bar-flagcell { display: flex; align-items: center; justify-content: center; }
-.stats-bar-flag { width: 24px; height: 24px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
-.stats-bar-flag-historic { width: auto; height: 24px; }
-.stats-bar-label { font-family: var(--font-names); font-size: 16px; color: var(--text); line-height: 1.25; overflow-wrap: break-word; min-width: 0; }
-/* Sous le nom : la famille (redondante avec la couleur de la barre, pour ne pas
-   reposer sur la seule couleur) puis la période éventuelle. */
-.stats-bar-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; margin-top: 2px; }
-.stats-bar-type { font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; }
-.stats-bar-item.is-courant .stats-bar-type { color: var(--or-texte); }
-.stats-bar-item.is-categorie .stats-bar-type { color: var(--rouge-texte); }
-.stats-bar-years { font-family: var(--font); font-size: 12px; font-style: italic; color: var(--brun-pale); }
-.stats-bar-track {
-  position: relative;
-  height: 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-dim);
-  background-image: repeating-linear-gradient(to right, var(--border-dim) 0 1px, transparent 1px 25%);
-}
-.stats-bar-fill {
-  height: 100%;
-  background: var(--or);
-  min-width: 2px;
-  box-shadow: inset -2px 0 0 rgba(0,0,0,0.18);
-  transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.stats-bar-item.is-categorie .stats-bar-fill { background: var(--rouge); }
-.stats-bar-count { text-align: right; font-variant-numeric: tabular-nums; }
-.stats-bar-count-n { display: block; font-size: 19px; font-weight: 700; line-height: 1; color: var(--text); }
-.stats-bar-count-pct {
-  display: block;
-  font-family: system-ui, sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--brun-pale);
-  margin-top: 4px;
-  white-space: nowrap;
-}
-/* Entrées du catalogue rattachées à aucune fiche : présentes mais en retrait */
-.stats-bar-item.is-zero .stats-bar-label,
-.stats-bar-item.is-zero .stats-bar-count-n { color: var(--brun-pale); }
-.stats-bar-item.is-zero .stats-bar-flag { filter: grayscale(1); opacity: 0.45; }
-.stats-bar-item.is-zero .stats-bar-type { opacity: 0.6; }
-.stats-bar-item.is-zero .stats-bar-fill { display: none; }
-
-/* Échelle sous les barres + légende de lecture */
-.stats-axis {
-  display: grid;
-  grid-template-columns: var(--stats-cols);
-  gap: 12px;
-  padding: 8px 1.5rem 0.9rem;
-  border-top: 1px solid var(--border);
-}
-.stats-axis-scale {
-  grid-column: 4;
-  display: flex;
-  justify-content: space-between;
-  font-family: system-ui, sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--brun-pale);
-  font-variant-numeric: tabular-nums;
-}
-.stats-legend { padding: 10px 1.5rem 1.1rem; }
-.stats-legend-keys { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 8px; }
-.stats-legend-key {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: system-ui, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--brun-pale);
-}
-.stats-legend-key i { width: 13px; height: 13px; flex-shrink: 0; box-shadow: inset -2px 0 0 rgba(0,0,0,0.18); }
-.stats-legend-key.is-courant i { background: var(--or); }
-.stats-legend-key.is-categorie i { background: var(--rouge); }
-.stats-legend-note { display: block; font-size: 13px; font-style: italic; color: var(--brun-pale); line-height: 1.4; }
-
-/* ── LE CATALOGUE EN TABLEAU ──────────────────────────────────────────── */
-/* La barre de filtres : une recherche, trois listes déroulantes, un bouton
-   de remise à zéro. Tout agit immédiatement, rien ne relit la base. */
+/* ── LA BARRE DE FILTRES ──────────────────────────────────────────────── */
+/* Une recherche, deux listes déroulantes, un bouton de tri à deux positions,
+   une remise à zéro. Tout agit immédiatement, rien ne relit la base. */
 .stats-filtres {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid var(--border);
   background: var(--bg-subtle);
 }
 /* Les champs du back-office sont en largeur pleine par défaut : ici on les
@@ -1401,126 +1305,214 @@ body {
   letter-spacing: 0.08em;
   flex: 0 0 auto;
 }
-
-/* Le tableau. Six colonnes seulement : il tient sans défilement latéral
-   jusque dans les 900 px de .main, et n'a donc pas besoin d'une colonne de
-   noms collée à gauche comme celui de l'onglet Activité.
-   CENT TRENTE LIGNES DÉFILENT DANS LE TABLEAU, PAS DANS LA PAGE : sans ce
-   plafond, le catalogue rendait à lui seul quatre mille cinq cents pixels et
-   l'onglet redevenait le rouleau qu'on voulait lui éviter. L'en-tête reste
-   accroché en haut du cadre, pour qu'on sache toujours ce qu'on lit. */
-.stats-table-wrap {
-  overflow: auto;
-  max-height: min(620px, 70vh);
-  overscroll-behavior: contain;
-}
-.stats-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--bg-card);
-}
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.stats-table th, .stats-table td {
-  padding: 7px 10px;
-  text-align: right;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--border-dim);
-  font-variant-numeric: tabular-nums;
-}
-.stats-table thead th {
-  vertical-align: bottom;
-  padding-top: 10px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--noir);
-}
-.stats-table tbody tr:last-child td { border-bottom: none; }
-.stats-table tbody tr:hover td { background: var(--bg-subtle); }
-.stats-table .stats-gauche { text-align: left; white-space: normal; }
-.stats-col-rang {
-  width: 34px;
+/* Les deux positions du tri, collées l'une à l'autre comme un interrupteur */
+.stats-tri-groupe { display: inline-flex; flex: 0 0 auto; }
+.stats-tri-btn {
   font-family: system-ui, sans-serif;
   font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  background: var(--bg-card);
   color: var(--brun-pale);
-  text-align: right;
+  border: 1px solid var(--border);
+  cursor: pointer;
 }
-.stats-table-nom {
+.stats-tri-btn + .stats-tri-btn { border-left: none; }
+.stats-tri-btn:hover { color: var(--text); }
+.stats-tri-btn.actif {
+  background: var(--noir);
+  color: #f0ece3;
+  border-color: var(--noir);
+  font-weight: 700;
+}
+.dark .stats-tri-btn.actif { color: #1a1714; }
+
+/* ── UN PALIER ────────────────────────────────────────────────────────── */
+/* <details> : le repli ne coûte pas une ligne de JavaScript d'état. */
+.stats-palier > .stats-palier-tete { cursor: pointer; list-style: none; }
+.stats-palier > .stats-palier-tete::-webkit-details-marker { display: none; }
+/* Le chevron, posé à la main pour qu'il suive la couleur du texte */
+.stats-palier-tete::before {
+  content: '▸';
+  font-size: 12px;
+  color: var(--brun-pale);
+  transition: transform 0.12s;
+  display: inline-block;
+}
+.stats-palier[open] > .stats-palier-tete::before { transform: rotate(90deg); }
+.stats-palier > .stats-palier-tete:hover { background: var(--bg-subtle); }
+.stats-palier:not([open]) > .stats-palier-tete { border-bottom: none; }
+.stats-palier-chiffres {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--brun-pale);
+  font-variant-numeric: tabular-nums;
+}
+.stats-palier-chiffres strong { color: var(--text); font-weight: 700; }
+/* Le palier des entrées jamais rattachées est en retrait : c'est une liste
+   de travail, pas une donnée à comparer. */
+.stats-palier.is-absents .stats-bloc-titre { color: var(--brun-pale); }
+
+/* ── LES BARRES (paliers « Piliers » et « Bien représentés ») ──────────── */
+/* TROIS RANGS par entrée, et non plus cinq colonnes serrées : nom et
+   effectif face à face, famille et période dessous, barre pleine largeur.
+   « Nouvelle Vague tchécoslovaque » ne passe plus sur trois lignes dans une
+   colonne de 130 px. */
+.stats-bars { padding: 0.4rem 0 0.5rem; }
+.stats-bar-item {
+  padding: 11px 1.5rem 13px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.stats-bar-item:last-child { border-bottom: none; }
+.stats-bar-item:hover { background: var(--bg-subtle); }
+.stats-bar-haut {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.stats-bar-rank {
+  flex: none;
+  min-width: 26px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brun-pale);
+  font-variant-numeric: tabular-nums;
+}
+.stats-bar-flagcell { flex: none; display: flex; width: 24px; justify-content: center; align-self: center; }
+.stats-bar-flag { width: 22px; height: 22px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.stats-bar-flag-historic { width: auto; height: 22px; }
+.stats-bar-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-names);
+  font-size: 17px;
+  color: var(--text);
+  line-height: 1.2;
+  overflow-wrap: break-word;
+}
+.stats-bar-count {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.stats-bar-count-n { font-size: 19px; font-weight: 700; color: var(--text); }
+.stats-bar-count-pct { font-size: 12px; color: var(--brun-pale); min-width: 44px; }
+/* Famille et période, en retrait sous le rang pour s'aligner sur le nom */
+.stats-bar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 9px;
+  margin: 3px 0 7px 60px;
+}
+.stats-bar-type { font-family: system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; }
+.stats-bar-item.is-courant .stats-bar-type { color: var(--or-texte); }
+.stats-bar-item.is-categorie .stats-bar-type { color: var(--rouge-texte); }
+.stats-bar-years { font-family: var(--font); font-size: 12px; font-style: italic; color: var(--brun-pale); }
+.stats-bar-track {
+  height: 10px;
+  margin-left: 60px;
+  background: var(--border-dim);
+  overflow: hidden;
+}
+.stats-bar-fill {
+  height: 100%;
+  background: var(--or);
+  box-shadow: inset -2px 0 0 rgba(0,0,0,0.18);
+  min-width: 2px;
+}
+.stats-bar-item.is-categorie .stats-bar-fill { background: var(--rouge); }
+
+/* ── LA GRILLE (palier « Présents ») ──────────────────────────────────── */
+/* De une à quatorze fiches : une barre n'y distingue plus rien. Une ligne par
+   entrée, en autant de colonnes que la largeur en autorise. */
+.stats-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0 1.5rem;
+  padding: 0.6rem 1.5rem 1rem;
+}
+.stats-grille-item {
   display: flex;
   align-items: center;
   gap: 9px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 14px;
+}
+.stats-grille-flagcell { flex: none; display: flex; width: 20px; justify-content: center; }
+.stats-grille-flag { width: 18px; height: 18px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.stats-grille-flag-historic { width: auto; height: 18px; }
+.stats-grille-nom {
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-names);
-  font-size: 15px;
   color: var(--text);
-  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.stats-table-flagcell { flex: none; display: flex; width: 22px; justify-content: center; }
-.stats-table-flag { width: 20px; height: 20px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
-.stats-table-flag-historic { width: auto; height: 20px; }
-/* Le type porte la couleur de sa famille — la même que celle des barres du
-   classement, et que celle des étiquettes des fiches publiques. */
-.stats-table-type {
-  font-family: system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+/* Un filet de couleur rappelle la famille, le titre de l'infobulle la nomme */
+.stats-grille-item.is-courant .stats-grille-nom { box-shadow: inset 3px 0 0 var(--or); padding-left: 8px; }
+.stats-grille-item.is-categorie .stats-grille-nom { box-shadow: inset 3px 0 0 var(--rouge); padding-left: 8px; }
+.stats-grille-n {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
 }
-.stats-table tr.is-courant .stats-table-type { color: var(--or-texte); }
-.stats-table tr.is-categorie .stats-table-type { color: var(--rouge-texte); }
-.stats-table-annees { font-family: var(--font); font-size: 12px; font-style: italic; color: var(--brun-pale); }
-/* La colonne des effectifs porte sa propre micro-barre, calée à droite du
-   nombre : on compare d'un coup d'œil sans quitter la ligne. */
-.stats-table-count {
-  display: flex;
+
+/* ── LES PASTILLES (palier « Jamais rattachés ») ──────────────────────── */
+.stats-pastilles { padding: 0.9rem 1.5rem 1.2rem; }
+.stats-pastilles-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brun-pale);
+  line-height: 1.45;
+}
+.stats-pastilles-liste { display: flex; flex-wrap: wrap; gap: 7px; }
+.stats-pastille {
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-}
-.stats-table-piste {
-  flex: 1 1 110px;
-  min-width: 48px;
-  height: 10px;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: var(--text);
   background: var(--bg-subtle);
   border: 1px solid var(--border-dim);
 }
-.stats-table-fill {
-  display: block;
-  height: 100%;
-  min-width: 2px;
-  background: var(--or);
-}
-.stats-table tr.is-categorie .stats-table-fill { background: var(--rouge); }
-.stats-table-n { flex: none; min-width: 34px; font-size: 15px; font-weight: 700; color: var(--text); }
-.stats-table-part { width: 58px; font-size: 12px; color: var(--brun-pale); }
-/* Un zéro s'écrit « · » et s'efface : ce qui doit sauter aux yeux, c'est ce
-   qui EST rattaché. La ligne reste lisible, simplement elle ne crie pas. */
-.stats-zero { color: var(--border); }
-.stats-table tr.is-zero .stats-table-nom { color: var(--brun-pale); }
-.stats-table tr.is-zero .stats-table-flag { filter: grayscale(1); opacity: 0.45; }
-.stats-table tr.is-zero .stats-table-type { opacity: 0.6; }
+.stats-pastille.is-courant { border-left: 3px solid var(--or); }
+.stats-pastille.is-categorie { border-left: 3px solid var(--rouge); }
+.stats-pastille-flagcell { display: flex; }
+.stats-pastille-flag { width: 15px; height: 15px; object-fit: cover; border-radius: 2px; }
+.stats-pastille-flag-historic { width: auto; height: 15px; }
 
-.stats-tri {
+/* ── LÉGENDES ─────────────────────────────────────────────────────────── */
+.stats-legend { padding: 10px 1.5rem 1.1rem; }
+.stats-legend-keys { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 8px; }
+.stats-legend-key {
   display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+  align-items: center;
+  gap: 7px;
   font-family: system-ui, sans-serif;
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--brun-pale);
 }
-.stats-tri:hover { color: var(--text); }
-.stats-tri-actif { color: var(--text); font-weight: 700; }
-.stats-fleche { font-size: 12px; }
-.stats-table-wrap + .stats-legend { border-top: 1px solid var(--border); }
+.stats-legend-key i { width: 13px; height: 13px; flex-shrink: 0; box-shadow: inset -2px 0 0 rgba(0,0,0,0.18); }
+.stats-legend-key.is-courant i { background: var(--or); }
+.stats-legend-key.is-categorie i { background: var(--rouge); }
+.stats-legend-note { display: block; font-size: 13px; font-style: italic; color: var(--brun-pale); line-height: 1.4; }
 
 @media (max-width: 900px) {
   .stats-summary-main { padding: 1.1rem 1.2rem; }
@@ -1528,40 +1520,26 @@ body {
   .stats-summary-label { font-size: 15px; }
   .stats-summary-kpi { padding: 1rem 0.5rem; }
   .stats-summary-kpi-value { font-size: 21px; }
-  .stats-bar-item { padding: 9px 1.2rem; gap: 10px; }
-  .stats-axis, .stats-legend, .stats-filtres, .stats-bloc-tete { padding-left: 1.2rem; padding-right: 1.2rem; }
-  .stats-bar-label { font-size: 14px; }
+  .stats-bar-item { padding: 10px 1.2rem 12px; }
+  .stats-legend, .stats-filtres, .stats-bloc-tete,
+  .stats-grille, .stats-pastilles { padding-left: 1.2rem; padding-right: 1.2rem; }
+  .stats-bar-label { font-size: 15px; }
 }
-/* Sous 700px la barre passe sur sa propre ligne, pleine largeur */
 @media (max-width: 700px) {
-  .stats-bar-item {
-    grid-template-columns: 24px 26px 1fr auto;
-    grid-template-areas:
-      'rank flag label count'
-      'track track track track';
-    row-gap: 8px;
-    align-items: baseline;
-  }
-  .stats-bar-rank { grid-area: rank; }
-  .stats-bar-flagcell { grid-area: flag; align-self: center; }
-  .stats-bar-label { grid-area: label; }
-  .stats-bar-count { grid-area: count; display: flex; align-items: baseline; gap: 6px; }
-  .stats-bar-count-n, .stats-bar-count-pct { display: inline; margin-top: 0; }
-  .stats-bar-track { grid-area: track; }
-  .stats-axis { display: none; }
   /* Deux par deux plutôt qu'une rangée 3 + 1 bancale */
   .stats-summary-kpis { flex-basis: 100%; grid-template-columns: repeat(2, 1fr); }
   .stats-summary-kpi:nth-child(odd) { border-left: none; }
   .stats-summary-kpi:nth-child(n+3) { border-top: 1px solid var(--border-dim); }
-  /* Le tableau du catalogue : la micro-barre et la part sautent les
-     premières. Le nom, le type et l'effectif suffisent à s'y retrouver sur
-     un téléphone, et les six colonnes tenaient mal dans 360 px. */
   .stats-filtres .autocomplete-input, .stats-filtres .contrib-select { width: 100%; }
   .stats-filtres .stats-filtre-select { flex: 1 1 140px; }
-  .stats-table-piste, .stats-table-part, .stats-table th:last-child { display: none; }
-  .stats-table th, .stats-table td { padding: 7px 6px; }
-  .stats-table-nom { font-size: 14px; }
-  .stats-table-wrap { max-height: min(520px, 65vh); }
+  .stats-tri-groupe, .stats-filtre-reset { flex: 1 1 auto; }
+  .stats-tri-btn { flex: 1 1 0; }
+  /* Le retrait qui alignait barre et méta sur le nom coûte trop cher dans
+     360 px : on le rend à la largeur. */
+  .stats-bar-meta, .stats-bar-track { margin-left: 0; }
+  .stats-bar-label { font-size: 14px; }
+  .stats-bar-count-n { font-size: 17px; }
+  .stats-grille { grid-template-columns: 1fr; }
 }
 
 .submission-header {
@@ -1754,6 +1732,20 @@ body {
 .prop-status-badge.pending { background: #fff3cd; color: #856404; }
 .prop-edit-row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 .prop-edit-row > * { flex: 1; min-width: 110px; }
+/* Duos : la pastille à côté du nom, et l'intertitre du second membre dans
+   l'éditeur d'avant-validation. */
+.prop-duo-badge {
+  display: inline-block; vertical-align: middle;
+  font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 2px 7px; margin-left: 8px;
+  border: 1px solid var(--rouge); color: var(--rouge-texte);
+}
+.prop-edit-duo-titre {
+  font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--brun-pale); margin: 12px 0 7px;
+}
 /* Modération des commentaires */
 .cm-card { border: 1px solid var(--border,#d0c8b8); padding: 0.9rem 1.4rem; margin-bottom: 0.8rem; background: var(--bg-card,#faf8f4); }
 .cm-card-meta { font-size: 13px; color: var(--brun-pale); margin-bottom: 6px; }

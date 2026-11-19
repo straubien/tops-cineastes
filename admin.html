@@ -206,7 +206,13 @@
 
     <!-- ── TAB 6 : DRAPEAUX ── -->
     <div class="tab-panel" id="panel-flags">
-      <div class="section-title">Drapeaux de nationalité</div>
+      <div class="section-title">Drapeaux — pays de carrière</div>
+      <div style="font-size:13px;color:var(--brun-pale);margin-bottom:1rem;max-width:640px;">
+        Le ou les drapeaux d'une fiche indiquent le <strong>pays de carrière</strong> — le cinéma
+        dans lequel l'œuvre s'est faite — et non la nationalité de la personne. D'où le second
+        sélecteur&nbsp;: il sert aux carrières en deux temps (Sirk, Tarkovski…), pas aux doubles
+        nationalités.
+      </div>
       <div class="field-wrap" style="max-width:420px;margin-bottom:1rem;">
         <input type="text" class="autocomplete-input" id="flags-search" aria-label="Rechercher un cinéaste" placeholder="Rechercher un cinéaste…" autocomplete="off">
       </div>
@@ -378,6 +384,9 @@
       <div style="font-size:13px;color:var(--brun-pale);margin-bottom:1rem;">
         Nombre de fiches cinéaste où chaque courant / catégorie du catalogue est affecté
         (colonnes courant, courant 2 ou courant 3). Se met à jour automatiquement.
+        Le catalogue se lit par <strong>paliers d'ordre de grandeur</strong>, chacun à sa propre
+        échelle&nbsp;: comparer une entrée à 240 fiches et une entrée à 7 sur la même règle ne
+        montrait plus rien. Le dernier palier, replié, liste ce qui n'est rattaché à aucune fiche.
       </div>
       <div id="stats-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 16px;margin-bottom:1rem;font-size:15px;"></div>
 

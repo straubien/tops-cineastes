@@ -1303,6 +1303,13 @@ function init(){
 // getInitiales, formatContribName → définis dans utils.js
 
 function formatNom(nom,noBold){
+  // Le suffixe d'unicité d'un homonyme (« CLARK (II), Larry ») ne veut rien
+  // dire pour un lecteur : il n'existe que pour garder la colonne « nom »
+  // unique en base. Il disparaît ici, donc de TOUS les affichages du site
+  // d'un coup. Ce qui distingue vraiment deux homonymes — l'année de
+  // naissance — est ajouté par formatNomQualifie, là où les dates ne sont
+  // pas déjà affichées à côté.
+  nom=tcNomNu(nom);
   if(nom.includes(' & ')){
     var parts=nom.split(' & ');
     var hasComma=parts.some(function(p){return p.includes(',');});
@@ -1314,6 +1321,70 @@ function formatNom(nom,noBold){
   }
   if(nom.includes(',')){var i=nom.indexOf(',');return noBold?escapeHtml(nom):'<b>'+escapeHtml(nom.slice(0,i))+'</b>'+escapeHtml(nom.slice(i));}
   return noBold?escapeHtml(nom):'<b>'+escapeHtml(nom)+'</b>';
+}
+
+// ── HOMONYMES : CE QUI LES DISTINGUE À L'ÉCRAN ────────────────────────────
+// Le suffixe d'unicité retiré, deux homonymes s'afficheraient à l'identique.
+// Là où le nom paraît SEUL — le fil d'actualités, le classement, la liste de
+// ses propositions —, on lui accole donc l'année de naissance, qui est déjà
+// dans les données et qui, elle, dit quelque chose : « Larry CLARK 1943 » et
+// « Larry CLARK 1948 ». Ailleurs — l'index, la fiche, les hommages — les
+// dates figurent déjà à côté du nom : rien à ajouter.
+//
+// Le qualifiant n'apparaît QUE s'il y a vraiment homonymie. Sur les 3 728
+// fiches de l'index, un seul nom est aujourd'hui porté deux fois.
+var _TC_IDX_HOMONYMES = null;
+function tcIndexHomonymes(){
+  if(_TC_IDX_HOMONYMES) return _TC_IDX_HOMONYMES;
+  if(!DATA || !DATA.cineastes) return null;
+  var par = {};
+  DATA.cineastes.forEach(function(c){
+    var cle = normStr(tcNomNu(c.nom));
+    if(!par[cle]) par[cle] = [];
+    par[cle].push(c);
+  });
+  _TC_IDX_HOMONYMES = par;
+  return par;
+}
+
+// L'année qui distingue ce cinéaste de son homonyme, ou '' s'il n'en a pas.
+// `nom` est le nom COMPLET tel qu'il est en base, suffixe compris.
+function tcQualifiantHomonyme(nom){
+  var par = tcIndexHomonymes();
+  if(!par || typeof nom !== 'string') return '';
+  var liste = par[normStr(tcNomNu(nom))];
+  if(!liste || liste.length < 2) return '';
+  var c = null;
+  for(var i=0;i<liste.length;i++){ if(liste[i].nom === nom){ c = liste[i]; break; } }
+  if(!c) return '';
+  // Un duo range ses naissances dans un tableau : on prend celle du premier
+  // membre, comme partout ailleurs.
+  var n = Array.isArray(c.naissance) ? c.naissance[0] : c.naissance;
+  if(n) return String(n);
+  // Sans année renseignée, on retombe sur le suffixe lui-même : deux fiches
+  // ne doivent JAMAIS être impossibles à distinguer à l'écran.
+  return tcSuffixeHomonyme(nom);
+}
+
+// formatNom, plus le qualifiant quand il y a homonymie.
+function formatNomQualifie(nom,noBold){
+  var html = formatNom(nom,noBold);
+  var q = tcQualifiantHomonyme(nom);
+  return q ? (html + '<span class="c-homonyme">' + escapeHtml(q) + '</span>') : html;
+}
+
+// Infobulle d'un lien construit à partir d'un nom écrit en TEXTE LIBRE (un
+// favori, une liste importée), quand ce nom est porté par deux cinéastes.
+// Le lien mène à la fiche enregistrée sous ce nom EXACT — règle stable, et
+// c'est déjà ce que faisait tcResoudreCineaste — mais le lecteur est averti
+// que l'autre existe, au lieu d'ignorer qu'un choix a été fait pour lui.
+// Rend '' dès qu'il n'y a pas d'homonymie, c'est-à-dire presque toujours.
+function tcTitreHomonyme(cible){
+  var par = tcIndexHomonymes();
+  if(!par || typeof cible !== 'string') return '';
+  var liste = par[normStr(tcNomNu(cible))];
+  if(!liste || liste.length < 2) return '';
+  return t('homonyme_avertissement', String(liste.length));
 }
 // ── Décès sans date connue : « après 1986 » ───────────────────────
 // La colonne « deces » de la table cineastes est un jsonb : elle accepte donc,
@@ -1577,6 +1648,8 @@ function renderProfilFavs(favs){
       item.classList.add('profil-cin-lien');
       item.setAttribute('role','button');
       item.setAttribute('tabindex','0');
+      var titreHom=tcTitreHomonyme(cible);
+      if(titreHom) item.title=titreHom;
       item.addEventListener('click',function(){tcOuvrirFicheParNom(cible);});
       item.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();tcOuvrirFicheParNom(cible);}});
     }
@@ -1609,8 +1682,10 @@ function renderAutresCineaste(list,showAll){
     var display=formatAutreNom(n);
     var cls='profil-autre-item'+(display.length>22?' profil-autre-small':'');
     var cible=tcResoudreCineaste(n);
+    var titreHom=cible?tcTitreHomonyme(cible):'';
     var attrs=cible
       ? ' class="'+cls+' profil-cin-lien" data-cineaste="'+escapeHtml(cible)+'" role="button" tabindex="0"'
+        +(titreHom?' title="'+escapeHtml(titreHom)+'"':'')
       : ' class="'+cls+'"';
     return '<div'+attrs+'><span class="profil-autre-num">'+(i+1)+'</span> '+escapeHtml(display)+'</div>';
   }).join('');
@@ -1875,7 +1950,7 @@ function renderProfilPortrait(name,cin){
     var paysRows=paysKeys.slice(0,6).map(function(code){
       var v=paysCount[code];
       var pct=Math.round(v/maxPays*100);
-      var flag=tcFlagHtml(code,'pp-flag');
+      var flag=tcFlagHtml(code,'pp-flag',t('flag_pays_carriere'));
       var label=tcCountryLabel(code)||code;
       return '<div class="pp-hbar-row"><div class="pp-hbar-label pp-nat">'+(flag||'')+'<span>'+escapeHtml(label)+'</span></div>'
         +'<div class="pp-hbar-track"><div class="pp-hbar-fill pp-alt" style="width:'+pct+'%"></div></div>'
@@ -2125,7 +2200,9 @@ function selectLetter(l){
   });
   var _bar=document.getElementById('alpha-bar');
   if(_bar) tcBarreRovingMaj(_bar, _bar.querySelector('.alpha-col.active'));
-  var items=getLetterData(l);items.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr')});
+  // Tri sur le nom NU : sans cela « CLARK (II), Larry » passait avant
+  // « CLARK, Bob », qui venait s'intercaler entre les deux Larry Clark.
+  var items=getLetterData(l);items.sort(function(a,b){return tcComparerNoms(a.nom,b.nom)});
   if(activeFilter==='non-couvert'){var covered=getCoveredCineastes();items=items.filter(function(c){return!covered.has(c.nom);});}
   renderList(items);
 }
@@ -2277,7 +2354,7 @@ function filterList(){
   // avant « BERNARD, Raymond ». Tri alphabétique à l'intérieur de chaque groupe.
   function tcLastName(nom){var base=nom.split('&')[0];var i=base.indexOf(',');return normStr((i!==-1?base.slice(0,i):base).trim());}
   function tcRank(nom){var ln=tcLastName(nom);var p=ln.indexOf(q);return p===0?0:(p!==-1?1:2);}
-  r.sort(function(a,b){var ra=tcRank(a.nom),rb=tcRank(b.nom);if(ra!==rb)return ra-rb;return a.nom.localeCompare(b.nom,'fr');});
+  r.sort(function(a,b){var ra=tcRank(a.nom),rb=tcRank(b.nom);if(ra!==rb)return ra-rb;return tcComparerNoms(a.nom,b.nom);});
   document.querySelectorAll('.alpha-col').forEach(function(col){col.classList.remove('active')});
   renderList(r);
 }
@@ -2305,7 +2382,7 @@ function applyFilter(){
     var covered=getCoveredCineastes();
     items=DATA.cineastes.filter(function(c){return!covered.has(c.nom);});
   } else {selectLetter(currentLetter);return;}
-  items.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
+  items.sort(function(a,b){return tcComparerNoms(a.nom,b.nom);});
   document.querySelectorAll('.alpha-col').forEach(function(col){col.classList.remove('active');});
   document.getElementById('search-input').value='';
   renderList(items);
@@ -2467,10 +2544,14 @@ function openFiche(c){
   var fichePhotoPath=c.photo_tmdb;
   var fichePhotoHtml=buildPhotoHtml(fichePhotoPath,'fiche-photo',185,c.nom);
 
-  // Drapeau(x) de nationalité : jusqu'à deux (deux carrières distinctes),
-  // affichés côte à côte sous le nom et au-dessus des dates. tcFlagHtml renvoie
-  // '' pour un code vide/inconnu, donc le bloc gère naturellement 0, 1 ou 2 drapeaux.
-  var ficheFlagsInner=tcFlagHtml(c.pays,'fiche-flag')+tcFlagHtml(c.pays2,'fiche-flag');
+  // Drapeau(x) du PAYS DE CARRIÈRE — le cinéma dans lequel l'œuvre s'est
+  // faite, et non la nationalité de la personne (cf. flagsdata.js). Jusqu'à
+  // deux, pour deux carrières distinctes, affichés côte à côte sous le nom et
+  // au-dessus des dates. L'infobulle l'écrit en toutes lettres : le drapeau
+  // seul se lirait comme un passeport. tcFlagHtml renvoie '' pour un code
+  // vide ou inconnu, donc le bloc gère naturellement 0, 1 ou 2 drapeaux.
+  var ficheFlagTitre=t('flag_pays_carriere');
+  var ficheFlagsInner=tcFlagHtml(c.pays,'fiche-flag',ficheFlagTitre)+tcFlagHtml(c.pays2,'fiche-flag',ficheFlagTitre);
   var ficheFlagsHtml=ficheFlagsInner?('<div class="fiche-flags">'+ficheFlagsInner+'</div>'):'';
 
   var ficheCourantHtml='';
@@ -3556,17 +3637,17 @@ function renderActualites(){
       var key=s.contributor_id&&cin?tcActuTopKey(s.contributor_id,cin):null;
       var isModif=(s.parsed_json&&(s.parsed_json.isModification||s.parsed_json.approvalCount>1))||(key&&(legacyKeys.has(key)||seenKeys.has(key)));
       if(key)seenKeys.add(key);
-      var label=isModif?t('actu_top_modifie',[escapeHtml(dn),formatNom(cin)]):t('actu_top_nouveau',[escapeHtml(dn),formatNom(cin)]);
+      var label=isModif?t('actu_top_modifie',[escapeHtml(dn),formatNomQualifie(cin)]):t('actu_top_nouveau',[escapeHtml(dn),formatNomQualifie(cin)]);
       items.push({date:s.reviewed_at||s.submitted_at,html:tcActuAvatarHtml(s.contributor_id,dn)+' '+label,cineaste:cin,type:'tops'});
     });
     coms.forEach(function(c){
       var dn=tcAuthorLabel(c.author_contributor_id);
-      items.push({date:c.created_at,html:'<span class="actu-icon">💬</span> '+t('actu_commentaire',[escapeHtml(dn),formatNom(c.cineaste_nom||'')]),cineaste:c.cineaste_nom,type:'comments'});
+      items.push({date:c.created_at,html:'<span class="actu-icon">💬</span> '+t('actu_commentaire',[escapeHtml(dn),formatNomQualifie(c.cineaste_nom||'')]),cineaste:c.cineaste_nom,type:'comments'});
     });
     courantProps.forEach(function(p){
       var dn=(p.contributors&&p.contributors.display_name)||'?';
       var actuKey=tcCourantTypeFromName(p.courant||'')==='categorie'?'actu_categorie_valide':'actu_courant_valide';
-      items.push({date:p.reviewed_at||p.submitted_at,html:'<span class="actu-icon">🏷️</span> '+t(actuKey,[escapeHtml(dn),formatNom(p.cineaste_nom||''),'<span class="actu-courant-name">'+escapeHtml(tcCourantLabelFromName(p.courant||''))+'</span>']),cineaste:p.cineaste_nom,type:'courants'});
+      items.push({date:p.reviewed_at||p.submitted_at,html:'<span class="actu-icon">🏷️</span> '+t(actuKey,[escapeHtml(dn),formatNomQualifie(p.cineaste_nom||''),'<span class="actu-courant-name">'+escapeHtml(tcCourantLabelFromName(p.courant||''))+'</span>']),cineaste:p.cineaste_nom,type:'courants'});
     });
     // Versions dont on possède une empreinte, par source, de la plus
     // récente à la plus ancienne : une mise à jour ne peut se raconter top
@@ -3763,10 +3844,10 @@ function tcMajItemsActualite(p,changements){
   var ch=changements&&changements[tcMajCle(p)];
   if(ch&&(ch.a.length||ch.m.length)){
     return ch.a.map(function(nom){
-      return {date:p.date, html:avatar+' '+t('actu_top_nouveau',[escapeHtml(aut.nom),formatNom(nom)]),
+      return {date:p.date, html:avatar+' '+t('actu_top_nouveau',[escapeHtml(aut.nom),formatNomQualifie(nom)]),
               cineaste:nom, type:'tops'};
     }).concat(ch.m.map(function(nom){
-      return {date:p.date, html:avatar+' '+t('actu_top_modifie',[escapeHtml(aut.nom),formatNom(nom)]),
+      return {date:p.date, html:avatar+' '+t('actu_top_modifie',[escapeHtml(aut.nom),formatNomQualifie(nom)]),
               cineaste:nom, type:'tops'};
     }));
   }
@@ -3920,7 +4001,7 @@ function tcHommagesComputeSlides(year){
       });
     }
   });
-  slides.sort(function(a,b){return a.cineaste.nom.localeCompare(b.cineaste.nom,'fr');});
+  slides.sort(function(a,b){return tcComparerNoms(a.cineaste.nom,b.cineaste.nom);});
   return slides;
 }
 function tcHommagesGoTo(i){
@@ -4169,15 +4250,15 @@ var _courantDetailCineastes=null;
 function tcSortCourantDetailList(list){
   var sorted=list.slice();
   if(COURANT_DETAIL_SORT==='alpha'){
-    sorted.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
+    sorted.sort(function(a,b){return tcComparerNoms(a.nom,b.nom);});
   } else {
     sorted.sort(function(a,b){
       var ya=tcCourantDetailBirthYear(a),yb=tcCourantDetailBirthYear(b);
-      if(ya==null&&yb==null)return a.nom.localeCompare(b.nom,'fr');
+      if(ya==null&&yb==null)return tcComparerNoms(a.nom,b.nom);
       if(ya==null)return 1;
       if(yb==null)return -1;
       if(ya!==yb)return ya-yb;
-      return a.nom.localeCompare(b.nom,'fr');
+      return tcComparerNoms(a.nom,b.nom);
     });
   }
   return sorted;
@@ -4506,7 +4587,7 @@ function renderStatistiques(){
     var row=document.createElement('div');
     row.className='ranking-row clickable';
     row.innerHTML='<div class="'+rankClass+'">'+(i+1)+'</div>'
-      +'<div class="ranking-name">'+formatNom(c.nom)+'</div>'
+      +'<div class="ranking-name">'+formatNomQualifie(c.nom)+'</div>'
       +'<div class="ranking-value">'+nb+' '+t('tops_in_ranking')+'</div>';
     row.setAttribute('role','button');
     row.setAttribute('tabindex','0');
@@ -6318,8 +6399,16 @@ function openFicheThematique(themeNom){
     res.data.forEach(function(p){
       var nomComplet = (p.prenom ? p.prenom + ' ' : '') + p.nom;
       var annees = [];
-      if(p.annee_naissance) annees.push(t('prop_ne_en', p.annee_naissance));
-      if(p.annee_deces) annees.push(t('prop_decede_en', p.annee_deces));
+      if(p.duo){
+        // Un duo porte deux jeux de dates : on les lit membre par membre,
+        // séparés par une barre oblique, comme sur la fiche publique.
+        var m1 = propAnnees(p.annee_naissance, p.annee_deces);
+        var m2 = propAnnees(p.annee_naissance2, p.annee_deces2);
+        if(m1 || m2) annees.push((m1 || '?') + ' / ' + (m2 || '?'));
+      } else {
+        if(p.annee_naissance) annees.push(t('prop_ne_en', p.annee_naissance));
+        if(p.annee_deces) annees.push(t('prop_decede_en', p.annee_deces));
+      }
       if(p.pays && typeof tcCountryLabel === 'function'){ var _pl = tcCountryLabel(p.pays); if(_pl) annees.push(_pl); }
 
       var card = document.createElement('div');
@@ -6333,10 +6422,17 @@ function openFicheThematique(themeNom){
       var infoEl = document.createElement('div'); infoEl.className = 'prop-card-info';
 
       var nameEl = document.createElement('div'); nameEl.className = 'prop-card-name'; nameEl.textContent = nomComplet;
+      if(p.duo){
+        var duoBadge = document.createElement('span');
+        duoBadge.className = 'prop-duo-badge';
+        duoBadge.textContent = t('prop_duo_badge');
+        nameEl.appendChild(document.createTextNode(' '));
+        nameEl.appendChild(duoBadge);
+      }
       infoEl.appendChild(nameEl);
 
       if(p.pays && typeof tcFlagHtml === 'function'){
-        var flagHtml = tcFlagHtml(p.pays, 'prop-flag');
+        var flagHtml = tcFlagHtml(p.pays, 'prop-flag', t('flag_pays_carriere'));
         if(flagHtml){
           var flagWrap = document.createElement('div'); flagWrap.className = 'prop-flag-wrap'; flagWrap.innerHTML = flagHtml;
           infoEl.appendChild(flagWrap);
@@ -6359,7 +6455,8 @@ function openFicheThematique(themeNom){
     });
   }
 
-  // Remplissage du menu déroulant « Nationalité » (mêmes pays que l'onglet Drapeaux).
+  // Remplissage du menu déroulant « Pays de carrière » (mêmes pays que
+  // l'onglet Drapeaux de l'admin).
   (function initPropPaysSelect(){
     var sel = document.getElementById('prop-pays');
     if(!sel || typeof tcCountrySelectOptions !== 'function') return;
@@ -6373,22 +6470,54 @@ function openFicheThematique(themeNom){
     sel.innerHTML = html;
   })();
 
-  // Case « Aucune photo disponible » : désactive/vide le champ photo TMDB
-  // et rend son renseignement facultatif (la cellule reste NULL en base).
+  // Case « Aucune photo disponible » : désactive/vide le ou les champs photo
+  // TMDB et rend leur renseignement facultatif (la cellule reste NULL en
+  // base). Elle vaut pour les deux membres d'un duo : une photo de l'un sans
+  // l'autre se renseigne en laissant la case décochée et un champ vide.
   (function initPropNoPhotoCheckbox(){
     var chk = document.getElementById('prop-no-photo');
     var photoInput = document.getElementById('prop-photo-tmdb');
     if(!chk || !photoInput) return;
     chk.addEventListener('change', function(){
-      photoInput.disabled = chk.checked;
-      if(chk.checked) photoInput.value = '';
+      [photoInput, document.getElementById('prop-photo-tmdb2')].forEach(function(el){
+        if(!el) return;
+        el.disabled = chk.checked;
+        if(chk.checked) el.value = '';
+      });
     });
   })();
 
+  // Case « C'est un duo » : déplie le volet du second cinéaste, et fait
+  // apparaître l'intertitre « Premier cinéaste » au-dessus du premier volet —
+  // il n'a aucun sens tant qu'il n'y en a qu'un.
+  (function initPropDuoCheckbox(){
+    var chk = document.getElementById('prop-duo');
+    var bloc = document.getElementById('prop-duo-bloc');
+    var titre1 = document.getElementById('prop-membre1-titre');
+    if(!chk || !bloc) return;
+    chk.addEventListener('change', function(){
+      bloc.style.display = chk.checked ? 'block' : 'none';
+      if(titre1) titre1.style.display = chk.checked ? 'block' : 'none';
+    });
+  })();
+
+  // Les dates d'un membre : « 1944–2024 », « 1944 », « ?–1983 », ou '' si
+  // rien n'est renseigné. Sert à lire un duo membre par membre.
+  function propAnnees(naissance, deces){
+    if(!naissance && !deces) return '';
+    if(naissance && deces) return naissance + '\u2013' + deces;
+    return deces ? ('?\u2013' + deces) : String(naissance);
+  }
+
   document.getElementById('prop-btn-submit').addEventListener('click', async function(){
     if(!mtCurrentContributor){ alert(t('prop_alert_login_submit')); return; }
-    var prenom = document.getElementById('prop-prenom').value.trim();
-    var nom = document.getElementById('prop-nom').value.trim().toUpperCase();
+    var estDuo = document.getElementById('prop-duo').checked;
+    var prenomSaisi = document.getElementById('prop-prenom').value.trim();
+    // PLUS DE .toUpperCase() ICI, ni de text-transform sur le champ : l'index
+    // écrit McCAREY, DeMILLE, LaBRUCE, MacDOUGALL, St. CLAIR, DAVIES Jr. —
+    // trente-sept fiches portent une minuscule dans leur nom de famille, et
+    // les capitales forcées les rendaient impossibles à proposer.
+    var nomSaisi = document.getElementById('prop-nom').value.trim();
     var paysVal = document.getElementById('prop-pays').value || null;
     var naissanceVal = document.getElementById('prop-naissance').value;
     var decesVal = document.getElementById('prop-deces').value;
@@ -6397,8 +6526,31 @@ function openFicheThematique(themeNom){
     var noPhoto = document.getElementById('prop-no-photo').checked;
     var photoTmdb = noPhoto ? null : (document.getElementById('prop-photo-tmdb').value.trim() || null);
 
-    if(!nom){ alert(t('prop_alert_nom_required')); return; }
+    if(!nomSaisi){ alert(t('prop_alert_nom_required')); return; }
     if(!noPhoto && (!photoTmdb || !/^\/[A-Za-z0-9]+\.jpg$/.test(photoTmdb))){ alert(t('prop_alert_photo_format')); return; }
+
+    // Second membre d'un duo. Son nom est le seul champ exigé : la photo d'un
+    // duo n'existe souvent que pour l'un des deux, et les années suivent la
+    // même règle que celles du premier membre.
+    var nom, prenom;
+    var naissance2 = null, deces2 = null, photoTmdb2 = null;
+    if(estDuo){
+      var nom2 = document.getElementById('prop-nom2').value.trim();
+      var prenom2 = document.getElementById('prop-prenom2').value.trim();
+      if(!nom2){ alert(t('prop_alert_duo_nom2')); return; }
+      var naissance2Val = document.getElementById('prop-naissance2').value;
+      var deces2Val = document.getElementById('prop-deces2').value;
+      naissance2 = naissance2Val ? parseInt(naissance2Val) : null;
+      deces2 = deces2Val ? parseInt(deces2Val) : null;
+      photoTmdb2 = noPhoto ? null : (document.getElementById('prop-photo-tmdb2').value.trim() || null);
+      if(photoTmdb2 && !/^\/[A-Za-z0-9]+\.jpg$/.test(photoTmdb2)){ alert(t('prop_alert_photo_format')); return; }
+      // tcComposerDuo (utils.js) écrit le nom dans l'une des deux formes que
+      // tcDuoMembres sait relire : le cinéphile n'a pas à les connaître.
+      var compose = tcComposerDuo(nomSaisi, prenomSaisi, nom2, prenom2);
+      nom = compose.nom; prenom = compose.prenom;
+    } else {
+      nom = nomSaisi; prenom = prenomSaisi;
+    }
 
     // Nom au format "NOM, Prénom" utilisé dans la table cineastes (cf. cineasteNomFromProposal
     // dans admin.js). Comparer aussi au format "Prénom NOM" par sécurité (duos, saisies atypiques).
@@ -6448,6 +6600,12 @@ function openFicheThematique(themeNom){
           annee_naissance: naissance,
           annee_deces: deces,
           photo_tmdb: photoTmdb,
+          // Colonnes du second membre d'un duo (cf. le fichier SQL de mise à
+          // jour). Elles restent à leur valeur par défaut pour un solo.
+          duo: estDuo,
+          annee_naissance2: naissance2,
+          annee_deces2: deces2,
+          photo_tmdb2: photoTmdb2,
           status: 'pending'
         }).select('id');
       }, { retries: 0 });
@@ -6455,17 +6613,33 @@ function openFicheThematique(themeNom){
 
     btn.disabled = false; btn.textContent = t('prop_btn_submit');
 
-    if(res.error){ if(tcIsAuthError(res.error)) tcNotifyAuthExpired(); alert(t('prop_err_err') + friendlyError(res.error)); return; }
+    if(res.error){
+      if(tcIsAuthError(res.error)) tcNotifyAuthExpired();
+      // Filet pour une mise en ligne faite AVANT le passage du fichier
+      // A-FAIRE-DANS-SUPABASE-10.sql : les quatre colonnes du duo manquent
+      // encore. Plutôt qu'une erreur Postgres brute (« column
+      // annee_naissance2 does not exist »), on dit ce qui se passe.
+      if(estDuo && /annee_naissance2|annee_deces2|photo_tmdb2|\bduo\b/.test(String(res.error.message || ''))){
+        alert(t('prop_err_duo_indispo'));
+        return;
+      }
+      alert(t('prop_err_err') + friendlyError(res.error));
+      return;
+    }
     if(!res.data || !res.data.length){ alert(t('prop_err_err') + tcTexte('droits_insuffisants','Droits insuffisants.')); return; }
 
-    document.getElementById('prop-prenom').value = '';
-    document.getElementById('prop-nom').value = '';
-    document.getElementById('prop-pays').value = '';
-    document.getElementById('prop-naissance').value = '';
-    document.getElementById('prop-deces').value = '';
-    document.getElementById('prop-photo-tmdb').value = '';
-    document.getElementById('prop-photo-tmdb').disabled = false;
+    ['prop-prenom', 'prop-nom', 'prop-pays', 'prop-naissance', 'prop-deces', 'prop-photo-tmdb',
+     'prop-prenom2', 'prop-nom2', 'prop-naissance2', 'prop-deces2', 'prop-photo-tmdb2'
+    ].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){ el.value = ''; el.disabled = false; }
+    });
     document.getElementById('prop-no-photo').checked = false;
+    // Le volet du duo se referme avec le formulaire.
+    document.getElementById('prop-duo').checked = false;
+    document.getElementById('prop-duo-bloc').style.display = 'none';
+    var _propTitre1 = document.getElementById('prop-membre1-titre');
+    if(_propTitre1) _propTitre1.style.display = 'none';
     var successEl = document.getElementById('prop-success');
     successEl.style.display = 'block';
     setTimeout(function(){ successEl.style.display = 'none'; }, 3000);
@@ -6751,7 +6925,7 @@ function openFicheThematique(themeNom){
       var statusCls = p.status === 'approved' ? 'approved' : (p.status === 'rejected' ? 'rejected' : 'pending');
       var statusLabel = p.status === 'approved' ? t('mt_status_approved') : (p.status === 'rejected' ? t('mt_status_rejected') : t('mt_status_pending'));
       card.innerHTML = '<div class="mt-prev-card-head">'
-        + '<span class="mt-prev-card-cin">' + formatNom(p.cineaste_nom) + ' — ' + escapeHtml(p.courant) + '</span>'
+        + '<span class="mt-prev-card-cin">' + formatNomQualifie(p.cineaste_nom) + ' — ' + escapeHtml(p.courant) + '</span>'
         + '<span class="mt-prev-status ' + statusCls + '">' + statusLabel + '</span>'
         + '</div>';
       listEl.appendChild(card);

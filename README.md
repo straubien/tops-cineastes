@@ -119,6 +119,12 @@ Ils n'ont pas été examinés un par un. Les cas équivalents dans `submit.js` l
 
 **Prenez l'habitude** : chaque fois qu'un contributeur vous signale une liste mal analysée, ajoutez-en un cas dans ce fichier. La suite se construira toute seule, à partir de vrais problèmes.
 
+`_tests/duos.test.js` couvre les duos de cinéastes, et surtout l'**aller-retour** entre les deux fonctions inverses de `utils.js` : `tcComposerDuo`, qui écrit le nom d'un duo à partir des deux membres saisis dans « Proposer un cinéaste », et `tcDuoMembres`, qui le relit sur les fiches. Si l'une écrivait ce que l'autre ne sait pas relire, la fiche s'afficherait avec un seul portrait et des dates fausses — **sans la moindre erreur à l'écran**. D'où des tests qui vérifient le cycle complet plutôt que chaque fonction à part. Le fichier contrôle aussi que les noms à minuscule (`McCAREY`, `DeMILLE`, `St. CLAIR`) ne sont jamais pris pour des duos.
+
+`_tests/homonymes.test.js` couvre les **homonymes** — deux cinéastes du même nom. La colonne `nom` est unique et sert de clef partout (tops, commentaires, favoris, JSON, portraits) : le second homonyme porte donc un suffixe d'unicité, `CLARK (II), Larry`. Ce suffixe est un **jeton technique** : `tcNomNu` le retire de tout affichage et de tout tri, et c'est ce que les tests vérifient — y compris qu'il ne mange jamais une parenthèse qui fait partie du nom, comme celle de `MEDVEDKINE (Groupes)`.
+
+> **Si vous ajoutez un homonyme** : donnez-lui le suffixe suivant, `(II)` puis `(III)`, accolé au nom de famille — `CLARK (II), Larry`. L'année de naissance est admise aussi, `CLARK (1948), Larry`. Le site s'occupe du reste : il masque le suffixe, range les homonymes côte à côte, et ajoute l'année de naissance là où le nom paraît seul.
+
 `_tests/_charger.js` charge un fichier du site dans un bac à sable, avec juste assez de faux navigateur pour qu'il s'exécute. **Aucun changement n'est demandé au code du site.**
 
 > **Pas encore couverts** : `parseFilmStr` et `tcResoudreCineaste` vivent dans `index.js`, qui exécute beaucoup de code de navigateur au chargement et ne peut pas être chargé tel quel dans un test. Les déplacer dans `utils.js` les rendrait testables — c'est une bonne idée pour plus tard.

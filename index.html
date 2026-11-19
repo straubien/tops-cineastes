@@ -166,6 +166,18 @@
 .prop-checkbox-row input[type="checkbox"] { width: 17px; height: 17px; flex-shrink: 0; accent-color: var(--rouge,#A33025); cursor: pointer; }
 .prop-checkbox-row label { display: inline; font-size: 15px; font-weight: 400; text-transform: none; letter-spacing: 0; margin-bottom: 0; cursor: pointer; }
 .prop-form-field input:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Conseil sous un champ : la convention d'écriture du nom, le sens exact du
+   drapeau. Discret, mais toujours là — pas une infobulle à découvrir. */
+.prop-field-hint { font-size: 13px; font-style: italic; line-height: 1.35; color: var(--text,#111008); opacity: 0.65; margin-top: 6px; }
+/* .contrib-select porte 1,6 rem de marge basse, prévus pour un formulaire
+   sans conseil dessous : ici le conseil appartient au champ, il se colle. */
+#prop-pays { margin-bottom: 0; }
+/* Duos : la case qui ouvre le second volet, et l'intertitre de chaque membre */
+.prop-duo-row { margin: 0 0 1.2rem; }
+.prop-membre-titre { font-size: 13px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--rouge,#A33025); margin: 0 0 0.8rem; }
+.prop-duo-bloc { border-left: 3px solid var(--border,#d0c8b8); padding-left: 1.1rem; margin: 0 0 1rem; }
+.prop-duo-note { font-size: 14px; font-style: italic; color: var(--text,#111008); opacity: 0.7; margin-bottom: 1rem; }
+.prop-duo-badge { display: inline-block; vertical-align: middle; font-family: system-ui, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--rouge,#A33025); color: var(--rouge-texte,#A33025); border-radius: 3px; }
 .prop-section-title { font-size: 14px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text,#111008); margin: 2rem 0 1.1rem; }
 .prop-card { border: 1px solid var(--border,#d0c8b8); border-left: 4px solid var(--rouge,#A33025); border-radius: 0 8px 8px 0; padding: 1.3rem 1.5rem; margin-bottom: 1.2rem; background: var(--bg-card,#faf8f4); box-shadow: 0 4px 16px rgba(0,0,0,0.07); transition: box-shadow 0.2s, transform 0.2s; }
 .prop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.11); border-left-color: var(--rouge,#A33025); }
@@ -586,6 +598,18 @@
         <!-- TAB : Proposer un cinéaste -->
         <div class="mt-tab-panel" id="mt-panel-propositions">
 
+          <!-- Duos : la case déplie un second volet identique au premier. Les
+               deux membres sont saisis séparément, et c'est le code qui
+               compose le nom au format de l'index (« COEN, Joel & Ethan »
+               quand le nom de famille est commun, « ALOV & NAUMOV » sinon) :
+               le cinéphile n'a pas à connaître la convention. -->
+          <div class="prop-checkbox-row prop-duo-row">
+            <input type="checkbox" id="prop-duo">
+            <label for="prop-duo" data-i18n="prop_duo_label">C'est un duo de cinéastes (frères Coen, Straub &amp; Huillet, Dardenne…)</label>
+          </div>
+
+          <div class="prop-membre-titre" id="prop-membre1-titre" data-i18n="prop_membre1_titre" style="display:none">Premier cinéaste</div>
+
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_prenom_label">Prénom *</label>
@@ -593,13 +617,15 @@
             </div>
             <div class="prop-form-field">
               <label data-i18n="prop_nom_label">Nom *</label>
-              <input type="text" id="prop-nom" aria-label="Nom" data-i18n-aria="prop_nom_label" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off" style="text-transform:uppercase">
+              <input type="text" id="prop-nom" aria-label="Nom" data-i18n-aria="prop_nom_label" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off">
+              <div class="prop-field-hint" data-i18n="prop_nom_hint">En capitales, mais les minuscules sont acceptées : l'index écrit McCAREY, DeMILLE, LaBRUCE, St. CLAIR.</div>
             </div>
           </div>
           <div class="prop-form-row">
             <div class="prop-form-field">
-              <label data-i18n="prop_pays_label">Nationalité *</label>
-              <select id="prop-pays" aria-label="Nationalité" data-i18n-aria="prop_pays_label" class="contrib-select"></select>
+              <label data-i18n="prop_pays_label">Pays de carrière *</label>
+              <select id="prop-pays" aria-label="Pays de carrière" data-i18n-aria="prop_pays_label" class="contrib-select"></select>
+              <div class="prop-field-hint" data-i18n="prop_pays_hint">Le drapeau de la fiche indique le pays où s'est faite la carrière, et non la nationalité du passeport.</div>
             </div>
           </div>
           <div class="prop-form-row">
@@ -622,7 +648,39 @@
               </div>
             </div>
           </div>
-          <div class="prop-required-note" data-i18n="prop_required_note">* Champs obligatoires — seule l'année de décès reste facultative.</div>
+
+          <div class="prop-duo-bloc" id="prop-duo-bloc" style="display:none">
+            <div class="prop-membre-titre" data-i18n="prop_membre2_titre">Second cinéaste</div>
+            <div class="prop-form-row">
+              <div class="prop-form-field">
+                <label data-i18n="prop_prenom_label">Prénom *</label>
+                <input type="text" id="prop-prenom2" aria-label="Prénom du second cinéaste" data-i18n-aria="prop_prenom2_aria" placeholder="Prénom" data-i18n-ph="prop_prenom_ph" autocomplete="off">
+              </div>
+              <div class="prop-form-field">
+                <label data-i18n="prop_nom_label">Nom *</label>
+                <input type="text" id="prop-nom2" aria-label="Nom du second cinéaste" data-i18n-aria="prop_nom2_aria" placeholder="NOM" data-i18n-ph="prop_nom_ph" autocomplete="off">
+              </div>
+            </div>
+            <div class="prop-form-row">
+              <div class="prop-form-field">
+                <label data-i18n="prop_naissance_label">Année de naissance *</label>
+                <input type="number" id="prop-naissance2" aria-label="Année de naissance du second cinéaste" data-i18n-aria="prop_naissance2_aria" placeholder="ex. 1940" data-i18n-ph="prop_naissance_ph" min="1800" max="2010">
+              </div>
+              <div class="prop-form-field">
+                <label><span data-i18n="prop_deces_label">Année de décès</span> <span style="font-weight:400;text-transform:none;letter-spacing:0" data-i18n="prop_deces_optional">(si applicable)</span></label>
+                <input type="number" id="prop-deces2" aria-label="Année de décès du second cinéaste" data-i18n-aria="prop_deces2_aria" placeholder="ex. 2010" data-i18n-ph="prop_deces_ph" min="1800" max="2030">
+              </div>
+            </div>
+            <div class="prop-form-row">
+              <div class="prop-form-field">
+                <label data-i18n="prop_photo_tmdb2_label">Photo TMDB du second (si elle existe)</label>
+                <input type="text" id="prop-photo-tmdb2" aria-label="Photo TMDB du second cinéaste" data-i18n-aria="prop_photo_tmdb2_aria" placeholder="ex. /abcXYZ123.jpg" data-i18n-ph="prop_photo_tmdb_ph" autocomplete="off">
+              </div>
+            </div>
+            <div class="prop-duo-note" data-i18n="prop_duo_note">Le pays de carrière vaut pour le duo entier : il ne se saisit qu'une fois, plus haut.</div>
+          </div>
+
+          <div class="prop-required-note" data-i18n="prop_required_note">* Champs obligatoires — seules les années de décès restent facultatives.</div>
           <div class="actions">
             <button class="btn-primary" id="prop-btn-submit" data-i18n="prop_btn_submit">Soumettre la proposition</button>
           </div>

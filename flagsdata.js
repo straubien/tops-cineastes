@@ -1,4 +1,16 @@
-// Données partagées pour les drapeaux de nationalité (fiches cinéastes + admin)
+// Données partagées pour les drapeaux des fiches cinéastes (+ admin)
+//
+// CE QUE DIT UN DRAPEAU. Sur une fiche de cinéaste, le ou les drapeaux
+// indiquent le PAYS DE CARRIÈRE — le cinéma dans lequel l'œuvre s'est faite —
+// et non la nationalité de la personne. Les deux coïncident souvent, pas
+// toujours : Sirk a fait carrière aux États-Unis, Tarkovski a terminé la
+// sienne en Suède. C'est pour cela qu'une fiche peut en porter DEUX
+// (colonnes pays et pays2) : deux carrières distinctes, pas deux passeports.
+// Le libellé de l'interface et l'infobulle disent « pays de carrière », et
+// tcFlagHtml accepte un préfixe d'infobulle pour l'écrire.
+//
+// Sur une entrée du catalogue des courants, en revanche, le drapeau désigne
+// le pays du courant lui-même : là, aucun préfixe n'est passé.
 //
 // - Codes ISO 3166-1 alpha-2 (minuscules) : pays existants, drapeau résolu via flagsapi.com
 // - Codes historiques (majuscules) : pays/entités disparus, drapeau auto-hébergé dans /flags
@@ -99,11 +111,17 @@ function tcCountryLabel(code){
 }
 
 // Génère le HTML <img> du drapeau pour un code donné (ou '' si absent/inconnu)
-function tcFlagHtml(code, cssClass){
+//
+// `titrePrefixe` (facultatif) est écrit devant le nom du pays dans l'infobulle
+// ET dans le texte de remplacement : « Pays de carrière : Japon ». On le passe
+// pour le drapeau d'un CINÉASTE, où le pays demande à être qualifié, et on
+// l'omet pour celui d'un courant, où le pays se suffit à lui-même.
+function tcFlagHtml(code, cssClass, titrePrefixe){
   var url = tcFlagUrl(code);
   if(!url) return '';
   var label = tcCountryLabel(code);
+  var titre = titrePrefixe ? (titrePrefixe + ' : ' + label) : label;
   var cls = cssClass || 'tc-flag';
   if(tcIsHistoricCode(code)) cls += ' ' + cls + '-historic';
-  return '<img class="'+cls+'" src="'+url+'" alt="'+escapeHtml(label)+'" title="'+escapeHtml(label)+'" loading="lazy">';
+  return '<img class="'+cls+'" src="'+url+'" alt="'+escapeHtml(titre)+'" title="'+escapeHtml(titre)+'" loading="lazy">';
 }
