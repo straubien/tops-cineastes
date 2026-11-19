@@ -26,7 +26,7 @@ const RACINE = path.join(__dirname, '..');
 // Les pages du site public. admin.html ne charge plus i18n.js depuis A-066 :
 // son texte est ecrit en francais directement, il n'a rien a verifier ici.
 const PAGES = {
-  'index.html':  ['index.html', 'index.js', 'shared.js', 'utils.js', 'i18n.js'],
+  'index.html':  ['index.html', 'index.js', 'shared.js', 'utils.js', 'i18n.js', 'tops-export.js'],
   'submit.html': ['submit.html', 'submit.js', 'shared.js', 'utils.js', 'i18n.js', 'auth-shared.js'],
   'photogramme.html': ['photogramme.html', 'photogramme.js', 'shared.js', 'utils.js', 'i18n.js', 'auth-shared.js']
 };

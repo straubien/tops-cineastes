@@ -70,6 +70,9 @@ const globauxDuProjet = {
   tcJournalConnexion: 'readonly',
   // Reconnait une session d'invite du Jeu du photogramme (cf. utils.js).
   tcEstInvite: 'readonly',
+  // tops-export.js — telechargement de ses tops en Word (.docx) ou en PDF.
+  // Seuls noms appeles depuis index.js : le reste du fichier lui est interne.
+  tcExportTops: 'readonly', tcExportTopsPossible: 'readonly',
   // bibliotheque externe (jsDelivr)
   supabase: 'readonly'
 };

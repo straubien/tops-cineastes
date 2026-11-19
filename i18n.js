@@ -210,6 +210,18 @@ var TC_TRANSLATIONS = {
     mt_dup_will_replace: "Vous avez déjà un top pour ce cinéaste : votre nouvelle liste le remplacera après validation.",
     mt_prefill_info: "Votre top actuel a été repris ci-dessus : modifiez-le, puis relancez l’analyse.",
     liste_des_tops: "Liste des tops",
+    // Telechargement de ses tops en Word ou en PDF (tops-export.js). Le titre
+    // du document reprend celui du modele Word, identique dans les deux
+    // langues : c'est le nom du site.
+    exp_word: "Télécharger en Word",
+    exp_pdf: "Télécharger en PDF",
+    exp_titre_doc: "Tops cinéastes",
+    exp_sous_titre: function(a){ return a.tops + ' top' + (a.tops > 1 ? 's' : '') + ' · ' + a.films + ' film' + (a.films > 1 ? 's' : '') + ' · exporté le ' + a.date; },
+    exp_en_cours: "Préparation du fichier…",
+    exp_erreur: "Le fichier n’a pas pu être fabriqué. Réessayez.",
+    exp_vide: "Aucun top à télécharger.",
+    exp_partiel: function(n){ return n > 1 ? n + " tops n’ont pas pu être chargés : ils manquent dans le fichier." : "Un top n’a pas pu être chargé : il manque dans le fichier."; },
+    exp_theme_absent: "Les tops thématiques n’ont pas pu être joints au fichier.",
     // Commentaires sous les tops
     tc_cm_voir: "Commentaires",
     tc_cm_nb: function(n){ return n > 1 ? n + " commentaires" : n + " commentaire"; },
@@ -940,6 +952,16 @@ var TC_TRANSLATIONS = {
     mt_dup_will_replace: "You already have a top for this filmmaker: your new list will replace it after validation.",
     mt_prefill_info: "Your current top has been filled in above: edit it, then run the analysis again.",
     liste_des_tops: "Tops list",
+    // Downloading one's own tops as Word or PDF (tops-export.js)
+    exp_word: "Download as Word",
+    exp_pdf: "Download as PDF",
+    exp_titre_doc: "Tops cinéastes",
+    exp_sous_titre: function(a){ return a.tops + ' top' + (a.tops > 1 ? 's' : '') + ' · ' + a.films + ' film' + (a.films > 1 ? 's' : '') + ' · exported on ' + a.date; },
+    exp_en_cours: "Preparing the file…",
+    exp_erreur: "The file could not be created. Please try again.",
+    exp_vide: "No tops to download.",
+    exp_partiel: function(n){ return n > 1 ? n + " tops could not be loaded: they are missing from the file." : "One top could not be loaded: it is missing from the file."; },
+    exp_theme_absent: "Thematic tops could not be added to the file.",
     // Comments under tops
     tc_cm_voir: "Comments",
     tc_cm_nb: function(n){ return n > 1 ? n + " comments" : n + " comment"; },

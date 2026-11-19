@@ -37,6 +37,7 @@ Il n'y a **ni compilation, ni assemblage** : les fichiers du dépôt sont exacte
 | `shared.js` | Mode sombre (avant le premier affichage), bannières, erreurs globales, détection hors-ligne | les 3 pages |
 | `i18n.js` | Traductions français/anglais et fonction `t()` | index + submit |
 | `flagsdata.js` | Drapeaux et libellés de pays | index + admin |
+| `tops-export.js` | Téléchargement de ses propres tops en Word (`.docx`) ou en PDF, depuis son profil | index |
 | `auth-shared.js` | Connexion Supabase mutualisée | submit + admin |
 | `anti-cadre.js` | Garde-fou contre l'affichage du site dans un cadre | submit + admin |
 | `style.css` | Tout le style, thèmes clair et sombre | les 3 pages |

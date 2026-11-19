@@ -1669,7 +1669,14 @@ function renderProfil(name){
   var listeTopsWrap=document.getElementById('profil-liste-tops-wrap');
   if(imp.tops>0){
     listeTopsWrap.style.display='';
-    listeTopsWrap.innerHTML='<button class="profil-liste-tops-btn" data-imp-name="'+escapeHtml(name)+'">'+t('liste_des_tops')+'</button>';
+    // Le telechargement Word/PDF n'est propose qu'au cinephile lui-meme, sur
+    // son propre profil, et seulement pour des tops venus de Supabase : les
+    // deux collections importees a la main en sont exclues (tops-export.js).
+    var exportHtml=(typeof tcExportTopsPossible==='function'&&tcExportTopsPossible(name))
+      ? '<button class="profil-liste-tops-btn" data-exp-format="docx" data-i18n="exp_word">'+t('exp_word')+'</button>'
+        +'<button class="profil-liste-tops-btn" data-exp-format="pdf" data-i18n="exp_pdf">'+t('exp_pdf')+'</button>'
+      : '';
+    listeTopsWrap.innerHTML='<button class="profil-liste-tops-btn" data-imp-name="'+escapeHtml(name)+'">'+t('liste_des_tops')+'</button>'+exportHtml;
   } else {
     listeTopsWrap.style.display='none';
     listeTopsWrap.innerHTML='';
@@ -4649,7 +4656,15 @@ document.getElementById('profil-films-autres-btn').addEventListener('click',func
 document.getElementById('fiche-overlay').addEventListener('click',function(e){if(e.target===this)closeFiche();});
 document.getElementById('profil-liste-tops-wrap').addEventListener('click',function(e){
   var btn=e.target.closest('.profil-liste-tops-btn');
-  if(btn)showImportedPanel(btn.getAttribute('data-imp-name'));
+  if(!btn)return;
+  var expFormat=btn.getAttribute('data-exp-format');
+  if(!expFormat){showImportedPanel(btn.getAttribute('data-imp-name'));return;}
+  // Les deux boutons restent inertes le temps de fabriquer le fichier.
+  var expBtns=this.querySelectorAll('[data-exp-format]');
+  expBtns.forEach(function(b){b.disabled=true;});
+  tcExportTops(_currentProfilName,expFormat).then(function(){
+    expBtns.forEach(function(b){b.disabled=false;});
+  });
 });
 // ═══════════════════════════════════════════════════════════════
 // COMPARAISON DE CINÉPHILES — points communs entre profils, à partir

@@ -36,6 +36,7 @@
 <script defer src="utils.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="flagsdata.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="i18n.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<script defer src="tops-export.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <style>
 /* Wrapper nom connecté + tooltip déconnexion */
 #nav-user-wrap { position: relative; display: inline-flex; align-items: center; }
@@ -184,7 +185,12 @@
 .dark .prop-card { background: var(--bg-card); border-color: var(--border); }
 .dark .prop-card-name { color: var(--text); }
 /* ── Panel tops importés ─────────────────────────────────────── */
-.profil-liste-tops-wrap { margin-top: 12px; }
+.profil-liste-tops-wrap { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+/* Boutons de telechargement Word/PDF : jamais coupes en deux lignes sur
+   telephone, et inertes le temps de la fabrication du fichier. */
+.profil-liste-tops-btn[data-exp-format] { white-space: nowrap; }
+.profil-liste-tops-btn[disabled] { opacity: 0.5; cursor: default; }
+.profil-liste-tops-btn[disabled]:hover { background: transparent; border-color: rgba(240,236,227,0.5); color: rgba(240,236,227,0.85); }
 #imp-panel-alpha { margin: 0; padding: 0.7rem 1rem 0.6rem; border-bottom: 1px solid var(--border,#d0c8b8); }
 #imp-panel-alpha .alpha-col { width: 24px; height: 30px; }
 #imp-panel-alpha .alpha-char { font-size: 17px; }
