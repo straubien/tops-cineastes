@@ -1603,6 +1603,13 @@ a { text-decoration: none; color: inherit; }
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 7px;
+  /* Le bouton retour est en position absolue à droite de l'en-tête, sur TOUTE
+     sa hauteur : il recouvre donc aussi la rangée d'étiquettes, et non le seul
+     nom. Sans cette réserve, la dernière étiquette passait sous la flèche —
+     d'autant plus avec un quatrième courant. On réserve la même largeur que
+     .fiche-name, pour que les étiquettes reviennent à la ligne sur la marge
+     exacte où s'arrête le nom. */
+  padding-right: 70px;
 }
 .fiche-mention-badge {
   font-family: 'TWCenCondEB', sans-serif;
@@ -1614,7 +1621,14 @@ a { text-decoration: none; color: inherit; }
   background: #A8841E;
   border-radius: 3px;
   padding: 2px 7px;
-  white-space: nowrap;
+  /* Plus de « white-space: nowrap » ici. Sur un écran étroit, la colonne de
+     texte de l'en-tête (l'en-tête moins la photo) peut être plus courte qu'un
+     libellé à elle seule : l'étiquette passait alors sous la flèche retour, et
+     la réserve de .fiche-courant n'y pouvait rien — rien ne peut la renvoyer à
+     la ligne, puisqu'elle est seule sur la sienne. La coupure n'intervient
+     QUE dans ce cas : tant qu'une étiquette tient dans la largeur, elle reste
+     d'un seul tenant, et c'est l'étiquette suivante qui passe à la ligne. */
+  overflow-wrap: break-word;
   position: relative;
   z-index: 1;
 }
@@ -2766,6 +2780,7 @@ a { text-decoration: none; color: inherit; }
   .fiche { max-width: 100%; box-shadow: none; border-top: 1px solid var(--border); }
   .fiche-header { padding: 1.2rem 1.2rem 1rem; --sq: 30px; }
   .fiche-name { font-size: 28px; padding-right: 40px; }
+  .fiche-courant { padding-right: 40px; }
   .fiche-body { grid-template-columns: 90px 1fr; gap: 1.2rem; padding: 1.2rem; }
   .fiche-stat-number { font-size: 48px; }
 

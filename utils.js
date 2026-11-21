@@ -287,14 +287,15 @@ function tcSbError(err, source){
 }
 
 // Charge la table "cineastes" en totalité (paginé, db.max_rows plafonne à 1000 lignes/requête)
-// Les colonnes courant/courant2/courant3 contiennent des id référençant la
-// table "courants" (catalogue bilingue) — voir tcLoadCourants/tcCourantLabel.
+// Les colonnes courant/courant2/courant3/courant4 contiennent des id
+// référençant la table "courants" (catalogue bilingue) — voir
+// tcLoadCourants/tcCourantLabel.
 // `fbid` a ete retire : telecharge a chaque visite, il n'est lu NULLE PART
 // dans le code. `url_facebook` aussi : il ne sert qu'a la fiche d'un
 // cineaste, et est desormais charge a son ouverture (tcChargerLienFacebook).
 // A eux deux ils representaient un tiers du catalogue transfere a chaque
 // chargement de page, soit environ 1,3 Go par mois d'egress Supabase.
-var TC_CINEASTES_COLONNES = 'nom,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3';
+var TC_CINEASTES_COLONNES = 'nom,duo,naissance,deces,vivant,pays,pays2,photo_tmdb,courant,courant2,courant3,courant4';
 
 // Une page de la table `cineastes`. Utilisee par les deux strategies ci-dessous.
 function tcChargerPageCineastes(sbClient, debut, pageSize){
@@ -441,9 +442,9 @@ function tcPresentationCourant(sbClient, id){
   }).catch(function(){ return ''; });
 }
 
-// Retourne les id de courants renseignés pour un cinéaste (0 à 3), sans les vides.
+// Retourne les id de courants renseignés pour un cinéaste (0 à 4), sans les vides.
 function tcCourantIds(c){
-  return [c.courant, c.courant2, c.courant3].filter(function(v){ return v; });
+  return [c.courant, c.courant2, c.courant3, c.courant4].filter(function(v){ return v; });
 }
 
 // ── LES TYPES D'ENTRÉE DU CATALOGUE (table "courant_types") ──────────────

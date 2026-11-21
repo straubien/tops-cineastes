@@ -4504,8 +4504,8 @@ function renderStatistiques(){
   // pour le compte par cinéaste. Chacune coûtait le même prix. Les voici
   // réunies — mêmes calculs, mêmes résultats, un tiers du temps.
   //
-  // Courants cinématographiques : un cinéaste peut en cumuler jusqu'à 3
-  // (courant/courant2/courant3), chacun compte pour une occurrence.
+  // Courants cinématographiques : un cinéaste peut en cumuler jusqu'à 4
+  // (courant/courant2/courant3/courant4), chacun compte pour une occurrence.
   var enA=0,dec=0,st=0,tt=0;
   var courantCount={};
   var cinTopCount={};

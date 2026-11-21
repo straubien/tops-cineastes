@@ -556,7 +556,7 @@ body {
   .courant-row.expanded.desc-ouverte > .courant-row-desc { display: grid; grid-template-columns: 1fr; }
 }
 
-/* ── EMPLACEMENTS D'UNE FICHE CINÉASTE (courant / courant2 / courant3) ──
+/* ── EMPLACEMENTS D'UNE FICHE CINÉASTE (courant → courant4) ─────────────
    Une ligne par emplacement : son rang, le courant qui l'occupe, et les
    flèches qui l'échangent avec l'emplacement voisin. L'ordre des lignes est
    l'ordre réel des colonnes en base, donc celui affiché sur la fiche. */

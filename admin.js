@@ -2374,9 +2374,9 @@ function buildCourantCard(row){
 }
 
 // Résout le courant proposé (nom français) vers son id dans la table de
-// référence "courants", puis l'affecte à la première des 3 colonnes
-// courant/courant2/courant3 du cinéaste qui soit libre, sans doublon, avant
-// de marquer la proposition comme validée.
+// référence "courants", puis l'affecte à la première des 4 colonnes
+// courant/courant2/courant3/courant4 du cinéaste qui soit libre, sans doublon,
+// avant de marquer la proposition comme validée.
 async function approveCourant(row, apprBtn, rejBtn){
   if(apprBtn) apprBtn.disabled = true;
   if(rejBtn) rejBtn.disabled = true;
@@ -2398,12 +2398,12 @@ async function approveCourant(row, apprBtn, rejBtn){
   var cineasteRes;
   try {
     cineasteRes = await tcWithRetryTimeout(function(){
-      return sb.from('cineastes').select('nom, courant, courant2, courant3').eq('nom', row.cineaste_nom).single();
+      return sb.from('cineastes').select('nom, courant, courant2, courant3, courant4').eq('nom', row.cineaste_nom).single();
     });
   } catch(err){ admErreur(null, err); reenable(); return; }
   if(cineasteRes.error || !cineasteRes.data){ showAdminNotice('Cinéaste introuvable — validation annulée.', false); reenable(); return; }
 
-  var slots = ['courant', 'courant2', 'courant3'];
+  var slots = ['courant', 'courant2', 'courant3', 'courant4'];
   var valeurs = slots.map(function(k){ return cineasteRes.data[k] || null; });
   var dejaPresent = valeurs.indexOf(courantId) !== -1;
 
@@ -2412,7 +2412,7 @@ async function approveCourant(row, apprBtn, rejBtn){
   } else {
     var slotLibre = valeurs.indexOf(null);
     if(slotLibre === -1){
-      showAdminNotice('Ce cinéaste a déjà 3 courants renseignés — supprimez-en un avant de valider celui-ci.', false);
+      showAdminNotice('Ce cinéaste a déjà 4 courants renseignés — supprimez-en un avant de valider celui-ci.', false);
       reenable();
       return;
     }
@@ -3085,7 +3085,7 @@ async function saveCourantEdits(id, edits, btn){
 }
 
 // Suppression bloquée si le courant est encore affecté à au moins une fiche
-// cinéaste (courant/courant2/courant3) — il faut d'abord l'en retirer.
+// cinéaste (courant/courant2/courant3/courant4) — il faut d'abord l'en retirer.
 async function deleteCourantFromCatalogue(id, nomFr, btn){
   if(btn) btn.disabled = true;
 
@@ -3093,7 +3093,7 @@ async function deleteCourantFromCatalogue(id, nomFr, btn){
   try {
     usageRes = await tcWithRetryTimeout(function(){
       return sb.from('cineastes').select('nom', { count: 'exact', head: true })
-        .or('courant.eq.' + id + ',courant2.eq.' + id + ',courant3.eq.' + id);
+        .or('courant.eq.' + id + ',courant2.eq.' + id + ',courant3.eq.' + id + ',courant4.eq.' + id);
     });
   } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
   if(usageRes.error){ admErreur(null, usageRes.error); if(btn) btn.disabled = false; return; }
@@ -3176,16 +3176,17 @@ var _courantGestionBtnAdd = document.getElementById('courant-gestion-btn-add');
 if(_courantGestionBtnAdd) _courantGestionBtnAdd.addEventListener('click', addCourantToCatalogue);
 
 // ── Courants et catégories d'une fiche cinéaste ───────────────────────────
-// Trois emplacements (colonnes courant / courant2 / courant3). L'admin peut y
-// changer le courant affecté, le vider, ou échanger deux emplacements pour
-// modifier la « place » d'un courant sans toucher à son contenu. Tout est
-// appliqué en une fois par la fonction SQL tc_admin_set_courants, qui écrit la
-// fiche ET propage le changement à courant_proposals et notifications dans la
-// même transaction (voir tc-courants-cascade.sql).
+// Quatre emplacements (colonnes courant / courant2 / courant3 / courant4).
+// L'admin peut y changer le courant affecté, le vider, ou échanger deux
+// emplacements pour modifier la « place » d'un courant sans toucher à son
+// contenu. Tout est appliqué en une fois par la fonction SQL
+// tc_admin_set_courants, qui écrit la fiche ET propage le changement à
+// courant_proposals et notifications dans la même transaction
+// (voir tc-courants-cascade.sql, puis tc-courant4.sql).
 var _courantFicheSearchInitDone = false;
 var _courantFicheSelected = null;
-// État d'édition local des trois emplacements (id de courant, ou null si vide).
-var _courantFicheSlots = [null, null, null];
+// État d'édition local des quatre emplacements (id de courant, ou null si vide).
+var _courantFicheSlots = [null, null, null, null];
 
 function initCourantFicheSearch(){
   if(_courantFicheSearchInitDone) return;
@@ -3199,7 +3200,7 @@ function initCourantFicheSearch(){
   });
   document.getElementById('courant-fiche-cineaste-input').addEventListener('input', function(){
     _courantFicheSelected = null;
-    _courantFicheSlots = [null, null, null];
+    _courantFicheSlots = [null, null, null, null];
     document.getElementById('courant-fiche-result').innerHTML = '';
   });
 }
@@ -3250,11 +3251,11 @@ function renderCourantFicheResult(nom){
   if(!resEl) return;
   var c = (DATA.cineastes || []).find(function(x){ return x.nom === nom; });
   if(!c){ resEl.innerHTML = ''; return; }
-  _courantFicheSlots = [courantSlotId(c.courant), courantSlotId(c.courant2), courantSlotId(c.courant3)];
+  _courantFicheSlots = [courantSlotId(c.courant), courantSlotId(c.courant2), courantSlotId(c.courant3), courantSlotId(c.courant4)];
   renderCourantFicheSlots(c);
 }
 
-// Rendu des trois emplacements depuis l'état local, rejoué après chaque
+// Rendu des quatre emplacements depuis l'état local, rejoué après chaque
 // échange de position pour que l'ordre affiché soit toujours celui qui sera
 // enregistré.
 function renderCourantFicheSlots(c){
@@ -3336,7 +3337,7 @@ function saveCourantFicheSlots(c, btn){
     return;
   }
 
-  var avant = [courantSlotId(c.courant), courantSlotId(c.courant2), courantSlotId(c.courant3)];
+  var avant = [courantSlotId(c.courant), courantSlotId(c.courant2), courantSlotId(c.courant3), courantSlotId(c.courant4)];
   var inchange = slots.every(function(v, idx){ return v === avant[idx]; });
   if(inchange){
     showAdminNotice('Aucun changement à enregistrer.', false);
@@ -3366,7 +3367,8 @@ async function applyCourantFicheSlots(c, slots, btn){
         p_cineaste_nom: c.nom,
         p_courant: slots[0],
         p_courant2: slots[1],
-        p_courant3: slots[2]
+        p_courant3: slots[2],
+        p_courant4: slots[3]
       });
     }, { retries: 0 });
   } catch(err){ admErreur(null, err); if(btn) btn.disabled = false; return; }
@@ -3385,6 +3387,7 @@ async function applyCourantFicheSlots(c, slots, btn){
   c.courant = slots[0];
   c.courant2 = slots[1];
   c.courant3 = slots[2];
+  c.courant4 = slots[3];
 
   // Compte rendu de la cascade renvoyé par la fonction SQL, affiché tel quel :
   // une cascade silencieuse serait impossible à vérifier depuis le back-office.
@@ -4300,15 +4303,15 @@ async function renderStats(reinitialiser){
     typeCleById[row.id] = row.type || 'courant';
   });
 
-  // Une fiche pouvant porter jusqu'à trois entrées, on distingue les cinéastes
+  // Une fiche pouvant porter jusqu'à quatre entrées, on distingue les cinéastes
   // DISTINCTS rattachés (total mis en avant, plus sa ventilation par famille)
-  // du nombre d'affectations, c'est-à-dire de cases courant/courant2/courant3
-  // effectivement remplies.
+  // du nombre d'affectations, c'est-à-dire de cases
+  // courant/courant2/courant3/courant4 effectivement remplies.
   var countById = {};
   var totals = { fiches: 0, fichesCourant: 0, fichesCategorie: 0, affectations: 0 };
   cineastes.forEach(function(c){
     var vu = { courant: false, categorie: false };
-    [c.courant, c.courant2, c.courant3].forEach(function(id){
+    [c.courant, c.courant2, c.courant3, c.courant4].forEach(function(id){
       if(!id) return;
       countById[id] = (countById[id] || 0) + 1;
       var type = typeById[id];
