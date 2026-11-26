@@ -1015,13 +1015,16 @@ function tcEnregistrerEmpreinte(source,version,donnees){
 
 // Cle unique, cote base comme cote navigateur.
 var TC_MUR_CLE = 'splash_mur';
-// Ces deux valeurs DOIVENT rester egales a l'animation ecrite dans style.css
-// (section ① SPLASH) : « splash-mur-a 32s » et « calc(var(--i) * -1.7s) ».
-// C'est ce qui permet de savoir, a tout instant et sans rien mesurer, laquelle
-// des deux couches d'une tuile est cachee — donc laquelle peut changer de
-// visage sans que personne ne le voie.
+// Ces trois valeurs DOIVENT rester egales a l'animation ecrite dans style.css
+// (section ① SPLASH) : « splash-mur-a 32s » et
+// « calc(var(--i) * 0.6s - 10.2s) ». C'est ce qui permet de savoir, a tout
+// instant et sans rien mesurer, laquelle des deux couches d'une tuile est
+// cachee — donc laquelle peut changer de visage sans que personne ne le voie.
+// Si vous modifiez le decalage la-bas, modifiez-le ici : un ecart entre les
+// deux ferait changer un visage pendant qu'il est a l'ecran.
 var TC_MUR_CYCLE = 32000;
-var TC_MUR_DECALAGE = 1700;
+var TC_MUR_DECALAGE = 600;
+var TC_MUR_AVANCE = 10200;
 // Memoire des visages deja montres, le temps d'une session de navigation.
 var TC_MUR_VUS = 'tc-mur-vus';
 var TC_MUR_MEMOIRE_MAX = 30;
@@ -1194,7 +1197,7 @@ function tcMurRotation(tuiles, ordre, curseur){
   var vu = [];
   for(var k = 0; k < tuiles.length; k++){
     var i_css = parseFloat(getComputedStyle(tuiles[k]).getPropertyValue('--i'));
-    decalage.push((isNaN(i_css) ? k : i_css) * TC_MUR_DECALAGE);
+    decalage.push((isNaN(i_css) ? k : i_css) * TC_MUR_DECALAGE - TC_MUR_AVANCE);
     vu.push(0);
   }
   setInterval(function(){
@@ -5123,7 +5126,15 @@ function loadCompareAvatar(name){
 // La page montrait deux listes de points communs et un pourcentage. Elle
 // reprend maintenant TOUS les éléments du profil, et de la seule façon qui
 // réponde à la question « qu'est-ce qui les rapproche, qu'est-ce qui les
-// sépare » : en les superposant.
+// sépare » : en les mettant face à face.
+//
+// ── POURQUOI UN PAPILLON, ET PAS DEUX BARRES CÔTE À CÔTE ─────────────────
+// Chaque rangée a une aile à gauche pour le premier cinéphile, une aile à
+// droite pour le second, le libellé entre les deux, et la MÊME échelle des
+// deux côtés. On n'a donc rien à lire pour comprendre : deux ailes de même
+// longueur, ils sont d'accord ; une aile seule, l'un cite ce que l'autre
+// ignore. C'est la forme qu'on emploie depuis toujours pour comparer deux
+// populations, et elle se passe de légende, de mode d'emploi et de bouton.
 //
 // ── DEUX FAMILLES DE DONNÉES, QU'IL NE FAUT PAS MÉLANGER ─────────────────
 //   1. CE QU'ILS DÉCLARENT AIMER — cinéastes et films favoris/appréciés,
@@ -5138,31 +5149,32 @@ function loadCompareAvatar(name){
 //
 // ── POURQUOI DES PARTS, ET JAMAIS DES NOMBRES BRUTS ──────────────────────
 // Un cinéphile dont le millier de tops a été importé de Facebook écraserait
-// toujours celui qui en a vingt : toutes ses barres seraient plus longues,
-// sur tous les graphiques, et la comparaison ne dirait plus rien d'autre que
+// toujours celui qui en a vingt : toutes ses ailes seraient plus longues, sur
+// toutes les rangées, et la comparaison ne dirait plus rien d'autre que
 // « l'un en a plus que l'autre ». Ce qui se compare ici est donc la FORME de
 // chaque goût — quelle part de ses films tombe dans les années 1960 — et le
-// nombre brut reste écrit dans l'infobulle de chaque barre.
+// nombre brut reste écrit dans l'infobulle de chaque rangée.
 //
-// ── LE RECOUVREMENT ──────────────────────────────────────────────────────
-// Sous chaque graphique, un chiffre : la somme des parts communes
-// (∑ min(partA, partB)). Il se lit en une phrase — « ces deux cinéphiles
-// placent 71 % de leurs films dans les mêmes décennies » — et il vaut 100 %
-// pour deux répartitions identiques, 0 % pour deux répartitions sans aucun
-// recouvrement. Ce n'est PAS le pourcentage d'affinité du haut de page, qui
-// se calcule sur les favoris déclarés et reste réglable depuis l'admin : les
-// deux sont nommés et notés séparément pour qu'on ne les confonde pas.
+// ── CE QUI EST ÉCRIT EN TOUTES LETTRES ───────────────────────────────────
+// Chaque carte s'ouvre sur une phrase, pas sur un indicateur : « ils placent
+// 62 % de leurs films dans les mêmes décennies ». Le nombre est le même qu'un
+// taux de recouvrement (la somme des parts communes, 100 % pour deux
+// répartitions identiques), mais personne n'a à connaître ce mot pour lire la
+// phrase. Et chaque carte se referme sur ce qui les rapproche le plus et ce
+// qui les éloigne le plus, nommément.
+//
+// ── LES COULEURS ─────────────────────────────────────────────────────────
+// Le rouge et le noir du site, ceux-là mêmes qu'emploient déjà les graphiques
+// du portrait cinéphile (.pp-hbar-fill et .pp-hbar-fill.pp-alt). Elles ne
+// portent jamais l'identité à elles seules : chaque aile est d'un côté fixe
+// de l'axe, et le nom de son cinéphile est écrit en tête de colonne.
 
-// Les deux couleurs de la page : A et B. Posées dans style.css
-// (--cmp-a / --cmp-b), lisibles dans les deux modes et distinguables en
-// vision dichromate — un bleu profond et un ocre, jamais rouge contre vert.
-
-// État de l'interface. Vit en dehors du rendu : changer un filtre ne doit
-// pas recalculer les index ni faire sauter la page.
+// L'état de l'interface. Il vit en dehors du rendu : changer un filtre ne doit
+// ni recalculer les index, ni faire sauter la page.
 var _cmpFiltre='communs';      // 'communs' | 'a' | 'b'
 var _cmpRecherche='';
-var _cmpMode='superpose';      // 'superpose' | 'ecart'
-var _cmpCalc=null;             // dernier calcul (index, communs, portraits)
+var _cmpOrdre='presents';      // 'presents' | 'separe'
+var _cmpCalc=null;             // dernier calcul (points communs, portraits)
 var _cmpPortraitJeton=0;
 
 function compareTagHtml(favA,favB){
@@ -5198,9 +5210,13 @@ function renderCompareList(elId,res,emptyKey){
     el.innerHTML='<div class="empty-msg">'+(q?escapeHtml(t('cmp_aucun_resultat')):t(emptyKey))+'</div>';
     return;
   }
-  el.innerHTML=items.map(function(it){
+  el.innerHTML=items.map(function(it,i){
     var tag=it.cote?cmpTagSeulHtml(it.fav,it.cote):compareTagHtml(it.favA,it.favB);
-    return '<div class="compare-item">'+tag+'<span class="compare-item-name">'+escapeHtml(it.display)+'</span></div>';
+    // « --k » échelonne l'apparition : les entrées se posent l'une après
+    // l'autre plutôt que de surgir toutes ensemble à chaque changement de
+    // filtre. Plafonné, sinon la centième attendrait trois secondes.
+    return '<div class="compare-item" style="--k:'+Math.min(i,24)+'">'+tag
+      +'<span class="compare-item-name">'+escapeHtml(it.display)+'</span></div>';
   }).join('');
 }
 
@@ -5208,66 +5224,47 @@ function cmpRendreListes(){
   if(!_cmpCalc)return;
   renderCompareList('compare-cin-list',_cmpCalc.resCin,'compare_no_cin');
   renderCompareList('compare-film-list',_cmpCalc.resFilm,'compare_no_film');
-  // Les compteurs des trois boutons suivent le filtre choisi, pas l'inverse :
-  // ils disent toujours combien il y a de quoi, même quand on regarde ailleurs.
   document.querySelectorAll('.cmp-filtre-btn').forEach(function(b){
     b.classList.toggle('active',b.getAttribute('data-cmp-filtre')===_cmpFiltre);
   });
 }
 
-// ── LES GRAPHIQUES SUPERPOSÉS ────────────────────────────────────────────
-// Une part en pourcentage, arrondie à une décimale pour que deux valeurs
-// proches ne s'affichent pas identiques.
+// ── LE PAPILLON ──────────────────────────────────────────────────────────
 function cmpPart(n,total){ return total?(n/total*100):0; }
 function cmpPct(v){ return (Math.round(v*10)/10).toString().replace('.',','); }
 
-// Une rangée : le libellé, puis les deux parts l'une sur l'autre (mode
-// « superposer ») ou leur écart de part et d'autre d'un axe (mode « écart »).
-function cmpBarreHtml(labelHtml,partA,partB,nA,nB,max,infoSuffixe){
-  var titre=formatContribNamePlain(_compareA)+' : '+nA+' ('+cmpPct(partA)+' %)'
-    +' — '+formatContribNamePlain(_compareB)+' : '+nB+' ('+cmpPct(partB)+' %)'
-    +(infoSuffixe?' — '+infoSuffixe:'');
-  var attrTitre=' title="'+escapeHtml(titre)+'"';
-  if(_cmpMode==='ecart'){
-    var d=partA-partB;
-    var larg=max?Math.min(100,Math.abs(d)/max*100):0;
-    return '<div class="cmp-bar-row"'+attrTitre+'>'
-      +'<div class="cmp-bar-label">'+labelHtml+'</div>'
-      +'<div class="cmp-bar-axis">'
-        +'<div class="cmp-bar-half cmp-bar-half-left">'+(d<0?'<div class="cmp-bar cmp-bar-b" style="width:'+larg+'%"></div>':'')+'</div>'
-        +'<div class="cmp-bar-half cmp-bar-half-right">'+(d>0?'<div class="cmp-bar cmp-bar-a" style="width:'+larg+'%"></div>':'')+'</div>'
-      +'</div>'
-      +'<div class="cmp-bar-val">'+(d>0?'+':(d<0?'−':''))+cmpPct(Math.abs(d))+'&nbsp;'+escapeHtml(t('cmp_pt'))+'</div>'
-    +'</div>';
-  }
-  var la=max?Math.min(100,partA/max*100):0;
-  var lb=max?Math.min(100,partB/max*100):0;
-  return '<div class="cmp-bar-row"'+attrTitre+'>'
-    +'<div class="cmp-bar-label">'+labelHtml+'</div>'
-    +'<div class="cmp-bar-pair">'
-      +'<div class="cmp-bar-track"><div class="cmp-bar cmp-bar-a" style="width:'+la+'%"></div></div>'
-      +'<div class="cmp-bar-track"><div class="cmp-bar cmp-bar-b" style="width:'+lb+'%"></div></div>'
-    +'</div>'
-    +'<div class="cmp-bar-val">'+cmpPct(partA)+'&nbsp;/&nbsp;'+cmpPct(partB)+'&nbsp;%</div>'
+// Une rangée : la part du premier à gauche, le libellé au milieu, la part du
+// second à droite. La MÊME échelle des deux côtés — c'est toute la lisibilité
+// de la figure, et « max » est donc calculé sur les deux ailes à la fois.
+function cmpAileHtml(r,pa,pb,max,k){
+  var la=max?Math.min(100,pa/max*100):0;
+  var lb=max?Math.min(100,pb/max*100):0;
+  var titre=_cmpCalc.nomA+' : '+r.nA+' ('+cmpPct(pa)+' %) — '+_cmpCalc.nomB+' : '+r.nB+' ('+cmpPct(pb)+' %)';
+  return '<div class="cmp-aile-row" style="--k:'+Math.min(k,20)+'" title="'+escapeHtml(titre)+'">'
+    +'<div class="cmp-aile-val">'+cmpPct(pa)+'&nbsp;%</div>'
+    +'<div class="cmp-aile cmp-aile-a"><div class="cmp-aile-barre" style="width:'+la+'%"></div></div>'
+    +'<div class="cmp-aile-lab">'+r.labelHtml+'</div>'
+    +'<div class="cmp-aile cmp-aile-b"><div class="cmp-aile-barre" style="width:'+lb+'%"></div></div>'
+    +'<div class="cmp-aile-val">'+cmpPct(pb)+'&nbsp;%</div>'
   +'</div>';
 }
 
-// Une carte complète : les rangées, le recouvrement, et la ligne « ce qui les
-// rapproche / ce qui les sépare ». `rangs` est une liste
-// { cle, labelHtml, nA, nB, info } déjà ordonnée.
-function cmpCarteHtml(titre, rangs, totalA, totalB, note, limite){
+// Une carte complète. `phrase` est une fonction de i18n qui reçoit le taux de
+// recouvrement et en fait une phrase française ; `chrono` garde l'ordre naturel
+// des rangées (les décennies se lisent dans le temps, pas par importance).
+function cmpCarteHtml(titre, phraseCle, rangs, totalA, totalB, note, limite, chrono){
   if(!rangs.length)return '';
   var parts=rangs.map(function(r){
     return { r:r, pa:cmpPart(r.nA,totalA), pb:cmpPart(r.nB,totalB) };
   });
-  // Recouvrement : la somme des parts communes, sur TOUTES les clefs, et non
+
+  // Le recouvrement : la somme des parts communes, sur TOUTES les clefs et non
   // sur les seules rangées affichées — un recouvrement calculé sur un extrait
-  // ne voudrait rien dire.
+  // ne voudrait rien dire. Il n'apparaît jamais sous ce nom à l'écran : il est
+  // dit en toutes lettres par la phrase d'introduction.
   var recouvrement=0;
   parts.forEach(function(x){ recouvrement+=Math.min(x.pa,x.pb); });
 
-  // Ce qui les rapproche le plus : la clef dont les deux parts sont les plus
-  // hautes ensemble. Ce qui les sépare : le plus grand écart.
   var proche=null,loin=null;
   parts.forEach(function(x){
     if(!proche||Math.min(x.pa,x.pb)>Math.min(proche.pa,proche.pb))proche=x;
@@ -5275,35 +5272,40 @@ function cmpCarteHtml(titre, rangs, totalA, totalB, note, limite){
   });
 
   var affichees=parts.slice();
-  if(_cmpMode==='ecart'){
-    affichees.sort(function(x,y){ return Math.abs(y.pa-y.pb)-Math.abs(x.pa-x.pb); });
+  if(!chrono||_cmpOrdre==='separe'){
+    affichees.sort(function(x,y){
+      if(_cmpOrdre==='separe')return Math.abs(y.pa-y.pb)-Math.abs(x.pa-x.pb);
+      return (y.pa+y.pb)-(x.pa+x.pb);
+    });
   }
   if(limite)affichees=affichees.slice(0,limite);
 
   var max=0;
-  affichees.forEach(function(x){
-    var v=(_cmpMode==='ecart')?Math.abs(x.pa-x.pb):Math.max(x.pa,x.pb);
-    if(v>max)max=v;
-  });
+  affichees.forEach(function(x){ max=Math.max(max,x.pa,x.pb); });
 
-  var lignes=affichees.map(function(x){
-    return cmpBarreHtml(x.r.labelHtml,x.pa,x.pb,x.r.nA,x.r.nB,max,x.r.info);
-  }).join('');
-
-  var resume='<div class="cmp-resume">'
-    +'<span class="cmp-resume-item"><b>'+escapeHtml(t('cmp_convergence'))+'</b> '
-      +(proche?proche.r.labelTexte+' ('+cmpPct(Math.min(proche.pa,proche.pb))+'&nbsp;%)':'—')+'</span>'
-    +'<span class="cmp-resume-item"><b>'+escapeHtml(t('cmp_divergence'))+'</b> '
-      +(loin?loin.r.labelTexte+' ('+cmpPct(Math.abs(loin.pa-loin.pb))+'&nbsp;'+escapeHtml(t('cmp_pt'))+')':'—')+'</span>'
-    +'</div>';
+  var lignes=affichees.map(function(x,k){ return cmpAileHtml(x.r,x.pa,x.pb,max,k); }).join('');
 
   return '<div class="cmp-card">'
-    +'<div class="cmp-card-head">'+escapeHtml(titre)
-      +'<span class="cmp-recouvrement" title="'+escapeHtml(t('cmp_recouvrement_note'))+'">'
-        +escapeHtml(t('cmp_recouvrement'))+' '+cmpPct(recouvrement)+'&nbsp;%</span>'
+    +'<div class="cmp-card-head">'+escapeHtml(titre)+'</div>'
+    +'<p class="cmp-phrase" title="'+escapeHtml(t('cmp_recouvrement_note'))+'">'
+      +t(phraseCle,'<b>'+cmpPct(recouvrement)+'&nbsp;%</b>')+'</p>'
+    +'<div class="cmp-papillon">'
+      +'<div class="cmp-tete">'
+        +'<span class="cmp-tete-a">'+escapeHtml(_cmpCalc.nomA)+'</span>'
+        +'<span class="cmp-tete-lab"></span>'
+        +'<span class="cmp-tete-b">'+escapeHtml(_cmpCalc.nomB)+'</span>'
+      +'</div>'
+      +lignes
     +'</div>'
-    +'<div class="cmp-bars">'+lignes+'</div>'
-    +resume
+    // Le resume ne dit quelque chose qu'a partir de trois rangees : sur deux,
+    // « ils se rejoignent sur X » et « ils s'eloignent sur X » designent le
+    // plus souvent la meme ligne, et la figure se suffit a elle-meme.
+    +(parts.length >= 3
+      ? '<div class="cmp-resume">'
+        +'<span><b>'+escapeHtml(t('cmp_convergence'))+'</b> '+proche.r.labelTexte+'</span>'
+        +'<span><b>'+escapeHtml(t('cmp_divergence'))+'</b> '+loin.r.labelTexte+'</span>'
+        +'</div>'
+      : '')
     +(note?'<div class="cmp-note">'+note+'</div>':'')
   +'</div>';
 }
@@ -5332,9 +5334,9 @@ function cmpSomme(obj){
   return s;
 }
 
-// Un chiffre clé, les deux valeurs côte à côte.
-function cmpChiffreHtml(label,valA,valB){
-  return '<div class="cmp-tile">'
+// Un chiffre clé, les deux valeurs de part et d'autre.
+function cmpChiffreHtml(label,valA,valB,k){
+  return '<div class="cmp-tile" style="--k:'+k+'">'
     +'<div class="cmp-tile-lab">'+escapeHtml(label)+'</div>'
     +'<div class="cmp-tile-vals">'
       +'<span class="cmp-tile-a">'+valA+'</span>'
@@ -5359,13 +5361,13 @@ function cmpRendrePortrait(){
 
   var html='';
 
-  // 1) Les chiffres clés, côte à côte
+  // 1) Les chiffres clés, de part et d'autre
   var moy=function(p){ return p.moyFilms?(p.moyFilms.toFixed(2).replace('.',',')):'—'; };
   html+='<div class="cmp-tiles">'
-    +cmpChiffreHtml(t('pp_cineastes_cites'),pa.nbCin,pb.nbCin)
-    +cmpChiffreHtml(t('pp_films_total'),pa.nbFilms,pb.nbFilms)
-    +cmpChiffreHtml(t('pp_films_par_cin'),moy(pa),moy(pb))
-    +cmpChiffreHtml(t('pp_periode'),escapeHtml(cmpPeriode(pa)),escapeHtml(cmpPeriode(pb)))
+    +cmpChiffreHtml(t('pp_cineastes_cites'),pa.nbCin,pb.nbCin,0)
+    +cmpChiffreHtml(t('pp_films_total'),pa.nbFilms,pb.nbFilms,1)
+    +cmpChiffreHtml(t('pp_films_par_cin'),moy(pa),moy(pb),2)
+    +cmpChiffreHtml(t('pp_periode'),escapeHtml(cmpPeriode(pa)),escapeHtml(cmpPeriode(pb)),3)
     +'</div>';
 
   // 2) Les décennies — seulement si LES DEUX inscrivent leurs années. Le
@@ -5376,13 +5378,8 @@ function cmpRendrePortrait(){
     var rangsDec=cmpRangs(pa.decennies,pb.decennies,totDecA,totDecB,function(k){
       return { html:escapeHtml(k+'s'), texte:k+'s' };
     }).sort(function(x,y){ return Number(x.cle)-Number(y.cle); });
-    if(_cmpMode==='ecart'){
-      // En mode « écart », l'ordre chronologique cède la place au classement
-      // par écart : c'est la question posée qui change, pas les données.
-      rangsDec=rangsDec.slice();
-    }
-    html+=cmpCarteHtml(t('pp_epoque'),rangsDec,totDecA,totDecB,
-      escapeHtml(t('cmp_part_note_films')),0);
+    html+=cmpCarteHtml(t('pp_epoque'),'cmp_phrase_epoques',rangsDec,totDecA,totDecB,
+      escapeHtml(t('cmp_part_note_films')),0,true);
   }
 
   // 3) Les cinémas (pays de carrière)
@@ -5392,8 +5389,8 @@ function cmpRendrePortrait(){
     var flag=tcFlagHtml(code,'cmp-flag',t('flag_pays_carriere'));
     return { html:(flag||'')+'<span>'+escapeHtml(label)+'</span>', texte:label };
   });
-  html+=cmpCarteHtml(t('pp_cinemas'),rangsPays,totPaysA,totPaysB,
-    escapeHtml(t('pp_cinemas_note')),10);
+  html+=cmpCarteHtml(t('pp_cinemas'),'cmp_phrase_cinemas',rangsPays,totPaysA,totPaysB,
+    escapeHtml(t('pp_cinemas_note')),10,false);
 
   // 4) Les courants et catégories
   var totCourA=cmpSomme(pa.courantCount),totCourB=cmpSomme(pb.courantCount);
@@ -5403,27 +5400,24 @@ function cmpRendrePortrait(){
     return { html:'<span class="'+(estCat?'cmp-lab-categorie':'cmp-lab-courant')+'">'+escapeHtml(label)+'</span>',
              texte:label };
   });
-  html+=cmpCarteHtml(t('pp_courants_categories'),rangsCour,totCourA,totCourB,
-    escapeHtml(t('pp_courants_categories_note')),12);
+  html+=cmpCarteHtml(t('pp_courants_categories'),'cmp_phrase_courants',rangsCour,totCourA,totCourB,
+    escapeHtml(t('pp_courants_categories_note')),12,false);
 
-  // 5) En activité / disparus — deux rangées, même langage visuel que le reste
-  var statA={actif:pa.enActivite,disparu:pa.disparus};
-  var statB={actif:pb.enActivite,disparu:pb.disparus};
+  // 5) En activité / disparus — deux rangées, même figure que le reste
   if(pa.statutConnu||pb.statutConnu){
     var rangsStat=[
-      // Pas de pastille de couleur sur ces deux libellés : ici les couleurs
-      // désignent les deux CINÉPHILES, et une troisième couleur pour
-      // « en activité » se lirait comme une troisième personne.
-      { cle:'actif', labelHtml:escapeHtml(t('pp_en_activite')), labelTexte:t('pp_en_activite'), nA:statA.actif, nB:statB.actif },
-      { cle:'disparu', labelHtml:escapeHtml(t('pp_disparus')), labelTexte:t('pp_disparus'), nA:statA.disparu, nB:statB.disparu }
+      { cle:'actif', labelHtml:escapeHtml(t('pp_en_activite')), labelTexte:t('pp_en_activite'),
+        nA:pa.enActivite, nB:pb.enActivite },
+      { cle:'disparu', labelHtml:escapeHtml(t('pp_disparus')), labelTexte:t('pp_disparus'),
+        nA:pa.disparus, nB:pb.disparus }
     ];
-    html+=cmpCarteHtml(t('pp_vivants'),rangsStat,pa.statutConnu,pb.statutConnu,
-      escapeHtml(t('pp_vivants_note',Math.min(pa.statutConnu,pb.statutConnu))),0);
+    html+=cmpCarteHtml(t('pp_vivants'),'cmp_phrase_statut',rangsStat,pa.statutConnu,pb.statutConnu,
+      escapeHtml(t('pp_vivants_note',Math.min(pa.statutConnu,pb.statutConnu))),0,true);
   }
 
   host.innerHTML=html;
-  document.querySelectorAll('.cmp-mode-btn').forEach(function(b){
-    b.classList.toggle('active',b.getAttribute('data-cmp-mode')===_cmpMode);
+  document.querySelectorAll('.cmp-ordre-btn').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-cmp-ordre')===_cmpOrdre);
   });
 }
 
@@ -5475,12 +5469,11 @@ function renderComparaisonResult(){
     sumIndexOwnWeight(idxA.film),sumIndexOwnWeight(idxB.film),
     resFilm.commonOwnWeightA,resFilm.commonOwnWeightB);
 
-  _cmpCalc={ resCin:resCin, resFilm:resFilm, portraitA:null, portraitB:null };
+  _cmpCalc={ resCin:resCin, resFilm:resFilm, portraitA:null, portraitB:null,
+             nomA:formatContribNamePlain(_compareA), nomB:formatContribNamePlain(_compareB) };
 
-  var compteurs=function(res){
-    return { c:res.commons.length, a:res.seulA.length, b:res.seulB.length };
-  };
-  var nCin=compteurs(resCin),nFilm=compteurs(resFilm);
+  var nCin={c:resCin.commons.length,a:resCin.seulA.length,b:resCin.seulB.length};
+  var nFilm={c:resFilm.commons.length,a:resFilm.seulA.length,b:resFilm.seulB.length};
   var btnFiltre=function(cle,libelle,n){
     return '<button type="button" class="cmp-filtre-btn'+(cle===_cmpFiltre?' active':'')+'" data-cmp-filtre="'+cle+'">'
       +escapeHtml(libelle)+' <span class="cmp-filtre-n">'+n+'</span></button>';
@@ -5537,9 +5530,10 @@ function renderComparaisonResult(){
       +'<div class="cmp-section-head">'
         +'<h3 class="cmp-section-title">'+escapeHtml(t('cmp_tops_titre'))+'</h3>'
         +'<div class="cmp-controls">'
-          +'<div class="cmp-modes" role="group" aria-label="'+escapeHtml(t('cmp_modes_aria'))+'">'
-            +'<button type="button" class="cmp-mode-btn'+(_cmpMode==='superpose'?' active':'')+'" data-cmp-mode="superpose">'+escapeHtml(t('cmp_mode_superpose'))+'</button>'
-            +'<button type="button" class="cmp-mode-btn'+(_cmpMode==='ecart'?' active':'')+'" data-cmp-mode="ecart">'+escapeHtml(t('cmp_mode_ecart'))+'</button>'
+          +'<span class="cmp-ordre-lab">'+escapeHtml(t('cmp_ordre_label'))+'</span>'
+          +'<div class="cmp-ordres" role="group" aria-label="'+escapeHtml(t('cmp_ordre_label'))+'">'
+            +'<button type="button" class="cmp-ordre-btn'+(_cmpOrdre==='presents'?' active':'')+'" data-cmp-ordre="presents">'+escapeHtml(t('cmp_ordre_presents'))+'</button>'
+            +'<button type="button" class="cmp-ordre-btn'+(_cmpOrdre==='separe'?' active':'')+'" data-cmp-ordre="separe">'+escapeHtml(t('cmp_ordre_separe'))+'</button>'
           +'</div>'
         +'</div>'
       +'</div>'
@@ -5553,7 +5547,7 @@ function renderComparaisonResult(){
 
   // Les commandes : posées sur les éléments qui viennent d'être écrits, et
   // qui ne redessinent que la partie concernée — un filtre ne doit pas
-  // refaire les graphiques, ni un changement de mode vider la recherche.
+  // refaire les papillons, ni un changement d'ordre vider la recherche.
   wrap.querySelectorAll('.cmp-filtre-btn').forEach(function(b){
     b.addEventListener('click',function(){
       _cmpFiltre=b.getAttribute('data-cmp-filtre');
@@ -5570,9 +5564,9 @@ function renderComparaisonResult(){
       };
     })());
   }
-  wrap.querySelectorAll('.cmp-mode-btn').forEach(function(b){
+  wrap.querySelectorAll('.cmp-ordre-btn').forEach(function(b){
     b.addEventListener('click',function(){
-      _cmpMode=b.getAttribute('data-cmp-mode');
+      _cmpOrdre=b.getAttribute('data-cmp-ordre');
       cmpRendrePortrait();
     });
   });
@@ -5591,7 +5585,7 @@ function renderComparaisonResult(){
   if(tcFilmsCinephileCharges(_compareA)&&tcFilmsCinephileCharges(_compareB)){
     finir();
   } else {
-    cmpRendrePortrait();   // affiche « Lecture des tops… »
+    cmpRendrePortrait();   // affiche « Lecture de leurs tops… »
     Promise.all([
       tcChargerFilmsDuCinephile(_compareA),
       tcChargerFilmsDuCinephile(_compareB)
