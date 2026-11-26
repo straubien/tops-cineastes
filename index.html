@@ -33,6 +33,43 @@
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="config.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script src="shared.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
+<!-- ── MUR D'ACCUEIL : CE QUI DOIT ÊTRE DÉCIDÉ AVANT LE PREMIER RENDU ──────
+     Ces quelques lignes sont ici, en clair et SANS « defer », pour la même
+     raison que shared.js juste au-dessus : elles doivent s'exécuter avant que
+     le navigateur ne peigne quoi que ce soit. Un fichier chargé en « defer »
+     — index.js, par exemple — arriverait toujours trop tard.
+
+     Elles répondent à deux problèmes, et à rien d'autre :
+
+     1. LE DOUBLE MUR. style.css écrit trente-six portraits par défaut. Quand
+        ce navigateur connaît déjà la liste du back-office, ces trente-six
+        images étaient demandées, peintes, PUIS remplacées par index.js — le
+        visiteur voyait donc un mur s'installer puis se refaire. La classe
+        « tc-mur-perso » les neutralise avant le premier rendu : plus rien
+        n'est demandé pour rien, et plus rien n'est remplacé à l'écran.
+
+     2. L'ARRIVÉE EN DÉSORDRE. « tc-mur-attente » masque les tuiles ; index.js
+        les dévoile d'un seul tenant quand les images répondent.
+
+     LE GARDE-FOU DE TROIS SECONDES N'EST PAS DÉCORATIF. Si index.js ne
+     s'exécutait pas — erreur de script, fichier non arrivé —, le mur
+     resterait noir pour toujours. Passé ce délai on dévoile, et on rend
+     leurs portraits par défaut aux tuiles qu'index.js n'a pas garnies : une
+     variable posée en style en ligne par index.js, elle, reste prioritaire,
+     donc ce retour en arrière ne défait jamais un mur déjà appliqué. -->
+<script>
+(function(){
+  var racine = document.documentElement;
+  racine.classList.add('tc-mur-attente');
+  var cache = null;
+  try { cache = localStorage.getItem('tc-splash_mur'); } catch(e){}
+  if(cache && cache.length > 40) racine.classList.add('tc-mur-perso');
+  setTimeout(function(){
+    racine.classList.remove('tc-mur-perso');
+    racine.classList.add('tc-mur-pret');
+  }, 3000);
+})();
+</script>
 <script defer src="utils.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="flagsdata.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
 <script defer src="i18n.js?v={{ site.time | date: '%Y%m%d%H%M%S' }}"></script>
@@ -414,7 +451,10 @@
       <div class="list-header" style="margin-bottom:1.5rem">
         <h2 class="list-letter" style="font-size:44px;color:var(--text)" data-i18n="page_comparaison_h">Affinités entre cinéphiles</h2>
       </div>
-      <div class="compare-hint" data-i18n="compare_hint">Comparez deux cinéphiles à partir de leurs cinéastes et films favoris/appréciés (indépendamment de leurs tops).</div>
+      <!-- Ce texte est aussi dans i18n.js (clé compare_hint) : celui-ci est
+           celui qu'on lit avant que la traduction ne s'applique. Les deux
+           doivent dire la même chose. -->
+      <div class="compare-hint" data-i18n="compare_hint">Comparez deux cinéphiles : d'abord ce qu'ils déclarent aimer — cinéastes et films favoris ou appréciés, d'où vient le pourcentage d'affinité —, puis ce que disent leurs tops, époques, cinémas, courants et statut des cinéastes cités.</div>
       <div class="compare-selectors">
         <div class="compare-selector">
           <div class="autocomplete-wrap">
@@ -621,11 +661,20 @@
               <div class="prop-field-hint" data-i18n="prop_nom_hint">En capitales, mais les minuscules sont acceptées : l'index écrit McCAREY, DeMILLE, LaBRUCE, St. CLAIR.</div>
             </div>
           </div>
+          <!-- Deux pays de carrière, et non deux nationalités : une carrière
+               en deux temps (Sirk aux États-Unis, Tarkovski en Suède) porte
+               deux drapeaux sur sa fiche. Le second reste facultatif, comme
+               la colonne « pays2 » qu'il remplit. -->
           <div class="prop-form-row">
             <div class="prop-form-field">
               <label data-i18n="prop_pays_label">Pays de carrière *</label>
               <select id="prop-pays" aria-label="Pays de carrière" data-i18n-aria="prop_pays_label" class="contrib-select"></select>
               <div class="prop-field-hint" data-i18n="prop_pays_hint">Le drapeau de la fiche indique le pays où s'est faite la carrière, et non la nationalité du passeport.</div>
+            </div>
+            <div class="prop-form-field">
+              <label><span data-i18n="prop_pays2_label">Second pays de carrière</span> <span style="font-weight:400;text-transform:none;letter-spacing:0" data-i18n="prop_pays2_optional">(facultatif)</span></label>
+              <select id="prop-pays2" aria-label="Second pays de carrière" data-i18n-aria="prop_pays2_label" class="contrib-select"></select>
+              <div class="prop-field-hint" data-i18n="prop_pays2_hint">À ne renseigner que pour une carrière faite dans deux cinémas, pas pour une double nationalité.</div>
             </div>
           </div>
           <div class="prop-form-row">

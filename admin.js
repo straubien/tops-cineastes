@@ -124,6 +124,10 @@ tcWithRetryTimeout(function(){ return loadAllCineastesAdmin(0, 1000); }).then(fu
   DATA = { cineastes: rows };
   cineastesIndex = rows.map(function(c){ return c&&c.nom; }).filter(function(n){ return typeof n==='string'; });
   if(currentUser){ renderDashboard(); populateContribSelect(); }
+  // L'onglet « Fiche cinéaste » compte les cinéastes sans pays sur ce
+  // catalogue : ouvert avant son arrivée, il affichait « Chargement… » pour
+  // toujours.
+  if(typeof ficheAdmMajCompteSansPays === 'function') ficheAdmMajCompteSansPays();
 });
 
 // Catalogue des courants (id -> libellés FR/EN), nécessaire pour afficher les
@@ -266,13 +270,13 @@ document.querySelectorAll('.tab').forEach(function(tab){
     isStatsTabActive = tab.getAttribute('data-tab') === 'statistiques';
     if(isDashboardTabActive) renderDashboard();
     if(tab.getAttribute('data-tab') === 'comments') loadCommentsAdmin();
-    if(tab.getAttribute('data-tab') === 'flags') renderFlagsAdmin();
+    if(tab.getAttribute('data-tab') === 'fiche') initFicheAdmin();
     if(tab.getAttribute('data-tab') === 'thematiques') loadThematicTops();
     if(tab.getAttribute('data-tab') === 'courants') loadCourantProposals();
     // Les TYPES d'abord : le catalogue des courants s'en sert pour remplir
     // ses sélecteurs. Les deux lectures partent en parallèle, et chacune
     // redessine ce qui la concerne quand elle revient.
-    if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantTypes(); loadCourantCatalogue(); initCourantFicheSearch(); }
+    if(tab.getAttribute('data-tab') === 'courants-gestion'){ loadCourantTypes(); loadCourantCatalogue(); }
     // Onglet « Types d'entrée » : il ne lit que sa propre table.
     if(tab.getAttribute('data-tab') === 'courants-types') loadCourantTypes();
     // Vrai = ouverture de l'onglet : les filtres et les paliers repartent à
@@ -1390,7 +1394,14 @@ function buildProposalCard(p, container){
       if(p.annee_naissance) annees.push('né(e) en ' + p.annee_naissance);
       if(p.annee_deces) annees.push('décédé en ' + p.annee_deces);
     }
-    if(p.pays && typeof tcCountryLabel === 'function'){ var _pl = tcCountryLabel(p.pays); if(_pl) annees.push(_pl); }
+    // Les deux pays de carrière, quand il y en a deux.
+    if(typeof tcCountryLabel === 'function'){
+      [p.pays, p.pays2].forEach(function(_code){
+        if(!_code) return;
+        var _pl = tcCountryLabel(_code);
+        if(_pl) annees.push(_pl);
+      });
+    }
 
     var card = document.createElement('div'); card.className = 'prop-card';
 
@@ -1411,8 +1422,10 @@ function buildProposalCard(p, container){
     }
     infoEl.appendChild(nameEl);
 
-    if(p.pays && typeof tcFlagHtml === 'function'){
-      var flagHtml = tcFlagHtml(p.pays, 'prop-flag', 'Pays de carrière');
+    if(typeof tcFlagHtml === 'function'){
+      var flagHtml = [p.pays, p.pays2].map(function(_code){
+        return _code ? tcFlagHtml(_code, 'prop-flag', 'Pays de carrière') : '';
+      }).join('');
       if(flagHtml){
         var flagWrap = document.createElement('div'); flagWrap.className = 'prop-flag-wrap'; flagWrap.innerHTML = flagHtml;
         infoEl.appendChild(flagWrap);
@@ -1449,14 +1462,12 @@ function buildProposalCard(p, container){
       nomInput.value = p.nom || '';
       nomInput.placeholder = p.duo ? 'Nom du duo *' : 'Nom *';
 
-      var paysSelect = document.createElement('select'); paysSelect.className = 'contrib-select';
-      var paysGroups = typeof tcCountrySelectOptions === 'function' ? tcCountrySelectOptions() : { iso: [], historic: [] };
-      var paysHtml = '<option value="">' + '—' + '</option><optgroup label="' + 'Pays actuels (ISO)' + '">';
-      paysGroups.iso.forEach(function(o){ paysHtml += '<option value="' + o.code + '"' + (o.code === p.pays ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>'; });
-      paysHtml += '</optgroup><optgroup label="' + 'Pays / entités historiques' + '">';
-      paysGroups.historic.forEach(function(o){ paysHtml += '<option value="' + o.code + '"' + (o.code === p.pays ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>'; });
-      paysHtml += '</optgroup>';
-      paysSelect.innerHTML = paysHtml;
+      // Les deux pays de carrière, par le même sélecteur que l'éditeur de
+      // fiche : un modèle fabriqué une fois puis cloné, qui sait aussi
+      // réintroduire un code retiré de flagsdata.js entre-temps plutôt que
+      // de l'effacer en silence (voir flagsCountrySelect).
+      var paysSelect = flagsCountrySelect(p.pays || '');
+      var pays2Select = flagsCountrySelect(p.pays2 || '', 'flags-select-2');
 
       var naissanceInput = document.createElement('input');
       naissanceInput.type = 'number'; naissanceInput.className = 'autocomplete-input';
@@ -1473,11 +1484,13 @@ function buildProposalCard(p, container){
       var editRow1 = document.createElement('div'); editRow1.className = 'prop-edit-row';
       editRow1.appendChild(prenomInput); editRow1.appendChild(nomInput);
       var editRow2 = document.createElement('div'); editRow2.className = 'prop-edit-row';
-      editRow2.appendChild(paysSelect); editRow2.appendChild(naissanceInput); editRow2.appendChild(decesInput);
+      editRow2.appendChild(paysSelect); editRow2.appendChild(pays2Select);
+      var editRow2b = document.createElement('div'); editRow2b.className = 'prop-edit-row';
+      editRow2b.appendChild(naissanceInput); editRow2b.appendChild(decesInput);
       var editRow3 = document.createElement('div'); editRow3.className = 'prop-edit-row';
       editRow3.appendChild(photoInput);
 
-      editZone.appendChild(editRow1); editZone.appendChild(editRow2); editZone.appendChild(editRow3);
+      editZone.appendChild(editRow1); editZone.appendChild(editRow2); editZone.appendChild(editRow2b); editZone.appendChild(editRow3);
 
       // Duos : le nom et le prénom ci-dessus portent DÉJÀ les deux membres,
       // au format de l'index (« COEN, Joel & Ethan » ou « ALOV & NAUMOV ») ;
@@ -1522,10 +1535,22 @@ function buildProposalCard(p, container){
           // commentaire sur nomInput ci-dessus.
           var editedNom = nomInput.value.trim();
           if(!editedNom){ showAdminNotice('Le nom ne peut pas être vide.', false); return; }
+          // Deux fois le même code afficherait deux fois le même drapeau sur la
+          // fiche : on refuse plutôt que de créer la fiche et de la corriger
+          // ensuite.
+          if(pays2Select.value && pays2Select.value === paysSelect.value){
+            showAdminNotice('Les deux pays de carrière doivent être différents.', false);
+            return;
+          }
+          if(pays2Select.value && !paysSelect.value){
+            showAdminNotice('Indiquez d\'abord le premier pays de carrière.', false);
+            return;
+          }
           editFields = {
             prenom: prenomInput.value.trim(),
             nom: editedNom,
             pays: paysSelect.value || null,
+            pays2: pays2Select.value || null,
             annee_naissance: naissanceInput.value ? parseInt(naissanceInput.value, 10) : null,
             annee_deces: decesInput.value ? parseInt(decesInput.value, 10) : null,
             photo_tmdb: photoInput.value.trim() || null
@@ -1610,6 +1635,7 @@ async function insertCineasteFromProposal(p){
       vivant: [!d1, !d2],
       duo: true,
       pays: p.pays || null,
+      pays2: p.pays2 || null,
       // Deux chemins, ou rien du tout : un tableau [null, null] n'apporte
       // rien de plus qu'une cellule vide.
       photo_tmdb: (ph1 || ph2) ? [ph1, ph2] : null
@@ -1622,6 +1648,7 @@ async function insertCineasteFromProposal(p){
       vivant: p.annee_deces ? false : true,
       duo: false,
       pays: p.pays || null,
+      pays2: p.pays2 || null,
       photo_tmdb: p.photo_tmdb || null
     };
   }
@@ -1779,34 +1806,45 @@ function deleteCommentAdmin(id, delBtn){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DRAPEAUX — PAYS DE CARRIÈRE
+// FICHE CINÉASTE — TOUTES LES DONNÉES D'UNE LIGNE
 // ═══════════════════════════════════════════════════════════════
-var flagsSearchTerm = '';
-// Mode « cinéastes sans pays » : liste tous les cinéastes dont la colonne
-// "pays" est NULL/vide, pour les renseigner directement depuis l'admin.
-var flagsNullMode = false;
-
-// ── POURQUOI LA RECHERCHE RAMAIT ──────────────────────────────────────────
-// Chaque ligne affichée porte DEUX sélecteurs de pays, soit environ cent
-// quatre-vingts <option> chacun. Sur les 3 700 cinéastes de l'index, taper
-// une lettre en retenait plusieurs centaines : le navigateur construisait
-// d'un seul coup des centaines de milliers de nœuds, le fil principal gelait
-// pendant des secondes, et la frappe elle-même ne s'affichait plus. Deux
-// mesures, l'une et l'autre nécessaires :
+// Cet onglet remplace l'ancien onglet « Drapeaux » et a repris le champ
+// cinéaste qui ouvrait « Gestion des courants ». Les deux écrivaient dans la
+// MÊME ligne de la table « cineastes », chacun n'en montrant qu'un morceau :
+// les deux drapeaux d'un côté, les quatre courants de l'autre, et les dates,
+// le statut, la photo, le lien Facebook nulle part.
 //
-//   1. le <select> n'est fabriqué qu'UNE FOIS puis cloné ligne par ligne —
-//      cloner un sous-arbre déjà analysé coûte une fraction de ce que coûte
-//      le même HTML redonné à innerHTML ;
-//   2. l'affichage est PLAFONNÉ, par paquets, avec un bouton pour la suite.
-//      C'est elle qui garantit un coût borné, quel que soit le terme tapé.
-var FLAGS_PAR_PAQUET = 50;
-var flagsLimite = FLAGS_PAR_PAQUET;
-// En deçà de deux lettres, une recherche ne désigne rien et ramène le pire
-// cas : on ne la lance pas.
-var FLAGS_MIN_LETTRES = 2;
+// CE QU'IL ÉCRIT, ET PAR QUEL CHEMIN — deux chemins, et ce n'est pas un
+// hasard :
+//
+//   • les colonnes propres à la fiche (dates, statut, pays, photo, Facebook)
+//     par un simple UPDATE, idempotent, donc rejouable sans dommage si la
+//     réponse se perd ;
+//   • les quatre emplacements de courants par la fonction SQL
+//     tc_admin_set_courants, la seule qui sache propager un changement aux
+//     propositions validées et aux notifications dans la même transaction.
+//     Cet éditeur-là n'a pas été réécrit : il est repris tel quel, plus bas
+//     dans ce fichier (renderCourantFicheResult et la suite), et seulement
+//     affiché ici.
+//
+// LE NOM N'EST PAS MODIFIABLE, ET C'EST UN CHOIX. Il est la clef unique qui
+// relie une fiche à ses tops, ses commentaires, les favoris des cinéphiles,
+// les deux collections JSON importées et les fichiers de /portraits. Un
+// renommage fait ici écrirait un nom neuf dans la table et laisserait tout le
+// reste pointer vers l'ancien — sans la moindre erreur à l'écran.
+//
+// POURQUOI LA LIGNE EST RELUE EN BASE À CHAQUE OUVERTURE. Le catalogue chargé
+// au démarrage ne porte pas « url_facebook » ni « fbid » : ces deux colonnes
+// en ont été retirées parce qu'elles représentaient un tiers des données
+// transférées à chaque visite du site (cf. TC_CINEASTES_COLONNES dans
+// utils.js). Les éditer suppose donc de les demander, et une fiche à la fois
+// est exactement le bon grain.
 
-// Le <select> des pays, fabriqué une seule fois (cf. ci-dessus) et cloné à
-// chaque appel.
+// ── LE SÉLECTEUR DE PAYS, FABRIQUÉ UNE FOIS PUIS CLONÉ ────────────────────
+// Cent quatre-vingts <option> par sélecteur : cloner un sous-arbre déjà
+// analysé coûte une fraction de ce que coûte le même HTML redonné à
+// innerHTML. Le modèle sert maintenant à quatre endroits — les deux pays de
+// cette fiche, et les deux pays de l'éditeur de propositions.
 var _flagsSelectModele = null;
 function flagsCountrySelect(currentCode, cssClass){
   if(!_flagsSelectModele){
@@ -1841,187 +1879,538 @@ function flagsCountrySelect(currentCode, cssClass){
   return sel;
 }
 
-function renderFlagsAdmin(){
-  var tbody = document.getElementById('flags-tbody');
-  var errEl = document.getElementById('flags-error');
-  errEl.style.display = 'none';
-  if(!DATA || !DATA.cineastes){ tbody.innerHTML = '<tr><td colspan="3">' + 'Chargement…' + '</td></tr>'; return; }
+// ── ÉTAT DE L'ONGLET ──────────────────────────────────────────────────────
+// La ligne relue en base, telle qu'elle est arrivée : c'est elle qui sert de
+// référence pour savoir ce qui a changé, et pour le bouton « Annuler ».
+var _ficheAdmRow = null;
+var _ficheAdmNom = null;
+// Jeton d'ouverture : deux fiches ouvertes coup sur coup, la réponse de la
+// première ne doit pas remplacer l'affichage de la seconde.
+var _ficheAdmJeton = 0;
 
-  var countEl = document.getElementById('flags-null-count');
-  var rows;
-  if(flagsNullMode){
-    // Liste tous les cinéastes dont le pays n'est pas renseigné (NULL ou vide).
-    rows = DATA.cineastes
-      .filter(function(c){ return !c.pays; })
-      .sort(function(a,b){ return tcComparerNoms(a.nom, b.nom); });
-    if(countEl) countEl.textContent = rows.length + ' cinéaste(s) sans pays';
-    tbody.innerHTML = '';
-    if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">Tous les cinéastes ont un pays renseigné.</td></tr>'; return; }
-  } else {
-    if(countEl) countEl.textContent = '';
-    var term = normStr(flagsSearchTerm.trim());
-    // Seule la barre de recherche pilote l'affichage : sans terme saisi, aucun
-    // cinéaste n'est listé (évite aussi le gel du navigateur sur 2000+ lignes).
-    if(!term){ tbody.innerHTML = '<tr><td colspan="3">' + 'Recherchez un cinéaste pour l\'afficher.' + '</td></tr>'; return; }
-    if(term.length < FLAGS_MIN_LETTRES){
-      tbody.innerHTML = '<tr><td colspan="3">' + 'Tapez au moins ' + FLAGS_MIN_LETTRES + ' lettres.' + '</td></tr>';
-      return;
-    }
-    rows = DATA.cineastes
-      .filter(function(c){ return normStr(c.nom).indexOf(term) !== -1; })
-      .sort(function(a,b){ return tcComparerNoms(a.nom, b.nom); });
-    tbody.innerHTML = '';
-    if(!rows.length){ tbody.innerHTML = '<tr><td colspan="3">' + 'Aucun résultat.' + '</td></tr>'; return; }
-  }
-
-  // Un paquet à la fois (cf. le commentaire en tête de section). Le reste
-  // attend derrière le bouton posé en pied de tableau.
-  var visibles = rows.slice(0, flagsLimite);
-
-  // Tout est assemblé hors du document, puis inséré d'un seul coup : le
-  // navigateur ne recalcule la mise en page qu'une fois.
-  var fragment = document.createDocumentFragment();
-  visibles.forEach(function(c){
-    var tr = document.createElement('tr');
-
-    var tdName = document.createElement('td');
-    tdName.textContent = c.nom;
-
-    var tdFlag = document.createElement('td');
-    var select = flagsCountrySelect(c.pays || '');
-    // Second drapeau (optionnel) : pays d'une éventuelle 2e carrière.
-    var select2 = flagsCountrySelect(c.pays2 || '', 'flags-select-2');
-
-    var tdAction = document.createElement('td');
-    var saveBtn = document.createElement('button');
-    saveBtn.className = 'btn-secondary';
-    saveBtn.textContent = 'Enregistrer';
-    saveBtn.addEventListener('click', function(){ saveCineasteFlag(c, select.value, select2.value, saveBtn); });
-
-    tdFlag.appendChild(select);
-    tdFlag.appendChild(select2);
-    tdAction.appendChild(saveBtn);
-    tr.appendChild(tdName); tr.appendChild(tdFlag); tr.appendChild(tdAction);
-    fragment.appendChild(tr);
-  });
-  tbody.appendChild(fragment);
-
-  if(rows.length > visibles.length){
-    var trPlus = document.createElement('tr');
-    var tdPlus = document.createElement('td');
-    tdPlus.colSpan = 3;
-    tdPlus.className = 'flags-plus';
-
-    var info = document.createElement('span');
-    info.className = 'flags-plus-info';
-    info.textContent = visibles.length + ' affichés sur ' + rows.length;
-    tdPlus.appendChild(info);
-
-    var reste = rows.length - visibles.length;
-    var plusBtn = document.createElement('button');
-    plusBtn.type = 'button';
-    plusBtn.className = 'btn-secondary';
-    plusBtn.textContent = 'Afficher ' + Math.min(FLAGS_PAR_PAQUET, reste) + ' de plus';
-    plusBtn.addEventListener('click', function(){
-      flagsLimite += FLAGS_PAR_PAQUET;
-      renderFlagsAdmin();
-    });
-    tdPlus.appendChild(plusBtn);
-
-    trPlus.appendChild(tdPlus);
-    tbody.appendChild(trPlus);
-  }
+function ficheAdmErreur(message){
+  var el = document.getElementById('fiche-adm-error');
+  if(!el) return;
+  if(!message){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = message;
+  el.style.display = 'block';
 }
 
-async function saveCineasteFlag(c, code, code2, saveBtn){
-  var errEl = document.getElementById('flags-error');
-  errEl.style.display = 'none';
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Enregistrement…';
-  var newVal = code || null;
-  var newVal2 = code2 || null;
-  // Filet de sécurité : si la Promise ne se résout jamais (ex: token JWT expiré
-  // et refresh silencieusement bloqué), on débloque le bouton après 20s.
-  var _done = false;
-  var _safety = setTimeout(function(){
-    if(_done) return;
-    _done = true;
-    console.error('saveCineasteFlag: timeout de sécurité (20s) pour "' + c.nom + '"');
-    errEl.textContent = 'La connexion a expiré pour "' + c.nom + '". Rechargez la page et réessayez.';
-    errEl.style.display = 'block';
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Enregistrer';
-  }, 20000);
+// La valeur d'un membre dans une colonne qui peut être scalaire (solo) ou
+// tableau de deux (duo).
+//
+// UN STATUT SCALAIRE SUR UN DUO VAUT POUR LES DEUX MEMBRES : la base en
+// contient (« COOPER & SCHOEDSACK » porte vivant = false avec deux dates de
+// naissance), et le site public le lit déjà comme ça. Sans cette règle,
+// ouvrir puis enregistrer une telle fiche ferait disparaître le statut du
+// second membre sans que personne ne l'ait demandé.
+function ficheAdmMembre(valeur, i, scalairePourTous){
+  if(Array.isArray(valeur)) return valeur.length > i ? valeur[i] : null;
+  if(valeur === undefined || valeur === null) return null;
+  return (i === 0 || scalairePourTous) ? valeur : null;
+}
+
+// Un entier d'année, ou null. Refuse ce qui n'est pas une année plausible
+// plutôt que d'écrire 19 ou 20250 dans la base.
+function ficheAdmAnnee(brut){
+  if(brut === '' || brut === null || brut === undefined) return null;
+  var n = parseInt(brut, 10);
+  if(isNaN(n) || n < 1800 || n > 2100) return NaN;   // NaN = saisie refusée
+  return n;
+}
+
+// ── OUVERTURE D'UNE FICHE ─────────────────────────────────────────────────
+async function ficheAdmOuvrir(nom){
+  var resEl = document.getElementById('fiche-adm-result');
+  if(!resEl) return;
+  ficheAdmErreur(null);
+  _ficheAdmNom = nom;
+  _ficheAdmRow = null;
+  var jeton = ++_ficheAdmJeton;
+  resEl.innerHTML = '<div class="empty-state">Lecture de la fiche…</div>';
+
+  var res;
   try {
-    var res = await tcWithRetryTimeout(function(){
-      return sb.from('cineastes').update({ pays: newVal, pays2: newVal2 }).eq('nom', c.nom).select('nom');
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('cineastes').select('*').eq('nom', nom).maybeSingle();
     });
-    if(_done) return;
-    _done = true;
-    clearTimeout(_safety);
-    if(res.error){
-      errEl.textContent = 'Erreur d\'enregistrement pour "' + c.nom + '" : ' + friendlyError(res.error);
-      errEl.style.display = 'block';
-      saveBtn.textContent = 'Erreur ✗';
-      setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
+  } catch(err){
+    if(jeton !== _ficheAdmJeton) return;
+    resEl.innerHTML = '';
+    ficheAdmErreur('Lecture impossible : ' + friendlyError(err));
+    return;
+  }
+  if(jeton !== _ficheAdmJeton) return;
+  if(res.error){
+    resEl.innerHTML = '';
+    ficheAdmErreur('Lecture impossible : ' + friendlyError(res.error));
+    return;
+  }
+  if(!res.data){
+    resEl.innerHTML = '';
+    ficheAdmErreur('Aucune fiche ne porte le nom « ' + nom +' ».');
+    return;
+  }
+  _ficheAdmRow = res.data;
+  renderFicheAdm();
+}
+
+// ── RENDU DU FORMULAIRE ───────────────────────────────────────────────────
+// Reconstruit depuis _ficheAdmRow, donc depuis la base : c'est aussi ce que
+// fait le bouton « Annuler les modifications ». Rejoué tel quel quand la case
+// « duo » change, pour que le second volet apparaisse ou disparaisse.
+//
+// Les champs sont fabriqués par l'API du document et non par innerHTML :
+// un nom de cinéaste, une adresse Facebook ou un chemin de photo sont du
+// texte venu de la base, et textContent/value n'ont pas à être échappés.
+var _ficheAdmDuoEdite = null;   // état de la case « duo » en cours d'édition
+
+function renderFicheAdm(){
+  var host = document.getElementById('fiche-adm-result');
+  if(!host) return;
+  var row = _ficheAdmRow;
+  if(!row){ host.innerHTML = ''; return; }
+  host.innerHTML = '';
+
+  var estDuo = (_ficheAdmDuoEdite === null) ? !!row.duo : _ficheAdmDuoEdite;
+
+  var bloc = document.createElement('div');
+  bloc.className = 'fiche-adm-bloc';
+
+  // — En-tête : le nom, et l'identifiant de la ligne —
+  var tete = document.createElement('div');
+  tete.className = 'fiche-adm-tete';
+  var nomEl = document.createElement('div');
+  nomEl.className = 'fiche-adm-nom';
+  nomEl.textContent = row.nom;
+  var idEl = document.createElement('div');
+  idEl.className = 'fiche-adm-id';
+  idEl.textContent = 'id ' + row.id + ' · nom non modifiable';
+  tete.appendChild(nomEl);
+  tete.appendChild(idEl);
+  bloc.appendChild(tete);
+
+  // — La case « duo » —
+  var duoLigne = document.createElement('div');
+  duoLigne.className = 'fiche-adm-duo-ligne';
+  var duoChk = document.createElement('input');
+  duoChk.type = 'checkbox';
+  duoChk.id = 'fiche-adm-duo';
+  duoChk.checked = estDuo;
+  var duoLab = document.createElement('label');
+  duoLab.setAttribute('for', 'fiche-adm-duo');
+  duoLab.textContent = 'Cette fiche est un duo (deux jeux de dates, deux photos)';
+  duoLigne.appendChild(duoChk);
+  duoLigne.appendChild(duoLab);
+  bloc.appendChild(duoLigne);
+
+  // — Les champs, membre par membre —
+  var champs = {};   // mémorise les éléments pour la lecture au moment d'enregistrer
+
+  function volet(i, titre){
+    var wrap = document.createElement('div');
+    wrap.className = 'fiche-adm-volet';
+    if(titre){
+      var t = document.createElement('div');
+      t.className = 'fiche-adm-volet-titre';
+      t.textContent = titre;
+      wrap.appendChild(t);
+    }
+    var grille = document.createElement('div');
+    grille.className = 'fiche-adm-grille';
+
+    var naissance = document.createElement('input');
+    naissance.type = 'number'; naissance.className = 'autocomplete-input';
+    naissance.placeholder = 'ex. 1940';
+    var vN = ficheAdmMembre(row.naissance, i, false);
+    naissance.value = (vN === null || vN === undefined) ? '' : vN;
+
+    var deces = document.createElement('input');
+    deces.type = 'number'; deces.className = 'autocomplete-input';
+    deces.placeholder = 'si applicable';
+    var vD = ficheAdmMembre(row.deces, i, false);
+    deces.value = (vD === null || vD === undefined) ? '' : vD;
+
+    var statut = document.createElement('select');
+    statut.className = 'contrib-select';
+    statut.innerHTML = '<option value="">Non renseigné</option>'
+      + '<option value="1">En activité</option>'
+      + '<option value="0">Disparu</option>';
+    var vV = ficheAdmMembre(row.vivant, i, true);
+    statut.value = (vV === true) ? '1' : ((vV === false) ? '0' : '');
+
+    var photo = document.createElement('input');
+    photo.type = 'text'; photo.className = 'autocomplete-input';
+    photo.placeholder = '/abcXYZ123.jpg';
+    var vP = ficheAdmMembre(row.photo_tmdb, i, false);
+    photo.value = (vP === null || vP === undefined) ? '' : vP;
+
+    // UNE ANNÉE DE DÉCÈS DÉCIDE DU STATUT. Les deux colonnes se contrediraient
+    // sinon — une fiche « en activité » avec une date de mort — et c'est le
+    // genre d'incohérence qu'une interface ne doit pas rendre possible.
+    var accorderStatut = function(){
+      if(deces.value){
+        statut.value = '0';
+        statut.disabled = true;
+        statut.title = 'Une année de décès est renseignée : le statut suit.';
+      } else {
+        statut.disabled = false;
+        statut.title = '';
+      }
+    };
+    deces.addEventListener('input', accorderStatut);
+    accorderStatut();
+
+    [['Année de naissance', naissance],
+     ['Année de décès', deces],
+     ['Statut', statut],
+     ['Photo TMDB', photo]].forEach(function(paire){
+      var f = document.createElement('div');
+      f.className = 'field-wrap';
+      var lab = document.createElement('div');
+      lab.className = 'field-label';
+      lab.textContent = paire[0];
+      f.appendChild(lab);
+      f.appendChild(paire[1]);
+      grille.appendChild(f);
+    });
+
+    wrap.appendChild(grille);
+    champs['naissance' + i] = naissance;
+    champs['deces' + i] = deces;
+    champs['statut' + i] = statut;
+    champs['photo' + i] = photo;
+    return wrap;
+  }
+
+  bloc.appendChild(volet(0, estDuo ? 'Premier cinéaste' : null));
+  if(estDuo) bloc.appendChild(volet(1, 'Second cinéaste'));
+
+  // — Les deux pays de carrière —
+  var paysWrap = document.createElement('div');
+  paysWrap.className = 'fiche-adm-grille';
+  var paysSel = flagsCountrySelect(row.pays || '');
+  var pays2Sel = flagsCountrySelect(row.pays2 || '', 'flags-select-2');
+  [['Pays de carrière', paysSel], ['Second pays de carrière', pays2Sel]].forEach(function(paire){
+    var f = document.createElement('div');
+    f.className = 'field-wrap';
+    var lab = document.createElement('div');
+    lab.className = 'field-label';
+    lab.textContent = paire[0];
+    f.appendChild(lab);
+    f.appendChild(paire[1]);
+    paysWrap.appendChild(f);
+  });
+  bloc.appendChild(paysWrap);
+
+  // — Facebook : l'adresse de la publication d'origine, et son identifiant —
+  var fbWrap = document.createElement('div');
+  fbWrap.className = 'fiche-adm-grille';
+  var urlFb = document.createElement('input');
+  urlFb.type = 'text'; urlFb.className = 'autocomplete-input';
+  urlFb.placeholder = 'https://www.facebook.com/…';
+  urlFb.value = row.url_facebook || '';
+  var fbid = document.createElement('input');
+  fbid.type = 'text'; fbid.className = 'autocomplete-input';
+  fbid.placeholder = 'ex. 248330679741467';
+  fbid.value = row.fbid || '';
+  [['Lien Facebook', urlFb], ['Identifiant Facebook (fbid)', fbid]].forEach(function(paire){
+    var f = document.createElement('div');
+    f.className = 'field-wrap';
+    var lab = document.createElement('div');
+    lab.className = 'field-label';
+    lab.textContent = paire[0];
+    f.appendChild(lab);
+    f.appendChild(paire[1]);
+    fbWrap.appendChild(f);
+  });
+  bloc.appendChild(fbWrap);
+
+  var note = document.createElement('div');
+  note.className = 'fiche-adm-note';
+  note.textContent = 'Le lien Facebook ne s\'affiche que sur la fiche publique du cinéaste, '
+    + 'et n\'est lu qu\'à son ouverture : il ne pèse pas sur le chargement du site.';
+  bloc.appendChild(note);
+
+  // — Les boutons —
+  var actions = document.createElement('div');
+  actions.className = 'courant-slot-actions';
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary';
+  saveBtn.textContent = 'Enregistrer la fiche';
+  var resetBtn = document.createElement('button');
+  resetBtn.className = 'btn-reject';
+  resetBtn.textContent = 'Annuler les modifications';
+  resetBtn.addEventListener('click', function(){
+    _ficheAdmDuoEdite = null;
+    ficheAdmErreur(null);
+    renderFicheAdm();
+  });
+  actions.appendChild(saveBtn);
+  actions.appendChild(resetBtn);
+  bloc.appendChild(actions);
+
+  host.appendChild(bloc);
+
+  // La case « duo » rejoue le rendu : le second volet apparaît ou disparaît.
+  duoChk.addEventListener('change', function(){
+    _ficheAdmDuoEdite = duoChk.checked;
+    renderFicheAdm();
+  });
+
+  saveBtn.addEventListener('click', function(){
+    ficheAdmPreparerEnregistrement(estDuo, champs, paysSel, pays2Sel, urlFb, fbid, saveBtn);
+  });
+}
+
+// ── CONTRÔLES, PUIS CONFIRMATION DÉTAILLÉE ────────────────────────────────
+// Les contrôles d'ici n'évitent qu'un aller-retour inutile : la base reste la
+// seule barrière qui compte (règles RLS). La confirmation, en revanche, est
+// là pour une autre raison — elle écrit noir sur blanc ce qui va changer,
+// colonne par colonne. Un back-office qui modifie une fiche en silence est un
+// back-office dans lequel on ne peut rien vérifier.
+function ficheAdmPreparerEnregistrement(estDuo, champs, paysSel, pays2Sel, urlFb, fbid, btn){
+  ficheAdmErreur(null);
+  var row = _ficheAdmRow;
+  if(!row) return;
+
+  var membres = estDuo ? [0, 1] : [0];
+  var naissances = [], deces = [], statuts = [], photos = [];
+  for(var k = 0; k < membres.length; k++){
+    var i = membres[k];
+    var n = ficheAdmAnnee(champs['naissance' + i].value);
+    var d = ficheAdmAnnee(champs['deces' + i].value);
+    if(isNaN(n) || isNaN(d)){
+      showAdminNotice('Les années doivent être comprises entre 1800 et 2100.', false);
       return;
     }
-    if(!res.data || !res.data.length){
-      errEl.textContent = 'Erreur : la mise à jour n\'a pas abouti pour "' + c.nom + '" (droits insuffisants ?).';
-      errEl.style.display = 'block';
-      saveBtn.textContent = 'Erreur ✗';
-      setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
+    if(n && d && d < n){
+      showAdminNotice('Une année de décès ne peut pas précéder l\'année de naissance.', false);
       return;
     }
-    c.pays = newVal;
-    c.pays2 = newVal2;
-    saveBtn.textContent = 'Enregistré ✓';
-    showAdminNotice('✓ Pays enregistré pour « ' + c.nom + ' ».', true);
-    setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 1500);
-  } catch(err) {
-    if(_done) return;
-    _done = true;
-    clearTimeout(_safety);
-    errEl.textContent = 'Erreur inattendue : ' + friendlyError(err);
-    errEl.style.display = 'block';
-    saveBtn.textContent = 'Erreur ✗';
-    setTimeout(function(){ saveBtn.textContent = 'Enregistrer'; }, 2500);
-  } finally {
-    saveBtn.disabled = false;
+    var st = champs['statut' + i].value;
+    var photo = champs['photo' + i].value.trim();
+    // Même format que partout ailleurs sur le site : un chemin TMDB, ou rien.
+    if(photo && !/^\/[A-Za-z0-9_-]+\.jpg$/.test(photo)){
+      showAdminNotice('La photo TMDB doit s\'écrire « /abcXYZ123.jpg ».', false);
+      return;
+    }
+    naissances.push(n);
+    deces.push(d);
+    statuts.push(d ? false : (st === '1' ? true : (st === '0' ? false : null)));
+    photos.push(photo || null);
+  }
+
+  var pays = paysSel.value || null;
+  var pays2 = pays2Sel.value || null;
+  if(pays2 && !pays){
+    showAdminNotice('Indiquez d\'abord le premier pays de carrière.', false);
+    return;
+  }
+  if(pays2 && pays2 === pays){
+    showAdminNotice('Les deux pays de carrière doivent être différents.', false);
+    return;
+  }
+
+  var lien = urlFb.value.trim();
+  if(lien && !/^https:\/\//i.test(lien)){
+    showAdminNotice('Le lien Facebook doit commencer par « https:// ».', false);
+    return;
+  }
+  var idFb = fbid.value.trim();
+  if(idFb && !/^[0-9]+$/.test(idFb)){
+    showAdminNotice('L\'identifiant Facebook ne contient que des chiffres.', false);
+    return;
+  }
+
+  // UN DUO RANGE UN TABLEAU DE DEUX, UN SOLO UNE VALEUR SEULE. C'est la forme
+  // que lisent formatDates(), tcPhotoDuo() et le décompte « en activité /
+  // disparus » du site public : écrire une seule année pour deux personnes
+  // fabriquerait une fiche de duo cassée, sans erreur visible.
+  var maj;
+  if(estDuo){
+    maj = {
+      duo: true,
+      naissance: [naissances[0], naissances[1]],
+      deces: [deces[0], deces[1]],
+      vivant: [statuts[0], statuts[1]],
+      // Deux chemins, ou rien du tout : un tableau [null, null] n'apprend
+      // rien de plus qu'une cellule vide.
+      photo_tmdb: (photos[0] || photos[1]) ? [photos[0], photos[1]] : null
+    };
+  } else {
+    maj = {
+      duo: false,
+      naissance: naissances[0],
+      deces: deces[0],
+      vivant: statuts[0],
+      photo_tmdb: photos[0]
+    };
+  }
+  maj.pays = pays;
+  maj.pays2 = pays2;
+  maj.url_facebook = lien || null;
+  maj.fbid = idFb || null;
+
+  // Ce qui change, colonne par colonne, dans la confirmation.
+  var lisible = function(v){
+    if(v === null || v === undefined) return '(vide)';
+    if(Array.isArray(v)) return '[' + v.map(function(x){ return (x === null || x === undefined) ? '—' : x; }).join(', ') + ']';
+    if(v === true) return 'en activité';
+    if(v === false) return 'disparu';
+    return String(v);
+  };
+  var memeChose = function(a, b){ return JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b); };
+  var changements = Object.keys(maj).filter(function(col){ return !memeChose(row[col], maj[col]); });
+  if(!changements.length){
+    showAdminNotice('Aucun changement à enregistrer.', false);
+    return;
+  }
+  var recap = changements.map(function(col){
+    return '· ' + col + ' : ' + lisible(row[col]) + ' → ' + lisible(maj[col]);
+  }).join('\n');
+
+  showConfirmModal(
+    'Enregistrer la fiche de ' + row.nom + ' ?\n\n' + recap,
+    function(){ ficheAdmEnregistrer(maj, btn); }
+  );
+}
+
+// ── ÉCRITURE ──────────────────────────────────────────────────────────────
+// UPDATE idempotent (on réécrit des valeurs fixes, jamais un incrément) :
+// le rejouer après un délai réseau ne peut pas produire de doublon ni
+// d'effet de bord. D'où tcWithRetryTimeout avec ses relances par défaut,
+// contrairement aux INSERT de ce fichier.
+async function ficheAdmEnregistrer(maj, btn){
+  var nom = _ficheAdmNom;
+  if(btn){ btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.from('cineastes').update(maj).eq('nom', nom).select('nom');
+    });
+  } catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = 'Enregistrer la fiche'; }
+    ficheAdmErreur('Enregistrement impossible : ' + friendlyError(err));
+    return;
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Enregistrer la fiche'; }
+  if(res.error){
+    ficheAdmErreur('Enregistrement impossible : ' + friendlyError(res.error));
+    return;
+  }
+  if(!res.data || !res.data.length){
+    ficheAdmErreur('La mise à jour n\'a pas abouti pour « ' + nom + ' » (droits insuffisants ?).');
+    return;
+  }
+
+  // La ligne de référence, et le catalogue gardé en mémoire par la page, sont
+  // remis d'accord avec la base : sans cela l'onglet « Statistiques », la
+  // recherche et le compte des cinéastes sans pays continueraient d'afficher
+  // l'état d'avant.
+  Object.keys(maj).forEach(function(col){ _ficheAdmRow[col] = maj[col]; });
+  var cache = (DATA && DATA.cineastes || []).find(function(c){ return c.nom === nom; });
+  if(cache) Object.keys(maj).forEach(function(col){ cache[col] = maj[col]; });
+
+  _ficheAdmDuoEdite = null;
+  showAdminNotice('✓ Fiche de « ' + nom + ' » enregistrée.', true);
+  renderFicheAdm();
+  ficheAdmMajCompteSansPays();
+  refreshStatsIfActive();
+}
+
+// ── LES CINÉASTES SANS PAYS ───────────────────────────────────────────────
+// Reprise de l'ancien onglet « Drapeaux » : c'était sa seule fonction que la
+// recherche par nom ne couvrait pas, puisqu'elle demande de parcourir tout
+// l'index. La liste n'ouvre plus un tableau de formulaires, elle sert de
+// raccourci : un nom cliqué ouvre la fiche complète.
+var _ficheAdmNullOuvert = false;
+
+function ficheAdmSansPays(){
+  return (DATA && DATA.cineastes ? DATA.cineastes : [])
+    .filter(function(c){ return !c.pays; })
+    .sort(function(a, b){ return tcComparerNoms(a.nom, b.nom); });
+}
+
+function ficheAdmMajCompteSansPays(){
+  var el = document.getElementById('fiche-null-count');
+  if(!el) return;
+  if(!DATA || !DATA.cineastes){ el.textContent = 'Chargement de l\'index…'; return; }
+  var n = ficheAdmSansPays().length;
+  el.textContent = n ? (n + ' cinéaste(s) sans pays') : 'Tous les cinéastes ont un pays renseigné.';
+  if(_ficheAdmNullOuvert) ficheAdmRendreSansPays();
+}
+
+function ficheAdmRendreSansPays(){
+  var host = document.getElementById('fiche-null-list');
+  if(!host) return;
+  host.innerHTML = '';
+  if(!_ficheAdmNullOuvert){ host.style.display = 'none'; return; }
+  host.style.display = 'block';
+  var rows = ficheAdmSansPays();
+  if(!rows.length){
+    host.textContent = 'Tous les cinéastes ont un pays renseigné.';
+    return;
+  }
+  // Plafonné : trois mille boutons d'un coup geleraient la page, et la liste
+  // est de toute façon une file d'attente que l'on vide par le haut.
+  var visibles = rows.slice(0, 200);
+  visibles.forEach(function(c){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'fiche-adm-null-item';
+    b.textContent = c.nom;
+    b.addEventListener('click', function(){
+      var input = document.getElementById('courant-fiche-cineaste-input');
+      if(input) input.value = c.nom;
+      ficheAdmSelectionner(c.nom);
+    });
+    host.appendChild(b);
+  });
+  if(rows.length > visibles.length){
+    var reste = document.createElement('div');
+    reste.className = 'fiche-adm-note';
+    reste.textContent = visibles.length + ' affichés sur ' + rows.length
+      + ' — renseignez-en quelques-uns, la liste se raccourcit d\'elle-même.';
+    host.appendChild(reste);
   }
 }
 
-// Le rendu est maintenant borné (sélecteur cloné, affichage par paquets), si
-// bien qu'une frappe coûte quelques millisecondes et non plus quelques
-// secondes. La courte pause de saisie reste utile — elle évite de refaire le
-// travail à chaque caractère d'un nom tapé d'une traite — mais elle peut être
-// ramenée au seuil habituel des autres barres du site.
-var _flagsSearchDebounce = null;
-document.getElementById('flags-search').addEventListener('input', function(e){
-  flagsSearchTerm = e.target.value;
-  // Chaque nouvelle recherche repart du premier paquet.
-  flagsLimite = FLAGS_PAR_PAQUET;
-  // Saisir une recherche sort du mode « sans pays ».
-  if(flagsNullMode){
-    flagsNullMode = false;
-    var b = document.getElementById('flags-null-btn');
-    if(b) b.classList.remove('active');
-  }
-  clearTimeout(_flagsSearchDebounce);
-  _flagsSearchDebounce = setTimeout(renderFlagsAdmin, 120);
+var _ficheNullBtn = document.getElementById('fiche-null-btn');
+if(_ficheNullBtn) _ficheNullBtn.addEventListener('click', function(){
+  _ficheAdmNullOuvert = !_ficheAdmNullOuvert;
+  this.classList.toggle('active', _ficheAdmNullOuvert);
+  ficheAdmRendreSansPays();
 });
 
-document.getElementById('flags-null-btn').addEventListener('click', function(){
-  flagsNullMode = !flagsNullMode;
-  this.classList.toggle('active', flagsNullMode);
-  flagsLimite = FLAGS_PAR_PAQUET;
-  if(flagsNullMode){
-    flagsSearchTerm = '';
-    var searchEl = document.getElementById('flags-search');
-    if(searchEl) searchEl.value = '';
-  }
-  renderFlagsAdmin();
-});
+// ── LE POINT D'ENTRÉE DE L'ONGLET ─────────────────────────────────────────
+// Un cinéaste choisi ouvre les DEUX blocs : les colonnes de la fiche, et les
+// quatre emplacements de courants (ce second éditeur vit plus bas dans ce
+// fichier et n'a pas été touché).
+function ficheAdmSelectionner(nom){
+  _ficheAdmDuoEdite = null;
+  ficheAdmOuvrir(nom);
+  var wrap = document.getElementById('fiche-adm-courants-wrap');
+  if(wrap) wrap.style.display = 'block';
+  renderCourantFicheResult(nom);
+}
+
+function ficheAdmVider(){
+  _ficheAdmJeton++;            // annule une lecture encore en vol
+  _ficheAdmRow = null;
+  _ficheAdmNom = null;
+  _ficheAdmDuoEdite = null;
+  ficheAdmErreur(null);
+  var host = document.getElementById('fiche-adm-result');
+  if(host) host.innerHTML = '';
+  var wrap = document.getElementById('fiche-adm-courants-wrap');
+  if(wrap) wrap.style.display = 'none';
+}
+
+function initFicheAdmin(){
+  initCourantFicheSearch();
+  ficheAdmMajCompteSansPays();
+}
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -3183,6 +3572,12 @@ if(_courantGestionBtnAdd) _courantGestionBtnAdd.addEventListener('click', addCou
 // tc_admin_set_courants, qui écrit la fiche ET propage le changement à
 // courant_proposals et notifications dans la même transaction
 // (voir tc-courants-cascade.sql, puis tc-courant4.sql).
+//
+// CET ÉDITEUR S'AFFICHE MAINTENANT DANS L'ONGLET « FICHE CINÉASTE », avec les
+// autres colonnes de la même ligne, et non plus en tête de « Gestion des
+// courants », qui ne s'occupe plus que du catalogue. Son code n'a pas changé
+// pour autant : seul le champ qui le déclenche a déménagé, et c'est
+// ficheAdmSelectionner() qui l'appelle.
 var _courantFicheSearchInitDone = false;
 var _courantFicheSelected = null;
 // État d'édition local des quatre emplacements (id de courant, ou null si vide).
@@ -3196,12 +3591,17 @@ function initCourantFicheSearch(){
     inputId: 'courant-fiche-cineaste-input',
     dropdownId: 'courant-fiche-cineaste-dropdown',
     getItems: function(){ return cineastesIndex; },
-    onSelect: function(nom){ _courantFicheSelected = nom; renderCourantFicheResult(nom); }
+    // Un nom choisi ouvre les DEUX blocs de l'onglet : les colonnes de la
+    // fiche, et les quatre emplacements de courants ci-dessous.
+    onSelect: function(nom){ _courantFicheSelected = nom; ficheAdmSelectionner(nom); }
   });
   document.getElementById('courant-fiche-cineaste-input').addEventListener('input', function(){
     _courantFicheSelected = null;
     _courantFicheSlots = [null, null, null, null];
     document.getElementById('courant-fiche-result').innerHTML = '';
+    // Un nom repris en cours de frappe ne désigne plus personne : on referme
+    // l'éditeur plutôt que de laisser à l'écran la fiche de quelqu'un d'autre.
+    ficheAdmVider();
   });
 }
 

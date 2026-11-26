@@ -908,7 +908,41 @@ a { text-decoration: none; color: inherit; }
      sur la tuile et non sur les deux couches : une seule surface à
      filtrer au lieu de deux, pendant que le fondu tourne. */
   filter: grayscale(1) contrast(1.1) brightness(1.02);
+  /* Le mur entre en fondu, d'un seul tenant (voir ci-dessous). */
+  transition: opacity 0.9s ease;
 }
+
+/* ── L'ARRIVÉE DU MUR ────────────────────────────────────────────
+   Les tuiles restent invisibles tant que leurs dix-huit premières images
+   ne sont pas décodées : sans cela elles s'allument une par une sur fond
+   noir, chacune au rythme de son téléchargement, et le mur « saute » à
+   l'ouverture.
+
+   La classe « tc-mur-attente » n'est posée QUE par le script d'en-tête
+   d'index.html : un navigateur sans JavaScript n'entre jamais dans cet
+   état et voit le mur comme avant. « tc-mur-pret » est posée par
+   index.js dès que les images répondent, et de toute façon par le
+   garde-fou de trois secondes du même script d'en-tête — un mur
+   incomplet vaut toujours mieux qu'un écran noir.
+
+   Le voile sombre (.splash-mur::after) n'est pas concerné : il reste en
+   place dès la première image à l'écran, et le titre reste lisible. */
+.tc-mur-attente:not(.tc-mur-pret) .splash-mur > i { opacity: 0; }
+
+/* Les trente-six portraits par défaut de ce fichier ne sont PAS montrés
+   quand ce navigateur a déjà en mémoire la liste du back-office : les
+   demander reviendrait à peindre un mur pour le repeindre aussitôt — ce
+   que le visiteur voyait, et qui donnait au mur son air de se mettre à
+   jour sous ses yeux. index.js retire la classe si, finalement, il n'a
+   pas su appliquer la liste ; les portraits par défaut reviennent alors,
+   sans que rien n'ait été montré entre-temps. */
+/* « html » n'est pas decoratif dans ce selecteur : les trente-six regles
+   « .splash-mur > i:nth-child(n) » plus bas ont exactement la meme specificite
+   qu'un « .classe .splash-mur > i », et comme elles viennent APRES, ce sont
+   elles qui gagnaient — la neutralisation ne neutralisait rien, et les
+   trente-six portraits par defaut partaient quand meme. Le type en tete fait
+   pencher la balance, quel que soit l'ordre des regles. */
+html.tc-mur-perso .splash-mur > i { --a: none; --b: none; }
 .splash-mur > i::before,
 .splash-mur > i::after {
   content: "";
@@ -924,8 +958,19 @@ a { text-decoration: none; color: inherit; }
   background-position: center 22%;
   animation: splash-mur-a 32s ease-in-out infinite;
   /* Chaque tuile part décalée, sinon les 18 visages changeraient
-     ensemble. La valeur vient de « --i », posé dans index.html. */
-  animation-delay: calc(var(--i, 0) * -1.7s);
+     ensemble. La valeur vient de « --i », posé dans index.html.
+     LE DÉCALAGE EST POSITIF, ET CE SIGNE COMPTE. Il était négatif : chaque
+     tuile démarrait alors en plein milieu de son cycle, et celles dont le
+     décalage tombait dans un fondu croisé changeaient de visage dans la
+     première seconde — un mur qui bouge avant même qu'on l'ait regardé.
+     Positif, aucune tuile ne bouge pendant les quatorze premières
+     secondes, et le décalage entre tuiles est conservé intact. */
+  animation-delay: calc(var(--i, 0) * 1.7s);
+  /* INDISPENSABLE avec un décalage positif : pendant l'attente, c'est la
+     première image-clef qui s'applique (couche A visible, couche B
+     effacée). Sans cela les deux couches seraient opaques et le mur
+     montrerait les visages de la couche B, puis basculerait d'un coup. */
+  animation-fill-mode: backwards;
 }
 .splash-mur > i::before { background-image: var(--a); }
 .splash-mur > i::after  { background-image: var(--b); animation-name: splash-mur-b; }
@@ -3818,6 +3863,202 @@ li.tc-nc-sep:not(:first-child) { border-top: 0.5px solid var(--border-dark,#d0c8
 }
 .compare-tag { font-size: 12px; color: var(--rouge-texte); letter-spacing: 0.05em; }
 .compare-tag-weak { width: 5px; height: 5px; border-radius: 50%; background: var(--brun-pale); display: inline-block; }
+
+
+/* ── COMPARATEUR : LES DEUX CINÉPHILES, SUPERPOSÉS ─────────────
+   LES DEUX COULEURS NE SONT PAS CHOISIES ICI. Ce sont celles des graphiques
+   de l'onglet « Activité » du back-office — le bleu #2E62B0 et l'or #A8841E,
+   avec leur variante de mode sombre —, reprises telles quelles pour trois
+   raisons : le site n'a pas à inventer une deuxième paire de couleurs de
+   graphique, cette paire-là a déjà été contrôlée (écart ΔE de 26 en vision
+   normale, 26 en protanopie, 21 en tritanopie sur les deux fonds), et elle
+   évite le rouge du site, qui veut dire « accent » partout ailleurs et ne
+   doit pas se mettre à vouloir dire « le premier cinéphile ».
+
+   LA COULEUR N'EST JAMAIS SEULE À PORTER L'IDENTITÉ : le premier cinéphile
+   est toujours la barre du HAUT, une légende nomme les deux, et l'infobulle
+   de chaque barre écrit les deux noms avec leurs nombres bruts. */
+:root {
+  --cmp-a: #2E62B0;
+  --cmp-b: #A8841E;
+}
+.dark {
+  --cmp-a: #5B8FD6;
+  --cmp-b: #A8841E;
+}
+
+/* Les trois sous-scores sous l'anneau d'affinité */
+.cmp-sous-scores {
+  display: flex;
+  gap: 12px;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--brun-pale);
+}
+.cmp-sous-scores b { color: var(--text); font-weight: 700; }
+
+/* Une section : son titre, et ses commandes sur la même ligne */
+.cmp-section { margin-bottom: 2.6rem; }
+.cmp-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+.cmp-section-title {
+  font-family: var(--font-names);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+.cmp-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Filtres et modes : même bouton, deux rôles */
+.cmp-filtres, .cmp-modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.cmp-filtre-btn, .cmp-mode-btn {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--brun-pale);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.cmp-filtre-btn:hover, .cmp-mode-btn:hover { color: var(--text); border-color: var(--rouge); }
+.cmp-filtre-btn.active, .cmp-mode-btn.active {
+  background: var(--rouge);
+  border-color: var(--rouge);
+  color: #fff;
+}
+.cmp-filtre-n { opacity: 0.75; margin-left: 4px; }
+.cmp-search {
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  min-width: 170px;
+}
+
+/* Les deux colonnes de goûts déclarés */
+.cmp-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
+.cmp-col { min-width: 0; }
+
+/* Pastille d'appartenance, dans la légende et devant une entrée propre à l'un */
+.cmp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.cmp-dot-a { background: var(--cmp-a); }
+.cmp-dot-b { background: var(--cmp-b); }
+
+/* Les chiffres clés, deux valeurs par tuile */
+.cmp-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 1.6rem; }
+.cmp-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-top: 3px solid var(--noir);
+  padding: 14px 12px;
+  text-align: center;
+}
+.cmp-tile-lab { font-family: var(--font); font-size: 13px; font-style: italic; color: var(--text-dim); margin-bottom: 6px; }
+.cmp-tile-vals { font-family: 'TWCenCondEB', 'Arial Narrow', sans-serif; font-size: 25px; line-height: 1.1; }
+/* Chaque valeur reste d'un seul tenant : sans cela une periode couverte se
+   coupait en plein milieu de son tiret (« 1922– » d'un cote, « 1978 » de
+   l'autre). La tuile passe a la ligne ENTRE les deux valeurs, jamais dedans. */
+.cmp-tile-a, .cmp-tile-b { white-space: nowrap; }
+.cmp-tile-a { color: var(--cmp-a); }
+.cmp-tile-b { color: var(--cmp-b); }
+.cmp-tile-sep { opacity: 0.45; margin: 0 5px; color: var(--text-dim); }
+
+/* Une carte de graphique — même habillage que les cartes du portrait
+   cinéphile (.pp-card), pour que les deux pages se lisent pareil. */
+.cmp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-left: 4px solid var(--rouge);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.3rem;
+}
+.cmp-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: var(--font-names);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 0.9rem;
+}
+.cmp-recouvrement {
+  font-family: 'TWCenCondEB', 'Arial Narrow', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-dim);
+  cursor: help;
+  white-space: nowrap;
+}
+
+/* Les rangées. Deux barres l'une sur l'autre, séparées de 2 px de fond :
+   c'est ce filet qui les garde distinctes quand elles ont presque la même
+   longueur. La première est toujours celle du PREMIER cinéphile. */
+.cmp-bars { display: flex; flex-direction: column; gap: 9px; }
+.cmp-bar-row { display: grid; grid-template-columns: 132px 1fr 76px; align-items: center; gap: 10px; }
+.cmp-bar-label { font-family: var(--font-baskerville); font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 7px; min-width: 0; }
+.cmp-bar-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-flag { width: 22px; height: auto; border-radius: 2px; flex-shrink: 0; }
+.cmp-lab-categorie { font-style: italic; }
+.cmp-bar-pair { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cmp-bar-track { background: var(--bg-subtle); height: 9px; border-radius: 2px; overflow: hidden; }
+.cmp-bar { height: 100%; border-radius: 2px; transition: width 0.25s ease; }
+.cmp-bar-a { background: var(--cmp-a); }
+.cmp-bar-b { background: var(--cmp-b); }
+.cmp-bar-val {
+  font-family: 'TWCenCondEB', 'Arial Narrow', sans-serif;
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Mode « écart » : un axe au milieu, le premier cinéphile à droite, le
+   second à gauche. La ligne centrale est le zéro. */
+.cmp-bar-axis { display: flex; align-items: center; min-width: 0; border-left: 0; }
+.cmp-bar-half { flex: 1; height: 11px; background: var(--bg-subtle); display: flex; min-width: 0; }
+.cmp-bar-half-left { justify-content: flex-end; border-right: 2px solid var(--brun-pale); }
+.cmp-bar-half-right { justify-content: flex-start; }
+
+/* Ce qui les rapproche, ce qui les sépare */
+.cmp-resume {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 0.9rem;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.cmp-resume b { font-weight: 400; font-style: italic; color: var(--brun-pale); }
+.cmp-note { font-family: var(--font); font-size: 14px; font-style: italic; color: var(--text-dim); margin-top: 0.9rem; }
+.cmp-note-haut { margin-top: 0; margin-bottom: 1.2rem; }
+
+@media (max-width: 760px) {
+  .cmp-two-col { grid-template-columns: 1fr; gap: 1.2rem; }
+  .cmp-tiles { grid-template-columns: 1fr 1fr; }
+  .cmp-bar-row { grid-template-columns: 96px 1fr 68px; gap: 8px; }
+  .cmp-search { min-width: 0; flex: 1; }
+}
 
 @media (max-width: 600px) {
   .compare-selectors { flex-wrap: wrap; }
