@@ -5173,7 +5173,6 @@ function loadCompareAvatar(name){
 // ni recalculer les index, ni faire sauter la page.
 var _cmpFiltre='communs';      // 'communs' | 'a' | 'b'
 var _cmpRecherche='';
-var _cmpOrdre='presents';      // 'presents' | 'separe'
 var _cmpCalc=null;             // dernier calcul (points communs, portraits)
 var _cmpPortraitJeton=0;
 
@@ -5252,49 +5251,27 @@ function cmpAileHtml(r,pa,pb,max,k){
   +'</div>';
 }
 
-// Une carte complète.
+// Une carte : un titre, le papillon, et rien d'autre que ce que la figure ne
+// dit pas déjà.
 //
-// `phrase` EST UNE FONCTION, ET CE N'EST PAS UN DÉTAIL DE STYLE. On lui passait
-// d'abord le NOM de la clef de traduction, et la carte appelait t(laClef) :
-// c'était du code juste, et un piège. Le contrôle du dictionnaire
-// (_outils/verifier-i18n.js) ne repère une clef réclamée que lorsqu'elle est
-// écrite en toutes lettres dans l'appel — t('…') et rien d'autre, le motif
-// qu'il cherche dans le texte du fichier. (Ce commentaire lui-même a d'abord
-// porté l'exemple en entier : le contrôle l'a pris pour un vrai appel et a
-// réclamé la clef inventée. La preuve qu'il regarde bien le texte brut.)
-// Écrite dans une variable, la clef devient invisible pour lui — une clef
-// absente d'i18n.js passait donc les contrôles
-// sans rien dire et s'affichait telle quelle sur la page, « cmp_phrase_epoques »
-// à la place d'une phrase. En passant une fonction fabriquée sur place, l'appel
-// redevient littéral chez l'appelant, et le contrôle peut faire son travail.
+// CE QUI A ÉTÉ RETIRÉ, ET POURQUOI. La carte s'ouvrait sur une phrase
+// (« 60 % de leurs cinéastes viennent des mêmes pays ») et se fermait sur un
+// résumé (« ils se rejoignent surtout sur : États-Unis »). Les deux
+// paraphrasaient la figure : dans un papillon, la rangée la plus partagée est
+// celle du haut, et une aile seule d'un côté saute aux yeux. Du commentaire
+// sur une image qui se lisait déjà seule.
 //
-// `chrono` garde l'ordre naturel des rangées (les décennies se lisent dans le
-// temps, pas par importance).
-function cmpCarteHtml(titre, phrase, rangs, totalA, totalB, note, limite, chrono){
+// `chrono` garde l'ordre naturel des rangées — les décennies se lisent dans le
+// temps ; partout ailleurs, les plus présentes d'abord.
+function cmpCarteHtml(titre, rangs, totalA, totalB, note, limite, chrono){
   if(!rangs.length)return '';
   var parts=rangs.map(function(r){
     return { r:r, pa:cmpPart(r.nA,totalA), pb:cmpPart(r.nB,totalB) };
   });
 
-  // Le recouvrement : la somme des parts communes, sur TOUTES les clefs et non
-  // sur les seules rangées affichées — un recouvrement calculé sur un extrait
-  // ne voudrait rien dire. Il n'apparaît jamais sous ce nom à l'écran : il est
-  // dit en toutes lettres par la phrase d'introduction.
-  var recouvrement=0;
-  parts.forEach(function(x){ recouvrement+=Math.min(x.pa,x.pb); });
-
-  var proche=null,loin=null;
-  parts.forEach(function(x){
-    if(!proche||Math.min(x.pa,x.pb)>Math.min(proche.pa,proche.pb))proche=x;
-    if(!loin||Math.abs(x.pa-x.pb)>Math.abs(loin.pa-loin.pb))loin=x;
-  });
-
   var affichees=parts.slice();
-  if(!chrono||_cmpOrdre==='separe'){
-    affichees.sort(function(x,y){
-      if(_cmpOrdre==='separe')return Math.abs(y.pa-y.pb)-Math.abs(x.pa-x.pb);
-      return (y.pa+y.pb)-(x.pa+x.pb);
-    });
+  if(!chrono){
+    affichees.sort(function(x,y){ return (y.pa+y.pb)-(x.pa+x.pb); });
   }
   if(limite)affichees=affichees.slice(0,limite);
 
@@ -5305,8 +5282,6 @@ function cmpCarteHtml(titre, phrase, rangs, totalA, totalB, note, limite, chrono
 
   return '<div class="cmp-card">'
     +'<div class="cmp-card-head">'+escapeHtml(titre)+'</div>'
-    +'<p class="cmp-phrase" title="'+escapeHtml(t('cmp_recouvrement_note'))+'">'
-      +phrase('<b>'+cmpPct(recouvrement)+'&nbsp;%</b>')+'</p>'
     +'<div class="cmp-papillon">'
       +'<div class="cmp-tete">'
         +'<span class="cmp-tete-a">'+escapeHtml(_cmpCalc.nomA)+'</span>'
@@ -5315,15 +5290,6 @@ function cmpCarteHtml(titre, phrase, rangs, totalA, totalB, note, limite, chrono
       +'</div>'
       +lignes
     +'</div>'
-    // Le resume ne dit quelque chose qu'a partir de trois rangees : sur deux,
-    // « ils se rejoignent sur X » et « ils s'eloignent sur X » designent le
-    // plus souvent la meme ligne, et la figure se suffit a elle-meme.
-    +(parts.length >= 3
-      ? '<div class="cmp-resume">'
-        +'<span><b>'+escapeHtml(t('cmp_convergence'))+'</b> '+proche.r.labelTexte+'</span>'
-        +'<span><b>'+escapeHtml(t('cmp_divergence'))+'</b> '+loin.r.labelTexte+'</span>'
-        +'</div>'
-      : '')
     +(note?'<div class="cmp-note">'+note+'</div>':'')
   +'</div>';
 }
@@ -5396,7 +5362,7 @@ function cmpRendrePortrait(){
     var rangsDec=cmpRangs(pa.decennies,pb.decennies,totDecA,totDecB,function(k){
       return { html:escapeHtml(k+'s'), texte:k+'s' };
     }).sort(function(x,y){ return Number(x.cle)-Number(y.cle); });
-    html+=cmpCarteHtml(t('pp_epoque'),function(p){ return t('cmp_phrase_epoques',p); },rangsDec,totDecA,totDecB,
+    html+=cmpCarteHtml(t('pp_epoque'),rangsDec,totDecA,totDecB,
       escapeHtml(t('cmp_part_note_films')),0,true);
   }
 
@@ -5407,19 +5373,22 @@ function cmpRendrePortrait(){
     var flag=tcFlagHtml(code,'cmp-flag',t('flag_pays_carriere'));
     return { html:(flag||'')+'<span>'+escapeHtml(label)+'</span>', texte:label };
   });
-  html+=cmpCarteHtml(t('pp_cinemas'),function(p){ return t('cmp_phrase_cinemas',p); },rangsPays,totPaysA,totPaysB,
-    escapeHtml(t('pp_cinemas_note')),10,false);
+  // Pas de note : le titre dit déjà « pays de carrière », et la fiche
+  // publique comme le profil expliquent ce que cela recouvre.
+  html+=cmpCarteHtml(t('pp_cinemas'),rangsPays,totPaysA,totPaysB,
+    '',10,false);
 
   // 4) Les courants et catégories
   var totCourA=cmpSomme(pa.courantCount),totCourB=cmpSomme(pb.courantCount);
   var rangsCour=cmpRangs(pa.courantCount,pb.courantCount,totCourA,totCourB,function(id){
+    // Courants et catégories s'écrivent pareil : ici ils se comparent sur le
+    // même pied, et une mise en forme distincte laisserait croire à une
+    // différence de nature entre deux rangées de la même figure.
     var label=tcCourantLabel(Number(id))||('#'+id);
-    var estCat=tcCourantType(Number(id))==='categorie';
-    return { html:'<span class="'+(estCat?'cmp-lab-categorie':'cmp-lab-courant')+'">'+escapeHtml(label)+'</span>',
-             texte:label };
+    return { html:'<span>'+escapeHtml(label)+'</span>', texte:label };
   });
-  html+=cmpCarteHtml(t('pp_courants_categories'),function(p){ return t('cmp_phrase_courants',p); },rangsCour,totCourA,totCourB,
-    escapeHtml(t('pp_courants_categories_note')),12,false);
+  html+=cmpCarteHtml(t('pp_courants_categories'),rangsCour,totCourA,totCourB,
+    '',12,false);
 
   // 5) En activité / disparus — deux rangées, même figure que le reste
   if(pa.statutConnu||pb.statutConnu){
@@ -5429,14 +5398,13 @@ function cmpRendrePortrait(){
       { cle:'disparu', labelHtml:escapeHtml(t('pp_disparus')), labelTexte:t('pp_disparus'),
         nA:pa.disparus, nB:pb.disparus }
     ];
-    html+=cmpCarteHtml(t('pp_vivants'),function(p){ return t('cmp_phrase_statut',p); },rangsStat,pa.statutConnu,pb.statutConnu,
+    // Celle-ci reste : elle dit sur COMBIEN de cinéastes le partage est
+    // calculé, ce que la figure ne peut pas montrer.
+    html+=cmpCarteHtml(t('pp_vivants'),rangsStat,pa.statutConnu,pb.statutConnu,
       escapeHtml(t('pp_vivants_note',Math.min(pa.statutConnu,pb.statutConnu))),0,true);
   }
 
   host.innerHTML=html;
-  document.querySelectorAll('.cmp-ordre-btn').forEach(function(b){
-    b.classList.toggle('active',b.getAttribute('data-cmp-ordre')===_cmpOrdre);
-  });
 }
 
 // ── LE RENDU D'ENSEMBLE ──────────────────────────────────────────────────
@@ -5547,13 +5515,6 @@ function renderComparaisonResult(){
     +'<div class="cmp-section">'
       +'<div class="cmp-section-head">'
         +'<h3 class="cmp-section-title">'+escapeHtml(t('cmp_tops_titre'))+'</h3>'
-        +'<div class="cmp-controls">'
-          +'<span class="cmp-ordre-lab">'+escapeHtml(t('cmp_ordre_label'))+'</span>'
-          +'<div class="cmp-ordres" role="group" aria-label="'+escapeHtml(t('cmp_ordre_label'))+'">'
-            +'<button type="button" class="cmp-ordre-btn'+(_cmpOrdre==='presents'?' active':'')+'" data-cmp-ordre="presents">'+escapeHtml(t('cmp_ordre_presents'))+'</button>'
-            +'<button type="button" class="cmp-ordre-btn'+(_cmpOrdre==='separe'?' active':'')+'" data-cmp-ordre="separe">'+escapeHtml(t('cmp_ordre_separe'))+'</button>'
-          +'</div>'
-        +'</div>'
       +'</div>'
       +'<div class="cmp-note cmp-note-haut">'+escapeHtml(t('cmp_tops_note'))+'</div>'
       +'<div id="cmp-portrait"></div>'
@@ -5582,13 +5543,6 @@ function renderComparaisonResult(){
       };
     })());
   }
-  wrap.querySelectorAll('.cmp-ordre-btn').forEach(function(b){
-    b.addEventListener('click',function(){
-      _cmpOrdre=b.getAttribute('data-cmp-ordre');
-      cmpRendrePortrait();
-    });
-  });
-
   // Les agrégats des tops demandent la liste des films, qui n'est chargée
   // qu'à la demande (SUPABASE_TOPS n'en porte d'abord que les noms et les
   // nombres). Le reste de la page est déjà à l'écran : on ne la fait pas
