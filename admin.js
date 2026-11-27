@@ -45,6 +45,29 @@ function admErreur(cible, err, contexte){
   return phrase;
 }
 
+// Une fonction SQL appelée alors qu'elle n'est pas (ou pas encore) en base :
+// c'est le seul échec qui mérite un message à lui, parce qu'il dit quoi faire.
+// « Fonction introuvable » prend trois formes selon le chemin emprunté — le
+// nom dans le message de PostgREST, son cache de schéma, ou le « does not
+// exist » de PostgreSQL —, d'où les trois reconnaissances.
+// Le reste des erreurs repart par friendlyError, comme partout ailleurs.
+function messageRpcAbsent(err, nomFonction, fichierSql){
+  var brut = (err && err.message) ? err.message : String(err == null ? '' : err);
+  if(brut.indexOf(nomFonction) !== -1 || /schema cache/i.test(brut) || /does not exist/i.test(brut)){
+    return 'La fonction SQL « ' + nomFonction + ' » est introuvable — exécutez d\'abord '
+      + fichierSql + ' dans l\'éditeur SQL Supabase.';
+  }
+  return friendlyError(err);
+}
+
+// Une ligne de récapitulatif chiffrée, dans les fenêtres de confirmation des
+// suppressions : « · 1 notification supprimée » plutôt que « · 1
+// notification(s) supprimée(s) ». Un décompte qu'on relit à voix haute avant
+// d'appuyer sur un bouton irréversible mérite d'être écrit en français.
+function admLigneCompte(n, singulier, pluriel){
+  return '· ' + n + ' ' + (n === 1 ? singulier : pluriel);
+}
+
 // ── MESSAGERIE CINÉPHILE ──────────────────────────────────────
 // Crée une notification pour un cinéphile lorsqu'une de ses propositions
 // (cinéaste, courant) ou un de ses tops soumis est validé côté back-office.
@@ -1896,6 +1919,30 @@ function ficheAdmErreur(message){
   el.style.display = 'block';
 }
 
+// L'encadré de suppression ne paraît QUE sur une fiche réellement relue en
+// base : un bouton « Supprimer ce cinéaste » offert pendant la lecture, ou
+// après une lecture qui a échoué, désignerait un cinéaste que la page n'a pas.
+// Le refus d'une suppression précédente part avec l'encadré : il parlait d'une
+// autre fiche.
+function ficheAdmAfficherDanger(visible){
+  var wrap = document.getElementById('fiche-adm-danger-wrap');
+  if(wrap) wrap.style.display = visible ? 'block' : 'none';
+  ficheAdmDeleteErreur(null);
+}
+
+// Le refus d'une suppression s'affiche DANS l'encadré, sous le bouton qui l'a
+// demandée. Le bandeau du haut de l'onglet (ficheAdmErreur) est à deux écrans
+// de là, et le bandeau flottant du back-office s'effacerait au bout de sept
+// secondes : trop court pour « retirez d'abord ces tops », qui est une
+// consigne à suivre, pas une nouvelle à lire.
+function ficheAdmDeleteErreur(message){
+  var el = document.getElementById('fiche-adm-delete-error');
+  if(!el) return;
+  if(!message){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
 // La valeur d'un membre dans une colonne qui peut être scalaire (solo) ou
 // tableau de deux (duo).
 //
@@ -1924,6 +1971,7 @@ async function ficheAdmOuvrir(nom){
   var resEl = document.getElementById('fiche-adm-result');
   if(!resEl) return;
   ficheAdmErreur(null);
+  ficheAdmAfficherDanger(false);
   _ficheAdmNom = nom;
   _ficheAdmRow = null;
   var jeton = ++_ficheAdmJeton;
@@ -2161,6 +2209,13 @@ function renderFicheAdm(){
   saveBtn.addEventListener('click', function(){
     ficheAdmPreparerEnregistrement(estDuo, champs, paysSel, pays2Sel, urlFb, fbid, saveBtn);
   });
+
+  // La fiche est là, relue en base : l'encadré de suppression peut paraître.
+  ficheAdmAfficherDanger(true);
+  if(_ficheAdmDeleteBtn){
+    _ficheAdmDeleteBtn.disabled = false;
+    _ficheAdmDeleteBtn.textContent = FICHE_ADM_DELETE_LABEL;
+  }
 }
 
 // ── CONTRÔLES, PUIS CONFIRMATION DÉTAILLÉE ────────────────────────────────
@@ -2319,6 +2374,223 @@ async function ficheAdmEnregistrer(maj, btn){
   refreshStatsIfActive();
 }
 
+// ── SUPPRIMER UN CINÉASTE DE LA BASE ──────────────────────────────────────
+// Une proposition validée par erreur, un doublon, un homonyme créé deux fois :
+// la ligne n'était retirable que depuis l'éditeur SQL de Supabase, et avec
+// elle il fallait penser à la proposition de cinéaste — celle qui alimente les
+// actualités « a proposé X » puis « proposition de X validée » — et aux
+// notifications envoyées aux cinéphiles.
+//
+// POURQUOI UNE FONCTION SQL ET PAS UN DELETE. La table « cineastes » n'a
+// aucune règle de suppression, et « cineaste_proposals » non plus : un DELETE
+// envoyé d'ici n'enlèverait aucune ligne, sans erreur à l'écran — le pire des
+// comportements possibles pour une suppression. tc_admin_supprimer_cineaste
+// (A-FAIRE-DANS-SUPABASE-12.sql) fait tout dans une seule transaction, et
+// vérifie les droits de son côté.
+//
+// TROIS SOURCES DE TOPS, ET LA BASE N'EN VOIT QUE DEUX. La fonction SQL compte
+// la table « tops » et les soumissions validées, puis refuse s'il en reste.
+// Les tops de MATHIEU MUZARD et de KARINE CNUDDE, eux, ne sont pas en base :
+// ils vivent dans muzard.json et cnudde.json, deux fichiers du site. Un
+// cinéaste peut donc n'avoir aucune ligne dans « tops » ni dans
+// « submissions » et porter malgré tout un top — c'est même le cas le plus
+// fréquent, l'index étant né de ces deux collections. C'est donc ici, et
+// seulement ici, que ces deux fichiers sont consultés.
+//
+// ILS NE SONT LUS QU'AU CLIC, ET UNE SEULE FOIS. Un mégaoctet et deux cents
+// kilo-octets : le back-office n'a aucune autre raison de les télécharger, et
+// certainement pas à chaque ouverture.
+var _ficheAdmTopsJson = null;      // { 'muzard.json': {clef: true} | null, … }
+
+// Mêmes variantes d'apostrophe que tcCleNomCineaste (index.js) : « MARC’O »
+// écrit avec l'apostrophe typographique et « MARC'O » avec l'apostrophe droite
+// désignent la même personne, et six cinéastes de l'index sont dans ce cas.
+// Comparés caractère par caractère, ces deux noms ne se reconnaîtraient pas —
+// et un top passerait inaperçu, ce qui est exactement ce qu'il ne faut pas ici.
+function ficheAdmCleNom(nom){
+  if(typeof nom !== 'string') return '';
+  return nom.replace(/[\u2018\u2019\u02BC\u00B4`]/g, "'").toLowerCase();
+}
+
+// Les noms de cinéastes présents dans les deux fichiers de tops, par fichier.
+// Un fichier illisible vaut null — et non un ensemble vide : « je ne sais pas »
+// et « il n'y est pas » ne conduisent pas à la même décision.
+async function ficheAdmChargerTopsJson(){
+  if(_ficheAdmTopsJson) return _ficheAdmTopsJson;
+  var fichiers = ['muzard.json', 'cnudde.json'];
+  var resultat = {};
+  for(var i = 0; i < fichiers.length; i++){
+    var fichier = fichiers[i];
+    try {
+      var rep = await tcFetchWithTimeout(fichier, { timeoutMs: 20000 });
+      if(!rep.ok) throw new Error('HTTP ' + rep.status);
+      var data = await rep.json();
+      if(!data || !Array.isArray(data.tops)) throw new Error('Format inattendu.');
+      var noms = {};
+      data.tops.forEach(function(top){
+        var cle = ficheAdmCleNom(top && top.cineaste);
+        if(cle) noms[cle] = true;
+      });
+      resultat[fichier] = noms;
+    } catch(err){
+      console.error('[admin] lecture de ' + fichier + ' : ' + ((err && err.message) || err), err);
+      resultat[fichier] = null;
+    }
+  }
+  _ficheAdmTopsJson = resultat;
+  return resultat;
+}
+
+// Contrôles, puis confirmation détaillée. Comme pour l'enregistrement de la
+// fiche, les contrôles d'ici n'évitent qu'un aller-retour inutile — la
+// fonction SQL refuse de son côté — mais la confirmation, elle, est le cœur
+// du dispositif : elle écrit noir sur blanc, ligne par ligne, ce qui va
+// disparaître. Un back-office qui supprime en silence est un back-office dans
+// lequel on ne peut rien vérifier.
+var FICHE_ADM_DELETE_LABEL = 'Supprimer ce cinéaste de la base';
+
+async function ficheAdmPreparerSuppression(btn){
+  var nom = _ficheAdmNom;
+  if(!nom || !_ficheAdmRow){
+    showAdminNotice('Choisissez d\'abord un cinéaste.', false);
+    return;
+  }
+  ficheAdmDeleteErreur(null);
+  if(btn){ btn.disabled = true; btn.textContent = 'Vérification…'; }
+
+  // 1. Les deux fichiers de tops du site.
+  var jsonTops = await ficheAdmChargerTopsJson();
+  var cle = ficheAdmCleNom(nom);
+  var dansJson = [], illisibles = [];
+  Object.keys(jsonTops).forEach(function(fichier){
+    if(jsonTops[fichier] === null){ illisibles.push(fichier); return; }
+    if(jsonTops[fichier][cle]) dansJson.push(fichier);
+  });
+  if(dansJson.length){
+    if(btn){ btn.disabled = false; btn.textContent = FICHE_ADM_DELETE_LABEL; }
+    ficheAdmDeleteErreur('Impossible : « ' + nom + ' » porte un top dans ' + dansJson.join(' et ')
+      + '. Retirez-le d\'abord de ce fichier, sinon le top resterait dans le fichier sans fiche à laquelle se rattacher.');
+    return;
+  }
+
+  // 2. Le décompte en base, sans rien supprimer (p_confirmer = false).
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.rpc('tc_admin_supprimer_cineaste', { p_nom: nom, p_confirmer: false });
+    });
+  } catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = FICHE_ADM_DELETE_LABEL; }
+    ficheAdmDeleteErreur(messageRpcAbsent(err, 'tc_admin_supprimer_cineaste', 'A-FAIRE-DANS-SUPABASE-12.sql'));
+    return;
+  }
+  if(btn){ btn.disabled = false; btn.textContent = FICHE_ADM_DELETE_LABEL; }
+  if(res.error){
+    console.error('[admin] décompte avant suppression : ' + (res.error.message || ''), res.error);
+    ficheAdmDeleteErreur(messageRpcAbsent(res.error, 'tc_admin_supprimer_cineaste', 'A-FAIRE-DANS-SUPABASE-12.sql'));
+    return;
+  }
+
+  var r = res.data || {};
+  var nb = function(v){ return typeof v === 'number' ? v : 0; };
+  var tops = nb(r.tops), soumissions = nb(r.soumissions);
+  if(tops || soumissions){
+    ficheAdmDeleteErreur('Impossible : ' + tops + ' top(s) dans la table historique et '
+      + soumissions + ' soumission(s) validée(s) désignent encore « ' + nom
+      + ' ». Supprimez d\'abord ces tops — sans la fiche, ils ne pointeraient plus vers personne.');
+    return;
+  }
+
+  var recap = [
+    admLigneCompte(nb(r.propositions_cineaste), 'proposition de cinéaste (et son actualité)', 'propositions de cinéaste (et leurs actualités)'),
+    admLigneCompte(nb(r.propositions_courants), 'proposition de courant (et son actualité)', 'propositions de courants (et leurs actualités)'),
+    admLigneCompte(nb(r.notifications), 'notification', 'notifications'),
+    admLigneCompte(nb(r.commentaires), 'commentaire', 'commentaires')
+  ].join('\n');
+
+  var reserves = [];
+  if(nb(r.favoris)){
+    reserves.push('Ce nom figure dans les favoris de ' + nb(r.favoris)
+      + ' cinéphile(s) : ces listes ne sont pas modifiées, le nom y restera écrit.');
+  }
+  if(illisibles.length){
+    reserves.push('Attention : ' + illisibles.join(' et ')
+      + ' n\'a pas pu être lu — un top de Mathieu Muzard ou de Karine Cnudde pourrait avoir échappé au contrôle.');
+  }
+
+  showConfirmModal(
+    'Supprimer définitivement « ' + nom + ' » de la base ?\n\nSeront supprimés avec la fiche :\n' + recap
+      + (reserves.length ? '\n\n' + reserves.join('\n') : '')
+      + '\n\nCette action est irréversible.',
+    function(){ ficheAdmSupprimer(nom, btn); }
+  );
+}
+
+// Écriture effective. AUCUNE RELANCE : la fonction est idempotente, mais la
+// rejouer après un délai réseau échouerait sur « Cinéaste introuvable » —
+// puisque la première tentative a abouti — et annoncerait un échec pour une
+// suppression réussie.
+async function ficheAdmSupprimer(nom, btn){
+  if(btn){ btn.disabled = true; btn.textContent = 'Suppression…'; }
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.rpc('tc_admin_supprimer_cineaste', { p_nom: nom, p_confirmer: true });
+    }, { retries: 0 });
+  } catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = FICHE_ADM_DELETE_LABEL; }
+    ficheAdmDeleteErreur(messageRpcAbsent(err, 'tc_admin_supprimer_cineaste', 'A-FAIRE-DANS-SUPABASE-12.sql'));
+    return;
+  }
+  if(btn){ btn.disabled = false; btn.textContent = FICHE_ADM_DELETE_LABEL; }
+  if(res.error){
+    console.error('[admin] suppression d\'un cinéaste : ' + (res.error.message || ''), res.error);
+    ficheAdmDeleteErreur(messageRpcAbsent(res.error, 'tc_admin_supprimer_cineaste', 'A-FAIRE-DANS-SUPABASE-12.sql'));
+    return;
+  }
+
+  // Le catalogue et l'index des noms gardés en mémoire par la page suivent la
+  // base : sans cela l'autocomplétion continuerait de proposer un cinéaste
+  // supprimé, et les statistiques comme le compte des fiches sans pays
+  // afficheraient l'état d'avant.
+  if(DATA && DATA.cineastes){
+    var i = DATA.cineastes.findIndex(function(c){ return c && c.nom === nom; });
+    if(i !== -1) DATA.cineastes.splice(i, 1);
+  }
+  var j = cineastesIndex.indexOf(nom);
+  if(j !== -1) cineastesIndex.splice(j, 1);
+
+  var r = res.data || {};
+  var nb = function(v){ return typeof v === 'number' ? v : 0; };
+  var detail = [];
+  if(nb(r.propositions_cineaste) || nb(r.propositions_courants)){
+    detail.push(nb(r.propositions_cineaste) + ' proposition(s) de cinéaste et '
+      + nb(r.propositions_courants) + ' de courant supprimées');
+  }
+  if(nb(r.notifications)) detail.push(nb(r.notifications) + ' notification(s) supprimées');
+  if(nb(r.commentaires)) detail.push(nb(r.commentaires) + ' commentaire(s) supprimés');
+
+  // Le champ de recherche et les deux blocs se referment : laisser à l'écran
+  // le formulaire d'une fiche qui n'existe plus inviterait à l'enregistrer.
+  var input = document.getElementById('courant-fiche-cineaste-input');
+  if(input) input.value = '';
+  _courantFicheSelected = null;
+  _courantFicheSlots = [null, null, null, null];
+  var resCourants = document.getElementById('courant-fiche-result');
+  if(resCourants) resCourants.innerHTML = '';
+  ficheAdmVider();
+
+  showAdminNotice('✓ « ' + nom + ' » supprimé de la base'
+    + (detail.length ? ' — ' + detail.join(', ') + '.' : '.'), true);
+  ficheAdmMajCompteSansPays();
+  refreshStatsIfActive();
+}
+
+var _ficheAdmDeleteBtn = document.getElementById('fiche-adm-delete-btn');
+if(_ficheAdmDeleteBtn) _ficheAdmDeleteBtn.addEventListener('click', function(){
+  ficheAdmPreparerSuppression(_ficheAdmDeleteBtn);
+});
+
 // ── LES CINÉASTES SANS PAYS ───────────────────────────────────────────────
 // Reprise de l'ancien onglet « Drapeaux » : c'était sa seule fonction que la
 // recherche par nom ne couvrait pas, puisqu'elle demande de parcourir tout
@@ -2405,6 +2677,7 @@ function ficheAdmVider(){
   if(host) host.innerHTML = '';
   var wrap = document.getElementById('fiche-adm-courants-wrap');
   if(wrap) wrap.style.display = 'none';
+  ficheAdmAfficherDanger(false);
 }
 
 function initFicheAdmin(){
@@ -3369,6 +3642,19 @@ function renderCourantCatalogue(rows){
       descBtn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
       if(ouvert) descFr.champ.focus();
     });
+    // Retire l'entrée de TOUTES les fiches, avec les propositions et les
+    // notifications qui la mentionnent, mais la laisse au catalogue. C'est le
+    // geste qui manquait : le « Supprimer » ci-dessous refuse tant qu'une
+    // seule fiche la porte, et rien ne permettait de les libérer en bloc.
+    // Pas de showConfirmModal ici : c'est purgerCourantPartout qui l'ouvre,
+    // une fois les lignes concernées comptées en base.
+    var detachBtn = document.createElement('button');
+    detachBtn.className = 'btn-reject courant-row-detach-btn';
+    detachBtn.type = 'button';
+    detachBtn.textContent = 'Détacher partout';
+    detachBtn.title = 'Retirer cette entrée de toutes les fiches cinéaste, avec les propositions et les notifications qui la mentionnent. Le catalogue n\'est pas modifié.';
+    detachBtn.addEventListener('click', function(){ purgerCourantPartout(row, detachBtn); });
+
     var delBtn = document.createElement('button');
     delBtn.className = 'btn-reject';
     delBtn.textContent = 'Supprimer';
@@ -3379,6 +3665,7 @@ function renderCourantCatalogue(rows){
     });
     actionsCell.appendChild(saveBtn);
     actionsCell.appendChild(descBtn);
+    actionsCell.appendChild(detachBtn);
     actionsCell.appendChild(delBtn);
 
     paysSel.addEventListener('change', function(){
@@ -3503,6 +3790,125 @@ async function deleteCourantFromCatalogue(id, nomFr, btn){
 
   showAdminNotice('Courant « ' + nomFr + ' » supprimé du catalogue.', true);
   loadCourantCatalogue();
+  refreshStatsIfActive();
+}
+
+// ── RETIRER UN COURANT DE TOUTES LES FICHES À LA FOIS ─────────────────────
+// Le bouton « Supprimer » juste au-dessus refuse — à juste titre — tant que
+// l'entrée occupe un emplacement sur une seule fiche. Mais il n'existait aucun
+// moyen de les libérer autrement qu'en ouvrant les fiches une par une, et
+// vider un emplacement ne suffit pas : la proposition validée qui a produit
+// l'actualité « X a rattaché Y à Z » et la notification envoyée au cinéphile
+// survivent au rattachement qu'elles racontent.
+//
+// TOUT PASSE PAR LA BASE, EN UNE TRANSACTION. tc_admin_purger_courant écrit
+// les quatre colonnes de toutes les fiches concernées et supprime les
+// propositions et les notifications correspondantes d'un seul mouvement
+// (A-FAIRE-DANS-SUPABASE-12.sql) : une purge interrompue au milieu laisserait
+// des fiches détachées dont les notifications parleraient encore d'un
+// rattachement disparu.
+//
+// DEUX APPELS, ET LE PREMIER NE SUPPRIME RIEN. La fonction appelée avec
+// p_confirmer = false se contente de compter ; c'est ce compte-là qui s'écrit
+// dans la fenêtre de confirmation. Annoncer « quelques propositions » avant
+// d'en supprimer cent quarante-quatre, ce serait demander d'approuver à
+// l'aveugle.
+//
+// L'ENTRÉE N'EST PAS SUPPRIMÉE DU CATALOGUE : vider et supprimer sont deux
+// décisions, elles gardent deux gestes. Celui-ci débloque seulement l'autre.
+//
+// LES PROPOSITIONS REJETÉES RESTENT. Les validées ont produit une actualité et
+// une notification, les en attente recréeraient le rattachement d'un clic sur
+// « Valider » : les unes et les autres partent. Un refus, lui, n'est ni un
+// rattachement ni une actualité — l'effacer rendrait la proposition
+// reproposable comme si rien ne s'était passé.
+async function purgerCourantPartout(row, btn){
+  if(btn) btn.disabled = true;
+  var res;
+  try {
+    // Lecture seule : rejouable sans dommage, donc les relances par défaut.
+    res = await tcWithRetryTimeout(function(){
+      return sb.rpc('tc_admin_purger_courant', { p_courant_id: row.id, p_confirmer: false });
+    });
+  } catch(err){
+    showAdminNotice(messageRpcAbsent(err, 'tc_admin_purger_courant', 'A-FAIRE-DANS-SUPABASE-12.sql'), false);
+    if(btn) btn.disabled = false;
+    return;
+  }
+  if(btn) btn.disabled = false;
+  if(res.error){
+    console.error('[admin] décompte de la purge : ' + (res.error.message || ''), res.error);
+    showAdminNotice(messageRpcAbsent(res.error, 'tc_admin_purger_courant', 'A-FAIRE-DANS-SUPABASE-12.sql'), false);
+    return;
+  }
+
+  var r = res.data || {};
+  var nb = function(v){ return typeof v === 'number' ? v : 0; };
+  var fiches = nb(r.fiches), props = nb(r.propositions), notifs = nb(r.notifications);
+  if(!fiches && !props && !notifs){
+    showAdminNotice('« ' + row.nom_fr + ' » n\'est rattaché à aucune fiche, et ne laisse aucune proposition ni notification derrière lui — il n\'y a rien à détacher.', false);
+    return;
+  }
+
+  var recap = [
+    admLigneCompte(fiches, 'fiche cinéaste détachée', 'fiches cinéaste détachées'),
+    admLigneCompte(props, 'proposition validée ou en attente supprimée (et son actualité)', 'propositions validées ou en attente supprimées (et leurs actualités)'),
+    admLigneCompte(notifs, 'notification supprimée', 'notifications supprimées')
+  ].join('\n');
+
+  showConfirmModal(
+    'Retirer « ' + row.nom_fr + ' » de toutes les fiches cinéaste ?\n\n' + recap
+      + '\n\nLes propositions rejetées sont conservées : elles gardent la trace d\'un refus.'
+      + '\nL\'entrée reste au catalogue, libre de tout rattachement. Cette action est irréversible.',
+    function(){ appliquerPurgeCourant(row, btn); }
+  );
+}
+
+// Écriture effective : un seul appel RPC, donc une seule transaction, et
+// AUCUNE relance (contrairement au décompte ci-dessus). La fonction est
+// pourtant idempotente — la rejouer ne trouverait plus rien à supprimer —
+// mais une relance après un délai réseau afficherait « 0 fiche détachée »
+// pour une purge qui a réussi, et ferait croire à un échec.
+async function appliquerPurgeCourant(row, btn){
+  if(btn) btn.disabled = true;
+  var res;
+  try {
+    res = await tcWithRetryTimeout(function(){
+      return sb.rpc('tc_admin_purger_courant', { p_courant_id: row.id, p_confirmer: true });
+    }, { retries: 0 });
+  } catch(err){
+    admErreur(null, err, 'purge d\'un courant');
+    if(btn) btn.disabled = false;
+    return;
+  }
+  if(btn) btn.disabled = false;
+  if(res.error){
+    console.error('[admin] purge d\'un courant : ' + (res.error.message || ''), res.error);
+    showAdminNotice(messageRpcAbsent(res.error, 'tc_admin_purger_courant', 'A-FAIRE-DANS-SUPABASE-12.sql'), false);
+    return;
+  }
+
+  // Le catalogue gardé en mémoire par la page suit la base : sans cela
+  // l'onglet « Statistiques », les quatre emplacements d'une fiche ouverte et
+  // le contrôle d'usage du bouton « Supprimer » continueraient de compter des
+  // rattachements qui n'existent plus.
+  var id = Number(row.id);
+  (DATA && DATA.cineastes ? DATA.cineastes : []).forEach(function(c){
+    ['courant', 'courant2', 'courant3', 'courant4'].forEach(function(col){
+      if(Number(c[col]) === id) c[col] = null;
+    });
+  });
+
+  var r = res.data || {};
+  var nb = function(v){ return typeof v === 'number' ? v : 0; };
+  showAdminNotice('« ' + (r.courant || row.nom_fr) + ' » retiré de ' + nb(r.fiches) + ' fiche(s) — '
+    + nb(r.propositions) + ' proposition(s) et ' + nb(r.notifications) + ' notification(s) supprimées. '
+    + 'L\'entrée reste au catalogue.', true);
+
+  // Une fiche ouverte dans l'onglet « Fiche cinéaste » affichait peut-être
+  // l'entrée que l'on vient de détacher : ses quatre emplacements sont
+  // relus depuis le catalogue remis à jour juste au-dessus.
+  if(_courantFicheSelected) renderCourantFicheResult(_courantFicheSelected);
   refreshStatsIfActive();
 }
 

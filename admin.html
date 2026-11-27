@@ -267,6 +267,42 @@
         </div>
         <div id="courant-fiche-result"></div>
       </div>
+
+      <!-- ── SUPPRIMER LA FICHE ───────────────────────────────────────────
+           La seule action de cet onglet qui ne se répare pas, d'où son propre
+           encadré, loin du bouton « Enregistrer la fiche ».
+
+           ELLE PASSE OBLIGATOIREMENT PAR LA BASE. La table « cineastes » n'a
+           aucune règle de suppression (lecture publique, insertion et mise à
+           jour pour l'administrateur, rien de plus), et « cineaste_proposals »
+           non plus : un DELETE envoyé d'ici n'enlèverait pas une ligne, et
+           n'afficherait aucune erreur. C'est donc la fonction SQL
+           tc_admin_supprimer_cineaste qui fait le travail — fiche,
+           proposition, notifications et commentaires dans une seule
+           transaction (A-FAIRE-DANS-SUPABASE-12.sql). -->
+      <div id="fiche-adm-danger-wrap" style="display:none">
+        <div class="section-title" style="margin-top:2rem;">Supprimer cette fiche</div>
+        <div class="fiche-adm-danger">
+          <div class="fiche-adm-danger-texte">
+            La fiche part avec la proposition de cinéaste qui l'a créée — donc avec l'actualité
+            « proposition validée » qu'elle alimente —, ses propositions de courants, les
+            notifications qui la nomment et ses éventuels commentaires.
+            <strong>La suppression est refusée tant qu'un seul top désigne ce cinéaste</strong>,
+            qu'il vienne du formulaire, de la table historique ou de <em>muzard.json</em> /
+            <em>cnudde.json</em>&nbsp;: le nom est la clef qui relie une fiche à ses tops, et aucune
+            clef étrangère ne la protège — la fiche partirait en laissant les tops pointer vers
+            personne. Les listes de favoris des cinéphiles, elles, ne sont pas modifiées&nbsp;:
+            elles sont comptées, et le compte est affiché avant confirmation.
+          </div>
+          <button type="button" class="btn-reject" id="fiche-adm-delete-btn">Supprimer ce cinéaste de la base</button>
+          <!-- Les refus se lisent ICI, et non dans le bandeau du haut de
+               l'onglet : le bouton est à deux écrans de lui, et un « 12 tops
+               désignent encore ce cinéaste » affiché hors de vue ne dit rien
+               à personne. Le bandeau flottant, lui, s'effacerait au bout de
+               sept secondes — trop vite pour une consigne à suivre. -->
+          <div id="fiche-adm-delete-error" style="display:none;color:#fff;background:var(--rouge);padding:10px 14px;margin-top:12px;font-size:14px;line-height:1.45;"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ── TAB 7 : TOPS THÉMATIQUES ── -->
@@ -315,7 +351,13 @@
       <div style="font-size:13px;color:var(--brun-pale);margin-bottom:1rem;">
         Ajoutez ici un courant avant qu'il ne soit proposable dans « Mes tops » ou affectable à une fiche cinéaste.
         Les noms français et anglais des entrées existantes sont modifiables ci-dessous ; renommer une entrée
-        en français met à jour en cascade les propositions et les notifications qui la mentionnent.
+        en français met à jour en cascade les propositions et les notifications qui la mentionnent.<br>
+        <strong>Détacher partout</strong> retire une entrée de toutes les fiches cinéaste d'un coup, et supprime
+        avec elle les propositions validées ou en attente qui la mentionnent — donc les actualités correspondantes —
+        et les notifications envoyées aux cinéphiles. Les propositions <em>rejetées</em> sont conservées&nbsp;: elles
+        ne sont pas des rattachements, et elles gardent la trace d'un refus. L'entrée reste au catalogue, simplement
+        libre de tout rattachement&nbsp;: son bouton <strong>Supprimer</strong>, qui refuse tant qu'une seule fiche
+        la porte, n'est alors plus bloqué.
       </div>
 
       <div class="import-form">

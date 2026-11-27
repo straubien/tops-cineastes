@@ -354,6 +354,27 @@ body {
 .fiche-adm-null-item:hover { background: var(--rouge); border-color: var(--rouge); color: #fff; }
 .fiche-adm-null-list .fiche-adm-note { flex-basis: 100%; margin: 4px 0 0; }
 
+/* ── LA SUPPRESSION D'UNE FICHE ────────────────────────────────────────────
+   Un encadré à part, et non un bouton de plus dans la rangée « Enregistrer /
+   Annuler les modifications » : la seule action de cet onglet qui ne se répare
+   pas ne doit pas se trouver sous le pouce de celui qui venait enregistrer.
+   Le filet rouge et le quatrième de bord à gauche reprennent l'habillage des
+   cartes de la file d'attente (.dash-queue-card), rouge au lieu de discret. */
+.fiche-adm-danger {
+  background: var(--bg-card);
+  border: 1px solid var(--rouge);
+  border-left: 4px solid var(--rouge);
+  padding: 14px 18px;
+  margin-top: 1rem;
+}
+.fiche-adm-danger-texte {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  max-width: 720px;
+  margin-bottom: 12px;
+}
+
 /* Files d'attente de modération */
 .dash-queue-grid {
   display: grid;
@@ -577,6 +598,18 @@ body {
   border: 1px solid var(--border);
 }
 .courant-row-actions .courant-row-desc-btn:hover { background: var(--bg-subtle); color: var(--text); }
+/* « Détacher partout » retire l'entrée de toutes les fiches mais la laisse au
+   catalogue : il emprunte le rouge de .btn-reject en CONTOUR seulement, pour
+   ne pas se confondre avec le « Supprimer » plein qui le suit — deux boutons
+   rouges identiques côte à côte, l'un réversible et l'autre non, seraient une
+   invitation à l'erreur. */
+.courant-row-actions .courant-row-detach-btn {
+  background: none;
+  color: var(--rouge);
+  border: 1px solid var(--rouge);
+}
+.courant-row-actions .courant-row-detach-btn:hover { background: var(--rouge); color: #fff; }
+.courant-row-actions .courant-row-detach-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .courant-row-mobile-header { display: none; }
 @media (max-width: 900px) {
