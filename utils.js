@@ -58,6 +58,23 @@ function normStr(s){
 // porte le suffixe PROPREMENT, à la fin (« portrait-Clark, Larry (II).jpg »),
 // pour qu'une fiche d'homonyme puisse avoir son portrait à elle, puis on
 // retombe sur les candidats du nom nu, partagés avec l'homonyme.
+//
+// ── « Jr. » APPARTIENT AU NOM DE FAMILLE, PAS AU PRÉNOM ───────────
+// Le patronyme est reconstitué plus bas en ne gardant que les mots écrits TOUT
+// EN CAPITALES : c'est ainsi qu'on sépare « DE SICA » de « Vittorio » sans
+// avoir à savoir où l'un s'arrête et où l'autre commence. Mais « Jr. », écrit
+// en minuscules, tombait avec le prénom — et « PARKS Jr., Gordon » rendait
+// alors exactement les mêmes candidats que « PARKS, Gordon » : le père de 1912
+// et le fils de 1934 se disputaient un seul fichier, et AUCUN nom de fichier
+// ne pouvait les distinguer. On garde donc ce mot-là avec le patronyme :
+// « portrait-Parks Jr..jpg » d'un côté, « portrait-Parks.jpg » de l'autre.
+//
+// SEULEMENT « Jr. » ET « Sr. », ET C'EST VOLONTAIRE. « St. CLAIR, Malcolm » et
+// « ABBADIE d'ARRAST, Harry d' » portent aussi un mot en minuscules dans leur
+// patronyme, mais ils n'ont pas d'homonyme à distinguer : les inclure ne
+// réparerait rien et déplacerait des chemins qui n'ont rien demandé.
+var TC_RE_SUFFIXE_FILIATION = /^(jr|sr)\.?$/i;
+
 function tcLocalPortraitCandidates(nom){
   if(!nom) return [];
   var suffixe = tcSuffixeHomonyme(nom);
@@ -80,7 +97,10 @@ function tcLocalPortraitCandidates(nom){
   var hasComma=nom.indexOf(',')!==-1;
   var clean=nom.replace(/,.*$/,'');
   var prenom=hasComma?nom.split(',').slice(1).join(',').trim():'';
-  var parts=clean.split(' ').filter(function(w){return w.length>=2&&w===w.toUpperCase();});
+  // Les mots en capitales forment le patronyme — plus le « Jr. » / « Sr. » qui
+  // s'y rattache, sans quoi un fils ne se distingue pas de son père (voir
+  // TC_RE_SUFFIXE_FILIATION, au-dessus de cette fonction).
+  var parts=clean.split(' ').filter(function(w){return (w.length>=2&&w===w.toUpperCase())||TC_RE_SUFFIXE_FILIATION.test(w);});
   var surnameUpper=parts.length?parts.join(' '):clean.trim().toUpperCase();
   if(!surnameUpper) return [];
   var surnameTitled=titleCase(surnameUpper);
