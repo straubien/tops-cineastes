@@ -1,6 +1,6 @@
 {
   "contributeur": "MATHIEU MUZARD",
-  "version": "8.0",
+  "version": "8.1",
   "tops": [
     {
       "cineaste": "ABULADZE, Tengiz",
@@ -3195,6 +3195,16 @@
       ]
     },
     {
+      "cineaste": "BENAZERAF, José",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Joë Caligula",
+          "annee": 1969
+        }
+      ]
+    },
+    {
       "cineaste": "BENEDEK, Laszlo",
       "films": [
         {
@@ -6319,6 +6329,16 @@
           "rang": 1,
           "titre": "Le dernier train du Katanga",
           "annee": 1968
+        }
+      ]
+    },
+    {
+      "cineaste": "CARDOS, John ‘Bud’",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "L'horrible invasion",
+          "annee": 1977
         }
       ]
     },
@@ -9838,6 +9858,16 @@
           "rang": 1,
           "titre": "La vie selon Agfa",
           "annee": 1992
+        }
+      ]
+    },
+    {
+      "cineaste": "DAYTON & FARIS",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Little miss sunshine",
+          "annee": 2006
         }
       ]
     },
@@ -13571,6 +13601,11 @@
         },
         {
           "rang": 8,
+          "titre": "Grégoire peut mieux faire",
+          "annee": 2002
+        },
+        {
+          "rang": 9,
           "titre": "Les étrangers",
           "annee": 1999
         }
@@ -16638,6 +16673,16 @@
           "rang": 4,
           "titre": "Dans les griffes de la momie",
           "annee": 1967
+        }
+      ]
+    },
+    {
+      "cineaste": "GINSBERG, Milton Moses",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Coming apart",
+          "annee": 1969
         }
       ]
     },
@@ -22685,6 +22730,16 @@
       ]
     },
     {
+      "cineaste": "KANIN, Garson",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Mon épouse favorite",
+          "annee": 1940
+        }
+      ]
+    },
+    {
       "cineaste": "KAPLAN, Nelly",
       "films": [
         {
@@ -24129,6 +24184,17 @@
           "rang": 4,
           "titre": "Raspoutine, l'agonie",
           "annee": 1981
+        }
+      ]
+    },
+    {
+      "cineaste": "KLIMOVSKY, Leon",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "La furie des vampires",
+          "annee": 1971,
+          "note": "version longue"
         }
       ]
     },
@@ -29059,7 +29125,7 @@
       ]
     },
     {
-      "cineaste": "MARC'O",
+      "cineaste": "MARC’O",
       "films": [
         {
           "rang": 1,
@@ -32175,6 +32241,11 @@
           "rang": 1,
           "titre": "Graffiti party",
           "annee": 1978
+        },
+        {
+          "rang": 2,
+          "titre": "Le lion et le vent",
+          "annee": 1975
         }
       ]
     },
@@ -38900,13 +38971,13 @@
         },
         {
           "rang": 15,
-          "titre": "Merry-go-round",
-          "annee": 1980
+          "titre": "Noroît (une vengeance)",
+          "annee": 1976
         },
         {
           "rang": 16,
-          "titre": "Noroît",
-          "annee": 1976
+          "titre": "Merry-go-round",
+          "annee": 1980
         },
         {
           "rang": 17,
@@ -43008,7 +43079,7 @@
           "rang": 1,
           "titre": "Sailor suit and machine gun",
           "annee": 1981,
-          "note": "theatrical version"
+          "note": "complete version"
         }
       ]
     },
@@ -43136,26 +43207,36 @@
         },
         {
           "rang": 16,
+          "titre": "Arrête-moi si tu peux",
+          "annee": 2002
+        },
+        {
+          "rang": 17,
           "titre": "A.I.",
           "annee": 2001
         },
         {
-          "rang": 17,
+          "rang": 18,
           "titre": "Le monde perdu",
           "annee": 1997
         },
         {
-          "rang": 18,
+          "rang": 19,
           "titre": "Hook ou la revanche du capitaine Crochet",
           "annee": 1991
         },
         {
-          "rang": 19,
+          "rang": 20,
+          "titre": "Le terminal",
+          "annee": 2004
+        },
+        {
+          "rang": 21,
           "titre": "Amistad",
           "annee": 1997
         },
         {
-          "rang": 20,
+          "rang": 22,
           "titre": "La liste de Schindler",
           "annee": 1993
         }
@@ -44534,6 +44615,11 @@
           "rang": 16,
           "titre": "Daddy nostalgie",
           "annee": 1990
+        },
+        {
+          "rang": 17,
+          "titre": "Ca commence aujourd'hui",
+          "annee": 1999
         }
       ]
     },
@@ -44722,6 +44808,31 @@
           "rang": 1,
           "titre": "Rome plutôt que vous",
           "annee": 2008
+        }
+      ]
+    },
+    {
+      "cineaste": "TENO, Jean-Marie",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Afrique, je te plumerai",
+          "annee": 1992
+        },
+        {
+          "rang": 2,
+          "titre": "Vacances au pays",
+          "annee": 2000
+        },
+        {
+          "rang": 3,
+          "titre": "Le malentendu colonial",
+          "annee": 2004
+        },
+        {
+          "rang": 4,
+          "titre": "Chef !",
+          "annee": 1999
         }
       ]
     },
@@ -46724,6 +46835,16 @@
           "titre": "Woodstock",
           "annee": 1970,
           "note": "director's cut"
+        }
+      ]
+    },
+    {
+      "cineaste": "WAGGNER, George",
+      "films": [
+        {
+          "rang": 1,
+          "titre": "Le loup-garou",
+          "annee": 1941
         }
       ]
     },
